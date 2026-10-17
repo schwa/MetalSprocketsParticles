@@ -34,6 +34,9 @@ typedef MS_ENUM(uint32_t, ParticleBirthDirection) {
     ParticleBirthDirectionVelocity = 0,
     /// Outward from the shape at the birth point, at the speed of `emitterVelocity`, plus spread.
     ParticleBirthDirectionNormal = 1,
+    /// Around the shape's +Y axis (counterclockwise looking down +Y), at the speed of `emitterVelocity`, plus spread. Sparks
+    /// thrown off a spinning wheel.
+    ParticleBirthDirectionTangent = 2,
 };
 
 /// One mesh triangle in emitter space. a.w is the cumulative surface area up to and including this triangle, as a

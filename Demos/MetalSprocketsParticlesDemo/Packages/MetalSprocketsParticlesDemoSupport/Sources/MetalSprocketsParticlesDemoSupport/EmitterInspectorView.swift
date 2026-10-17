@@ -161,6 +161,8 @@ struct MotionSectionView: View {
             }
             VectorEditorView("Emitter Offset", value: $emitter.motion.offset, in: -5...5)
             ParameterSliderView("Emitter Yaw", value: $emitter.motion.yaw, in: -.pi ... .pi)
+            ParameterSliderView("Emitter Pitch", value: $emitter.motion.pitch, in: -.pi ... .pi)
+            ParameterSliderView("Emitter Spin", value: $emitter.motion.spin, in: -10...10)
             Picker("Simulation Space", selection: $emitter.simulationSpace) {
                 ForEach(SimulationSpace.allCases) { space in
                     Text(space.name).tag(space)

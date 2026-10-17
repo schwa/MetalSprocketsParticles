@@ -342,9 +342,16 @@ kernel void updateParticles(
             sample = sampleShape(rng, uniforms, meshTriangles, meshVertices);
             position = uniforms.emitterPosition.xyz + sample.position;
         }
-        float3 baseVelocity = uniforms.shape.z == ParticleBirthDirectionNormal
-            ? sample.normal * length(uniforms.emitterVelocity.xyz)
-            : uniforms.emitterVelocity.xyz;
+        float baseSpeed = length(uniforms.emitterVelocity.xyz);
+        float3 baseVelocity = uniforms.emitterVelocity.xyz;
+        if (uniforms.shape.z == ParticleBirthDirectionNormal) {
+            baseVelocity = sample.normal * baseSpeed;
+        } else if (uniforms.shape.z == ParticleBirthDirectionTangent) {
+            // Around +Y through the shape center. On the axis itself there is no tangent; use the normal.
+            float3 around = cross(float3(0, 1, 0), position - uniforms.emitterPosition.xyz);
+            float aroundLength = length(around);
+            baseVelocity = (aroundLength > 1e-6 ? around / aroundLength : sample.normal) * baseSpeed;
+        }
         float3 velocity = baseVelocity + rng.inUnitSphere() * uniforms.emitterVelocity.w;
         float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.

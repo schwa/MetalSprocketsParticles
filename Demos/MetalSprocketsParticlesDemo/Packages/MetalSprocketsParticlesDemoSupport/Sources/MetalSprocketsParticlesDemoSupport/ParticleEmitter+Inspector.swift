@@ -482,11 +482,15 @@ extension ParticleBirthLocation: @retroactive CaseIterable, @retroactive Identif
 }
 
 extension ParticleBirthDirection: @retroactive CaseIterable, @retroactive Identifiable {
-    public static var allCases: [ParticleBirthDirection] { [.velocity, .normal] }
+    public static var allCases: [ParticleBirthDirection] { [.velocity, .normal, .tangent] }
     public var id: UInt32 { rawValue }
 
     var name: String {
-        self == .normal ? "Shape Normal" : "Velocity"
+        switch self {
+        case .normal: "Shape Normal"
+        case .tangent: "Around Axis"
+        default: "Velocity"
+        }
     }
 }
 

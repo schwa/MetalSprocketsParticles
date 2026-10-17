@@ -695,17 +695,19 @@ Add emitter types that spawn particles from shapes: volumes (box, sphere), plane
 ## 36: Doctor Strange portal example
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:tooling
 created: 2026-10-17T20:11:25Z
-updated: 2026-10-17T21:06:50Z
+updated: 2026-10-17T21:24:57Z
+closed: 2026-10-17T21:24:57Z
 +++
 
 Add an example of a Doctor Strange-style portal: sparks thrown off a spinning ring, like a Catherine wheel.
 
 - `2026-10-17T21:06:50Z`: Triage: fits as a preset (#30). Missing pieces: emitter motion that spins over time (EmitterMotion only has a fixed yaw; Galaxy needs the same for real spiral arms), and sparks thrown tangentially; today the closest is a rotating torus/disc rim with inheritVelocity. Related: #30.
+- `2026-10-17T21:24:57Z`: Added the Portal preset: an upright spinning ring of fire, sparks thrown tangentially off the rim that fall and bounce on the ground, and a counter-rotating inner shimmer. New: ParticleBirthDirection.tangent and EmitterMotion pitch/spin (both in the inspector). Tried spinning the Galaxy arm emitters for spiral arms; long-lived stars still smear into rings, so Galaxy is unchanged.
 
 ---
 

@@ -18,15 +18,31 @@ public struct EmitterMotion: Sendable, Equatable {
     public var speed: Float
     /// Added to the moving point, so a path can sit above the ground.
     public var offset: SIMD3<Float>
-    /// Turns the emitter around +Y, in radians.
+    /// Turns the emitter around world +Y, in radians.
     public var yaw: Float
+    /// Tilts the emitter around its x axis, in radians, applied after `yaw`. pi/2 stands a ring that lies in the XZ
+    /// plane upright, facing +Z.
+    public var pitch: Float
+    /// Spins the emitter around its own +Y axis, in radians per second. A spinning ring with `.tangent` birth direction
+    /// throws sparks like a Catherine wheel.
+    public var spin: Float
 
-    public init(kind: Kind = .still, radius: Float = 1.5, speed: Float = 1, offset: SIMD3<Float> = .zero, yaw: Float = 0) {
+    public init(
+        kind: Kind = .still,
+        radius: Float = 1.5,
+        speed: Float = 1,
+        offset: SIMD3<Float> = .zero,
+        yaw: Float = 0,
+        pitch: Float = 0,
+        spin: Float = 0
+    ) {
         self.kind = kind
         self.radius = radius
         self.speed = speed
         self.offset = offset
         self.yaw = yaw
+        self.pitch = pitch
+        self.spin = spin
     }
 
     public func transform(time: Float) -> simd_float4x4 {
@@ -37,7 +53,10 @@ public struct EmitterMotion: Sendable, Equatable {
         case .bounce: [0, abs(sin(angle)) * radius, 0]
         case .figureEight: [sin(angle) * radius, 0, sin(angle * 2) * radius * 0.5]
         }
-        var transform = simd_float4x4(simd_quatf(angle: yaw, axis: [0, 1, 0]))
+        let orientation = simd_quatf(angle: yaw, axis: [0, 1, 0])
+            * simd_quatf(angle: pitch, axis: [1, 0, 0])
+            * simd_quatf(angle: spin * time, axis: [0, 1, 0])
+        var transform = simd_float4x4(orientation)
         transform.columns.3 = SIMD4(position + offset, 1)
         return transform
     }

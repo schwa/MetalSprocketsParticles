@@ -11,7 +11,74 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
+        .portal,
     ]
+
+    /// A sorcerer's portal: a spinning ring of fire that throws sparks off its rim like a Catherine wheel.
+    static let portal: ParticlePreset = {
+        let center: SIMD3<Float> = [0, 1.6, 0]
+        // The rim shapes lie in the XZ plane; a pitch of pi/2 stands them up facing the camera. A negative pitch flips
+        // the ring's axis, so its tangent runs the other way.
+        let clockwise = EmitterMotion(offset: center, pitch: .pi / 2, spin: 3)
+        let counterclockwise = EmitterMotion(offset: center, pitch: -.pi / 2, spin: -2)
+        return ParticlePreset(
+            "Portal",
+            layers: [
+                Layer("Ring", settings: emitter {
+                    $0.shape = .disc(radius: 1.1)
+                    $0.birthLocation = .surface
+                    $0.birthDirection = .tangent
+                    $0.velocity = [0, 0.3, 0]
+                    $0.velocitySpread = 0.05
+                    $0.gravity = .zero
+                    $0.lifetime = 0.15...0.3
+                    $0.birthRate = 12_000
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .linear(from: 0.05, to: 0.015)
+                    $0.colorOverLife = .linear(from: [1, 0.55, 0.15, 0.2], to: [1, 0.25, 0.03, 0])
+                }, motion: clockwise, capacity: 6_000),
+                Layer("Sparks", settings: emitter {
+                    $0.shape = .disc(radius: 1.1)
+                    $0.birthLocation = .surface
+                    $0.birthDirection = .tangent
+                    $0.velocity = [0, 4, 0]
+                    $0.velocitySpread = 0.5
+                    $0.speedVariation = 1.5
+                    $0.gravity = [0, -4, 0]
+                    $0.drag = 0.8
+                    $0.lifetime = 0.4...1.1
+                    $0.birthRate = 5_000
+                    $0.restitution = 0.3
+                    $0.blendMode = .additive
+                    $0.orientation = .velocityAligned(stretch: 1.8)
+                    $0.sizeOverLife = .linear(from: 0.009, to: 0.004)
+                    $0.colorOverLife = ParticleCurve([
+                        .init(0, [1, 0.85, 0.45, 1]),
+                        .init(0.25, [1, 0.5, 0.1, 1]),
+                        .init(1, [0.7, 0.12, 0.02, 0]),
+                    ])
+                }, motion: clockwise, capacity: 8_000),
+                Layer("Inner Shimmer", settings: emitter {
+                    $0.shape = .disc(radius: 0.95)
+                    $0.birthLocation = .surface
+                    $0.birthDirection = .tangent
+                    $0.velocity = [0, 1.2, 0]
+                    $0.velocitySpread = 0.1
+                    $0.gravity = .zero
+                    $0.drag = 1
+                    $0.lifetime = 0.2...0.4
+                    $0.birthRate = 2_500
+                    $0.blendMode = .additive
+                    $0.orientation = .velocityAligned(stretch: 0.5)
+                    $0.sizeOverLife = .constant(0.008)
+                    $0.colorOverLife = .linear(from: [1, 0.85, 0.5, 0.7], to: [1, 0.4, 0.1, 0])
+                }, motion: counterclockwise, capacity: 2_000),
+            ],
+            colliders: [ground],
+            cameraEye: [0, 1.6, 4.5],
+            cameraTarget: center
+        )
+    }()
 
     static let fountain = ParticlePreset(
         "Fountain",
