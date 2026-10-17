@@ -46,6 +46,8 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var angularSpeed: Float = 0
     public var angularSpeedVariation: Float = 0
 
+    public var blendMode: ParticleBlendMode = .alpha
+
     /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
     public var birthRate: Float = 1_000
     /// Seconds of emission per cycle. `nil` emits forever.
@@ -199,9 +201,11 @@ public final class ParticleSystem {
             viewProjection: projection * view,
             cameraRight: SIMD4(simd_normalize(cameraToWorld.columns.0.xyz), 0),
             cameraUp: SIMD4(simd_normalize(cameraToWorld.columns.1.xyz), 0),
-            size: [emitter.sizeStart, emitter.sizeEnd, 0, 0]
+            size: [emitter.sizeStart, emitter.sizeEnd, 0, 0],
+            options: [emitter.blendMode.rawValue, 0, 0, 0]
         )
         let capacity = capacity
+        let blendMode = emitter.blendMode
         return try RenderPipeline(vertexShader: library.particleVertex, fragmentShader: library.particleFragment) {
             Draw { encoder in
                 encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: capacity)
@@ -210,13 +214,31 @@ public final class ParticleSystem {
         .parameter("particles", buffer: buffer)
         .parameter("uniforms", value: uniforms)
         .renderPipelineDescriptorTransformer { descriptor in
-            let attachment = descriptor.colorAttachments[0]!
-            attachment.blendingState = .enabled
-            attachment.sourceRGBBlendFactor = .one
-            attachment.sourceAlphaBlendFactor = .one
+            blendMode.configure(descriptor.colorAttachments[0]!)
+        }
+    }
+}
+
+extension ParticleBlendMode {
+    // The fragment shader outputs premultiplied color, so every blended mode uses `.one` for the source.
+    func configure(_ attachment: MTL4RenderPipelineColorAttachmentDescriptor) {
+        switch self {
+        case .opaque:
+            attachment.blendingState = .disabled
+            return
+        case .additive:
+            attachment.destinationRGBBlendFactor = .one
+            attachment.destinationAlphaBlendFactor = .one
+        case .screen:
+            attachment.destinationRGBBlendFactor = .oneMinusSourceColor
+            attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
+        default:
             attachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
             attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
         }
+        attachment.blendingState = .enabled
+        attachment.sourceRGBBlendFactor = .one
+        attachment.sourceAlphaBlendFactor = .one
     }
 }
 

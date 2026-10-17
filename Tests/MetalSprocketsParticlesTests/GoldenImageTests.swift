@@ -4,6 +4,7 @@ import GoldenImage
 import ImageIO
 import MetalSprockets
 import MetalSprocketsParticles
+import MetalSprocketsParticlesShaders
 import simd
 import Testing
 import UniformTypeIdentifiers
@@ -49,6 +50,32 @@ struct GoldenImageTests {
             .compare(image: try render(seed: 99, frames: 180), toGoldenImageNamed: "fountain-settled")
         print("differentSeedDoesNotMatch PSNR: \(outcome.psnr)")
         #expect(!outcome.isMatch)
+    }
+
+    @Test(arguments: [(ParticleBlendMode.additive, "additive"), (.screen, "screen"), (.opaque, "opaque")])
+    func blendModes(mode: ParticleBlendMode, name: String) throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.blendMode = mode
+        #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "fountain-blend-\(name)"))
+    }
+
+    // Blending lives in the pipeline descriptor; make sure the pipeline cache does not reuse the old one.
+    @Test func blendModeChangeOnSameRendererTakesEffect() throws {
+        let size = CGSize(width: 160, height: 90)
+        let renderer = try OffscreenRenderer(size: size)
+        let system = try ParticleSystem(device: renderer.device, capacity: 5_000, emitter: .fountain, seed: 0)
+        let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
+        let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
+        for _ in 0..<60 {
+            _ = try renderer.render(try system.simulate(deltaTime: 1.0 / 60.0))
+        }
+        func draw() throws -> CGImage {
+            try renderer.render(try RenderPass { try system.render(projection: projection, view: view) }).cgImage
+        }
+        let alpha = try draw()
+        system.emitter.blendMode = .additive
+        let additive = try draw()
+        #expect(try ImageComparison().compare(alpha, additive).psnr < psnrThreshold)
     }
 
     @Test func fountainWithoutColliderWireframes() throws {

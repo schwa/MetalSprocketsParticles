@@ -320,17 +320,19 @@ Particles always face the camera. SceneKit orientationMode and RealityKit billbo
 ## 19: Blend mode is fixed
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:rendering
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T15:40:46Z
+closed: 2026-10-17T15:40:46Z
 +++
 
 Particles always use premultiplied alpha blending. SceneKit blendMode and RealityKit blendMode offer additive, alpha, and others. Additive is needed for fire, sparks, and glow.
 
 - `2026-10-17T14:11:14Z`: Related: #4.
+- `2026-10-17T15:40:46Z`: Added ParticleEmitter.blendMode: alpha (default), additive, screen, opaque (alpha-tested). Shared ParticleBlendMode enum in the shader header. Goldens per mode plus a test that changing mode on a live renderer picks a new pipeline.
 
 ---
 

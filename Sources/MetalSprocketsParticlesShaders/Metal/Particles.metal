@@ -172,8 +172,14 @@ fragment float4 wireframeFragment(constant WireframeUniforms &uniforms [[buffer(
     return uniforms.color;
 }
 
-fragment float4 particleFragment(VertexOut in [[stage_in]]) {
+fragment float4 particleFragment(VertexOut in [[stage_in]], constant RenderUniforms &uniforms [[buffer(0)]]) {
     float falloff = saturate(1.0 - length(in.uv));
     float alpha = in.color.a * falloff * falloff;
+    if (uniforms.options.x == ParticleBlendModeOpaque) {
+        if (alpha < 0.5) {
+            discard_fragment();
+        }
+        return float4(in.color.rgb, 1);
+    }
     return float4(in.color.rgb * alpha, alpha); // Premultiplied.
 }
