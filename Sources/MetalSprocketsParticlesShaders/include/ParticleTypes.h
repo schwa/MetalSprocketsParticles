@@ -104,7 +104,7 @@ typedef struct {
     simd_float4 fields;          // x = force field count, y = simulation time (seconds)
     simd_float4 variation;       // +/- ranges: x = size (fraction), y = restitution, z = friction, w = speed
     simd_float4 colorVariation;  // +/- ranges: hue (turns), saturation, brightness, alpha
-    simd_uint4 random;           // x = seed, y = slice capacity, z = slice start in the shared buffer
+    simd_uint4 random;           // x = seed, y = slice capacity, z = slice start in the shared buffer, w = first ring slot dispatched
     // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
     // w = nonzero to kill all particles before this step.
     simd_uint4 spawn;

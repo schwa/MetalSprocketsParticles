@@ -542,12 +542,13 @@ Outcome: a keep/drop decision with numbers.
 ## 29: Measure and optimise particle system performance
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: effort:l, area:simulation, area:rendering
 created: 2026-10-17T15:01:18Z
-updated: 2026-10-17T17:10:11Z
+updated: 2026-10-17T20:59:15Z
+closed: 2026-10-17T20:59:15Z
 +++
 
 Goal: the particle system (simulation + rendering) should be a very small part of a typical frame for a reasonable number of particles.
@@ -568,6 +569,7 @@ Steps:
 Related: #4 (sorting adds cost), #28 (point cloud renderer spike), #16 (runtime shader compile).
 
 - `2026-10-17T17:10:11Z`: Triage note: #16 (runtime shader compile) is fixed; shaders are now precompiled by MetalCompilerPlugin, so drop that CPU candidate. Instancing at capacity still applies: the ring buffer (#21) draws capacity instances even when most are dead.
+- `2026-10-17T20:59:15Z`: Added particles-bench (simulate and render GPU time per pass, CPU per frame, 10K/100K/1M and edge scenarios) and README budgets/results. Fixes: analytic-derivative curl noise (1M simulate 2.0 -> 0.23 ms) and a per-emitter live window so unused capacity is not simulated or drawn (1M cap/100K alive render 0.77 -> 0.21 ms). Rendering is now fill-bound; discarding quad corners did not help and was reverted. Not measured on a base M chip. No just recipe: the justfile skill requires an explicit request.
 
 ---
 

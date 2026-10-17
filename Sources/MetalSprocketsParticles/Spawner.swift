@@ -16,6 +16,24 @@ struct Spawner: Equatable {
     /// Drives birth rate variation.
     var seed: UInt32 = 0
 
+    /// Emitter time and spawn serial at the end of each recent step, oldest first. Used to bound which slots can hold
+    /// live particles.
+    struct Checkpoint: Equatable {
+        var time: Float
+        var serial: UInt32
+    }
+
+    var checkpoints: [Checkpoint] = [Checkpoint(time: 0, serial: 0)]
+    /// The longest lifetime seen since the last reset. Only grows, so lowering the lifetime setting cannot hide
+    /// particles that are still alive.
+    var maxLifetime: Float = 0
+
+    /// Every particle with a serial below this is dead: it was born in a step that ended at least `maxLifetime` ago.
+    var liveStartSerial: UInt32 {
+        let cutoff = time - maxLifetime
+        return checkpoints.last { $0.time <= cutoff }?.serial ?? checkpoints[0].serial
+    }
+
     /// Index of the emission cycle containing `time`. Always 0 when emission does not cycle.
     static func cycleIndex(time: Float, emitter: ParticleEmitter) -> UInt32 {
         guard let duration = emitter.emissionDuration, emitter.loops else {
@@ -65,6 +83,13 @@ struct Spawner: Equatable {
         cursor = UInt32((Int(cursor) + count) % max(capacity, 1))
         serial &+= UInt32(count)
         time += deltaTime
+        maxLifetime = max(maxLifetime, emitter.lifetime.upperBound)
+        checkpoints.append(Checkpoint(time: time, serial: serial))
+        // Keep the newest checkpoint at or before the cutoff; older ones can never be needed again.
+        let cutoff = time - maxLifetime
+        if let keep = checkpoints.lastIndex(where: { $0.time <= cutoff }), keep > 0 {
+            checkpoints.removeFirst(keep)
+        }
         return step
     }
 }

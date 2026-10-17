@@ -43,6 +43,15 @@ public final class ParticleSystem {
         var needsKill = false
         var needsWarmup = true
         var previousTransform: simd_float4x4?
+        /// The live bound from the previous step. Each step dispatches from here, so particles that just died get one
+        /// last update that stores them as dead; every slot outside the window is then known to be dead.
+        var dispatchStartSerial: UInt32 = 0
+
+        /// Ring slots that can hold live particles: `count` slots starting at `start`, wrapping at `capacity`.
+        var liveWindow: (start: Int, count: Int) {
+            let start = spawner.liveStartSerial
+            return (Int(start % UInt32(capacity)), min(Int(spawner.serial &- start), capacity))
+        }
 
         init(settings: ParticleEmitter, capacity: Int, range: Range<Int>, seed: UInt32) {
             self.settings = settings
@@ -62,6 +71,7 @@ public final class ParticleSystem {
             spawner = Spawner(seed: seed)
             needsKill = true
             needsWarmup = true
+            dispatchStartSerial = 0
         }
 
         /// Simulation space to world: the transform in local space, identity in world space.
@@ -240,7 +250,7 @@ public final class ParticleSystem {
     }
 
     /// Where an emitter is in simulation space for one step.
-    private struct EmitterMotion {
+    private struct SpawnMotion {
         var transform = matrix_identity_float4x4
         var previousOrigin: SIMD3<Float> = .zero
         var inheritedVelocity: SIMD3<Float> = .zero
@@ -249,13 +259,14 @@ public final class ParticleSystem {
     /// One compute dispatch: an emitter's slice for one step.
     private struct Dispatch {
         var uniforms: SimulationUniforms
-        var capacity: Int
+        /// Slots this step touches; see `random.w` for the first one.
+        var threadCount: Int
         var mesh: EmitterMesh?
         /// The previous dispatch wrote the same slice.
         var followsSameEmitter: Bool
     }
 
-    private func makeStep(_ emitter: Emitter, deltaTime: Float, motion: EmitterMotion) -> SimulationUniforms {
+    private func makeStep(_ emitter: Emitter, deltaTime: Float, motion: SpawnMotion) -> (uniforms: SimulationUniforms, threadCount: Int) {
         let settings = emitter.settings
         let playing = state == .playing
         let deltaTime = playing ? deltaTime : 0
@@ -292,8 +303,21 @@ public final class ParticleSystem {
             random: [emitter.seed, UInt32(emitter.capacity), UInt32(emitter.range.lowerBound), 0],
             spawn: [spawn.cursor, spawn.count, spawn.serial, emitter.needsKill ? 1 : 0]
         )
+        // Touch only slots that can hold live particles, plus those that died since the last step. A kill touches all.
+        var dispatchUniforms = uniforms
+        let threadCount: Int
+        if emitter.needsKill {
+            dispatchUniforms.random.w = 0
+            threadCount = emitter.capacity
+        } else {
+            let start = emitter.dispatchStartSerial
+            dispatchUniforms.random.w = start % UInt32(emitter.capacity)
+            threadCount = min(Int(emitter.spawner.serial &- start), emitter.capacity)
+        }
+        emitter.dispatchStartSerial = emitter.spawner.liveStartSerial
         emitter.needsKill = false
-        return uniforms
+        // Never dispatch zero threads; an extra dead slot is harmless.
+        return (dispatchUniforms, max(threadCount, 1))
     }
 
     private func dispatches(_ emitter: Emitter, frameDeltaTime: Float) -> [Dispatch] {
@@ -304,10 +328,10 @@ public final class ParticleSystem {
         emitter.previousTransform = emitter.transform
         let emitterVelocity = frameDeltaTime > 0 ? (origin - previousOrigin) / frameDeltaTime : .zero
 
-        var steps: [SimulationUniforms] = []
+        var steps: [(uniforms: SimulationUniforms, threadCount: Int)] = []
         if emitter.needsWarmup {
             emitter.needsWarmup = false
-            let still = EmitterMotion(transform: spawnTransform, previousOrigin: origin)
+            let still = SpawnMotion(transform: spawnTransform, previousOrigin: origin)
             let warmupStep: Float = 1.0 / 60.0
             var remaining = emitter.settings.warmupDuration
             while remaining > 0 {
@@ -315,13 +339,13 @@ public final class ParticleSystem {
                 remaining -= warmupStep
             }
         }
-        steps.append(makeStep(emitter, deltaTime: frameDeltaTime, motion: EmitterMotion(
+        steps.append(makeStep(emitter, deltaTime: frameDeltaTime, motion: SpawnMotion(
             transform: spawnTransform,
             previousOrigin: previousOrigin,
             inheritedVelocity: emitterVelocity * emitter.settings.inheritVelocity
         )))
-        return steps.enumerated().map { index, uniforms in
-            Dispatch(uniforms: uniforms, capacity: emitter.capacity, mesh: emitter.mesh, followsSameEmitter: index > 0)
+        return steps.enumerated().map { index, step in
+            Dispatch(uniforms: step.uniforms, threadCount: step.threadCount, mesh: emitter.mesh, followsSameEmitter: index > 0)
         }
     }
 
@@ -354,7 +378,7 @@ public final class ParticleSystem {
                     EncoderBarrier(after: .dispatch, before: .dispatch)
                 }
                 try ComputePipeline(computeKernel: kernel) {
-                    try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].capacity, height: 1, depth: 1))
+                    try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
                 }
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: dispatches[index].uniforms)
@@ -386,7 +410,9 @@ public final class ParticleSystem {
             let draw = draws[index]
             try RenderPipeline(vertexShader: vertexShader, fragmentShader: fragmentShader) {
                 Draw { encoder in
-                    encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: draw.capacity, baseInstance: draw.baseInstance)
+                    for segment in draw.segments where segment.count > 0 {
+                        encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: segment.count, baseInstance: segment.start)
+                    }
                 }
             }
             .parameter("particles", buffer: buffer)
@@ -409,8 +435,8 @@ private struct EmitterDraw {
     var sizeCurve: [Float]
     var texture: MTLTexture?
     var blendMode: ParticleBlendMode
-    var capacity: Int
-    var baseInstance: Int
+    /// Instance ranges in the shared buffer: the emitter's live window, split in two where it wraps.
+    var segments: [(start: Int, count: Int)]
 
     init(emitter: ParticleSystem.Emitter, viewProjection: simd_float4x4, cameraToWorld: simd_float4x4) {
         let settings = emitter.settings
@@ -422,8 +448,10 @@ private struct EmitterDraw {
         sizeCurve = settings.sizeOverLife.baked()
         texture = emitter.texture
         blendMode = settings.blendMode
-        capacity = emitter.capacity
-        baseInstance = emitter.range.lowerBound
+        let base = emitter.range.lowerBound
+        let window = emitter.liveWindow
+        let firstCount = min(window.count, emitter.capacity - window.start)
+        segments = [(base + window.start, firstCount), (base, window.count - firstCount)]
         uniforms = RenderUniforms(
             viewProjection: viewProjection,
             model: emitter.modelTransform,

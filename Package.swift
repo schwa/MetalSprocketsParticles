@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .library(name: "MetalSprocketsParticles", targets: ["MetalSprocketsParticles"]),
         .executable(name: "particles-render", targets: ["particles-render"]),
+        .executable(name: "particles-bench", targets: ["particles-bench"]),
     ],
     dependencies: [
         .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.3")),
@@ -38,6 +39,14 @@ let package = Package(
                 .product(name: "GoldenImage", package: "GoldenImage"),
             ],
             resources: [.copy("Golden Images")]
+        ),
+        .executableTarget(
+            name: "particles-bench",
+            dependencies: [
+                "MetalSprocketsParticles",
+                .product(name: "MetalSprockets", package: "MetalSprockets"),
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ]
         ),
         .executableTarget(
             name: "particles-render",

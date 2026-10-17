@@ -9,48 +9,77 @@ static uint hash(uint v) {
     return (word >> 22u) ^ word;
 }
 
-// Gradient noise in -1...1, smooth (quintic) in each axis.
-static float gradientNoise(float3 p) {
-    float3 cell = floor(p);
-    float3 f = p - cell;
-    float3 u = f * f * f * (f * (f * 6 - 15) + 10);
-    float result = 0;
-    float weights[2][2][2];
-    for (int z = 0; z < 2; z++) {
-        for (int y = 0; y < 2; y++) {
-            for (int x = 0; x < 2; x++) {
-                int3 corner = int3(cell) + int3(x, y, z);
-                uint h = hash(uint(corner.x) * 73856093u ^ uint(corner.y) * 19349663u ^ uint(corner.z) * 83492791u);
-                // One of 12 cube-edge gradients.
-                const float3 gradients[12] = {
-                    float3(1, 1, 0), float3(-1, 1, 0), float3(1, -1, 0), float3(-1, -1, 0),
-                    float3(1, 0, 1), float3(-1, 0, 1), float3(1, 0, -1), float3(-1, 0, -1),
-                    float3(0, 1, 1), float3(0, -1, 1), float3(0, 1, -1), float3(0, -1, -1),
-                };
-                weights[z][y][x] = dot(gradients[h % 12], f - float3(x, y, z));
-            }
-        }
-    }
-    for (int z = 0; z < 2; z++) {
-        float a = mix(weights[z][0][0], weights[z][0][1], u.x);
-        float b = mix(weights[z][1][0], weights[z][1][1], u.x);
-        result += (z == 0 ? 1 - u.z : u.z) * mix(a, b, u.y);
-    }
-    return result;
+// A cube-edge gradient (one axis zero, the others ±1) chosen by hashing the lattice corner.
+static float3 latticeGradient(int3 corner) {
+    uint h = hash(uint(corner.x) * 73856093u ^ uint(corner.y) * 19349663u ^ uint(corner.z) * 83492791u);
+    float3 gradient = float3((h & 1) ? 1 : -1, (h & 2) ? 1 : -1, (h & 4) ? 1 : -1);
+    gradient[(h >> 3) % 3] = 0;
+    return gradient;
 }
 
-// Curl of a noise vector potential: a divergence-free flow, so particles swirl instead of bunching up.
+// Gradient noise (quintic) and its analytic derivatives: x = value, yzw = d/dx, d/dy, d/dz.
+// After Inigo Quilez, "Gradient Noise Derivatives". Corners: a 000, b 100, c 010, d 110, e 001, f 101, g 011, h 111.
+static float4 gradientNoiseWithDerivatives(float3 p) {
+    int3 cell = int3(floor(p));
+    float3 f = p - floor(p);
+    float3 u = f * f * f * (f * (f * 6 - 15) + 10);
+    float3 du = 30 * f * f * (f * (f - 2) + 1);
+
+    float3 ga = latticeGradient(cell + int3(0, 0, 0));
+    float3 gb = latticeGradient(cell + int3(1, 0, 0));
+    float3 gc = latticeGradient(cell + int3(0, 1, 0));
+    float3 gd = latticeGradient(cell + int3(1, 1, 0));
+    float3 ge = latticeGradient(cell + int3(0, 0, 1));
+    float3 gf = latticeGradient(cell + int3(1, 0, 1));
+    float3 gg = latticeGradient(cell + int3(0, 1, 1));
+    float3 gh = latticeGradient(cell + int3(1, 1, 1));
+
+    float va = dot(ga, f - float3(0, 0, 0));
+    float vb = dot(gb, f - float3(1, 0, 0));
+    float vc = dot(gc, f - float3(0, 1, 0));
+    float vd = dot(gd, f - float3(1, 1, 0));
+    float ve = dot(ge, f - float3(0, 0, 1));
+    float vf = dot(gf, f - float3(1, 0, 1));
+    float vg = dot(gg, f - float3(0, 1, 1));
+    float vh = dot(gh, f - float3(1, 1, 1));
+
+    float k0 = va;
+    float k1 = vb - va;
+    float k2 = vc - va;
+    float k3 = ve - va;
+    float k4 = va - vb - vc + vd;
+    float k5 = va - vc - ve + vg;
+    float k6 = va - vb - ve + vf;
+    float k7 = -va + vb + vc - vd + ve - vf - vg + vh;
+
+    float3 g0 = ga;
+    float3 g1 = gb - ga;
+    float3 g2 = gc - ga;
+    float3 g3 = ge - ga;
+    float3 g4 = ga - gb - gc + gd;
+    float3 g5 = ga - gc - ge + gg;
+    float3 g6 = ga - gb - ge + gf;
+    float3 g7 = -ga + gb + gc - gd + ge - gf - gg + gh;
+
+    float value = k0 + k1 * u.x + k2 * u.y + k3 * u.z + k4 * u.x * u.y + k5 * u.y * u.z + k6 * u.z * u.x + k7 * u.x * u.y * u.z;
+    float3 derivatives = g0 + g1 * u.x + g2 * u.y + g3 * u.z + g4 * u.x * u.y + g5 * u.y * u.z + g6 * u.z * u.x + g7 * u.x * u.y * u.z
+        + du * float3(
+            k1 + k4 * u.y + k6 * u.z + k7 * u.y * u.z,
+            k2 + k5 * u.z + k4 * u.x + k7 * u.z * u.x,
+            k3 + k6 * u.x + k5 * u.y + k7 * u.x * u.y);
+    return float4(value, derivatives);
+}
+
+// Curl of a noise vector potential: a divergence-free flow, so particles swirl instead of bunching up. Analytic
+// derivatives need three noise samples instead of eighteen for central differences.
 static float3 curlNoise(float3 p) {
-    const float e = 0.01;
     const float3 offsetY = float3(31.4, 17.2, 5.9);
     const float3 offsetZ = float3(-11.7, 43.1, 23.3);
-    auto potential = [&](float3 q) {
-        return float3(gradientNoise(q), gradientNoise(q + offsetY), gradientNoise(q + offsetZ));
-    };
-    float3 dx = potential(p + float3(e, 0, 0)) - potential(p - float3(e, 0, 0));
-    float3 dy = potential(p + float3(0, e, 0)) - potential(p - float3(0, e, 0));
-    float3 dz = potential(p + float3(0, 0, e)) - potential(p - float3(0, 0, e));
-    return float3(dy.z - dz.y, dz.x - dx.z, dx.y - dy.x) / (2 * e);
+    float3 dx = gradientNoiseWithDerivatives(p).yzw;
+    float3 dy = gradientNoiseWithDerivatives(p + offsetY).yzw;
+    float3 dz = gradientNoiseWithDerivatives(p + offsetZ).yzw;
+    // Potential = (noise x, noise y, noise z); curl = (dPz/dy - dPy/dz, dPx/dz - dPz/dx, dPy/dx - dPx/dy).
+    return float3(dz.y - dy.z, dx.z - dz.x, dy.x - dx.y);
 }
 
 // 1 inside half the radius, easing to 0 at the radius. A radius of 0 means unlimited range.
@@ -280,11 +309,12 @@ kernel void updateParticles(
     constant float4 *meshVertices [[buffer(5)]],
     uint localID [[thread_position_in_grid]]
 ) {
-    // Each dispatch covers one emitter's slice of the shared buffer.
-    uint id = uniforms.random.z + localID;
+    // Each dispatch covers a window of one emitter's ring, starting at slot random.w and wrapping at its capacity.
+    uint capacity = uniforms.random.y;
+    uint slot = (uniforms.random.w + localID) % capacity;
+    uint id = uniforms.random.z + slot;
     Particle p = particles[id];
     float dt = uniforms.lifetime.w;
-    uint capacity = uniforms.random.y;
 
     if (uniforms.spawn.w != 0) {
         p.position.w = 0;
@@ -293,7 +323,7 @@ kernel void updateParticles(
 
     // Particles spawn into a ring: this step owns `spawn.y` slots starting at the cursor. The oldest particles get
     // recycled first. Randomness comes from the spawn serial, not the slot, so results do not depend on thread order.
-    uint offset = (localID + capacity - uniforms.spawn.x) % capacity;
+    uint offset = (slot + capacity - uniforms.spawn.x) % capacity;
     if (offset < uniforms.spawn.y) {
         Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
         // The default full sphere volume keeps the original expression exactly: rewriting it changes rounding, and
