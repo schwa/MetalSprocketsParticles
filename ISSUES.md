@@ -24,140 +24,187 @@ Planes, spheres and boxes affect particles but are invisible. Particles are also
 ## 2: No collision with arbitrary meshes
 
 +++
-status: new
-priority: high
-kind: none
+status: open
+priority: medium
+kind: feature
+labels: effort:xl, area:collision
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:19:41Z
 +++
 
 Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes need collision with mesh geometry, e.g. via a baked SDF volume or the scene depth buffer.
+
+- `2026-10-17T14:02:37Z`: Doc review: SceneKit has colliderNodes (collide with node geometry). RealityKit ParticleEmitterComponent has no collision API at all, so this is a clear place to beat it.
+- `2026-10-17T14:11:14Z`: Related: #3 (SDF colliders could share the mesh SDF path).
 
 ---
 
 ## 3: No SDF or oriented-box colliders
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: feature
+labels: effort:m, area:collision
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Boxes are axis-aligned only. There is no rotated box, capsule, or SDF collider.
+
+- `2026-10-17T14:11:14Z`: Related: #2.
 
 ---
 
 ## 4: Transparent particles are not sorted
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: feature
+labels: effort:l, area:rendering
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Alpha-blended particles draw in buffer order, which is wrong for non-additive blending.
+
+- `2026-10-17T14:02:37Z`: Doc review: SceneKit sortingMode (none, projectedDepth, distance, oldestFirst, youngestFirst). RealityKit sortOrder (default increasingDepth).
+- `2026-10-17T14:11:14Z`: Related: #19 (additive blending needs no sorting).
 
 ---
 
 ## 5: No textured or flipbook sprites
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: feature
+labels: effort:m, area:rendering
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Particles are always a soft round dot. No texture, sprite sheet animation, or rotation.
+
+- `2026-10-17T14:02:37Z`: Doc review: SceneKit particleImage + imageSequence rows/columns/initialFrame/frameRate/animationMode. RealityKit image (premultiplied) + ImageSequence. SceneKit also supports a cube map image with fresnelExponent.
 
 ---
 
 ## 6: Over-life properties are linear only
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: feature
+labels: effort:m, area:simulation
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Color and size only lerp between start and end. RealityKit/SceneKit-class systems need curves and gradients.
+
+- `2026-10-17T14:02:37Z`: Doc review: RealityKit has colorEvolutionPower, sizeMultiplierAtEndOfLifespan(+Power), opacityCurve presets, and a start/end or evolving ParticleColor. SceneKit uses propertyControllers with CAAnimation-driven curves for any property.
 
 ---
 
 ## 7: Only one continuous emitter shape
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: feature
+labels: effort:l, area:emission
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
-Emission is a continuous spawn from a sphere. Missing: bursts, emission rate control, box/cone/disc/mesh-surface shapes, multiple emitters per system.
+Particles spawn only inside a sphere. Missing: box, cone, disc, cylinder, torus, and mesh-surface/volume/vertex emission shapes, birth direction modes, and multiple emitters per system. Timing and bursts are tracked in #21.
+
+- `2026-10-17T14:02:37Z`: Doc review: RealityKit EmitterShape (point, plane, box, sphere, cylinder, cone, torus) + emitterShapeSize, radialAmount, torusInnerRadius, BirthLocation (surface/volume/vertices), BirthDirection, burst()/burstCount. SceneKit emitterShape is any SCNGeometry with birthLocation (surface/volume/vertex) and birthDirection, emittingDirection, spreadingAngle.
+- `2026-10-17T14:11:13Z`: Related: #21 (timing/bursts split out), #22 (emitter transform).
 
 ---
 
 ## 8: No force fields
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: feature
+labels: effort:m, area:simulation
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Only constant gravity and drag. Missing: vortex, attractors, curl noise turbulence, wind.
+
+- `2026-10-17T14:02:37Z`: Doc review: RealityKit has attractionCenter/Strength, vortexDirection/Strength, noiseStrength/Scale/AnimationSpeed. SceneKit uses scene SCNPhysicsField objects (isAffectedByPhysicsFields) plus particleMass and particleCharge for electric/magnetic fields.
 
 ---
 
 ## 9: No sub-emitters
 
 +++
-status: new
-priority: low
-kind: none
+status: open
+priority: medium
+kind: feature
+labels: effort:l, area:emission
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:19:41Z
 +++
 
 Particles cannot spawn other particles on death or collision (sparks, splashes).
+
+- `2026-10-17T14:02:37Z`: Doc review: SceneKit systemSpawnedOnCollision/OnDying/OnLiving. RealityKit spawnedEmitter with spawnOccasion (onBirth/onDeath/onUpdate), spawnVelocityFactor, spawnSpreadFactor, spawnInheritsParentColor.
+- `2026-10-17T14:11:14Z`: Related: #23 (death on collision triggers onCollision sub-emitters).
 
 ---
 
 ## 10: No particle lighting or soft particles
 
 +++
-status: new
+status: open
 priority: low
-kind: none
+kind: feature
+labels: effort:l, area:rendering
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Particles are unlit and clip hard against geometry.
+
+- `2026-10-17T14:02:37Z`: Doc review: both have isLightingEnabled. SceneKit also has isBlackPassEnabled. Neither documents soft particles, so soft particles would beat both.
 
 ---
 
 ## 11: No benchmark against RealityKit and SceneKit
 
 +++
-status: new
+status: closed
 priority: low
-kind: none
+kind: task
+labels: effort:l, area:tooling
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T14:19:41Z
+closed: 2026-10-17T14:19:41Z
 +++
 
 The goal is to beat their particle systems, but there are no comparison scenes or performance numbers.
+
+- `2026-10-17T14:19:41Z`: Won't do: not benchmarking against RealityKit/SceneKit.
 
 ---
 
 ## 12: Particle simulation is not repeatable
 
 +++
-status: new
+status: open
 priority: high
 kind: bug
+labels: effort:s, area:simulation
 created: 2026-10-17T13:35:53Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Initial spawn delays use Float.random on the CPU, and the GPU RNG is seeded from wall-clock time. The same emitter settings produce different results on each run, so output cannot be compared across runs or used in golden image tests. A seed should control all randomness.
@@ -167,15 +214,18 @@ Initial spawn delays use Float.random on the CPU, and the GPU RNG is seeded from
 ## 13: No golden image tests
 
 +++
-status: new
+status: open
 priority: high
 kind: task
+labels: effort:m, area:tooling
 depends: 12
 created: 2026-10-17T13:35:53Z
-updated: 2026-10-17T13:49:11Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Rendering is only checked by running the demo app and looking at it. There are no automated tests that render particles offscreen with OffscreenRenderer and compare against reference images with GoldenImage. Depends on repeatable simulation.
+
+- `2026-10-17T14:11:14Z`: Related: #15 (color differences show up in golden images).
 
 ---
 
@@ -199,10 +249,12 @@ There is no way to render a particle scene to an image or video from the command
 ## 15: Particle colors differ between the app and the CLI
 
 +++
-status: new
+status: open
 priority: low
 kind: bug
+labels: effort:s, area:rendering
 created: 2026-10-17T13:47:19Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 particles-render output is paler and more washed out than the demo app. OffscreenRenderer renders to bgra8Unorm_srgb, so the shader's colors are probably being treated as linear in one path and sRGB in the other.
@@ -212,12 +264,183 @@ particles-render output is paler and more washed out than the demo app. Offscree
 ## 16: Shaders are compiled from source at runtime
 
 +++
-status: new
+status: open
 priority: medium
 kind: task
+labels: effort:m, area:tooling
 created: 2026-10-17T13:54:28Z
+updated: 2026-10-17T14:13:05Z
 +++
 
 Particles.metal ships as a copied resource and is compiled with ShaderLibrary(source:) on every launch. This costs startup time, hides shader compile errors until runtime, gives no Xcode Metal debugger support, and the Swift and Metal struct layouts are duplicated by hand. MetalSprocketsAddOns uses a separate shaders target built by MetalCompilerPlugin (~/Projects/Current/MetalCompilerPlugin), with shared C headers for the structs.
+
+---
+
+## 17: Particles have no rotation or spin
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:rendering
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+Billboards are always axis-aligned to the camera. SCNParticleSystem has particleAngle/particleAngularVelocity (+variation); RealityKit ParticleEmitter has angle/angularSpeed (+variation).
+
+---
+
+## 18: Only camera-facing billboards; no velocity stretch
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:rendering
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+Particles always face the camera. SceneKit orientationMode and RealityKit billboardMode offer Y-aligned, axis-locked, and free orientation. Both have stretchFactor to stretch particles along velocity (sparks, rain).
+
+---
+
+## 19: Blend mode is fixed
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:rendering
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+Particles always use premultiplied alpha blending. SceneKit blendMode and RealityKit blendMode offer additive, alpha, and others. Additive is needed for fire, sparks, and glow.
+
+- `2026-10-17T14:11:14Z`: Related: #4.
+
+---
+
+## 20: Per-particle properties are not randomized at birth
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:emission
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+Only position, velocity, and lifetime vary per particle. Both SceneKit and RealityKit pair almost every property with a *Variation range: size, color, angle, angular speed, mass, bounce, friction, birth rate, image sequence frame and rate.
+
+---
+
+## 21: No emission timing control
+
++++
+status: open
+priority: high
+kind: feature
+labels: effort:l, area:emission
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+The emitter always emits continuously at full capacity. Missing: birth rate independent of capacity, emission duration and idle periods, looping, warmup (pre-simulate before first render), play/pause/stop/restart, isEmitting toggle, and a simulation speed factor. Both SceneKit and RealityKit have these.
+
+- `2026-10-17T14:11:13Z`: Related: #7 (emitter shapes).
+
+---
+
+## 22: No emitter transform or simulation space
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:emission
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+The emitter has a position but no rotation, scale, or parent transform, and there is no choice of local vs world simulation space. SceneKit has isLocal; RealityKit has particlesInheritTransform and fieldSimulationSpace. Moving emitters (trails, rockets) need this.
+
+---
+
+## 23: Particles cannot die on collision
+
++++
+status: open
+priority: low
+kind: feature
+labels: effort:s, area:collision
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+Colliding particles always bounce. SceneKit has particleDiesOnCollision and collision events. Needed for rain, sparks hitting walls, and as a trigger for sub-emitters (#9).
+
+- `2026-10-17T14:11:14Z`: Related: #9.
+
+---
+
+## 24: No way to inject custom per-particle behavior
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:xl, area:simulation
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+SceneKit lets callers attach event handlers (birth, death, collision) and per-frame modifier blocks at several simulation stages. A GPU system needs an equivalent, e.g. user-supplied Metal functions for spawn, update, or render, so effects can go beyond the built-in parameters.
+
+---
+
+## 25: No presets or saved effect files
+
++++
+status: open
+priority: low
+kind: feature
+labels: effort:m, area:tooling
+created: 2026-10-17T14:01:52Z
+updated: 2026-10-17T14:13:05Z
++++
+
+RealityKit ships ParticleEmitterComponent.Presets (fireworks, impact, magic, rain, snow, sparks). SceneKit loads .scnp files authored in Xcode's particle editor. We have one hard-coded fountain and no serializable effect format.
+
+---
+
+## 26: No UI to adjust emitter settings
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:tooling
+created: 2026-10-17T14:15:58Z
++++
+
+Changing any emitter setting means editing code and rebuilding. The demo app needs a simple inspector (sliders, color pickers, collider list) for live tweaking. Keep it in the demo app for now; it may later move to its own reusable target. Related: #25 (presets/effect files).
+
+---
+
+## 27: Demo colliders are static
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:collision
+created: 2026-10-17T14:17:50Z
++++
+
+The demo's sphere and boxes never move, so it does not show particles reacting to moving geometry. Animate the colliders over time in the demo view. Moving colliders should also transfer their velocity to particles they hit; currently collision response assumes a stationary collider.
 
 ---
