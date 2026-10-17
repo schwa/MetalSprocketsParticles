@@ -9,6 +9,79 @@ static uint hash(uint v) {
     return (word >> 22u) ^ word;
 }
 
+// Gradient noise in -1...1, smooth (quintic) in each axis.
+static float gradientNoise(float3 p) {
+    float3 cell = floor(p);
+    float3 f = p - cell;
+    float3 u = f * f * f * (f * (f * 6 - 15) + 10);
+    float result = 0;
+    float weights[2][2][2];
+    for (int z = 0; z < 2; z++) {
+        for (int y = 0; y < 2; y++) {
+            for (int x = 0; x < 2; x++) {
+                int3 corner = int3(cell) + int3(x, y, z);
+                uint h = hash(uint(corner.x) * 73856093u ^ uint(corner.y) * 19349663u ^ uint(corner.z) * 83492791u);
+                // One of 12 cube-edge gradients.
+                const float3 gradients[12] = {
+                    float3(1, 1, 0), float3(-1, 1, 0), float3(1, -1, 0), float3(-1, -1, 0),
+                    float3(1, 0, 1), float3(-1, 0, 1), float3(1, 0, -1), float3(-1, 0, -1),
+                    float3(0, 1, 1), float3(0, -1, 1), float3(0, 1, -1), float3(0, -1, -1),
+                };
+                weights[z][y][x] = dot(gradients[h % 12], f - float3(x, y, z));
+            }
+        }
+    }
+    for (int z = 0; z < 2; z++) {
+        float a = mix(weights[z][0][0], weights[z][0][1], u.x);
+        float b = mix(weights[z][1][0], weights[z][1][1], u.x);
+        result += (z == 0 ? 1 - u.z : u.z) * mix(a, b, u.y);
+    }
+    return result;
+}
+
+// Curl of a noise vector potential: a divergence-free flow, so particles swirl instead of bunching up.
+static float3 curlNoise(float3 p) {
+    const float e = 0.01;
+    const float3 offsetY = float3(31.4, 17.2, 5.9);
+    const float3 offsetZ = float3(-11.7, 43.1, 23.3);
+    auto potential = [&](float3 q) {
+        return float3(gradientNoise(q), gradientNoise(q + offsetY), gradientNoise(q + offsetZ));
+    };
+    float3 dx = potential(p + float3(e, 0, 0)) - potential(p - float3(e, 0, 0));
+    float3 dy = potential(p + float3(0, e, 0)) - potential(p - float3(0, e, 0));
+    float3 dz = potential(p + float3(0, 0, e)) - potential(p - float3(0, 0, e));
+    return float3(dy.z - dz.y, dz.x - dx.z, dx.y - dy.x) / (2 * e);
+}
+
+// 1 inside half the radius, easing to 0 at the radius. A radius of 0 means unlimited range.
+static float fieldFalloff(float distance, float radius) {
+    return radius > 0 ? 1 - smoothstep(radius * 0.5, radius, distance) : 1;
+}
+
+static float3 fieldAcceleration(ForceFieldData field, float3 position, float3 velocity, float time) {
+    int kind = int(field.kind.x);
+    if (kind == 1) {
+        return (field.a.xyz - velocity) * field.a.w;
+    }
+    if (kind == 2) {
+        float3 offset = field.a.xyz - position;
+        float distance = length(offset);
+        return distance > 1e-4 ? offset / distance * field.a.w * fieldFalloff(distance, field.b.x) : float3(0);
+    }
+    if (kind == 3) {
+        float3 axis = normalize(field.b.xyz);
+        float3 offset = position - field.a.xyz;
+        float3 radial = offset - axis * dot(offset, axis);
+        float distance = length(radial);
+        return distance > 1e-4 ? cross(axis, radial / distance) * field.a.w * fieldFalloff(distance, field.b.w) : float3(0);
+    }
+    if (kind == 4) {
+        float3 sample = position * field.a.y + float3(0, 0, time * field.a.z);
+        return curlNoise(sample) * field.a.x;
+    }
+    return float3(0);
+}
+
 struct Random {
     uint state;
     float next() { state = hash(state); return float(state) / 4294967295.0; }
@@ -44,6 +117,7 @@ kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
     constant SimulationUniforms &uniforms [[buffer(1)]],
     constant ColliderData *colliders [[buffer(2)]],
+    constant ForceFieldData *forceFields [[buffer(3)]],
     uint id [[thread_position_in_grid]]
 ) {
     Particle p = particles[id];
@@ -87,6 +161,12 @@ kernel void updateParticles(
     float3 position = p.position.xyz;
     float3 velocity = p.velocity.xyz;
     velocity += uniforms.gravity.xyz * dt;
+    uint fieldCount = uint(uniforms.fields.x);
+    float3 acceleration = 0;
+    for (uint i = 0; i < fieldCount; i++) {
+        acceleration += fieldAcceleration(forceFields[i], position, velocity, uniforms.fields.y);
+    }
+    velocity += acceleration * dt;
     velocity *= max(0.0, 1.0 - uniforms.gravity.w * dt);
     position += velocity * dt;
     p.rotation.x += p.rotation.y * dt;

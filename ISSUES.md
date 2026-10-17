@@ -136,17 +136,19 @@ Particles spawn only inside a sphere. Missing: box, cone, disc, cylinder, torus,
 ## 8: No force fields
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:simulation
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T16:19:12Z
+closed: 2026-10-17T16:19:12Z
 +++
 
 Only constant gravity and drag. Missing: vortex, attractors, curl noise turbulence, wind.
 
 - `2026-10-17T14:02:37Z`: Doc review: RealityKit has attractionCenter/Strength, vortexDirection/Strength, noiseStrength/Scale/AnimationSpeed. SceneKit uses scene SCNPhysicsField objects (isAffectedByPhysicsFields) plus particleMass and particleCharge for electric/magnetic fields.
+- `2026-10-17T16:19:12Z`: Added ParticleEmitter.forceFields with wind, attractor (negative repels, optional radius), vortex (axis, optional radius), and curl-noise turbulence (scale, animated by the emitter clock so it stays deterministic). Tests per field and a force-fields golden.
 
 ---
 

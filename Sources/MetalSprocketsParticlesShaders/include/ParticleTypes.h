@@ -43,6 +43,7 @@ typedef struct {
     simd_float4 collision;       // x = restitution, y = friction, z = collider count
     simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
     simd_float4 imageSequence;   // x = initial frame, y = initial frame variation, z = frame rate, w = frame rate variation
+    simd_float4 fields;          // x = force field count, y = simulation time (seconds)
     simd_uint4 random;           // x = seed, y = capacity
     // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
     // w = nonzero to kill all particles before this step.
@@ -58,6 +59,14 @@ typedef struct {
     simd_float4 velocity; // xyz = collider velocity this step
     simd_float4 rotation; // quaternion (xyz = imaginary, w = real)
 } ColliderData;
+
+// kind.x: 1 = wind (a = velocity, strength), 2 = attractor (a = center, strength; b.x = radius),
+// 3 = vortex (a = center, strength; b = axis, radius), 4 = turbulence (a.x = strength, a.y = scale, a.z = speed).
+typedef struct {
+    simd_float4 kind;
+    simd_float4 a;
+    simd_float4 b;
+} ForceFieldData;
 
 typedef struct {
     simd_float4x4 viewProjection;

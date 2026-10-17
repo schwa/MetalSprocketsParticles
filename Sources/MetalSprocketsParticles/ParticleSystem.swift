@@ -102,6 +102,8 @@ public struct ParticleEmitter: Sendable, Equatable {
     /// Treats `ParticleSystem.texture` as a grid of animation frames. Ignored without a texture.
     public var imageSequence: ImageSequence?
 
+    public var forceFields: [ForceField] = []
+
     /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
     public var birthRate: Float = 1_000
     /// Seconds of emission per cycle. `nil` emits forever.
@@ -227,6 +229,8 @@ public final class ParticleSystem {
             ? spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: capacity, isEmitting: isEmitting)
             : Spawner.Step(cursor: spawner.cursor, count: 0, serial: spawner.serial)
         uniforms.lifetime.w = deltaTime
+        // The emitter clock, not wall time, so turbulence stays deterministic.
+        uniforms.fields.y = spawner.time
         uniforms.spawn = [spawn.cursor, spawn.count, spawn.serial, needsKill ? 1 : 0]
         needsKill = false
         return uniforms
@@ -243,6 +247,7 @@ public final class ParticleSystem {
             imageSequence: emitter.imageSequence.map {
                 [$0.initialFrame, $0.initialFrameVariation, $0.frameRate, $0.frameRateVariation]
             } ?? .zero,
+            fields: [Float(emitter.forceFields.count), 0, 0, 0],
             random: [seed, UInt32(capacity), 0, 0],
             spawn: .zero
         )
@@ -268,6 +273,7 @@ public final class ParticleSystem {
         steps.append(makeStep(deltaTime: min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)))
 
         let colliders = colliderData(deltaTime: steps.last?.lifetime.w ?? 0)
+        let forceFields = emitter.forceFields.map(ForceFieldData.init)
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
         let capacity = capacity
@@ -285,6 +291,7 @@ public final class ParticleSystem {
                 .parameter("uniforms", value: steps[index])
                 // Never bind an empty array; the count in uniforms keeps the padding unused.
                 .parameter("colliders", values: colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : colliders)
+                .parameter("forceFields", values: forceFields.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : forceFields)
             }
         }
         .barrierAfterPass(after: .dispatch, beforeQueueStages: .vertex)

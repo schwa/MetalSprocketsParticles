@@ -147,6 +147,16 @@ struct GoldenImageTests {
         #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "over-life-curves"))
     }
 
+    @Test func forceFields() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
+        emitter.forceFields = [
+            .vortex(center: .zero, strength: 6, radius: 2.5),
+            .turbulence(strength: 4, scale: 1.2, speed: 0.5),
+        ]
+        #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "force-fields"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }
