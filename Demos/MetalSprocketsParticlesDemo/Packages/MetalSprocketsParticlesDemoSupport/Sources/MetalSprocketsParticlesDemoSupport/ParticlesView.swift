@@ -36,7 +36,10 @@ public struct ParticlesView: View {
             }
             .background(.black)
             .onFrameTimingChange { frameTiming = $0 }
-            .interactiveCamera(cameraMatrix: $cameraMatrix, target: [0, 1.5, 0])
+            .interactiveCamera(cameraMatrix: $cameraMatrix, target: model.cameraTarget)
+            .onChange(of: model.presetName) {
+                cameraMatrix = simd_float4x4(lookingFrom: model.cameraEye, at: model.cameraTarget)
+            }
             .overlay(alignment: .topLeading) {
                 if let frameTiming {
                     FrameTimingView(statistics: frameTiming, options: .all)

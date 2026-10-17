@@ -7,6 +7,7 @@ struct EmitterInspectorView: View {
 
     var body: some View {
         Form {
+            PresetSectionView(model: model)
             PlaybackSectionView(model: model)
             EmittersSectionView(model: model)
             ShapeSectionView(settings: $model.selectedEmitter.settings)
@@ -17,11 +18,23 @@ struct EmitterInspectorView: View {
             CollisionSectionView(settings: $model.selectedEmitter.settings)
             CollidersSectionView(model: model)
             ForceFieldsSectionView(model: model)
-            Section {
-                Button("Reset Scene", systemImage: "arrow.uturn.backward") { model.resetScene() }
-            }
         }
         .formStyle(.grouped)
+    }
+}
+
+struct PresetSectionView: View {
+    @Bindable var model: ParticlesDemoModel
+
+    var body: some View {
+        Section("Preset") {
+            Picker("Preset", selection: $model.presetName) {
+                ForEach(ParticlePreset.all) { preset in
+                    Text(preset.name).tag(preset.name)
+                }
+            }
+            Button("Revert Changes", systemImage: "arrow.uturn.backward") { model.reloadPreset() }
+        }
     }
 }
 
@@ -146,6 +159,8 @@ struct MotionSectionView: View {
                 ParameterSliderView("Motion Radius", value: $emitter.motion.radius, in: 0...4)
                 ParameterSliderView("Motion Speed", value: $emitter.motion.speed, in: 0...5)
             }
+            VectorEditorView("Emitter Offset", value: $emitter.motion.offset, in: -5...5)
+            ParameterSliderView("Emitter Yaw", value: $emitter.motion.yaw, in: -.pi ... .pi)
             Picker("Simulation Space", selection: $emitter.simulationSpace) {
                 ForEach(SimulationSpace.allCases) { space in
                     Text(space.name).tag(space)
@@ -161,12 +176,12 @@ struct AppearanceSectionView: View {
 
     var body: some View {
         Section("Appearance") {
-            Picker("Texture", selection: $emitter.texture) {
-                ForEach(DemoTexture.allCases) { texture in
-                    Text(texture.rawValue).tag(texture)
+            Picker("Sprite", selection: $emitter.sprite) {
+                ForEach(ParticleSprite.allCases) { sprite in
+                    Text(sprite.rawValue).tag(sprite)
                 }
             }
-            if emitter.texture != .softDot {
+            if emitter.sprite != .softDot {
                 Toggle("Sprite Sheet", isOn: $emitter.settings.hasImageSequence)
                 if emitter.settings.hasImageSequence {
                     ImageSequenceEditorView(sequence: $emitter.settings.editableImageSequence)
@@ -368,6 +383,6 @@ extension ImageSequence {
 }
 
 #Preview("Inspector") {
-    EmitterInspectorView(model: ParticlesDemoModel(capacity: 1))
+    EmitterInspectorView(model: ParticlesDemoModel())
         .frame(width: 380, height: 1_000)
 }

@@ -7,14 +7,22 @@ import simd
 @Observable
 @MainActor
 final class ParticlesDemoModel {
-    static let capacityPerEmitter = 100_000
-
     @ObservationIgnored let system: ParticleSystem?
-    /// Particles per emitter.
-    @ObservationIgnored private let capacity: Int
-    @ObservationIgnored private var textureCache: [DemoTexture: MTLTexture] = [:]
+    @ObservationIgnored private var textureCache: [ParticleSprite: MTLTexture] = [:]
+    /// Particles per emitter. Preset layers bring their own; emitters added in the inspector get the default.
+    @ObservationIgnored private var capacities: [DemoEmitter.ID: Int] = [:]
+    private static let defaultCapacity = 50_000
 
-    var emitters: [DemoEmitter] {
+    /// The preset last loaded. Choosing another loads it, replacing emitters, colliders, and force fields.
+    var presetName: String {
+        didSet {
+            if presetName != oldValue, let preset = ParticlePreset.named(presetName) {
+                load(preset)
+            }
+        }
+    }
+
+    var emitters: [DemoEmitter] = [] {
         didSet { sync(from: oldValue) }
     }
 
@@ -47,19 +55,36 @@ final class ParticlesDemoModel {
         didSet { system?.speedFactor = speedFactor }
     }
 
-    var animateColliders = true
-    var showColliders = true
+    var animateColliders = false
+    var showColliders = false
 
-    init(capacity: Int = capacityPerEmitter) {
-        let fountain = DemoEmitter(name: "Fountain", settings: .fountain)
-        let colliders = ParticleEmitter.fountainColliders(time: 0).map { ColliderItem(collider: $0) }
-        let system = try? ParticleSystem(capacity: capacity, emitter: fountain.settings)
-        system?.colliders = colliders.map(\.collider)
-        self.system = system
-        self.capacity = capacity
-        emitters = [fountain]
-        selectedEmitterID = fountain.id
-        self.colliders = colliders
+    /// The preset's suggested camera, updated on load.
+    private(set) var cameraEye: SIMD3<Float> = [0, 3, 6]
+    private(set) var cameraTarget: SIMD3<Float> = [0, 1.5, 0]
+
+    init(preset: ParticlePreset = .fountain) {
+        system = try? ParticleSystem(emitters: [], capacity: 1)
+        presetName = preset.name
+        load(preset)
+    }
+
+    func load(_ preset: ParticlePreset) {
+        let emitters = preset.layers.map(DemoEmitter.init)
+        capacities = Dictionary(uniqueKeysWithValues: zip(emitters.map(\.id), preset.layers.map(\.capacity)))
+        self.emitters = emitters
+        selectedEmitterID = emitters.first?.id
+        colliders = preset.colliders.map { ColliderItem(collider: $0) }
+        forceFields = preset.forceFields.map { ForceFieldItem(field: $0) }
+        animateColliders = preset.animatesColliders
+        cameraEye = preset.cameraEye
+        cameraTarget = preset.cameraTarget
+    }
+
+    /// Reloads the current preset, discarding edits.
+    func reloadPreset() {
+        if let preset = ParticlePreset.named(presetName) {
+            load(preset)
+        }
     }
 
     // MARK: Emitters
@@ -75,10 +100,11 @@ final class ParticlesDemoModel {
     func duplicateSelectedEmitter() {
         let source = selectedEmitter
         var copy = DemoEmitter(name: "\(source.name) Copy", settings: source.settings)
-        copy.texture = source.texture
+        copy.sprite = source.sprite
         copy.motion = source.motion
         copy.simulationSpace = source.simulationSpace
         copy.isEmitting = source.isEmitting
+        capacities[copy.id] = capacities[source.id]
         emitters.append(copy)
         selectedEmitterID = copy.id
     }
@@ -104,21 +130,13 @@ final class ParticlesDemoModel {
         playback = .playing
     }
 
-    func resetScene() {
-        let fountain = DemoEmitter(name: "Fountain", settings: .fountain)
-        emitters = [fountain]
-        selectedEmitterID = fountain.id
-        colliders = ParticleEmitter.fountainColliders(time: 0).map { ColliderItem(collider: $0) }
-        forceFields = []
-    }
-
     // MARK: Per frame
 
     func frameColliders(time: Float) -> [Collider] {
         guard animateColliders else {
             return colliders.map(\.collider)
         }
-        return colliders.enumerated().map { index, item in item.animated(time: time, index: index) }
+        return colliders.enumerated().map { index, item in item.collider.animated(time: time, index: index) }
     }
 
     func frameTransforms(time: Float) -> [simd_float4x4] {
@@ -133,22 +151,22 @@ final class ParticlesDemoModel {
         }
         // Adding, removing, or reordering emitters rebuilds the shared buffer.
         if oldValue.map(\.id) != emitters.map(\.id) {
-            _ = try? system.setEmitters(emitters.map { ($0.settings, capacity) })
+            _ = try? system.setEmitters(emitters.map { ($0.settings, capacities[$0.id] ?? Self.defaultCapacity) })
         }
         for (emitter, runtime) in zip(emitters, system.emitters) {
             runtime.settings = emitter.settings
-            runtime.texture = texture(emitter.texture, device: system.device)
+            runtime.texture = texture(emitter.sprite, device: system.device)
             runtime.simulationSpace = emitter.simulationSpace
             runtime.isEmitting = emitter.isEmitting
         }
     }
 
-    private func texture(_ choice: DemoTexture, device: MTLDevice) -> MTLTexture? {
-        if let cached = textureCache[choice] {
+    private func texture(_ sprite: ParticleSprite, device: MTLDevice) -> MTLTexture? {
+        if let cached = textureCache[sprite] {
             return cached
         }
-        let texture = choice.makeTexture(device: device)
-        textureCache[choice] = texture
+        let texture = sprite.makeTexture(device: device)
+        textureCache[sprite] = texture
         return texture
     }
 }

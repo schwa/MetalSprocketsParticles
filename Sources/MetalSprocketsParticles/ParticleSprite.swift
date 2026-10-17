@@ -2,8 +2,8 @@ import CoreGraphics
 import Foundation
 import Metal
 
-/// Sprites drawn with Core Graphics at launch, so the demo needs no image assets.
-enum DemoTexture: String, CaseIterable, Identifiable {
+/// Built-in sprites drawn with Core Graphics, so effects need no image assets.
+public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable {
     case softDot = "Soft Dot"
     case star = "Star"
     case spark = "Spark"
@@ -12,15 +12,15 @@ enum DemoTexture: String, CaseIterable, Identifiable {
     case triangle = "Triangle"
     case colorSheet = "Color Sheet 2×2"
 
-    var id: Self { self }
+    public var id: Self { self }
 
     /// Rows and columns when the texture is a sprite sheet.
-    var sheetLayout: (rows: Int, columns: Int)? {
+    public var sheetLayout: (rows: Int, columns: Int)? {
         self == .colorSheet ? (2, 2) : nil
     }
 
     /// `nil` for the soft dot, which the shader draws without a texture.
-    func makeTexture(device: MTLDevice) -> MTLTexture? {
+    public func makeTexture(device: MTLDevice) -> MTLTexture? {
         guard self != .softDot else {
             return nil
         }

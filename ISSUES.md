@@ -574,12 +574,13 @@ Related: #4 (sorting adds cost), #28 (point cloud renderer spike), #16 (runtime 
 ## 30: Demo has no emitter presets, so most features stay hidden
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:l, area:tooling
 created: 2026-10-17T17:08:40Z
-updated: 2026-10-17T17:18:06Z
+updated: 2026-10-17T20:42:49Z
+closed: 2026-10-17T20:42:49Z
 +++
 
 The demo app and particles-render only ever use the fountain emitter. Textures and sprite sheets (#5), rotation (#17), rotated boxes and capsules (#3), moving emitters, local space and inherited velocity (#22), velocity stretch (#18), and most force fields (#8) never appear outside golden tests.
@@ -595,6 +596,7 @@ Related: #25 (saved effect files), #31 (inspector coverage), #32 (emitter DSL wo
 - `2026-10-17T17:08:40Z`: Related: #31 (inspector coverage); scene presets should load into the same inspector.
 - `2026-10-17T18:15:36Z`: Decision: colliders are part of a preset. Loading a preset replaces the colliders along with the emitter settings. Keep this when #33 moves colliders into a shared per-system world: a preset still carries its colliders.
 - `2026-10-17T19:34:40Z`: Clarification: preset colliders are a default, not the only source. Apps supply colliders at runtime too (today via simulate(deltaTime:colliders:)); runtime colliders replace or add to the preset's.
+- `2026-10-17T20:42:49Z`: Added ParticlePreset (layers with settings, sprite, motion, simulation space, capacity; colliders with optional animation; force fields; suggested camera), ParticleSystem.load(_:), and 12 presets: Fountain, Campfire, Fireworks, Sparks, Smoke, Snow, Rain, Magic Trail, Comet, Galaxy, Waterfall, Confetti. Each was tuned against particles-render output and has a golden. Demo inspector has a preset picker (moves the camera to the preset's view) and Revert Changes. particles-render has --preset and --list-presets. Galaxy forms rings rather than true spiral arms; arms need emitters that rotate over time.
 
 ---
 

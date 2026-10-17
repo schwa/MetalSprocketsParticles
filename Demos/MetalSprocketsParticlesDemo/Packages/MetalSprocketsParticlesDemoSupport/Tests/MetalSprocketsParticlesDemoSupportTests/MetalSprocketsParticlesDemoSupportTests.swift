@@ -113,12 +113,6 @@ struct ColliderAdapterTests {
         #expect(collider == .capsule(start: [-2, 0, 0], end: [2, 0, 0], radius: 0.2))
     }
 
-    @Test func animationLeavesPlanesAndMovesOthers() {
-        let plane = ColliderItem(collider: .plane(normal: [0, 1, 0], distance: 0))
-        let sphere = ColliderItem(collider: .sphere(center: .zero, radius: 1))
-        #expect(plane.animated(time: 1, index: 0) == plane.collider)
-        #expect(sphere.animated(time: 1, index: 0) != sphere.collider)
-    }
 }
 
 struct ForceFieldAdapterTests {
@@ -139,34 +133,37 @@ struct ForceFieldAdapterTests {
     }
 }
 
-struct EmitterMotionTests {
-    @Test func stillIsIdentity() {
-        #expect(EmitterMotion().transform(time: 3) == matrix_identity_float4x4)
-    }
-
-    @Test func circleStaysOnRadius() {
-        let motion = EmitterMotion(kind: .circle, radius: 2, speed: 1)
-        let translation = motion.transform(time: 0.7).columns.3
-        #expect(abs(simd_length(SIMD2(translation.x, translation.z)) - 2) < 1e-5)
-    }
-}
-
-struct DemoTextureTests {
-    @Test func everyTextureExceptSoftDotBuilds() throws {
-        let device = try #require(MTLCreateSystemDefaultDevice())
-        for texture in DemoTexture.allCases {
-            let made = texture.makeTexture(device: device)
-            #expect((made == nil) == (texture == .softDot))
-        }
-        let sheet = try #require(DemoTexture.colorSheet.makeTexture(device: device))
-        #expect(sheet.width == 128 && sheet.height == 128)
-    }
-}
-
 @MainActor
 struct ModelTests {
+    @Test func loadsEveryPreset() throws {
+        let model = ParticlesDemoModel()
+        let system = try #require(model.system)
+        for preset in ParticlePreset.all {
+            model.presetName = preset.name
+            #expect(model.emitters.map(\.name) == preset.layers.map(\.name))
+            #expect(system.emitters.map(\.capacity) == preset.layers.map(\.capacity))
+            #expect(system.colliders == preset.colliders)
+            #expect(system.forceFields == preset.forceFields)
+            #expect(model.animateColliders == preset.animatesColliders)
+            #expect(model.cameraEye == preset.cameraEye)
+            // Sprites reach the system: soft dots have no texture, everything else does.
+            for (layer, emitter) in zip(preset.layers, system.emitters) {
+                #expect((emitter.texture == nil) == (layer.sprite == .softDot))
+            }
+        }
+    }
+
+    @Test func revertDiscardsEdits() {
+        let model = ParticlesDemoModel()
+        model.selectedEmitter.settings.birthRate = 1
+        model.colliders = []
+        model.reloadPreset()
+        #expect(model.selectedEmitter.settings == ParticlePreset.fountain.layers[0].settings)
+        #expect(model.colliders.map(\.collider) == ParticlePreset.fountain.colliders)
+    }
+
     @Test func pushesPlaybackToSystem() throws {
-        let model = ParticlesDemoModel(capacity: 16)
+        let model = ParticlesDemoModel()
         let system = try #require(model.system)
         model.speedFactor = 2
         model.playback = .paused
@@ -178,12 +175,12 @@ struct ModelTests {
     }
 
     @Test func editingSelectedEmitterReachesSystem() throws {
-        let model = ParticlesDemoModel(capacity: 16)
+        let model = ParticlesDemoModel()
         let system = try #require(model.system)
         model.selectedEmitter.settings.birthRate = 123
         model.selectedEmitter.isEmitting = false
         model.selectedEmitter.simulationSpace = .local
-        model.selectedEmitter.texture = .star
+        model.selectedEmitter.sprite = .star
         #expect(system.emitters[0].settings.birthRate == 123)
         #expect(!system.emitters[0].isEmitting)
         #expect(system.emitters[0].simulationSpace == .local)
@@ -191,14 +188,16 @@ struct ModelTests {
     }
 
     @Test func addingDuplicatingAndRemovingEmitters() throws {
-        let model = ParticlesDemoModel(capacity: 16)
+        let model = ParticlesDemoModel()
         let system = try #require(model.system)
-        model.selectedEmitter.texture = .ring
+        model.selectedEmitter.sprite = .ring
         model.duplicateSelectedEmitter()
         #expect(model.emitters.count == 2)
         #expect(system.emitters.count == 2)
-        #expect(model.selectedEmitter.texture == .ring)
+        #expect(model.selectedEmitter.sprite == .ring)
         #expect(system.emitters[1].texture != nil)
+        // The duplicate keeps the preset layer's capacity.
+        #expect(system.emitters[1].capacity == ParticlePreset.fountain.layers[0].capacity)
         model.addEmitter()
         #expect(system.emitters.count == 3)
         model.removeSelectedEmitter()
@@ -209,7 +208,7 @@ struct ModelTests {
     }
 
     @Test func collidersAndForceFieldsReachSystem() throws {
-        let model = ParticlesDemoModel(capacity: 16)
+        let model = ParticlesDemoModel()
         let system = try #require(model.system)
         model.colliders = [ColliderItem(collider: .sphere(center: .zero, radius: 1))]
         model.forceFields = [ForceFieldItem(field: .turbulence(strength: 1))]
@@ -220,7 +219,7 @@ struct ModelTests {
     }
 
     @Test func frameTransformsFollowEmitterMotion() {
-        let model = ParticlesDemoModel(capacity: 16)
+        let model = ParticlesDemoModel()
         model.selectedEmitter.motion = EmitterMotion(kind: .circle, radius: 1, speed: 1)
         #expect(model.frameTransforms(time: 0).first?.columns.3 == [1, 0, 0, 1])
     }
