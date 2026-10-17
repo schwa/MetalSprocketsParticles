@@ -18,6 +18,7 @@ struct SimulationUniforms {
     var colorStart: SIMD4<Float>
     var colorEnd: SIMD4<Float>
     var collision: SIMD4<Float>
+    var random: SIMD4<UInt32>
 }
 
 struct ColliderData {
@@ -74,12 +75,16 @@ public struct ParticleEmitter: Sendable, Equatable {
 public final class ParticleSystem {
     public let capacity: Int
     public var emitter: ParticleEmitter
+    public let seed: UInt32
     let buffer: MTLBuffer
     let library: ShaderLibrary
+    /// Number of simulation steps run so far. Drives the GPU random sequence together with `seed`.
+    private(set) var step: UInt32 = 0
 
-    public init(device: MTLDevice = MTLCreateSystemDefaultDevice()!, capacity: Int, emitter: ParticleEmitter = ParticleEmitter()) throws {
+    public init(device: MTLDevice = MTLCreateSystemDefaultDevice()!, capacity: Int, emitter: ParticleEmitter = ParticleEmitter(), seed: UInt32 = 0) throws {
         self.capacity = capacity
         self.emitter = emitter
+        self.seed = seed
         guard let url = Bundle.module.url(forResource: "Particles", withExtension: "metal") else {
             throw CocoaError(.fileNoSuchFile)
         }
@@ -87,8 +92,9 @@ public final class ParticleSystem {
 
         // Stagger first spawn across the max lifetime so emission is continuous from the start.
         let maxLifetime = emitter.lifetime.upperBound
+        var generator = SplitMix64(seed: UInt64(seed))
         let particles = (0..<capacity).map { _ in
-            Particle(position: [0, 0, 0, -Float.random(in: 0...maxLifetime)], velocity: .zero, color: .zero)
+            Particle(position: [0, 0, 0, -Float.random(in: 0...maxLifetime, using: &generator)], velocity: .zero, color: .zero)
         }
         guard let buffer = particles.withUnsafeBytes({ device.makeBuffer(bytes: $0.baseAddress!, length: $0.count, options: .storageModeShared) }) else {
             throw CocoaError(.featureUnsupported)
@@ -105,14 +111,17 @@ public final class ParticleSystem {
             lifetime: [emitter.lifetime.lowerBound, emitter.lifetime.upperBound, 0, 0],
             colorStart: emitter.colorStart,
             colorEnd: emitter.colorEnd,
-            collision: [emitter.restitution, emitter.friction, Float(emitter.colliders.count), 0]
+            collision: [emitter.restitution, emitter.friction, Float(emitter.colliders.count), 0],
+            random: [seed, 0, 0, 0]
         )
     }
 
-    /// Advances the simulation. Put this before the render pass that draws the particles.
-    public func simulate(time: Float, deltaTime: Float) throws -> some Element {
+    /// Advances the simulation one step. Put this before the render pass that draws the particles.
+    /// The result depends only on `seed`, emitter settings, and the sequence of `deltaTime` values.
+    public func simulate(deltaTime: Float) throws -> some Element {
         var uniforms = simulationUniforms
-        uniforms.lifetime.z = time
+        uniforms.random.y = step
+        step &+= 1
         uniforms.lifetime.w = min(deltaTime, 1.0 / 30.0)
         let colliders = emitter.colliders.map(ColliderData.init)
         return try ComputePass {
@@ -155,6 +164,20 @@ public final class ParticleSystem {
             attachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
             attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
         }
+    }
+}
+
+struct SplitMix64: RandomNumberGenerator {
+    var state: UInt64
+
+    init(seed: UInt64) { state = seed }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
     }
 }
 

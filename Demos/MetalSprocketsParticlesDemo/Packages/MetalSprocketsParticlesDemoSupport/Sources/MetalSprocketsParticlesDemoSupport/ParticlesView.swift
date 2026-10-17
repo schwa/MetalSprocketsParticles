@@ -17,7 +17,7 @@ public struct ParticlesView: View {
             RenderView { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
-                try system.simulate(time: context.frameUniforms.time, deltaTime: context.frameUniforms.deltaTime)
+                try system.simulate(deltaTime: context.frameUniforms.deltaTime)
                 try RenderPass {
                     try system.renderColliders(projection: projection, view: cameraMatrix.inverse)
                     try system.render(projection: projection, view: cameraMatrix.inverse)

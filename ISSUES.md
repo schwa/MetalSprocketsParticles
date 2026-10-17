@@ -199,15 +199,18 @@ The goal is to beat their particle systems, but there are no comparison scenes o
 ## 12: Particle simulation is not repeatable
 
 +++
-status: open
+status: closed
 priority: high
 kind: bug
 labels: effort:s, area:simulation
 created: 2026-10-17T13:35:53Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T14:51:33Z
+closed: 2026-10-17T14:51:33Z
 +++
 
 Initial spawn delays use Float.random on the CPU, and the GPU RNG is seeded from wall-clock time. The same emitter settings produce different results on each run, so output cannot be compared across runs or used in golden image tests. A seed should control all randomness.
+
+- `2026-10-17T14:51:33Z`: Fixed: seed parameter drives a SplitMix64 CPU RNG for spawn delays and the GPU hash (id, seed, step counter). Time no longer feeds the RNG. Determinism tests added; particles-render --seed gives byte-identical PNGs.
 
 ---
 

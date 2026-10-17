@@ -19,6 +19,13 @@ let package = Package(
             dependencies: [.product(name: "MetalSprockets", package: "MetalSprockets")],
             resources: [.copy("Shaders/Particles.metal")]
         ),
+        .testTarget(
+            name: "MetalSprocketsParticlesTests",
+            dependencies: [
+                "MetalSprocketsParticles",
+                .product(name: "MetalSprockets", package: "MetalSprockets"),
+            ]
+        ),
         .executableTarget(
             name: "particles-render",
             dependencies: [

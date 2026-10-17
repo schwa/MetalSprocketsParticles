@@ -23,6 +23,9 @@ struct RenderCommand: ParsableCommand {
     @Option(help: "Seconds per simulation step.")
     var deltaTime: Float = 1.0 / 60.0
 
+    @Option(help: "Random seed. The same seed and settings always produce the same image.")
+    var seed: UInt32 = 0
+
     @Option(help: "Particle count.")
     var particles = 200_000
 
@@ -40,15 +43,14 @@ struct RenderCommand: ParsableCommand {
 
     func run() throws {
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
-        let system = try ParticleSystem(device: renderer.device, capacity: particles, emitter: .fountain)
+        let system = try ParticleSystem(device: renderer.device, capacity: particles, emitter: .fountain, seed: seed)
         let camera = simd_float4x4(lookingFrom: try parseVector(eye), at: try parseVector(target))
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
 
         var rendering: OffscreenRenderer.Rendering?
-        for frame in 0..<max(frames, 1) {
-            let time = Float(frame) * deltaTime
+        for _ in 0..<max(frames, 1) {
             rendering = try renderer.render(Group {
-                try system.simulate(time: time, deltaTime: deltaTime)
+                try system.simulate(deltaTime: deltaTime)
                 try RenderPass {
                     try system.renderColliders(projection: projection, view: camera.inverse)
                     try system.render(projection: projection, view: camera.inverse)

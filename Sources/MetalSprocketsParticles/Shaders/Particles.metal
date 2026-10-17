@@ -12,10 +12,11 @@ struct SimulationUniforms {
     float4 emitterPosition; // xyz, w = emitter radius
     float4 emitterVelocity; // xyz = base velocity, w = spread
     float4 gravity;         // xyz, w = drag
-    float4 lifetime;        // x = min, y = max, z = time, w = deltaTime
+    float4 lifetime;        // x = min, y = max, w = deltaTime
     float4 colorStart;
     float4 colorEnd;
     float4 collision;       // x = restitution, y = friction, z = collider count
+    uint4 random;           // x = seed, y = step
 };
 
 // kind: 0 = none, 1 = plane (a = normal, distance), 2 = sphere (a = center, radius), 3 = box (a = center, b = half extents).
@@ -79,7 +80,7 @@ kernel void updateParticles(
     }
 
     if (age >= lifetime) {
-        Random rng { hash(id ^ as_type<uint>(uniforms.lifetime.z)) };
+        Random rng { hash(hash(id ^ uniforms.random.x) ^ uniforms.random.y) };
         float3 position = uniforms.emitterPosition.xyz + rng.inUnitSphere() * uniforms.emitterPosition.w;
         float3 velocity = uniforms.emitterVelocity.xyz + rng.inUnitSphere() * uniforms.emitterVelocity.w;
         lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
