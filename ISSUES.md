@@ -453,14 +453,18 @@ RealityKit ships ParticleEmitterComponent.Presets (fireworks, impact, magic, rai
 ## 26: No UI to adjust emitter settings
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:tooling
 created: 2026-10-17T14:15:58Z
+updated: 2026-10-17T17:01:28Z
+closed: 2026-10-17T17:01:28Z
 +++
 
 Changing any emitter setting means editing code and rebuilding. The demo app needs a simple inspector (sliders, color pickers, collider list) for live tweaking. Keep it in the demo app for now; it may later move to its own reusable target. Related: #25 (presets/effect files).
+
+- `2026-10-17T17:01:28Z`: Added an inspector to the demo app (EmitterInspectorView) with playback, emission, motion, appearance, and collision sections, backed by an @Observable ParticlesDemoModel. Bindings use key-path projections through writable computed properties, not closure Binding adapters. Kept in the demo package for now. Layout not visually checked (no app launch); iOS simulator build blocked by MetalSprockets needing Metal 4.
 
 ---
 

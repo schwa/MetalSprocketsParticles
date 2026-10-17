@@ -1,8 +1,80 @@
-import Testing
+import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
+import simd
+import SwiftUI
+import Testing
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    // Swift Testing Documentation
-    // https://developer.apple.com/documentation/testing
+struct InspectorAdapterTests {
+    @Test func lifetimeBoundsStayOrdered() {
+        var emitter = ParticleEmitter()
+        emitter.lifetime = 1...2
+        emitter.lifetimeMinimum = 3
+        #expect(emitter.lifetime == 3...3)
+        emitter.lifetimeMaximum = 0.5
+        #expect(emitter.lifetime == 0.5...0.5)
+    }
+
+    @Test func limitedEmissionToggle() {
+        var emitter = ParticleEmitter()
+        #expect(!emitter.hasLimitedEmission)
+        emitter.hasLimitedEmission = true
+        #expect(emitter.emissionDuration == 1)
+        emitter.limitedEmissionDuration = 4
+        emitter.hasLimitedEmission = true
+        #expect(emitter.emissionDuration == 4)
+        emitter.hasLimitedEmission = false
+        #expect(emitter.emissionDuration == nil)
+    }
+
+    @Test func forceFieldStrengthAddsUpdatesAndRemoves() {
+        var emitter = ParticleEmitter()
+        emitter.turbulenceStrength = 3
+        emitter.vortexStrength = -2
+        #expect(emitter.forceFields.count == 2)
+        #expect(emitter.turbulenceStrength == 3)
+        #expect(emitter.vortexStrength == -2)
+        emitter.turbulenceStrength = 5
+        #expect(emitter.forceFields.count == 2)
+        #expect(emitter.turbulenceStrength == 5)
+        emitter.turbulenceStrength = 0
+        #expect(emitter.forceFields.count == 1)
+        #expect(emitter.turbulenceStrength == 0)
+    }
+
+    @Test func orientationKindKeepsStretch() {
+        var emitter = ParticleEmitter()
+        emitter.velocityStretch = 0.7
+        #expect(emitter.orientationKind == .velocityAligned)
+        emitter.orientationKind = .yAligned
+        #expect(emitter.orientation == .yAligned)
+        #expect(emitter.velocityStretch == 0)
+        emitter.orientationKind = .velocityAligned
+        #expect(emitter.orientation == .velocityAligned(stretch: 0))
+    }
+
+    @Test func colorRoundTripsThroughLinearSRGB() {
+        var curve = ParticleCurve<SIMD4<Float>>.linear(from: [1, 0.7, 0.2, 1], to: [0.8, 0.1, 0.05, 0])
+        let start = curve.start
+        curve.startColor = curve.startColor
+        #expect(abs(curve.start - start).max() < 1e-4)
+        curve.endColor = Color(.sRGBLinear, red: 0, green: 0.5, blue: 1, opacity: 0.25)
+        #expect(abs(curve.end - SIMD4<Float>(0, 0.5, 1, 0.25)).max() < 1e-4)
+    }
+
+    @MainActor
+    @Test func modelPushesChangesToSystem() throws {
+        let model = ParticlesDemoModel(capacity: 16)
+        let system = try #require(model.system)
+        model.emitter.birthRate = 123
+        model.speedFactor = 2
+        model.isEmitting = false
+        model.playback = .paused
+        #expect(system.emitter.birthRate == 123)
+        #expect(system.speedFactor == 2)
+        #expect(!system.isEmitting)
+        #expect(system.state == .paused)
+        model.restart()
+        #expect(system.state == .playing)
+        #expect(model.playback == .playing)
+    }
 }

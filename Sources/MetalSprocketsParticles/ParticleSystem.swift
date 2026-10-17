@@ -136,7 +136,7 @@ public struct ParticleEmitter: Sendable, Equatable {
     public init() {}
 }
 
-public enum SimulationState: Sendable, Equatable {
+public enum SimulationState: Sendable, Hashable {
     case playing
     /// Particles freeze in place. Queued bursts wait until playback resumes.
     case paused
