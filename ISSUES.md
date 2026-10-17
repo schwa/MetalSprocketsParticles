@@ -664,19 +664,21 @@ Each ParticleSystem owns exactly one ParticleEmitter. Effects that combine parts
 ## 34: Emission cannot be triggered by events
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:l, area:emission
 depends: 33
 created: 2026-10-17T17:16:57Z
-updated: 2026-10-17T19:36:36Z
+updated: 2026-10-17T22:04:12Z
+closed: 2026-10-17T22:04:12Z
 +++
 
 Emitters only emit on their own clock (birth rate, duration, idle) or when code calls burst(). There is no way to make emission happen in response to something: a trigger volume that particles or scene objects enter, a collider being hit, a timer or sequence, or a named event from the app. Effects like sparks where a blade touches a wall, a splash when something enters water, or a firework that bursts at the top of its arc need triggers that start, stop, or burst an emitter, ideally evaluated on the GPU for particle-driven events. Related: #33 (multiple emitters), #9 (sub-emitters: spawn on particle birth/death/collision), #23 (die on collision).
 
 - `2026-10-17T19:36:36Z`: Depends on #33. Design with #9.
 - `2026-10-17T21:55:52Z`: Design note from #9: sub-emitters use fixed child slots per parent particle written directly by the parent kernel (no atomics, deterministic). Particle-driven triggers can reuse the event detection in updateParticles (birth/death/collision/whileAlive); app and volume triggers are the new part.
+- `2026-10-17T22:04:12Z`: Added ParticleEmitter.triggers ([EmissionTrigger]: condition + action). Conditions: event(name) via send(event:), after/every seconds of simulation time, objectEnters(name, volume) using trackedObjects, particlesEnter(volume, count) and colliderHit(index, count) counted on the GPU with monotonic atomic counters read back at the next simulate. Actions: burst, start, stop, restart. Particle-driven per-particle spawning is #9 (sub-emitters). Inspector editing noted on #39. Bench unchanged.
 
 ---
 
@@ -764,6 +766,7 @@ created: 2026-10-17T21:07:28Z
 The demo inspector (#31) lists every control as a full-size row in a long sequence of sections, so it is hard to find a setting and needs a lot of scrolling. Reorganize it: group related controls into clear sections, collapse rarely used ones behind disclosure groups (variation, sprite sheet, curves, per-collider and per-field details), use smaller control sizes (.controlSize(.small)), and keep the most-used controls (preset, playback, emitter picker, birth rate, color) near the top. Related: #31.
 
 - `2026-10-17T21:55:52Z`: Also add sub-emitter editing (#9): list a selected emitter's subEmitters with occasion, countPerEvent, velocityFactor, and the child settings (reuse the emitter sections).
+- `2026-10-17T22:04:12Z`: Also add trigger editing (#34): list an emitter's triggers (condition + action) with add/remove, and a field to send named events.
 
 ---
 

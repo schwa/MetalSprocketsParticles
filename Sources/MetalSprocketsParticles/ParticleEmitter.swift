@@ -108,5 +108,8 @@ public struct ParticleEmitter: Sendable, Equatable {
     /// rebuilds the system's buffer on the next `simulate`, which removes all particles.
     public var subEmitters: [SubEmitter] = []
 
+    /// Reactions to events, timers, volumes, and collider hits.
+    public var triggers: [EmissionTrigger] = []
+
     public init() {}
 }

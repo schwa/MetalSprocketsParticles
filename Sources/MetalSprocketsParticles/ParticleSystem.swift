@@ -55,6 +55,8 @@ public final class ParticleSystem {
         var subEmitterIndex = 0
         /// Sub-emitter instances driven by this emitter, in `settings.subEmitters` order.
         var children: [Emitter] = []
+        /// What each of `settings.triggers` saw last time, by trigger index.
+        var triggerMemory: [Int: TriggerMemory] = [:]
 
         var isSubEmitter: Bool {
             parent != nil
@@ -104,6 +106,19 @@ public final class ParticleSystem {
 
     public let seed: UInt32
     public private(set) var emitters: [Emitter] = []
+    /// Positions of app objects, by name, for `EmissionTrigger.Condition.objectEnters`. Update them every frame.
+    public var trackedObjects: [String: SIMD3<Float>] = [:]
+    /// Seconds of simulation since the system started or restarted. Drives timer triggers.
+    public internal(set) var simulationTime: Float = 0
+    var pendingEvents: [String] = []
+    /// Monotonic GPU counters: collider hits, then particles entering trigger volumes.
+    let triggerCounters: MTLBuffer
+
+    /// Fires `EmissionTrigger.Condition.event(name)` triggers at the start of the next `simulate`.
+    public func send(event name: String) {
+        pendingEvents.append(name)
+    }
+
     /// Instances for every emitter's `settings.subEmitters`, stored after all emitters in the shared buffer.
     private(set) var subEmitterInstances: [Emitter] = []
     /// `countPerEvent` of each emitter's sub-emitters when the buffer was built, to notice structural changes.
@@ -180,6 +195,13 @@ public final class ParticleSystem {
         }
         placeholderSortRecords.label = "Particle placeholder sort records"
         self.placeholderSortRecords = placeholderSortRecords
+        let counterLength = Int(PARTICLE_TRIGGER_MAX_COLLIDERS + PARTICLE_TRIGGER_MAX_VOLUMES) * MemoryLayout<UInt32>.stride
+        guard let triggerCounters = device.makeBuffer(length: counterLength, options: .storageModeShared) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        triggerCounters.contents().initializeMemory(as: UInt8.self, repeating: 0, count: counterLength)
+        triggerCounters.label = "Particle trigger counters"
+        self.triggerCounters = triggerCounters
         buffer = try Self.makeBuffer(device: device, count: 1)
 
         try setEmitters(emitters.map { ($0, capacity) })
@@ -264,6 +286,8 @@ public final class ParticleSystem {
     /// Removes all particles from every emitter, resets their clocks, and runs warmup again.
     public func restart() {
         allEmitters.forEach { $0.restart() }
+        simulationTime = 0
+        emitters.forEach { $0.triggerMemory = [:] }
         if state != .playing {
             state = .playing
         }
@@ -392,6 +416,7 @@ public final class ParticleSystem {
             fields: [Float(forceFields.count), emitter.spawner.time, 0, 0],
             variation: [max(settings.sizeVariation, 0), max(settings.restitutionVariation, 0), max(settings.frictionVariation, 0), max(settings.speedVariation, 0)],
             colorVariation: simd_max(settings.colorVariation, .zero),
+            triggers: [UInt32(min(triggerVolumes.count, Int(PARTICLE_TRIGGER_MAX_VOLUMES))), countsColliderHits ? 1 : 0, 0, 0],
             random: [emitter.seed, UInt32(emitter.capacity), UInt32(emitter.range.lowerBound), 0],
             spawn: [spawn.cursor, spawn.count, spawn.serial, emitter.needsKill ? 1 : 0]
         )
@@ -476,6 +501,7 @@ public final class ParticleSystem {
         if Self.subEmitterLayout(of: emitters) != subEmitterLayout {
             try rebuild()
         }
+        evaluateTriggers(deltaTime: state == .playing ? min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0) : 0)
         for child in subEmitterInstances {
             if let parent = child.parent, child.subEmitterIndex < parent.settings.subEmitters.count {
                 child.settings = parent.settings.subEmitters[child.subEmitterIndex].settings
@@ -485,6 +511,8 @@ public final class ParticleSystem {
         let dispatches = allEmitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime) }
         let colliderData = colliderData(deltaTime: state == .playing ? frameDeltaTime : 0)
         let forceFieldData = forceFields.map(ForceFieldData.init)
+        let volumeData = triggerVolumes.prefix(Int(PARTICLE_TRIGGER_MAX_VOLUMES)).map(\.data)
+        let triggerCounters = triggerCounters
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
@@ -510,6 +538,8 @@ public final class ParticleSystem {
                 .parameter("meshVertices", buffer: (dispatches[index].mesh ?? placeholderMesh).vertices)
                 .parameter("subEmitters", values: dispatches[index].subEmitters)
                 .parameter("subEmitterUniforms", values: dispatches[index].subEmitterUniforms)
+                .parameter("triggerCounters", buffer: triggerCounters)
+                .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }
             if !sorts.isEmpty {
                 // Sorting reads the particles the simulation just wrote.

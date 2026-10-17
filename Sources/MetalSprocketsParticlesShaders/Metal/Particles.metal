@@ -382,6 +382,8 @@ kernel void updateParticles(
     constant float4 *meshVertices [[buffer(5)]],
     constant SubEmitterData *subEmitters [[buffer(6)]],
     constant SimulationUniforms *subEmitterUniforms [[buffer(7)]],
+    device atomic_uint *triggerCounters [[buffer(8)]],
+    constant TriggerVolumeData *triggerVolumes [[buffer(9)]],
     uint localID [[thread_position_in_grid]]
 ) {
     // Each dispatch covers a window of one emitter's ring, starting at slot random.w and wrapping at its capacity.
@@ -419,6 +421,7 @@ kernel void updateParticles(
     // Gravity, force fields, and colliders are in world space.
     float3 position = (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz;
     float3 velocity = (uniforms.simulationToWorld * float4(p.velocity.xyz, 0)).xyz;
+    float3 startPosition = position;
     velocity += uniforms.gravity.xyz * dt;
     uint fieldCount = uint(uniforms.fields.x);
     float3 acceleration = 0;
@@ -436,6 +439,9 @@ kernel void updateParticles(
     bool hit = false;
     uint colliderCount = uint(uniforms.collision.z);
     for (uint i = 0; i < colliderCount; i++) {
+        // Hits on earlier colliders this step do not count toward this one.
+        bool hitBefore = hit;
+        hit = false;
         ColliderData c = colliders[i];
         int kind = int(c.kind.x);
         if (kind == 1) {
@@ -470,6 +476,25 @@ kernel void updateParticles(
             if (distance < c.a.w && distance > 0) {
                 collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction, hit);
             }
+        }
+        if (hit && uniforms.triggers.y != 0 && i < PARTICLE_TRIGGER_MAX_COLLIDERS) {
+            atomic_fetch_add_explicit(&triggerCounters[i], 1u, memory_order_relaxed);
+        }
+        hit = hit || hitBefore;
+    }
+
+    // Trigger volumes count particles that were outside at the start of the step and inside at the end.
+    uint volumeCount = min(uniforms.triggers.x, uint(PARTICLE_TRIGGER_MAX_VOLUMES));
+    for (uint i = 0; i < volumeCount; i++) {
+        TriggerVolumeData volume = triggerVolumes[i];
+        auto inside = [&](float3 point) {
+            if (volume.kind.x == 1) {
+                return distance(point, volume.a.xyz) < volume.a.w;
+            }
+            return all(abs(point - volume.a.xyz) < volume.b.xyz);
+        };
+        if (inside(position) && !inside(startPosition)) {
+            atomic_fetch_add_explicit(&triggerCounters[PARTICLE_TRIGGER_MAX_COLLIDERS + i], 1u, memory_order_relaxed);
         }
     }
 

@@ -60,6 +60,18 @@ typedef struct {
     simd_float4 parameters; // x = parent velocity factor, y = interval (whileAlive)
 } SubEmitterData;
 
+/// Trigger counters: one per collider, then one per trigger volume. Monotonic; the CPU diffs them between frames.
+#define PARTICLE_TRIGGER_MAX_COLLIDERS 64
+#define PARTICLE_TRIGGER_MAX_VOLUMES 64
+
+/// A volume that counts particles entering it. kind.x: 1 = sphere (a = center, radius), 2 = box (a = center, b = half
+/// extents). World space.
+typedef struct {
+    simd_float4 kind;
+    simd_float4 a;
+    simd_float4 b;
+} TriggerVolumeData;
+
 /// Builds back-to-front sort records for one emitter's live window. Records are uint2(key, particle index).
 typedef struct {
     simd_float4 cameraPosition; // World space.
@@ -136,6 +148,7 @@ typedef struct {
     simd_float4 fields;          // x = force field count, y = simulation time (seconds), z = sub-emitter count
     simd_float4 variation;       // +/- ranges: x = size (fraction), y = restitution, z = friction, w = speed
     simd_float4 colorVariation;  // +/- ranges: hue (turns), saturation, brightness, alpha
+    simd_uint4 triggers;         // x = trigger volume count, y = nonzero to count collider hits
     simd_uint4 random;           // x = seed, y = slice capacity, z = slice start in the shared buffer, w = first ring slot dispatched
     // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
     // w = nonzero to kill all particles before this step.
