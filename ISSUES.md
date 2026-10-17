@@ -80,17 +80,19 @@ Alpha-blended particles draw in buffer order, which is wrong for non-additive bl
 ## 5: No textured or flipbook sprites
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:rendering
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T16:05:18Z
+closed: 2026-10-17T16:05:18Z
 +++
 
 Particles are always a soft round dot. No texture, sprite sheet animation, or rotation.
 
 - `2026-10-17T14:02:37Z`: Doc review: SceneKit particleImage + imageSequence rows/columns/initialFrame/frameRate/animationMode. RealityKit image (premultiplied) + ImageSequence. SceneKit also supports a cube map image with fresnelExponent.
+- `2026-10-17T16:05:18Z`: Added ParticleSystem.texture (premultiplied alpha; nil keeps the procedural dot) and ParticleEmitter.imageSequence (rows, columns, frameCount, frameRate/initialFrame with variation, repeat/clamp/autoReverse). Pixel-exact tests for each mode plus textured-spinning and sprite-sheet goldens.
 
 ---
 

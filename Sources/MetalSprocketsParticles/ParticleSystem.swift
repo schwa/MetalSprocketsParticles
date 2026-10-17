@@ -76,6 +76,9 @@ public struct ParticleEmitter: Sendable, Equatable {
 
     public var blendMode: ParticleBlendMode = .alpha
 
+    /// Treats `ParticleSystem.texture` as a grid of animation frames. Ignored without a texture.
+    public var imageSequence: ImageSequence?
+
     /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
     public var birthRate: Float = 1_000
     /// Seconds of emission per cycle. `nil` emits forever.
@@ -106,6 +109,12 @@ public final class ParticleSystem {
     public let seed: UInt32
     let buffer: MTLBuffer
     let library: ShaderLibrary
+    /// Premultiplied-alpha sprite, or a sprite sheet when `emitter.imageSequence` is set. `nil` draws a soft dot.
+    public var texture: MTLTexture?
+    public var device: MTLDevice { buffer.device }
+    private let sampler: MTLSamplerState
+    /// Bound in place of `texture` when there is none; the shader ignores it.
+    private let placeholderTexture: MTLTexture
     private(set) var spawner = Spawner()
     private var needsKill = false
     private var needsWarmup = true
@@ -131,6 +140,24 @@ public final class ParticleSystem {
         self.emitter = emitter
         self.seed = seed
         library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
+
+        let samplerDescriptor = MTLSamplerDescriptor()
+        samplerDescriptor.minFilter = .linear
+        samplerDescriptor.magFilter = .linear
+        samplerDescriptor.mipFilter = .linear
+        samplerDescriptor.sAddressMode = .clampToEdge
+        samplerDescriptor.tAddressMode = .clampToEdge
+        samplerDescriptor.supportArgumentBuffers = true
+        guard let sampler = device.makeSamplerState(descriptor: samplerDescriptor) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        self.sampler = sampler
+        let placeholderDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: 1, height: 1, mipmapped: false)
+        guard let placeholderTexture = device.makeTexture(descriptor: placeholderDescriptor) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        placeholderTexture.label = "Particle placeholder texture"
+        self.placeholderTexture = placeholderTexture
 
         // All particles start dead (lifetime 0).
         let length = MemoryLayout<Particle>.stride * capacity
@@ -192,6 +219,9 @@ public final class ParticleSystem {
             colorEnd: emitter.colorEnd,
             collision: [emitter.restitution, emitter.friction, Float(emitter.colliders.count), 0],
             rotation: [emitter.angle, emitter.angleVariation, emitter.angularSpeed, emitter.angularSpeedVariation],
+            imageSequence: emitter.imageSequence.map {
+                [$0.initialFrame, $0.initialFrameVariation, $0.frameRate, $0.frameRateVariation]
+            } ?? .zero,
             random: [seed, UInt32(capacity), 0, 0],
             spawn: .zero
         )
@@ -242,13 +272,20 @@ public final class ParticleSystem {
 
     /// Draws the particles as camera-facing billboards. Place inside a `RenderPass`.
     public func render(projection: simd_float4x4, view: simd_float4x4) throws -> some Element {
+        let sequence = texture == nil ? ImageSequence() : emitter.imageSequence ?? ImageSequence()
         let cameraToWorld = view.inverse
         let uniforms = RenderUniforms(
             viewProjection: projection * view,
             cameraRight: SIMD4(simd_normalize(cameraToWorld.columns.0.xyz), 0),
             cameraUp: SIMD4(simd_normalize(cameraToWorld.columns.1.xyz), 0),
             size: [emitter.sizeStart, emitter.sizeEnd, 0, 0],
-            options: [emitter.blendMode.rawValue, 0, 0, 0]
+            options: [
+                emitter.blendMode.rawValue,
+                texture == nil ? 0 : 1,
+                UInt32(max(sequence.columns, 1)),
+                UInt32(max(sequence.rows, 1)),
+            ],
+            imageSequence: [UInt32(max(sequence.frameCount, 1)), sequence.mode.rawValue, 0, 0]
         )
         let capacity = capacity
         let blendMode = emitter.blendMode
@@ -259,6 +296,8 @@ public final class ParticleSystem {
         }
         .parameter("particles", buffer: buffer)
         .parameter("uniforms", value: uniforms)
+        .parameter("sprite", texture: texture ?? placeholderTexture)
+        .parameter("spriteSampler", samplerState: sampler)
         .renderPipelineDescriptorTransformer { descriptor in
             blendMode.configure(descriptor.colorAttachments[0]!)
         }

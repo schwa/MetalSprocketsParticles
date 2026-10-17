@@ -70,7 +70,9 @@ kernel void updateParticles(
         float angularVelocity = uniforms.rotation.z + (rng.next() * 2 - 1) * uniforms.rotation.w;
         p.position = float4(position, 0);
         p.velocity = float4(velocity, lifetime);
-        p.rotation = float4(angle, angularVelocity, 0, 0);
+        float initialFrame = max(0.0, uniforms.imageSequence.x + (rng.next() * 2 - 1) * uniforms.imageSequence.y);
+        float frameRate = uniforms.imageSequence.z + (rng.next() * 2 - 1) * uniforms.imageSequence.w;
+        p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
     }
 
     float lifetime = p.velocity.w;
@@ -140,8 +142,29 @@ kernel void updateParticles(
 struct VertexOut {
     float4 position [[position]];
     float4 color;
-    float2 uv;
+    float2 uv;       // Quad corner space, -1...1. Drives the procedural dot.
+    float2 texcoord; // Sprite sheet cell coordinates.
 };
+
+// Frame index for a particle `age` seconds old.
+static uint sequenceFrame(float initialFrame, float frameRate, float age, uint frameCount, uint mode) {
+    if (frameCount <= 1) {
+        return 0;
+    }
+    int frame = int(floor(initialFrame + frameRate * age));
+    int count = int(frameCount);
+    switch (mode) {
+    case ParticleImageSequenceModeClamp:
+        return uint(clamp(frame, 0, count - 1));
+    case ParticleImageSequenceModeAutoReverse: {
+        int period = 2 * (count - 1);
+        int phase = ((frame % period) + period) % period;
+        return uint(phase < count ? phase : period - phase);
+    }
+    default:
+        return uint(((frame % count) + count) % count);
+    }
+}
 
 vertex VertexOut particleVertex(
     uint vertexID [[vertex_id]],
@@ -158,6 +181,7 @@ vertex VertexOut particleVertex(
         out.position = float4(0, 0, 0, 0); // Degenerate, clipped.
         out.color = 0;
         out.uv = 0;
+        out.texcoord = 0;
         return out;
     }
     float t = saturate(age / lifetime);
@@ -171,6 +195,13 @@ vertex VertexOut particleVertex(
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = p.color;
     out.uv = corner;
+    uint columns = max(uniforms.options.z, 1u);
+    uint rows = max(uniforms.options.w, 1u);
+    uint frame = sequenceFrame(p.rotation.z, p.rotation.w, age, uniforms.imageSequence.x, uniforms.imageSequence.y);
+    float2 cell = float2(frame % columns, frame / columns);
+    // Texture v runs down, quad corner y runs up.
+    float2 cellUV = float2(corner.x * 0.5 + 0.5, 0.5 - corner.y * 0.5);
+    out.texcoord = (cell + cellUV) / float2(columns, rows);
     return out;
 }
 
@@ -192,14 +223,28 @@ fragment float4 wireframeFragment(constant WireframeUniforms &uniforms [[buffer(
     return uniforms.color;
 }
 
-fragment float4 particleFragment(VertexOut in [[stage_in]], constant RenderUniforms &uniforms [[buffer(0)]]) {
-    float falloff = saturate(1.0 - length(in.uv));
-    float alpha = in.color.a * falloff * falloff;
+fragment float4 particleFragment(
+    VertexOut in [[stage_in]],
+    constant RenderUniforms &uniforms [[buffer(0)]],
+    texture2d<float, access::sample> sprite [[texture(0)]],
+    sampler spriteSampler [[sampler(0)]]
+) {
+    // Premultiplied coverage and color before tinting by the particle color.
+    float4 base;
+    if (uniforms.options.y != 0) {
+        base = sprite.sample(spriteSampler, in.texcoord);
+    } else {
+        float falloff = saturate(1.0 - length(in.uv));
+        float coverage = falloff * falloff;
+        base = float4(coverage, coverage, coverage, coverage);
+    }
+    float alpha = base.a * in.color.a;
     if (uniforms.options.x == ParticleBlendModeOpaque) {
         if (alpha < 0.5) {
             discard_fragment();
         }
-        return float4(in.color.rgb, 1);
+        float3 color = base.a > 0 ? base.rgb / base.a : base.rgb;
+        return float4(color * in.color.rgb, 1);
     }
-    return float4(in.color.rgb * alpha, alpha); // Premultiplied.
+    return float4(base.rgb * in.color.rgb * in.color.a, alpha);
 }

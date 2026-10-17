@@ -14,10 +14,17 @@ private let psnrThreshold = 30.0
 
 @Suite(.serialized)
 struct GoldenImageTests {
-    func render(emitter: ParticleEmitter = .fountain, seed: UInt32 = 0, frames: Int, colliders: Bool = true) throws -> CGImage {
+    func render(
+        emitter: ParticleEmitter = .fountain,
+        seed: UInt32 = 0,
+        frames: Int,
+        colliders: Bool = true,
+        configure: (ParticleSystem) throws -> Void = { _ in }
+    ) throws -> CGImage {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
         let system = try ParticleSystem(device: renderer.device, capacity: 50_000, emitter: emitter, seed: seed)
+        try configure(system)
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
         var rendering: OffscreenRenderer.Rendering?
@@ -86,6 +93,44 @@ struct GoldenImageTests {
             .capsule(start: [-1.5, 0.3, 0.5], end: [1.5, 0.3, -0.5], radius: 0.25),
         ]
         #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "rotated-box-and-capsule"))
+    }
+
+    @Test func texturedSpinningSprites() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.birthRate = 2_000
+        emitter.sizeStart = 0.12
+        emitter.sizeEnd = 0.06
+        emitter.angleVariation = .pi
+        emitter.angularSpeed = 4
+        emitter.angularSpeedVariation = 2
+        let image = try render(emitter: emitter, frames: 120, colliders: false) { system in
+            // An arrow pointing up, so rotation is visible.
+            system.texture = try makeSpriteSheet(device: system.device, rows: 1, columns: 1) { context, _, rect in
+                context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
+                context.move(to: CGPoint(x: rect.midX, y: rect.minY + 4))
+                context.addLine(to: CGPoint(x: rect.maxX - 8, y: rect.maxY - 4))
+                context.addLine(to: CGPoint(x: rect.minX + 8, y: rect.maxY - 4))
+                context.fillPath()
+            }
+        }
+        #expect(try image.matchesGolden(named: "textured-spinning-sprites"))
+    }
+
+    @Test func spriteSheetAnimation() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.birthRate = 4_000
+        emitter.sizeStart = 0.08
+        emitter.sizeEnd = 0.08
+        emitter.colorStart = [1, 1, 1, 1]
+        emitter.colorEnd = [1, 1, 1, 0.3]
+        emitter.imageSequence = ImageSequence(rows: 2, columns: 2, frameRate: 2)
+        let image = try render(emitter: emitter, frames: 120, colliders: false) { system in
+            system.texture = try makeSpriteSheet(device: system.device, rows: 2, columns: 2) { context, index, rect in
+                context.setFillColor(frameColors[index])
+                context.fillEllipse(in: rect.insetBy(dx: 6, dy: 6))
+            }
+        }
+        #expect(try image.matchesGolden(named: "sprite-sheet-animation"))
     }
 
     @Test func fountainWithoutColliderWireframes() throws {
