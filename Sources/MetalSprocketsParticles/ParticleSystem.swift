@@ -39,7 +39,26 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var friction: Float = 0.2
     public var colliders: [Collider] = [.plane(normal: [0, 1, 0], distance: 0)]
 
+    /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
+    public var birthRate: Float = 1_000
+    /// Seconds of emission per cycle. `nil` emits forever.
+    public var emissionDuration: Float?
+    /// Seconds without emission after each emission period. Only used when `emissionDuration` is set.
+    public var idleDuration: Float = 0
+    /// Repeats the emission/idle cycle. When false, emission ends after the first `emissionDuration`.
+    public var loops = true
+    /// Seconds simulated before the first rendered frame, and again after `restart()`.
+    public var warmupDuration: Float = 0
+
     public init() {}
+}
+
+public enum SimulationState: Sendable, Equatable {
+    case playing
+    /// Particles freeze in place. Queued bursts wait until playback resumes.
+    case paused
+    /// All particles are removed and nothing emits. Switching back to `.playing` restarts the emitter.
+    case stopped
 }
 
 /// Owns GPU particle state. Simulation and rendering are separate elements so callers can place them in
@@ -50,8 +69,23 @@ public final class ParticleSystem {
     public let seed: UInt32
     let buffer: MTLBuffer
     let library: ShaderLibrary
-    /// Number of simulation steps run so far. Drives the GPU random sequence together with `seed`.
-    private(set) var step: UInt32 = 0
+    private(set) var spawner = Spawner()
+    private var needsKill = false
+    private var needsWarmup = true
+
+    public var state: SimulationState = .playing {
+        didSet {
+            if state == .stopped {
+                needsKill = true
+            } else if oldValue == .stopped {
+                restart()
+            }
+        }
+    }
+    /// Turns emission off without affecting existing particles.
+    public var isEmitting = true
+    /// Multiplies simulation time. 2 runs twice as fast; 0.5 is slow motion.
+    public var speedFactor: Float = 1
 
     public init(device: MTLDevice = MTLCreateSystemDefaultDevice()!, capacity: Int, emitter: ParticleEmitter = ParticleEmitter(), seed: UInt32 = 0) throws {
         self.capacity = capacity
@@ -59,17 +93,42 @@ public final class ParticleSystem {
         self.seed = seed
         library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
 
-        // Stagger first spawn across the max lifetime so emission is continuous from the start.
-        let maxLifetime = emitter.lifetime.upperBound
-        var generator = SplitMix64(seed: UInt64(seed))
-        let particles = (0..<capacity).map { _ in
-            Particle(position: [0, 0, 0, -Float.random(in: 0...maxLifetime, using: &generator)], velocity: .zero, color: .zero)
-        }
-        guard let buffer = particles.withUnsafeBytes({ device.makeBuffer(bytes: $0.baseAddress!, length: $0.count, options: .storageModeShared) }) else {
+        // All particles start dead (lifetime 0).
+        let length = MemoryLayout<Particle>.stride * capacity
+        guard let buffer = device.makeBuffer(length: length, options: .storageModeShared) else {
             throw CocoaError(.featureUnsupported)
         }
+        buffer.contents().initializeMemory(as: UInt8.self, repeating: 0, count: length)
         buffer.label = "Particles"
         self.buffer = buffer
+    }
+
+    /// Emits `count` particles on the next playing step, on top of the birth rate.
+    public func burst(_ count: Int) {
+        spawner.pendingBurst += max(count, 0)
+    }
+
+    /// Removes all particles, resets the emission clock, and runs warmup again.
+    public func restart() {
+        spawner = Spawner()
+        needsKill = true
+        needsWarmup = true
+        if state != .playing {
+            state = .playing
+        }
+    }
+
+    private func makeStep(deltaTime: Float) -> SimulationUniforms {
+        var uniforms = simulationUniforms
+        let playing = state == .playing
+        let deltaTime = playing ? deltaTime : 0
+        let spawn = playing
+            ? spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: capacity, isEmitting: isEmitting)
+            : Spawner.Step(cursor: spawner.cursor, count: 0, serial: spawner.serial)
+        uniforms.lifetime.w = deltaTime
+        uniforms.spawn = [spawn.cursor, spawn.count, spawn.serial, needsKill ? 1 : 0]
+        needsKill = false
+        return uniforms
     }
 
     var simulationUniforms: SimulationUniforms {
@@ -81,28 +140,45 @@ public final class ParticleSystem {
             colorStart: emitter.colorStart,
             colorEnd: emitter.colorEnd,
             collision: [emitter.restitution, emitter.friction, Float(emitter.colliders.count), 0],
-            random: [seed, 0, 0, 0]
+            random: [seed, UInt32(capacity), 0, 0],
+            spawn: .zero
         )
     }
 
-    /// Advances the simulation one step. Put this before the render pass that draws the particles.
-    /// The result depends only on `seed`, emitter settings, and the sequence of `deltaTime` values.
+    /// Advances the simulation one frame. Put this before the render pass that draws the particles.
+    /// The result depends only on `seed`, emitter settings, playback calls, and the sequence of `deltaTime` values.
     public func simulate(deltaTime: Float) throws -> some Element {
-        var uniforms = simulationUniforms
-        uniforms.random.y = step
-        step &+= 1
-        uniforms.lifetime.w = min(deltaTime, 1.0 / 30.0)
+        var steps: [SimulationUniforms] = []
+        if needsWarmup {
+            needsWarmup = false
+            let warmupStep: Float = 1.0 / 60.0
+            var remaining = emitter.warmupDuration
+            while remaining > 0 {
+                steps.append(makeStep(deltaTime: min(warmupStep, remaining)))
+                remaining -= warmupStep
+            }
+        }
+        steps.append(makeStep(deltaTime: min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)))
+
         let colliders = emitter.colliders.map(ColliderData.init)
+        let kernel = try library.updateParticles as ComputeKernel
+        let buffer = buffer
+        let capacity = capacity
         return try ComputePass {
             // Previous frame's vertex stage reads the buffer we are about to write.
             QueueBarrier(after: .vertex, before: .dispatch)
-            try ComputePipeline(computeKernel: library.updateParticles) {
-                try ComputeDispatch(threadsPerGrid: MTLSize(width: capacity, height: 1, depth: 1))
+            ForEach(Array(steps.indices), id: \.self) { index in
+                if index > 0 {
+                    EncoderBarrier(after: .dispatch, before: .dispatch)
+                }
+                try ComputePipeline(computeKernel: kernel) {
+                    try ComputeDispatch(threadsPerGrid: MTLSize(width: capacity, height: 1, depth: 1))
+                }
+                .parameter("particles", buffer: buffer)
+                .parameter("uniforms", value: steps[index])
+                // Never bind an empty array; the count in uniforms keeps the padding unused.
+                .parameter("colliders", values: colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : colliders)
             }
-            .parameter("particles", buffer: buffer)
-            .parameter("uniforms", value: uniforms)
-            // Never bind an empty array; the count in uniforms keeps the padding unused.
-            .parameter("colliders", values: colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : colliders)
         }
         .barrierAfterPass(after: .dispatch, beforeQueueStages: .vertex)
         .gpuTimed("Simulate")
@@ -133,20 +209,6 @@ public final class ParticleSystem {
             attachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
             attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
         }
-    }
-}
-
-struct SplitMix64: RandomNumberGenerator {
-    var state: UInt64
-
-    init(seed: UInt64) { state = seed }
-
-    mutating func next() -> UInt64 {
-        state &+= 0x9E37_79B9_7F4A_7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-        return z ^ (z >> 31)
     }
 }
 

@@ -349,17 +349,19 @@ Only position, velocity, and lifetime vary per particle. Both SceneKit and Reali
 ## 21: No emission timing control
 
 +++
-status: open
+status: closed
 priority: high
 kind: feature
 labels: effort:l, area:emission
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T15:27:32Z
+closed: 2026-10-17T15:27:32Z
 +++
 
 The emitter always emits continuously at full capacity. Missing: birth rate independent of capacity, emission duration and idle periods, looping, warmup (pre-simulate before first render), play/pause/stop/restart, isEmitting toggle, and a simulation speed factor. Both SceneKit and RealityKit have these.
 
 - `2026-10-17T14:11:13Z`: Related: #7 (emitter shapes).
+- `2026-10-17T15:27:32Z`: Added birthRate (independent of capacity), emissionDuration/idleDuration/loops, warmupDuration, burst(), SimulationState play/pause/stop, restart(), isEmitting, and speedFactor. Particles spawn into a ring buffer with randomness keyed by spawn serial, so results stay deterministic.
 
 ---
 

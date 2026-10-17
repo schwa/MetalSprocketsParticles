@@ -6,6 +6,7 @@ public extension ParticleEmitter {
         var emitter = ParticleEmitter()
         emitter.position = [0, 0.5, 0]
         emitter.velocity = [0, 5, 0]
+        emitter.birthRate = 20_000
         emitter.colliders = [
             .plane(normal: [0, 1, 0], distance: 0),
             .sphere(center: [0, 2.5, 0], radius: 0.6),

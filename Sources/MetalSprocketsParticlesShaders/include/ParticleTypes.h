@@ -5,8 +5,8 @@
 // Shared between Swift and Metal. Only 16-byte vector types, so layouts match without padding rules.
 
 typedef struct {
-    simd_float4 position; // xyz, w = age (negative = waiting to spawn)
-    simd_float4 velocity; // xyz, w = lifetime (0 = never spawned)
+    simd_float4 position; // xyz, w = age
+    simd_float4 velocity; // xyz, w = lifetime (0 = never spawned). Dead when age >= lifetime.
     simd_float4 color;
 } Particle;
 
@@ -18,7 +18,10 @@ typedef struct {
     simd_float4 colorStart;
     simd_float4 colorEnd;
     simd_float4 collision;       // x = restitution, y = friction, z = collider count
-    simd_uint4 random;           // x = seed, y = step
+    simd_uint4 random;           // x = seed, y = capacity
+    // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
+    // w = nonzero to kill all particles before this step.
+    simd_uint4 spawn;
 } SimulationUniforms;
 
 // kind.x: 0 = none, 1 = plane (a = normal, distance), 2 = sphere (a = center, radius), 3 = box (a = center, b = half extents).

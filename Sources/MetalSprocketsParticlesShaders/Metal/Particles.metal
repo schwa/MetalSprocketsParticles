@@ -39,25 +39,34 @@ kernel void updateParticles(
 ) {
     Particle p = particles[id];
     float dt = uniforms.lifetime.w;
-    float age = p.position.w + dt;
-    float lifetime = p.velocity.w;
+    uint capacity = uniforms.random.y;
 
-    if (age < 0) {
-        p.position.w = age;
+    if (uniforms.spawn.w != 0) {
+        p.position.w = 0;
+        p.velocity.w = 0;
+    }
+
+    // Particles spawn into a ring: this step owns `spawn.y` slots starting at the cursor. The oldest particles get
+    // recycled first. Randomness comes from the spawn serial, not the slot, so results do not depend on thread order.
+    uint offset = (id + capacity - uniforms.spawn.x) % capacity;
+    if (offset < uniforms.spawn.y) {
+        Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
+        float3 position = uniforms.emitterPosition.xyz + rng.inUnitSphere() * uniforms.emitterPosition.w;
+        float3 velocity = uniforms.emitterVelocity.xyz + rng.inUnitSphere() * uniforms.emitterVelocity.w;
+        float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
+        // Spread births across the step so particles born in the same step do not move as one sheet.
+        dt *= rng.next();
+        p.position = float4(position, 0);
+        p.velocity = float4(velocity, lifetime);
+    }
+
+    float lifetime = p.velocity.w;
+    float age = p.position.w;
+    if (lifetime <= 0 || age >= lifetime) {
         particles[id] = p;
         return;
     }
-
-    if (age >= lifetime) {
-        Random rng { hash(hash(id ^ uniforms.random.x) ^ uniforms.random.y) };
-        float3 position = uniforms.emitterPosition.xyz + rng.inUnitSphere() * uniforms.emitterPosition.w;
-        float3 velocity = uniforms.emitterVelocity.xyz + rng.inUnitSphere() * uniforms.emitterVelocity.w;
-        lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
-        // Carry over the overshoot so emission stays smooth.
-        age = lifetime > 0 ? fmod(age - p.velocity.w, lifetime) : 0;
-        p.position = float4(position, age);
-        p.velocity = float4(velocity, lifetime);
-    }
+    age += dt;
 
     float3 position = p.position.xyz;
     float3 velocity = p.velocity.xyz;
@@ -120,7 +129,7 @@ vertex VertexOut particleVertex(
     VertexOut out;
     float age = p.position.w;
     float lifetime = p.velocity.w;
-    if (age < 0 || lifetime <= 0) {
+    if (lifetime <= 0 || age >= lifetime) {
         out.position = float4(0, 0, 0, 0); // Degenerate, clipped.
         out.color = 0;
         out.uv = 0;
