@@ -416,17 +416,19 @@ The emitter has a position but no rotation, scale, or parent transform, and ther
 ## 23: Particles cannot die on collision
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:collision
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T17:12:37Z
+updated: 2026-10-17T20:03:20Z
+closed: 2026-10-17T20:03:20Z
 +++
 
 Colliding particles always bounce. SceneKit has particleDiesOnCollision and collision events. Needed for rain, sparks hitting walls, and as a trigger for sub-emitters (#9).
 
 - `2026-10-17T14:11:14Z`: Related: #9.
+- `2026-10-17T20:03:20Z`: Added ParticleEmitter.diesOnCollision: on any collider contact the particle's age jumps to its lifetime. Collision events (SceneKit-style) are left to #34 triggers; spawning on collision to #9.
 
 ---
 

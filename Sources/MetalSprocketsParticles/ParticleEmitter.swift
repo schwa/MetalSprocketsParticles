@@ -44,6 +44,8 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var friction: Float = 0.2
     /// Per-particle offset range for `friction`, picked at birth.
     public var frictionVariation: Float = 0
+    /// Removes particles the moment they touch a collider, instead of bouncing. Good for rain and sparks on walls.
+    public var diesOnCollision = false
     /// Per-particle offset range in m/s for initial speed, applied after `velocitySpread`.
     public var speedVariation: Float = 0
     /// Per-particle size multiplier range as a fraction: 0.25 scales `sizeOverLife` by 0.75...1.25.

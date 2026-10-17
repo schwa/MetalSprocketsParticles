@@ -255,6 +255,25 @@ struct GoldenImageTests {
         #expect(try image.matchesGolden(named: "fire-smoke-embers"))
     }
 
+    @Test func rainDiesOnCollision() throws {
+        var rain = ParticleEmitter()
+        rain.position = [0, 4.5, 0]
+        rain.radius = 2.5
+        rain.velocity = [0, -6, 0]
+        rain.velocitySpread = 0.2
+        rain.lifetime = 2...2
+        rain.birthRate = 20_000
+        rain.diesOnCollision = true
+        rain.orientation = .velocityAligned(stretch: 0.25)
+        rain.sizeOverLife = .constant(0.008)
+        rain.colorOverLife = .constant([0.6, 0.7, 0.9, 0.7])
+        let colliders: [Collider] = [
+            .plane(normal: [0, 1, 0], distance: 0),
+            .box(center: [0, 1.4, 0.5], halfExtents: [1.4, 0.05, 1.2], rotation: simd_quatf(angle: 0.25, axis: [0, 0, 1])),
+        ]
+        #expect(try render(emitter: rain, frames: 120, worldColliders: colliders).matchesGolden(named: "rain-dies-on-collision"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }

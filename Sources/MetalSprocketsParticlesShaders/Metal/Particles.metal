@@ -101,7 +101,8 @@ static float3 rotate(float4 q, float3 v) {
 }
 
 // Response is computed relative to the collider, so moving colliders push and carry particles.
-static void collide(thread float3 &position, thread float3 &velocity, ColliderData c, float3 normal, float penetration, float restitution, float friction) {
+static void collide(thread float3 &position, thread float3 &velocity, ColliderData c, float3 normal, float penetration, float restitution, float friction, thread bool &hit) {
+    hit = true;
     position += normal * penetration;
     float3 colliderVelocity = c.velocity.xyz;
     float3 relative = velocity - colliderVelocity;
@@ -194,18 +195,19 @@ kernel void updateParticles(
     float restitution = max(0.0, uniforms.collision.x + p.properties.y);
     float friction = saturate(uniforms.collision.y + p.properties.z);
 
+    bool hit = false;
     uint colliderCount = uint(uniforms.collision.z);
     for (uint i = 0; i < colliderCount; i++) {
         ColliderData c = colliders[i];
         int kind = int(c.kind.x);
         if (kind == 1) {
             float distance = dot(position, c.a.xyz) - c.a.w;
-            if (distance < 0) { collide(position, velocity, c, c.a.xyz, -distance, restitution, friction); }
+            if (distance < 0) { collide(position, velocity, c, c.a.xyz, -distance, restitution, friction, hit); }
         } else if (kind == 2) {
             float3 offset = position - c.a.xyz;
             float distance = length(offset);
             if (distance < c.a.w && distance > 0) {
-                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction);
+                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction, hit);
             }
         } else if (kind == 3) {
             float4 inverse = float4(-c.rotation.xyz, c.rotation.w);
@@ -218,7 +220,7 @@ kernel void updateParticles(
                 if (depth.x < depth.y && depth.x < depth.z) { normal.x = sign(local.x); penetration = depth.x; }
                 else if (depth.y < depth.z) { normal.y = sign(local.y); penetration = depth.y; }
                 else { normal.z = sign(local.z); penetration = depth.z; }
-                collide(position, velocity, c, rotate(c.rotation, normal), penetration, restitution, friction);
+                collide(position, velocity, c, rotate(c.rotation, normal), penetration, restitution, friction, hit);
             }
         } else if (kind == 4) {
             float3 start = c.a.xyz;
@@ -228,9 +230,13 @@ kernel void updateParticles(
             float3 offset = position - (start + axis * t);
             float distance = length(offset);
             if (distance < c.a.w && distance > 0) {
-                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction);
+                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction, hit);
             }
         }
+    }
+
+    if (hit && uniforms.collision.w != 0) {
+        age = lifetime;
     }
 
     position = (uniforms.worldToSimulation * float4(position, 1)).xyz;

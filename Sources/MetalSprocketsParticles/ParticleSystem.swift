@@ -267,7 +267,7 @@ public final class ParticleSystem {
             emitterVelocity: SIMD4(settings.velocity, settings.velocitySpread),
             gravity: SIMD4(settings.gravity, settings.drag),
             lifetime: [settings.lifetime.lowerBound, settings.lifetime.upperBound, 0, deltaTime],
-            collision: [settings.restitution, settings.friction, Float(colliders.count), 0],
+            collision: [settings.restitution, settings.friction, Float(colliders.count), settings.diesOnCollision ? 1 : 0],
             rotation: [settings.angle, settings.angleVariation, settings.angularSpeed, settings.angularSpeedVariation],
             imageSequence: settings.imageSequence.map {
                 [$0.initialFrame, $0.initialFrameVariation, $0.frameRate, $0.frameRateVariation]

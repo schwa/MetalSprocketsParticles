@@ -60,7 +60,7 @@ typedef struct {
     simd_float4 emitterVelocity; // xyz = base velocity, w = spread
     simd_float4 gravity;         // xyz (world space), w = drag
     simd_float4 lifetime;        // x = min, y = max, w = deltaTime
-    simd_float4 collision;       // x = restitution, y = friction, z = collider count
+    simd_float4 collision;       // x = restitution, y = friction, z = collider count, w = nonzero to die on contact
     simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
     simd_float4 imageSequence;   // x = initial frame, y = initial frame variation, z = frame rate, w = frame rate variation
     simd_float4 fields;          // x = force field count, y = simulation time (seconds)
