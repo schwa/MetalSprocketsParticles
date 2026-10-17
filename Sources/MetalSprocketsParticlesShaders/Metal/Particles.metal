@@ -82,17 +82,174 @@ static float3 fieldAcceleration(ForceFieldData field, float3 position, float3 ve
     return float3(0);
 }
 
+// Draw several values with next2/next3/next4, never float3(next(), next(), next()): C++ leaves argument evaluation
+// order unspecified, so the compiler may reorder the draws whenever surrounding code changes.
 struct Random {
     uint state;
     float next() { state = hash(state); return float(state) / 4294967295.0; }
+    float2 next2() {
+        float x = next();
+        float y = next();
+        return float2(x, y);
+    }
+    float3 next3() {
+        float x = next();
+        float y = next();
+        float z = next();
+        return float3(x, y, z);
+    }
+    float4 next4() {
+        float x = next();
+        float y = next();
+        float z = next();
+        float w = next();
+        return float4(x, y, z, w);
+    }
     float3 inUnitSphere() {
         for (int i = 0; i < 8; i++) {
-            float3 p = float3(next(), next(), next()) * 2.0 - 1.0;
+            float3 p = next3() * 2.0 - 1.0;
             if (length_squared(p) <= 1.0) { return p; }
         }
         return float3(0);
     }
 };
+
+struct ShapeSample {
+    float3 position; // Emitter space, relative to the shape center.
+    float3 normal;   // Outward unit normal, or a random direction where the shape has none.
+};
+
+// A unit direction with azimuth around +Y limited to 0...sweep.
+static float3 sweptDirection(thread Random &rng, float sweep) {
+    float azimuth = rng.next() * sweep;
+    float y = rng.next() * 2 - 1;
+    float r = sqrt(max(0.0, 1 - y * y));
+    return float3(r * cos(azimuth), y, r * sin(azimuth));
+}
+
+static ShapeSample sampleShape(
+    thread Random &rng,
+    constant SimulationUniforms &uniforms,
+    constant EmitterMeshTriangle *triangles,
+    constant float4 *vertices
+) {
+    float4 parameters = uniforms.shapeParameters;
+    float sweep = parameters.w;
+    bool surface = uniforms.shape.y != ParticleBirthLocationVolume;
+    const float twoPi = 6.2831853;
+    switch (uniforms.shape.x) {
+    case ParticleEmitterShapeKindSphere: {
+        float radius = parameters.x;
+        if (!surface && sweep >= twoPi) {
+            // Same draws as the original sphere emitter, so default results do not change.
+            float3 offset = rng.inUnitSphere();
+            float length = metal::length(offset);
+            return { offset * radius, length > 1e-6 ? offset / length : sweptDirection(rng, twoPi) };
+        }
+        float3 direction = sweptDirection(rng, sweep);
+        float distance = surface ? radius : radius * pow(rng.next(), 1.0 / 3.0);
+        return { direction * distance, direction };
+    }
+    case ParticleEmitterShapeKindBox: {
+        float3 halfSize = parameters.xyz * 0.5;
+        float3 point = (rng.next3() * 2 - 1) * halfSize;
+        if (!surface) {
+            return { point, sweptDirection(rng, twoPi) };
+        }
+        // Pick a face pair by area, then a side, then project onto it.
+        float3 areas = float3(halfSize.y * halfSize.z, halfSize.x * halfSize.z, halfSize.x * halfSize.y);
+        float pick = rng.next() * (areas.x + areas.y + areas.z);
+        int axis = pick < areas.x ? 0 : (pick < areas.x + areas.y ? 1 : 2);
+        float side = rng.next() < 0.5 ? -1 : 1;
+        float3 normal = 0;
+        normal[axis] = side;
+        point[axis] = halfSize[axis] * side;
+        return { point, normal };
+    }
+    case ParticleEmitterShapeKindPlane: {
+        float2 halfSize = parameters.xy * 0.5;
+        float2 point = (rng.next2() * 2 - 1) * halfSize;
+        return { float3(point.x, 0, point.y), float3(0, 1, 0) };
+    }
+    case ParticleEmitterShapeKindDisc: {
+        float angle = rng.next() * sweep;
+        float distance = surface ? parameters.x : parameters.x * sqrt(rng.next());
+        return { float3(cos(angle), 0, sin(angle)) * distance, float3(0, 1, 0) };
+    }
+    case ParticleEmitterShapeKindCylinder: {
+        float angle = rng.next() * sweep;
+        float3 radial = float3(cos(angle), 0, sin(angle));
+        float distance = surface ? parameters.x : parameters.x * sqrt(rng.next());
+        float y = (rng.next() - 0.5) * parameters.y;
+        return { radial * distance + float3(0, y, 0), radial };
+    }
+    case ParticleEmitterShapeKindCone: {
+        // Base of radius parameters.x at y = 0, apex at y = parameters.y.
+        float radius = parameters.x;
+        float height = parameters.y;
+        float angle = rng.next() * sweep;
+        float3 radial = float3(cos(angle), 0, sin(angle));
+        // Cross-section area falls off with height, so sample height with matching density.
+        float fraction = surface ? 1 - sqrt(rng.next()) : 1 - pow(rng.next(), 1.0 / 3.0);
+        float sliceRadius = radius * (1 - fraction);
+        float distance = surface ? sliceRadius : sliceRadius * sqrt(rng.next());
+        float3 normal = normalize(radial * height + float3(0, radius, 0));
+        return { radial * distance + float3(0, fraction * height, 0), normal };
+    }
+    case ParticleEmitterShapeKindTorus: {
+        float radius = parameters.x;
+        float tube = parameters.y;
+        float angle = rng.next() * sweep;
+        // Rejection-sample the tube angle so points are uniform over the surface, not bunched on the inside.
+        float tubeAngle = 0;
+        for (int i = 0; i < 8; i++) {
+            tubeAngle = rng.next() * twoPi;
+            if (rng.next() * (radius + tube) <= radius + tube * cos(tubeAngle)) {
+                break;
+            }
+        }
+        float3 radial = float3(cos(angle), 0, sin(angle));
+        float3 normal = radial * cos(tubeAngle) + float3(0, sin(tubeAngle), 0);
+        float distance = surface ? tube : tube * sqrt(rng.next());
+        return { radial * radius + normal * distance, normal };
+    }
+    case ParticleEmitterShapeKindMesh: {
+        uint vertexCount = uniforms.meshCounts.y;
+        if (uniforms.shape.y == ParticleBirthLocationVertices && vertexCount > 0) {
+            uint index = min(uint(rng.next() * vertexCount), vertexCount - 1);
+            return { vertices[index].xyz, sweptDirection(rng, twoPi) };
+        }
+        uint count = uniforms.meshCounts.x;
+        if (count == 0) {
+            return { float3(0), sweptDirection(rng, twoPi) };
+        }
+        // Binary search the cumulative areas. Volume is not supported for meshes and uses the surface.
+        float target = rng.next();
+        uint low = 0;
+        uint high = count - 1;
+        while (low < high) {
+            uint middle = (low + high) / 2;
+            if (triangles[middle].a.w < target) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        EmitterMeshTriangle triangle = triangles[low];
+        float u = sqrt(rng.next());
+        float v = rng.next();
+        float3 a = triangle.a.xyz;
+        float3 b = triangle.b.xyz;
+        float3 c = triangle.c.xyz;
+        float3 point = a * (1 - u) + b * (u * (1 - v)) + c * (u * v);
+        float3 normal = cross(b - a, c - a);
+        float length = metal::length(normal);
+        return { point, length > 0 ? normal / length : sweptDirection(rng, twoPi) };
+    }
+    default:
+        return { float3(0), sweptDirection(rng, twoPi) };
+    }
+}
 
 // Rotates `v` by unit quaternion `q` (xyz = imaginary, w = real).
 static float3 rotate(float4 q, float3 v) {
@@ -119,6 +276,8 @@ kernel void updateParticles(
     constant SimulationUniforms &uniforms [[buffer(1)]],
     constant ColliderData *colliders [[buffer(2)]],
     constant ForceFieldData *forceFields [[buffer(3)]],
+    constant EmitterMeshTriangle *meshTriangles [[buffer(4)]],
+    constant float4 *meshVertices [[buffer(5)]],
     uint localID [[thread_position_in_grid]]
 ) {
     // Each dispatch covers one emitter's slice of the shared buffer.
@@ -137,8 +296,26 @@ kernel void updateParticles(
     uint offset = (localID + capacity - uniforms.spawn.x) % capacity;
     if (offset < uniforms.spawn.y) {
         Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
-        float3 position = uniforms.emitterPosition.xyz + rng.inUnitSphere() * uniforms.emitterPosition.w;
-        float3 velocity = uniforms.emitterVelocity.xyz + rng.inUnitSphere() * uniforms.emitterVelocity.w;
+        // The default full sphere volume keeps the original expression exactly: rewriting it changes rounding, and
+        // tiny differences grow chaotically through collisions.
+        bool defaultSphere = uniforms.shape.x == ParticleEmitterShapeKindSphere
+            && uniforms.shape.y == ParticleBirthLocationVolume
+            && uniforms.shapeParameters.w >= 6.2831853;
+        ShapeSample sample;
+        float3 position;
+        if (defaultSphere) {
+            float3 offset = rng.inUnitSphere();
+            position = uniforms.emitterPosition.xyz + offset * uniforms.shapeParameters.x;
+            float offsetLength = length(offset);
+            sample.normal = offsetLength > 1e-6 ? offset / offsetLength : float3(0, 1, 0);
+        } else {
+            sample = sampleShape(rng, uniforms, meshTriangles, meshVertices);
+            position = uniforms.emitterPosition.xyz + sample.position;
+        }
+        float3 baseVelocity = uniforms.shape.z == ParticleBirthDirectionNormal
+            ? sample.normal * length(uniforms.emitterVelocity.xyz)
+            : uniforms.emitterVelocity.xyz;
+        float3 velocity = baseVelocity + rng.inUnitSphere() * uniforms.emitterVelocity.w;
         float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
         float birthAge = rng.next();
@@ -157,7 +334,7 @@ kernel void updateParticles(
         if (speed > 1e-6) {
             velocity *= max(0.0, speed + speedOffset) / speed;
         }
-        float4 colorOffset = float4(rng.next(), rng.next(), rng.next(), rng.next()) * 2 - 1;
+        float4 colorOffset = rng.next4() * 2 - 1;
         // Emitter-local to simulation space. Particles born earlier in the step start further back along the
         // emitter's path, so fast-moving emitters leave continuous trails instead of clumps.
         position = (uniforms.emitterTransform * float4(position, 1)).xyz;

@@ -3,8 +3,26 @@ import simd
 
 /// Settings for one emitter. Colliders and force fields are shared by all emitters and live on `ParticleSystem`.
 public struct ParticleEmitter: Sendable, Equatable {
+    /// Center of `shape` in emitter space.
     public var position: SIMD3<Float> = .zero
-    public var radius: Float = 0.05
+    public var shape: EmitterShape = .sphere(radius: 0.05)
+    public var birthLocation: ParticleBirthLocation = .volume
+    public var birthDirection: ParticleBirthDirection = .velocity
+    /// Limits sphere, disc, cylinder, cone, and torus shapes to this angle around +Y, in radians.
+    public var sweepAngle: Float = 2 * .pi
+
+    /// The sphere radius. Setting it makes the shape a sphere.
+    public var radius: Float {
+        get {
+            if case let .sphere(radius) = shape {
+                return radius
+            }
+            return 0
+        }
+        set { shape = .sphere(radius: newValue) }
+    }
+
+    /// Base velocity. With `birthDirection` `.normal`, only its length is used, as the speed along the shape normal.
     public var velocity: SIMD3<Float> = [0, 4, 0]
     public var velocitySpread: Float = 1.5
     public var lifetime: ClosedRange<Float> = 1.5...3

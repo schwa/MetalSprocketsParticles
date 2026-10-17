@@ -121,18 +121,20 @@ Color and size only lerp between start and end. RealityKit/SceneKit-class system
 ## 7: Only one continuous emitter shape
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:l, area:emission
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T17:16:57Z
+updated: 2026-10-17T20:16:20Z
+closed: 2026-10-17T20:16:20Z
 +++
 
 Particles spawn only inside a sphere. Missing: box, cone, disc, cylinder, torus, and mesh-surface/volume/vertex emission shapes, and birth direction modes. Timing and bursts are tracked in #21; multiple emitters per system moved to #33.
 
 - `2026-10-17T14:02:37Z`: Doc review: RealityKit EmitterShape (point, plane, box, sphere, cylinder, cone, torus) + emitterShapeSize, radialAmount, torusInnerRadius, BirthLocation (surface/volume/vertices), BirthDirection, burst()/burstCount. SceneKit emitterShape is any SCNGeometry with birthLocation (surface/volume/vertex) and birthDirection, emittingDirection, spreadingAngle.
 - `2026-10-17T14:11:13Z`: Related: #21 (timing/bursts split out), #22 (emitter transform).
+- `2026-10-17T20:16:20Z`: Added EmitterShape (point, sphere, box, plane, disc, cylinder, cone, torus, mesh), ParticleBirthLocation (volume, surface, vertices), ParticleBirthDirection (velocity, normal), and sweepAngle. EmitterMesh samples triangles by area. Mesh volume emission falls back to the surface (no inside test). radius stays as a sphere accessor.
 
 ---
 
@@ -686,5 +688,22 @@ created: 2026-10-17T20:11:25Z
 +++
 
 Add an example of a Doctor Strange-style portal: sparks thrown off a spinning ring, like a Catherine wheel.
+
+---
+
+## 37: Random draw order depends on the Metal compiler
+
++++
+status: closed
+priority: high
+kind: bug
+labels: effort:xs, area:simulation
+created: 2026-10-17T20:16:20Z
+closed: 2026-10-17T20:16:20Z
++++
+
+Shader code built vectors from several random draws in one expression, for example float3(next(), next(), next()). C++ leaves argument evaluation order unspecified, so the compiler may draw the values in a different order whenever surrounding code changes. Within one build results were deterministic, but an unrelated shader edit could reshuffle every particle and break all golden images. Found while adding emitter shapes (#7): the same kernel drew the position and the velocity in different orders.
+
+- `2026-10-17T20:16:20Z`: Fixed in the #7 commit: Random gains next2/next3/next4 with explicit sequential draws, used everywhere. Goldens regenerated once; they now no longer depend on compiler choices.
 
 ---

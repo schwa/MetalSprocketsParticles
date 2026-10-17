@@ -274,6 +274,44 @@ struct GoldenImageTests {
         #expect(try render(emitter: rain, frames: 120, worldColliders: colliders).matchesGolden(named: "rain-dies-on-collision"))
     }
 
+    @Test func emitterShapes() throws {
+        func emitter(_ shape: EmitterShape, at x: Float, location: ParticleBirthLocation, color: SIMD4<Float>) -> ParticleEmitter {
+            var emitter = ParticleEmitter()
+            emitter.position = [x, 1.4, 0]
+            emitter.shape = shape
+            emitter.birthLocation = location
+            emitter.birthDirection = .normal
+            emitter.velocity = [0, 0.15, 0]
+            emitter.velocitySpread = 0
+            emitter.gravity = .zero
+            emitter.lifetime = 1...2
+            emitter.birthRate = 3_000
+            emitter.blendMode = .additive
+            emitter.sizeOverLife = .constant(0.015)
+            emitter.colorOverLife = .linear(from: color, to: color * [1, 1, 1, 0])
+            return emitter
+        }
+        let shapes = [
+            emitter(.torus(radius: 0.4, tubeRadius: 0.08), at: -2.1, location: .surface, color: [1, 0.5, 0.2, 0.8]),
+            emitter(.cone(radius: 0.35, height: 0.8), at: -0.7, location: .surface, color: [0.3, 1, 0.4, 0.8]),
+            emitter(.box(size: [0.6, 0.6, 0.6]), at: 0.7, location: .surface, color: [0.3, 0.6, 1, 0.8]),
+            emitter(.sphere(radius: 0.4), at: 2.1, location: .surface, color: [1, 0.3, 0.8, 0.8]),
+        ]
+        let image = try render(emitter: shapes[0], frames: 90, colliders: false, worldColliders: []) { system in
+            // Tilt the torus toward the camera so its hole shows. Its shape is centered on its own origin.
+            var torusSettings = shapes[0]
+            torusSettings.position = .zero
+            system.emitter = torusSettings
+            var transform = simd_float4x4(simd_quatf(angle: 1.1, axis: [1, 0, 0]))
+            transform.columns.3 = [-2.1, 1.4, 0, 1]
+            system.transform = transform
+            for shape in shapes.dropFirst() {
+                try system.addEmitter(shape, capacity: 50_000)
+            }
+        }
+        #expect(try image.matchesGolden(named: "emitter-shapes"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }

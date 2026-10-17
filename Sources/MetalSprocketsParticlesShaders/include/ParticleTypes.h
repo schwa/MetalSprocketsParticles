@@ -10,6 +10,40 @@ typedef MS_ENUM(uint32_t, ParticleOrientationMode) {
     ParticleOrientationModeFixed = 3,
 };
 
+typedef MS_ENUM(uint32_t, ParticleEmitterShapeKind) {
+    ParticleEmitterShapeKindPoint = 0,
+    ParticleEmitterShapeKindSphere = 1,
+    ParticleEmitterShapeKindBox = 2,
+    ParticleEmitterShapeKindPlane = 3,
+    ParticleEmitterShapeKindDisc = 4,
+    ParticleEmitterShapeKindCylinder = 5,
+    ParticleEmitterShapeKindCone = 6,
+    ParticleEmitterShapeKindTorus = 7,
+    ParticleEmitterShapeKindMesh = 8,
+};
+
+typedef MS_ENUM(uint32_t, ParticleBirthLocation) {
+    ParticleBirthLocationVolume = 0,
+    ParticleBirthLocationSurface = 1,
+    /// Mesh vertices. Other shapes treat it as surface.
+    ParticleBirthLocationVertices = 2,
+};
+
+typedef MS_ENUM(uint32_t, ParticleBirthDirection) {
+    /// `emitterVelocity`, plus spread.
+    ParticleBirthDirectionVelocity = 0,
+    /// Outward from the shape at the birth point, at the speed of `emitterVelocity`, plus spread.
+    ParticleBirthDirectionNormal = 1,
+};
+
+/// One mesh triangle in emitter space. a.w is the cumulative surface area up to and including this triangle, as a
+/// fraction of the total, for area-weighted sampling.
+typedef struct {
+    simd_float4 a;
+    simd_float4 b;
+    simd_float4 c;
+} EmitterMeshTriangle;
+
 /// Samples per over-life lookup table (color, size).
 #define PARTICLE_CURVE_SAMPLES 64
 
@@ -56,7 +90,11 @@ typedef struct {
     simd_float4 previousEmitterOrigin;
     // xyz = velocity added to every newborn particle (inherited emitter velocity), in simulation space.
     simd_float4 inheritedVelocity;
-    simd_float4 emitterPosition; // xyz, w = emitter radius
+    simd_float4 emitterPosition; // xyz = shape center, w unused
+    simd_uint4 shape;            // x = ParticleEmitterShapeKind, y = ParticleBirthLocation, z = ParticleBirthDirection
+    simd_float4 shapeParameters; // per kind: sphere x = radius; box xyz = size; plane xy = size; disc x = radius;
+                                 // cylinder/cone x = radius, y = height; torus x = radius, y = tube radius. w = sweep
+    simd_uint4 meshCounts;       // x = triangle count, y = vertex count
     simd_float4 emitterVelocity; // xyz = base velocity, w = spread
     simd_float4 gravity;         // xyz (world space), w = drag
     simd_float4 lifetime;        // x = min, y = max, w = deltaTime

@@ -31,6 +31,8 @@ public final class ParticleSystem {
         public var simulationSpace: SimulationSpace = .world
         /// Turns emission off without affecting existing particles.
         public var isEmitting = true
+        /// Triangles for `EmitterShape.mesh`.
+        public var mesh: EmitterMesh?
         /// Particles this emitter can have alive at once.
         public let capacity: Int
         /// This emitter's slice of the shared particle buffer.
@@ -94,6 +96,8 @@ public final class ParticleSystem {
     private let sampler: MTLSamplerState
     /// Bound in place of a missing texture; the shader ignores it.
     private let placeholderTexture: MTLTexture
+    /// Bound in place of a missing emitter mesh; the counts in uniforms keep it unused.
+    private let placeholderMesh: EmitterMesh
     /// Colliders from the previous frame, used to derive collider velocity.
     private var previousColliders: [Collider]?
 
@@ -125,6 +129,7 @@ public final class ParticleSystem {
         }
         placeholderTexture.label = "Particle placeholder texture"
         self.placeholderTexture = placeholderTexture
+        placeholderMesh = try EmitterMesh(device: device, positions: [], indices: [])
         buffer = try Self.makeBuffer(device: device, count: 1)
 
         try setEmitters(emitters.map { ($0, capacity) })
@@ -245,6 +250,7 @@ public final class ParticleSystem {
     private struct Dispatch {
         var uniforms: SimulationUniforms
         var capacity: Int
+        var mesh: EmitterMesh?
         /// The previous dispatch wrote the same slice.
         var followsSameEmitter: Bool
     }
@@ -263,7 +269,14 @@ public final class ParticleSystem {
             worldToSimulation: model.inverse,
             previousEmitterOrigin: SIMD4(motion.previousOrigin, 0),
             inheritedVelocity: SIMD4(motion.inheritedVelocity, 0),
-            emitterPosition: SIMD4(settings.position, settings.radius),
+            emitterPosition: SIMD4(settings.position, 0),
+            shape: [settings.shape.kind.rawValue, settings.birthLocation.rawValue, settings.birthDirection.rawValue, 0],
+            shapeParameters: {
+                var parameters = settings.shape.parameters
+                parameters.w = max(settings.sweepAngle, 0)
+                return parameters
+            }(),
+            meshCounts: settings.shape == .mesh ? [UInt32(emitter.mesh?.triangleCount ?? 0), UInt32(emitter.mesh?.vertexCount ?? 0), 0, 0] : .zero,
             emitterVelocity: SIMD4(settings.velocity, settings.velocitySpread),
             gravity: SIMD4(settings.gravity, settings.drag),
             lifetime: [settings.lifetime.lowerBound, settings.lifetime.upperBound, 0, deltaTime],
@@ -308,7 +321,7 @@ public final class ParticleSystem {
             inheritedVelocity: emitterVelocity * emitter.settings.inheritVelocity
         )))
         return steps.enumerated().map { index, uniforms in
-            Dispatch(uniforms: uniforms, capacity: emitter.capacity, followsSameEmitter: index > 0)
+            Dispatch(uniforms: uniforms, capacity: emitter.capacity, mesh: emitter.mesh, followsSameEmitter: index > 0)
         }
     }
 
@@ -323,6 +336,7 @@ public final class ParticleSystem {
         let dispatches = emitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime) }
         let colliderData = colliderData(deltaTime: state == .playing ? frameDeltaTime : 0)
         let forceFieldData = forceFields.map(ForceFieldData.init)
+        let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
         return try ComputePass {
@@ -341,6 +355,8 @@ public final class ParticleSystem {
                 // Never bind an empty array; the counts in uniforms keep the padding unused.
                 .parameter("colliders", values: colliderData.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : colliderData)
                 .parameter("forceFields", values: forceFieldData.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : forceFieldData)
+                .parameter("meshTriangles", buffer: (dispatches[index].mesh ?? placeholderMesh).triangles)
+                .parameter("meshVertices", buffer: (dispatches[index].mesh ?? placeholderMesh).vertices)
             }
         }
         .barrierAfterPass(after: .dispatch, beforeQueueStages: .vertex)
