@@ -2,6 +2,7 @@ import Foundation
 import Metal
 import MetalSprocketsParticlesShaders
 import simd
+import SwiftMesh
 
 /// The region particles are born in, in emitter space and centered on `ParticleEmitter.position`. Shapes with an axis
 /// use +Y.
@@ -82,6 +83,15 @@ public final class EmitterMesh {
         vertexCount = positions.count
         self.triangles = try Self.makeBuffer(device: device, triangles.isEmpty ? [EmitterMeshTriangle()] : triangles, label: "Emitter mesh triangles")
         vertices = try Self.makeBuffer(device: device, positions.isEmpty ? [SIMD4<Float>.zero] : positions.map { SIMD4($0, 1) }, label: "Emitter mesh vertices")
+    }
+
+    /// Emits from a SwiftMesh mesh. Polygon faces, including faces with holes, are triangulated; positions are in
+    /// emitter space.
+    public convenience init(device: MTLDevice, mesh: Mesh) throws {
+        let indices = mesh.triangulate().flatMap { triangle in
+            [UInt32(triangle.0.raw), UInt32(triangle.1.raw), UInt32(triangle.2.raw)]
+        }
+        try self.init(device: device, positions: mesh.positions, indices: indices)
     }
 
     static func makeBuffer<T>(device: MTLDevice, _ values: [T], label: String) throws -> MTLBuffer {

@@ -729,14 +729,18 @@ Shader code built vectors from several random draws in one expression, for examp
 ## 38: EmitterMesh cannot be built from a SwiftMesh mesh
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:s, area:emission
 created: 2026-10-17T21:05:19Z
+updated: 2026-10-17T21:14:02Z
+closed: 2026-10-17T21:14:02Z
 +++
 
 EmitterMesh (#7) only takes raw positions and triangle-list indices. Meshes in the MetalSprockets ecosystem are SwiftMesh meshes (MetalSprocketsAddOns uses it), so emitting from a model means converting by hand. Add a SwiftMesh dependency and an EmitterMesh initializer that takes a SwiftMesh mesh, handling its index format and non-triangle topology. Related: #2 (mesh colliders should take SwiftMesh too).
+
+- `2026-10-17T21:14:02Z`: Added SwiftMesh dependency (0.0.10, as MetalSprocketsAddOns) and EmitterMesh(device:mesh:), which triangulates polygon faces (holes included) with Mesh.triangulate(). Tests cover a quad face, vertex emission, and a cube primitive.
 
 ---
 

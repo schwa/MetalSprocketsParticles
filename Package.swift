@@ -15,6 +15,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
         .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.6")),
         .package(url: "https://github.com/schwa/MetalCompilerPlugin", .upToNextMinor(from: "0.4.1")),
+        .package(url: "https://github.com/schwa/SwiftMesh", .upToNextMinor(from: "0.0.10")),
     ],
     targets: [
         .target(
@@ -22,6 +23,7 @@ let package = Package(
             dependencies: [
                 "MetalSprocketsParticlesShaders",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
+                .product(name: "SwiftMesh", package: "SwiftMesh"),
             ]
         ),
         .target(
@@ -37,6 +39,7 @@ let package = Package(
                 "MetalSprocketsParticles",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "GoldenImage", package: "GoldenImage"),
+                .product(name: "SwiftMesh", package: "SwiftMesh"),
             ],
             resources: [.copy("Golden Images")]
         ),

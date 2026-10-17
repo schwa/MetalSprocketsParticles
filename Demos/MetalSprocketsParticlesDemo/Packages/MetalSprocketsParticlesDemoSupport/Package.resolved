@@ -2,6 +2,15 @@
   "originHash" : "89dc0349159fea6bdcb51079d47f6b5970fee1fd924d84c465c32e626f022fc3",
   "pins" : [
     {
+      "identity" : "geometrylite2d",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/schwa/GeometryLite2D",
+      "state" : {
+        "revision" : "542e05566f76d4248f95a43d13c1ff771acb32fd",
+        "version" : "0.0.4"
+      }
+    },
+    {
       "identity" : "geometrylite3d",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/GeometryLite3D",
@@ -116,6 +125,15 @@
       "state" : {
         "revision" : "073633367a7d69e206693377082ef36570345022",
         "version" : "0.3.8"
+      }
+    },
+    {
+      "identity" : "swiftmesh",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/schwa/SwiftMesh",
+      "state" : {
+        "revision" : "72a67636ad7f088f75b4abdb7b5e8ee2cf9ee022",
+        "version" : "0.0.10"
       }
     }
   ],
