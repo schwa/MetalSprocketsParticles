@@ -9,7 +9,6 @@ struct RotationTests {
     func simulate(steps: Int, configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
         let runner = try Runner()
         var emitter = ParticleEmitter()
-        emitter.colliders = []
         emitter.lifetime = 10...10
         emitter.birthRate = 0
         configure(&emitter)

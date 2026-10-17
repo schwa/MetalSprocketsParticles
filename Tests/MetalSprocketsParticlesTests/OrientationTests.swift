@@ -48,7 +48,6 @@ struct OrientationTests {
         emitter.drag = 0
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        emitter.colliders = []
         emitter.colorOverLife = .constant([1, 1, 1, 1])
         emitter.sizeOverLife = .constant(0.3)
         emitter.orientation = orientation

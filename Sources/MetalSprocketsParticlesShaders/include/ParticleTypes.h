@@ -43,9 +43,14 @@ typedef struct {
     simd_float4 properties; // x = size scale, y = restitution offset, z = friction offset
 } Particle;
 
+// One emitter's settings for one simulation step. Each emitter owns a slice of the shared particle buffer.
 typedef struct {
     // Emitter-local to simulation space at the end of this step. Identity when simulating in local space.
     simd_float4x4 emitterTransform;
+    // Gravity, force fields, and colliders are in world space. These convert particles to world space for that part of
+    // the step and back. Identity for world-space emitters.
+    simd_float4x4 simulationToWorld;
+    simd_float4x4 worldToSimulation;
     // xyz = simulation-space translation of the emitter at the start of the step, so births within the step can be
     // placed along the emitter's path. w unused.
     simd_float4 previousEmitterOrigin;
@@ -53,7 +58,7 @@ typedef struct {
     simd_float4 inheritedVelocity;
     simd_float4 emitterPosition; // xyz, w = emitter radius
     simd_float4 emitterVelocity; // xyz = base velocity, w = spread
-    simd_float4 gravity;         // xyz, w = drag
+    simd_float4 gravity;         // xyz (world space), w = drag
     simd_float4 lifetime;        // x = min, y = max, w = deltaTime
     simd_float4 collision;       // x = restitution, y = friction, z = collider count
     simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
@@ -61,7 +66,7 @@ typedef struct {
     simd_float4 fields;          // x = force field count, y = simulation time (seconds)
     simd_float4 variation;       // +/- ranges: x = size (fraction), y = restitution, z = friction, w = speed
     simd_float4 colorVariation;  // +/- ranges: hue (turns), saturation, brightness, alpha
-    simd_uint4 random;           // x = seed, y = capacity
+    simd_uint4 random;           // x = seed, y = slice capacity, z = slice start in the shared buffer
     // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
     // w = nonzero to kill all particles before this step.
     simd_uint4 spawn;

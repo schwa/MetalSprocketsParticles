@@ -58,15 +58,17 @@ extension ParticleEmitter {
         }
         set { orientation = .velocityAligned(stretch: newValue) }
     }
+}
 
+extension [ForceField] {
     var turbulenceStrength: Float {
-        get { forceFieldStrength(of: .turbulence) }
-        set { setForceFieldStrength(newValue, of: .turbulence) }
+        get { strength(of: .turbulence) }
+        set { setStrength(newValue, of: .turbulence) }
     }
 
     var vortexStrength: Float {
-        get { forceFieldStrength(of: .vortex) }
-        set { setForceFieldStrength(newValue, of: .vortex) }
+        get { strength(of: .vortex) }
+        set { setStrength(newValue, of: .vortex) }
     }
 
     enum FieldKind {
@@ -74,8 +76,8 @@ extension ParticleEmitter {
         case vortex
     }
 
-    private func forceFieldStrength(of kind: FieldKind) -> Float {
-        for field in forceFields {
+    private func strength(of kind: FieldKind) -> Float {
+        for field in self {
             switch (kind, field) {
             case let (.turbulence, .turbulence(strength, _, _)), let (.vortex, .vortex(_, _, strength, _)):
                 return strength
@@ -87,8 +89,8 @@ extension ParticleEmitter {
     }
 
     /// Replaces the first field of `kind`, adds one if missing, and removes it when `strength` is 0.
-    private mutating func setForceFieldStrength(_ strength: Float, of kind: FieldKind) {
-        let index = forceFields.firstIndex { field in
+    private mutating func setStrength(_ strength: Float, of kind: FieldKind) {
+        let index = firstIndex { field in
             switch (kind, field) {
             case (.turbulence, .turbulence), (.vortex, .vortex): true
             default: false
@@ -99,9 +101,9 @@ extension ParticleEmitter {
         case .vortex: .vortex(center: .zero, strength: strength, radius: 2.5)
         }
         switch (index, strength == 0) {
-        case let (index?, true): forceFields.remove(at: index)
-        case let (index?, false): forceFields[index] = field
-        case (nil, false): forceFields.append(field)
+        case let (index?, true): remove(at: index)
+        case let (index?, false): self[index] = field
+        case (nil, false): append(field)
         case (nil, true): break
         }
     }

@@ -16,7 +16,6 @@ struct VariationTests {
         emitter.velocitySpread = 0
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        emitter.colliders = []
         configure(&emitter)
         let system = try ParticleSystem(device: runner.device, capacity: count, emitter: emitter, seed: 21)
         system.burst(count)
@@ -72,7 +71,6 @@ struct VariationTests {
             emitter.gravity = .zero
             emitter.lifetime = 10...10
             emitter.birthRate = 0
-            emitter.colliders = []
             emitter.colorOverLife = .constant([1, 0, 0, 1])
             emitter.sizeOverLife = .constant(0.08)
             emitter.colorVariation = [hueVariation, 0, 0, 0]

@@ -626,17 +626,20 @@ Defining an effect means creating a ParticleEmitter and setting many properties 
 ## 33: A particle system has only one emitter
 
 +++
-status: open
+status: closed
 priority: high
 kind: feature
 labels: effort:l, area:emission
 created: 2026-10-17T17:16:57Z
+updated: 2026-10-17T19:59:49Z
+closed: 2026-10-17T19:59:49Z
 +++
 
 Each ParticleSystem owns exactly one ParticleEmitter. Effects that combine parts (fire + smoke + embers, a fountain with spray and mist) need several systems, each with its own buffer, compute pass, draw call, and copy of the colliders and force fields. Overlapping systems draw in code order, so blending between them is wrong. A system should host many emitters that share one particle buffer, one simulation pass, and one set of scene colliders and force fields, with per-emitter settings (shape, rate, curves, texture, blend mode) and per-emitter transforms. Split out of #7, which now covers emitter shapes only. Related: #4 (sorting across emitters), #9 (sub-emitters), #29 (performance).
 
 - `2026-10-17T18:15:36Z`: Constraint from #30: presets carry colliders. A shared collider world must still be loadable from (and saved to) a preset.
 - `2026-10-17T19:34:40Z`: Colliders have two sources: presets (authoring, demo) and the app at runtime. Planned runtime source is MetalSprocketsSceneGraph scene-node geometry. The shared collider world should be fed per frame from the app, merged with any preset colliders.
+- `2026-10-17T19:59:49Z`: ParticleSystem now hosts any number of emitters (ParticleSystem.Emitter: settings, texture, transform, simulation space, burst, restart) in one shared buffer, one compute pass, and per-emitter draws. Colliders and force fields moved to the system as a shared world-space world, fed per frame by the app (simulate(colliders:)). Local-space emitters collide with world colliders. Single-emitter API kept as conveniences; emitter 0 reproduces old results exactly (all goldens unchanged). Preset collider loading is left to #30.
 
 ---
 

@@ -47,13 +47,14 @@ struct RenderCommand: ParsableCommand {
     func run() throws {
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
         let system = try ParticleSystem(device: renderer.device, capacity: particles, emitter: .fountain, seed: seed)
+        system.colliders = ParticleEmitter.fountainColliders(time: 0)
         let camera = simd_float4x4(lookingFrom: try parseVector(eye), at: try parseVector(target))
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
 
         var rendering: OffscreenRenderer.Rendering?
         for frame in 0..<max(frames, 1) {
             if animateColliders {
-                system.emitter.colliders = ParticleEmitter.fountainColliders(time: Float(frame) * deltaTime)
+                system.colliders = ParticleEmitter.fountainColliders(time: Float(frame) * deltaTime)
             }
             rendering = try renderer.render(Group {
                 try system.simulate(deltaTime: deltaTime)

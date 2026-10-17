@@ -19,9 +19,8 @@ struct ForceFieldTests {
         emitter.drag = 0
         emitter.lifetime = 100...100
         emitter.birthRate = 0
-        emitter.colliders = []
-        emitter.forceFields = fields
         let system = try ParticleSystem(device: runner.device, capacity: count, emitter: emitter, seed: 9)
+        system.forceFields = fields
         system.burst(count)
         for _ in 0..<steps {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

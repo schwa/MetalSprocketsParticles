@@ -11,6 +11,10 @@ final class ParticlesDemoModel {
         didSet { system?.emitter = emitter }
     }
 
+    var forceFields: [ForceField] = [] {
+        didSet { system?.forceFields = forceFields }
+    }
+
     var playback: SimulationState = .playing {
         didSet { system?.state = playback }
     }
@@ -27,7 +31,7 @@ final class ParticlesDemoModel {
     var animateColliders = true {
         didSet {
             if !animateColliders {
-                system?.emitter.colliders = emitter.colliders
+                system?.colliders = ParticleEmitter.fountainColliders(time: 0)
             }
         }
     }
@@ -36,6 +40,7 @@ final class ParticlesDemoModel {
 
     init(capacity: Int = 200_000) {
         system = try? ParticleSystem(capacity: capacity, emitter: .fountain)
+        system?.colliders = ParticleEmitter.fountainColliders(time: 0)
     }
 
     func restart() {
@@ -49,5 +54,6 @@ final class ParticlesDemoModel {
 
     func resetEmitter() {
         emitter = .fountain
+        forceFields = []
     }
 }

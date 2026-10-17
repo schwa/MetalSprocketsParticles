@@ -19,12 +19,16 @@ struct GoldenImageTests {
         seed: UInt32 = 0,
         frames: Int,
         colliders: Bool = true,
+        worldColliders: [Collider] = ParticleEmitter.fountainColliders(time: 0),
+        forceFields: [ForceField] = [],
         configure: (ParticleSystem) throws -> Void = { _ in },
         perFrame: (ParticleSystem, Int) -> Void = { _, _ in }
     ) throws -> CGImage {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
         let system = try ParticleSystem(device: renderer.device, capacity: 50_000, emitter: emitter, seed: seed)
+        system.colliders = worldColliders
+        system.forceFields = forceFields
         try configure(system)
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
@@ -73,6 +77,7 @@ struct GoldenImageTests {
         let size = CGSize(width: 160, height: 90)
         let renderer = try OffscreenRenderer(size: size)
         let system = try ParticleSystem(device: renderer.device, capacity: 5_000, emitter: .fountain, seed: 0)
+        system.colliders = ParticleEmitter.fountainColliders(time: 0)
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
         for _ in 0..<60 {
@@ -88,13 +93,12 @@ struct GoldenImageTests {
     }
 
     @Test func rotatedBoxAndCapsule() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.colliders = [
+        let colliders: [Collider] = [
             .plane(normal: [0, 1, 0], distance: 0),
             .box(center: [0, 2.6, 0], halfExtents: [0.8, 0.1, 0.5], rotation: simd_quatf(angle: 0.5, axis: [0, 0, 1])),
             .capsule(start: [-1.5, 0.3, 0.5], end: [1.5, 0.3, -0.5], radius: 0.25),
         ]
-        #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "rotated-box-and-capsule"))
+        #expect(try render(frames: 120, worldColliders: colliders).matchesGolden(named: "rotated-box-and-capsule"))
     }
 
     @Test func texturedSpinningSprites() throws {
@@ -150,13 +154,11 @@ struct GoldenImageTests {
     }
 
     @Test func forceFields() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
-        emitter.forceFields = [
+        let fields: [ForceField] = [
             .vortex(center: .zero, strength: 6, radius: 2.5),
             .turbulence(strength: 4, scale: 1.2, speed: 0.5),
         ]
-        #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "force-fields"))
+        #expect(try render(frames: 120, worldColliders: [.plane(normal: [0, 1, 0], distance: 0)], forceFields: fields).matchesGolden(named: "force-fields"))
     }
 
     @Test func velocityStretchedSparks() throws {
@@ -188,14 +190,69 @@ struct GoldenImageTests {
         emitter.gravity = [0, -0.5, 0]
         emitter.birthRate = 8_000
         emitter.inheritVelocity = 0.3
-        emitter.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
-        let image = try render(emitter: emitter, frames: 120, perFrame: { system, frame in
+        let image = try render(emitter: emitter, frames: 120, worldColliders: [.plane(normal: [0, 1, 0], distance: 0)], perFrame: { system, frame in
             let angle = Float(frame) / 60 * 2.5
             var transform = matrix_identity_float4x4
             transform.columns.3 = [cos(angle) * 1.5, 1.5, sin(angle) * 1.5, 1]
             system.transform = transform
         })
         #expect(try image.matchesGolden(named: "moving-emitter-trail"))
+    }
+
+    @Test func fireSmokeAndEmbers() throws {
+        var fire = ParticleEmitter()
+        fire.position = [0, 0.1, 0]
+        fire.radius = 0.25
+        fire.velocity = [0, 1.2, 0]
+        fire.velocitySpread = 0.3
+        fire.gravity = [0, 1, 0]
+        fire.lifetime = 0.5...1
+        fire.birthRate = 6_000
+        fire.blendMode = .additive
+        fire.sizeOverLife = ParticleCurve([.init(0, 0.06), .init(0.4, 0.1), .init(1, 0.02)])
+        fire.colorOverLife = ParticleCurve([
+            .init(0, [1, 0.9, 0.5, 0.6]),
+            .init(0.4, [1, 0.4, 0.05, 0.4]),
+            .init(1, [0.4, 0.05, 0.02, 0]),
+        ])
+
+        var smoke = ParticleEmitter()
+        smoke.position = [0, 1, 0]
+        smoke.radius = 0.2
+        smoke.velocity = [0, 0.8, 0]
+        smoke.velocitySpread = 0.25
+        smoke.gravity = [0, 0.2, 0]
+        smoke.lifetime = 2...3.5
+        smoke.birthRate = 400
+        smoke.sizeOverLife = .linear(from: 0.1, to: 0.45)
+        smoke.colorOverLife = .linear(from: [0.25, 0.25, 0.27, 0.25], to: [0.4, 0.4, 0.42, 0])
+        smoke.warmupDuration = 2
+
+        var embers = ParticleEmitter()
+        embers.position = [0, 0.3, 0]
+        embers.radius = 0.2
+        embers.velocity = [0, 3, 0]
+        embers.velocitySpread = 1
+        embers.gravity = [0, -1, 0]
+        embers.lifetime = 1...2.5
+        embers.birthRate = 150
+        embers.blendMode = .additive
+        embers.orientation = .velocityAligned(stretch: 0.6)
+        embers.sizeOverLife = .constant(0.012)
+        embers.colorOverLife = .linear(from: [1, 0.6, 0.2, 1], to: [1, 0.2, 0.05, 0])
+
+        let image = try render(
+            emitter: smoke,
+            frames: 120,
+            colliders: false,
+            worldColliders: [],
+            forceFields: [.turbulence(strength: 1.5, scale: 1.5, speed: 0.6)]
+        ) { system in
+            // Smoke first so the additive fire and embers draw over it.
+            try system.addEmitter(fire, capacity: 50_000)
+            try system.addEmitter(embers, capacity: 5_000)
+        }
+        #expect(try image.matchesGolden(named: "fire-smoke-embers"))
     }
 
     @Test func fountainWithoutColliderWireframes() throws {

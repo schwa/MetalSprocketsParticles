@@ -37,18 +37,18 @@ struct InspectorAdapterTests {
     }
 
     @Test func forceFieldStrengthAddsUpdatesAndRemoves() {
-        var emitter = ParticleEmitter()
-        emitter.turbulenceStrength = 3
-        emitter.vortexStrength = -2
-        #expect(emitter.forceFields.count == 2)
-        #expect(emitter.turbulenceStrength == 3)
-        #expect(emitter.vortexStrength == -2)
-        emitter.turbulenceStrength = 5
-        #expect(emitter.forceFields.count == 2)
-        #expect(emitter.turbulenceStrength == 5)
-        emitter.turbulenceStrength = 0
-        #expect(emitter.forceFields.count == 1)
-        #expect(emitter.turbulenceStrength == 0)
+        var fields: [ForceField] = []
+        fields.turbulenceStrength = 3
+        fields.vortexStrength = -2
+        #expect(fields.count == 2)
+        #expect(fields.turbulenceStrength == 3)
+        #expect(fields.vortexStrength == -2)
+        fields.turbulenceStrength = 5
+        #expect(fields.count == 2)
+        #expect(fields.turbulenceStrength == 5)
+        fields.turbulenceStrength = 0
+        #expect(fields.count == 1)
+        #expect(fields.turbulenceStrength == 0)
     }
 
     @Test func orientationKindKeepsStretch() {

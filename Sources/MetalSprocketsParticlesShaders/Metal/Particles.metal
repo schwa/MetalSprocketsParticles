@@ -118,8 +118,10 @@ kernel void updateParticles(
     constant SimulationUniforms &uniforms [[buffer(1)]],
     constant ColliderData *colliders [[buffer(2)]],
     constant ForceFieldData *forceFields [[buffer(3)]],
-    uint id [[thread_position_in_grid]]
+    uint localID [[thread_position_in_grid]]
 ) {
+    // Each dispatch covers one emitter's slice of the shared buffer.
+    uint id = uniforms.random.z + localID;
     Particle p = particles[id];
     float dt = uniforms.lifetime.w;
     uint capacity = uniforms.random.y;
@@ -131,7 +133,7 @@ kernel void updateParticles(
 
     // Particles spawn into a ring: this step owns `spawn.y` slots starting at the cursor. The oldest particles get
     // recycled first. Randomness comes from the spawn serial, not the slot, so results do not depend on thread order.
-    uint offset = (id + capacity - uniforms.spawn.x) % capacity;
+    uint offset = (localID + capacity - uniforms.spawn.x) % capacity;
     if (offset < uniforms.spawn.y) {
         Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
         float3 position = uniforms.emitterPosition.xyz + rng.inUnitSphere() * uniforms.emitterPosition.w;
@@ -175,8 +177,9 @@ kernel void updateParticles(
     }
     age += dt;
 
-    float3 position = p.position.xyz;
-    float3 velocity = p.velocity.xyz;
+    // Gravity, force fields, and colliders are in world space.
+    float3 position = (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz;
+    float3 velocity = (uniforms.simulationToWorld * float4(p.velocity.xyz, 0)).xyz;
     velocity += uniforms.gravity.xyz * dt;
     uint fieldCount = uint(uniforms.fields.x);
     float3 acceleration = 0;
@@ -230,6 +233,8 @@ kernel void updateParticles(
         }
     }
 
+    position = (uniforms.worldToSimulation * float4(position, 1)).xyz;
+    velocity = (uniforms.worldToSimulation * float4(velocity, 0)).xyz;
     p.position = float4(position, age);
     p.velocity = float4(velocity, lifetime);
     particles[id] = p;

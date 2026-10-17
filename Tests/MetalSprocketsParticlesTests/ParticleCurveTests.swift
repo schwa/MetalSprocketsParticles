@@ -61,7 +61,6 @@ struct ParticleCurveGPUTests {
         emitter.gravity = .zero
         emitter.lifetime = 1...1
         emitter.birthRate = 0
-        emitter.colliders = []
         emitter.sizeOverLife = .constant(0.5)
         configure(&emitter)
         let system = try ParticleSystem(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)

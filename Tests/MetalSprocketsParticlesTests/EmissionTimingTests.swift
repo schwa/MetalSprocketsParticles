@@ -86,7 +86,6 @@ struct EmissionGPUTests {
     func makeSystem(_ configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystem {
         var emitter = ParticleEmitter()
         emitter.lifetime = 5...5
-        emitter.colliders = []
         emitter.birthRate = 600
         configure(&emitter)
         return try ParticleSystem(device: runner.device, capacity: 10_000, emitter: emitter, seed: 3)

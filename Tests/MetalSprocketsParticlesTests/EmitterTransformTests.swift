@@ -23,7 +23,6 @@ struct EmitterTransformTests {
         emitter.drag = 0
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        emitter.colliders = []
         configure(&emitter)
         return try ParticleSystem(device: runner.device, capacity: count, emitter: emitter, seed: 8)
     }
@@ -97,7 +96,6 @@ struct EmitterTransformTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        emitter.colliders = []
         emitter.colorOverLife = .constant([1, 1, 1, 1])
         emitter.sizeOverLife = .constant(0.1)
         let system = try ParticleSystem(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)

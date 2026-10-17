@@ -18,8 +18,8 @@ struct ColliderShapeTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        emitter.colliders = [collider]
         let system = try ParticleSystem(device: runner.device, capacity: 64, emitter: emitter, seed: 4)
+        system.colliders = [collider]
         system.burst(64)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)

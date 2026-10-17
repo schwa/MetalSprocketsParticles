@@ -41,8 +41,8 @@ struct EmitterInspectorView: View {
                 ParameterSliderView("Speed Variation", value: $model.emitter.speedVariation, in: 0...10)
                 ParameterSliderView("Gravity", value: $model.emitter.gravityY, in: -20...20)
                 ParameterSliderView("Drag", value: $model.emitter.drag, in: 0...5)
-                ParameterSliderView("Turbulence", value: $model.emitter.turbulenceStrength, in: 0...20)
-                ParameterSliderView("Vortex", value: $model.emitter.vortexStrength, in: -20...20)
+                ParameterSliderView("Turbulence", value: $model.forceFields.turbulenceStrength, in: 0...20)
+                ParameterSliderView("Vortex", value: $model.forceFields.vortexStrength, in: -20...20)
             }
 
             Section("Appearance") {

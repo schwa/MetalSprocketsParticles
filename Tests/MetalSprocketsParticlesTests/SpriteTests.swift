@@ -65,7 +65,6 @@ struct SpriteTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        emitter.colliders = []
         emitter.colorStart = [1, 1, 1, 1]
         emitter.colorEnd = [1, 1, 1, 1]
         emitter.sizeStart = 0.5

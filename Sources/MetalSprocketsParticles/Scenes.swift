@@ -1,13 +1,12 @@
 import simd
 
 public extension ParticleEmitter {
-    /// The demo scene: a fountain falling onto a ground plane, a sphere, and two boxes.
+    /// The demo fountain. Pair it with `fountainColliders(time:)` on the system.
     static var fountain: ParticleEmitter {
         var emitter = ParticleEmitter()
         emitter.position = [0, 0.5, 0]
         emitter.velocity = [0, 5, 0]
         emitter.birthRate = 20_000
-        emitter.colliders = fountainColliders(time: 0)
         return emitter
     }
 
