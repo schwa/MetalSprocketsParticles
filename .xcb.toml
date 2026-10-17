@@ -1,0 +1,3 @@
+[defaults]
+scheme = "MetalSprocketsParticlesDemo"
+skip_plugin_validation = true
