@@ -3,6 +3,9 @@
 #import <simd/simd.h>
 #import "MetalSprocketsShaders.h"
 
+/// Samples per over-life lookup table (color, size).
+#define PARTICLE_CURVE_SAMPLES 64
+
 typedef MS_ENUM(uint32_t, ParticleBlendMode) {
     /// Premultiplied alpha over the destination.
     ParticleBlendModeAlpha = 0,
@@ -28,7 +31,7 @@ typedef MS_ENUM(uint32_t, ParticleImageSequenceMode) {
 typedef struct {
     simd_float4 position; // xyz, w = age
     simd_float4 velocity; // xyz, w = lifetime (0 = never spawned). Dead when age >= lifetime.
-    simd_float4 color;
+    simd_float4 color;    // Per-particle tint, multiplied with the color-over-life curve.
     simd_float4 rotation; // x = angle (radians), y = angular velocity (radians per second), z = initial frame, w = frame rate
 } Particle;
 
@@ -37,8 +40,6 @@ typedef struct {
     simd_float4 emitterVelocity; // xyz = base velocity, w = spread
     simd_float4 gravity;         // xyz, w = drag
     simd_float4 lifetime;        // x = min, y = max, w = deltaTime
-    simd_float4 colorStart;
-    simd_float4 colorEnd;
     simd_float4 collision;       // x = restitution, y = friction, z = collider count
     simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
     simd_float4 imageSequence;   // x = initial frame, y = initial frame variation, z = frame rate, w = frame rate variation
@@ -62,7 +63,6 @@ typedef struct {
     simd_float4x4 viewProjection;
     simd_float4 cameraRight;
     simd_float4 cameraUp;
-    simd_float4 size; // x = start size, y = end size
     simd_uint4 options; // x = ParticleBlendMode, y = has texture, z = sheet columns, w = sheet rows
     simd_uint4 imageSequence; // x = frame count, y = ParticleImageSequenceMode
 } RenderUniforms;

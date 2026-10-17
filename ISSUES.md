@@ -99,17 +99,19 @@ Particles are always a soft round dot. No texture, sprite sheet animation, or ro
 ## 6: Over-life properties are linear only
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:simulation
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T16:12:16Z
+closed: 2026-10-17T16:12:16Z
 +++
 
 Color and size only lerp between start and end. RealityKit/SceneKit-class systems need curves and gradients.
 
 - `2026-10-17T14:02:37Z`: Doc review: RealityKit has colorEvolutionPower, sizeMultiplierAtEndOfLifespan(+Power), opacityCurve presets, and a start/end or evolving ParticleColor. SceneKit uses propertyControllers with CAAnimation-driven curves for any property.
+- `2026-10-17T16:12:16Z`: Added ParticleCurve (keyframed, linear between keys, .constant/.linear/.power helpers). ParticleEmitter has colorOverLife, sizeOverLife, opacityOverLife; colorStart/End and sizeStart/End now edit the first/last keyframes. Curves bake to 64-sample GPU tables read in the vertex shader. Existing goldens unchanged.
 
 ---
 

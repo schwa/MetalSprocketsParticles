@@ -73,6 +73,7 @@ kernel void updateParticles(
         float initialFrame = max(0.0, uniforms.imageSequence.x + (rng.next() * 2 - 1) * uniforms.imageSequence.y);
         float frameRate = uniforms.imageSequence.z + (rng.next() * 2 - 1) * uniforms.imageSequence.w;
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
+        p.color = float4(1);
     }
 
     float lifetime = p.velocity.w;
@@ -134,9 +135,15 @@ kernel void updateParticles(
 
     p.position = float4(position, age);
     p.velocity = float4(velocity, lifetime);
-    float t = saturate(age / lifetime);
-    p.color = mix(uniforms.colorStart, uniforms.colorEnd, t);
     particles[id] = p;
+}
+
+// Linear lookup into a PARTICLE_CURVE_SAMPLES-entry table covering normalized life 0...1.
+template <typename T>
+static T sampleCurve(constant T *curve, float t) {
+    float x = saturate(t) * (PARTICLE_CURVE_SAMPLES - 1);
+    uint index = min(uint(x), uint(PARTICLE_CURVE_SAMPLES - 2));
+    return mix(curve[index], curve[index + 1], x - float(index));
 }
 
 struct VertexOut {
@@ -170,7 +177,9 @@ vertex VertexOut particleVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
     const device Particle *particles [[buffer(0)]],
-    constant RenderUniforms &uniforms [[buffer(1)]]
+    constant RenderUniforms &uniforms [[buffer(1)]],
+    constant float4 *colorCurve [[buffer(2)]],
+    constant float *sizeCurve [[buffer(3)]]
 ) {
     const float2 corners[4] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(1, 1) };
     Particle p = particles[instanceID];
@@ -185,7 +194,7 @@ vertex VertexOut particleVertex(
         return out;
     }
     float t = saturate(age / lifetime);
-    float size = mix(uniforms.size.x, uniforms.size.y, t);
+    float size = sampleCurve(sizeCurve, t);
     float2 corner = corners[vertexID];
     // Rotate the quad, not the UVs, so textures spin with it.
     float s = sin(p.rotation.x);
@@ -193,7 +202,7 @@ vertex VertexOut particleVertex(
     float2 offset = float2(c * corner.x - s * corner.y, s * corner.x + c * corner.y);
     float3 world = p.position.xyz + (uniforms.cameraRight.xyz * offset.x + uniforms.cameraUp.xyz * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
-    out.color = p.color;
+    out.color = p.color * sampleCurve(colorCurve, t);
     out.uv = corner;
     uint columns = max(uniforms.options.z, 1u);
     uint rows = max(uniforms.options.w, 1u);

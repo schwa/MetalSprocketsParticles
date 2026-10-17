@@ -133,6 +133,20 @@ struct GoldenImageTests {
         #expect(try image.matchesGolden(named: "sprite-sheet-animation"))
     }
 
+    @Test func overLifeCurves() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.colorOverLife = ParticleCurve([
+            .init(0, [1, 1, 0.8, 1]),
+            .init(0.15, [1, 0.6, 0.1, 1]),
+            .init(0.5, [0.8, 0.15, 0.05, 1]),
+            .init(1, [0.2, 0.2, 0.25, 1]),
+        ])
+        // Puff up, then shrink away.
+        emitter.sizeOverLife = ParticleCurve([.init(0, 0.01), .init(0.3, 0.06), .init(1, 0.005)])
+        emitter.opacityOverLife = .power(from: 1, to: 0, exponent: 3)
+        #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "over-life-curves"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }

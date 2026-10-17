@@ -57,10 +57,33 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var velocity: SIMD3<Float> = [0, 4, 0]
     public var velocitySpread: Float = 1.5
     public var lifetime: ClosedRange<Float> = 1.5...3
-    public var colorStart: SIMD4<Float> = [1, 0.7, 0.2, 1]
-    public var colorEnd: SIMD4<Float> = [0.8, 0.1, 0.05, 0]
-    public var sizeStart: Float = 0.04
-    public var sizeEnd: Float = 0.01
+    /// Color by normalized age. Alpha is further multiplied by `opacityOverLife`.
+    public var colorOverLife = ParticleCurve<SIMD4<Float>>.linear(from: [1, 0.7, 0.2, 1], to: [0.8, 0.1, 0.05, 0])
+    /// Half-width of the quad in world units, by normalized age.
+    public var sizeOverLife = ParticleCurve<Float>.linear(from: 0.04, to: 0.01)
+    /// Multiplies color alpha by normalized age.
+    public var opacityOverLife = ParticleCurve<Float>.constant(1)
+
+    /// First keyframe of `colorOverLife`.
+    public var colorStart: SIMD4<Float> {
+        get { colorOverLife.start }
+        set { colorOverLife.start = newValue }
+    }
+    /// Last keyframe of `colorOverLife`.
+    public var colorEnd: SIMD4<Float> {
+        get { colorOverLife.end }
+        set { colorOverLife.end = newValue }
+    }
+    /// First keyframe of `sizeOverLife`.
+    public var sizeStart: Float {
+        get { sizeOverLife.start }
+        set { sizeOverLife.start = newValue }
+    }
+    /// Last keyframe of `sizeOverLife`.
+    public var sizeEnd: Float {
+        get { sizeOverLife.end }
+        set { sizeOverLife.end = newValue }
+    }
     public var gravity: SIMD3<Float> = [0, -9.8, 0]
     public var drag: Float = 0.1
     public var restitution: Float = 0.4
@@ -215,8 +238,6 @@ public final class ParticleSystem {
             emitterVelocity: SIMD4(emitter.velocity, emitter.velocitySpread),
             gravity: SIMD4(emitter.gravity, emitter.drag),
             lifetime: [emitter.lifetime.lowerBound, emitter.lifetime.upperBound, 0, 0],
-            colorStart: emitter.colorStart,
-            colorEnd: emitter.colorEnd,
             collision: [emitter.restitution, emitter.friction, Float(emitter.colliders.count), 0],
             rotation: [emitter.angle, emitter.angleVariation, emitter.angularSpeed, emitter.angularSpeedVariation],
             imageSequence: emitter.imageSequence.map {
@@ -273,12 +294,15 @@ public final class ParticleSystem {
     /// Draws the particles as camera-facing billboards. Place inside a `RenderPass`.
     public func render(projection: simd_float4x4, view: simd_float4x4) throws -> some Element {
         let sequence = texture == nil ? ImageSequence() : emitter.imageSequence ?? ImageSequence()
+        let opacity = emitter.opacityOverLife.baked()
+        let colorCurve = zip(emitter.colorOverLife.baked(), opacity).map { color, opacity in
+            SIMD4(color.x, color.y, color.z, color.w * opacity)
+        }
         let cameraToWorld = view.inverse
         let uniforms = RenderUniforms(
             viewProjection: projection * view,
             cameraRight: SIMD4(simd_normalize(cameraToWorld.columns.0.xyz), 0),
             cameraUp: SIMD4(simd_normalize(cameraToWorld.columns.1.xyz), 0),
-            size: [emitter.sizeStart, emitter.sizeEnd, 0, 0],
             options: [
                 emitter.blendMode.rawValue,
                 texture == nil ? 0 : 1,
@@ -296,6 +320,8 @@ public final class ParticleSystem {
         }
         .parameter("particles", buffer: buffer)
         .parameter("uniforms", value: uniforms)
+        .parameter("colorCurve", values: colorCurve)
+        .parameter("sizeCurve", values: emitter.sizeOverLife.baked())
         .parameter("sprite", texture: texture ?? placeholderTexture)
         .parameter("spriteSampler", samplerState: sampler)
         .renderPipelineDescriptorTransformer { descriptor in
