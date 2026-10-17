@@ -83,7 +83,7 @@ public extension ParticleSystem {
     /// Draws the emitter's colliders as flat-colored wireframes. Place inside a `RenderPass`.
     func renderColliders(projection: simd_float4x4, view: simd_float4x4, color: SIMD4<Float> = [0.4, 0.6, 1, 1]) throws -> some Element {
         let vertices = emitter.colliders.flatMap(\.wireframe)
-        let uniforms = WireframeUniforms(viewProjection: projection * view, color: color)
+        let uniforms = WireframeUniforms(viewProjection: projection * view * modelTransform, color: color)
         return try RenderPipeline(vertexShader: library.wireframeVertex, fragmentShader: library.wireframeFragment) {
             Draw { encoder in
                 if !vertices.isEmpty {

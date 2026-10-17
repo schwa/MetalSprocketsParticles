@@ -19,7 +19,8 @@ struct GoldenImageTests {
         seed: UInt32 = 0,
         frames: Int,
         colliders: Bool = true,
-        configure: (ParticleSystem) throws -> Void = { _ in }
+        configure: (ParticleSystem) throws -> Void = { _ in },
+        perFrame: (ParticleSystem, Int) -> Void = { _, _ in }
     ) throws -> CGImage {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
@@ -28,7 +29,8 @@ struct GoldenImageTests {
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
         var rendering: OffscreenRenderer.Rendering?
-        for _ in 0..<frames {
+        for frame in 0..<frames {
+            perFrame(system, frame)
             rendering = try renderer.render(Group {
                 try system.simulate(deltaTime: 1.0 / 60.0)
                 try RenderPass {
@@ -177,6 +179,23 @@ struct GoldenImageTests {
         emitter.colorVariation = [0.15, 0.3, 0.2, 0]
         emitter.restitutionVariation = 0.3
         #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "birth-variation"))
+    }
+
+    @Test func movingEmitterTrail() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.velocity = [0, 0.5, 0]
+        emitter.velocitySpread = 0.3
+        emitter.gravity = [0, -0.5, 0]
+        emitter.birthRate = 8_000
+        emitter.inheritVelocity = 0.3
+        emitter.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
+        let image = try render(emitter: emitter, frames: 120, perFrame: { system, frame in
+            let angle = Float(frame) / 60 * 2.5
+            var transform = matrix_identity_float4x4
+            transform.columns.3 = [cos(angle) * 1.5, 1.5, sin(angle) * 1.5, 1]
+            system.transform = transform
+        })
+        #expect(try image.matchesGolden(named: "moving-emitter-trail"))
     }
 
     @Test func fountainWithoutColliderWireframes() throws {

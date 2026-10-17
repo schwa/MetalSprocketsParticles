@@ -121,6 +121,9 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var birthRate: Float = 1_000
     /// Offset range for `birthRate`, picked once per emission cycle (once overall when emission does not loop).
     public var birthRateVariation: Float = 0
+    /// Fraction of the emitter's own velocity (from `ParticleSystem.transform` motion) given to newborn particles.
+    /// World simulation space only.
+    public var inheritVelocity: Float = 0
     /// Seconds of emission per cycle. `nil` emits forever.
     public var emissionDuration: Float?
     /// Seconds without emission after each emission period. Only used when `emissionDuration` is set.
@@ -172,6 +175,15 @@ public final class ParticleSystem {
     }
     /// Turns emission off without affecting existing particles.
     public var isEmitting = true
+    /// Emitter-to-world transform. Emitter position, velocity, and shape are in this space.
+    public var transform = matrix_identity_float4x4
+    public var simulationSpace: SimulationSpace = .world
+    private var previousTransform: simd_float4x4?
+
+    /// Simulation space to world: the emitter transform in local space, identity in world space.
+    var modelTransform: simd_float4x4 {
+        simulationSpace == .local ? transform : matrix_identity_float4x4
+    }
     /// Multiplies simulation time. 2 runs twice as fast; 0.5 is slow motion.
     public var speedFactor: Float = 1
 
@@ -237,8 +249,20 @@ public final class ParticleSystem {
         }
     }
 
-    private func makeStep(deltaTime: Float) -> SimulationUniforms {
+    /// Where the emitter is in simulation space for one step.
+    private struct EmitterMotion {
+        var transform = matrix_identity_float4x4
+        var previousOrigin: SIMD3<Float> = .zero
+        var inheritedVelocity: SIMD3<Float> = .zero
+
+        static let still = EmitterMotion()
+    }
+
+    private func makeStep(deltaTime: Float, motion: EmitterMotion) -> SimulationUniforms {
         var uniforms = simulationUniforms
+        uniforms.emitterTransform = motion.transform
+        uniforms.previousEmitterOrigin = SIMD4(motion.previousOrigin, 0)
+        uniforms.inheritedVelocity = SIMD4(motion.inheritedVelocity, 0)
         let playing = state == .playing
         let deltaTime = playing ? deltaTime : 0
         let spawn = playing
@@ -254,6 +278,9 @@ public final class ParticleSystem {
 
     var simulationUniforms: SimulationUniforms {
         SimulationUniforms(
+            emitterTransform: matrix_identity_float4x4,
+            previousEmitterOrigin: .zero,
+            inheritedVelocity: .zero,
             emitterPosition: SIMD4(emitter.position, emitter.radius),
             emitterVelocity: SIMD4(emitter.velocity, emitter.velocitySpread),
             gravity: SIMD4(emitter.gravity, emitter.drag),
@@ -278,17 +305,30 @@ public final class ParticleSystem {
         if let colliders {
             emitter.colliders = colliders
         }
+        let frameDeltaTime = min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)
+        // In local space the emitter is the origin of its own space and never moves.
+        let spawnTransform = simulationSpace == .world ? transform : matrix_identity_float4x4
+        let origin = spawnTransform.columns.3.xyz
+        let previousOrigin = simulationSpace == .world ? (previousTransform?.columns.3.xyz ?? origin) : origin
+        previousTransform = transform
+        let emitterVelocity = frameDeltaTime > 0 ? (origin - previousOrigin) / frameDeltaTime : .zero
+        let still = EmitterMotion(transform: spawnTransform, previousOrigin: origin)
+
         var steps: [SimulationUniforms] = []
         if needsWarmup {
             needsWarmup = false
             let warmupStep: Float = 1.0 / 60.0
             var remaining = emitter.warmupDuration
             while remaining > 0 {
-                steps.append(makeStep(deltaTime: min(warmupStep, remaining)))
+                steps.append(makeStep(deltaTime: min(warmupStep, remaining), motion: still))
                 remaining -= warmupStep
             }
         }
-        steps.append(makeStep(deltaTime: min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)))
+        steps.append(makeStep(deltaTime: frameDeltaTime, motion: EmitterMotion(
+            transform: spawnTransform,
+            previousOrigin: previousOrigin,
+            inheritedVelocity: emitterVelocity * emitter.inheritVelocity
+        )))
 
         let colliders = colliderData(deltaTime: steps.last?.lifetime.w ?? 0)
         let forceFields = emitter.forceFields.map(ForceFieldData.init)
@@ -326,6 +366,7 @@ public final class ParticleSystem {
         let cameraToWorld = view.inverse
         let uniforms = RenderUniforms(
             viewProjection: projection * view,
+            model: modelTransform,
             cameraRight: SIMD4(simd_normalize(cameraToWorld.columns.0.xyz), 0),
             cameraUp: SIMD4(simd_normalize(cameraToWorld.columns.1.xyz), 0),
             options: [

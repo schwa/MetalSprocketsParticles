@@ -44,6 +44,13 @@ typedef struct {
 } Particle;
 
 typedef struct {
+    // Emitter-local to simulation space at the end of this step. Identity when simulating in local space.
+    simd_float4x4 emitterTransform;
+    // xyz = simulation-space translation of the emitter at the start of the step, so births within the step can be
+    // placed along the emitter's path. w unused.
+    simd_float4 previousEmitterOrigin;
+    // xyz = velocity added to every newborn particle (inherited emitter velocity), in simulation space.
+    simd_float4 inheritedVelocity;
     simd_float4 emitterPosition; // xyz, w = emitter radius
     simd_float4 emitterVelocity; // xyz = base velocity, w = spread
     simd_float4 gravity;         // xyz, w = drag
@@ -80,6 +87,8 @@ typedef struct {
 
 typedef struct {
     simd_float4x4 viewProjection;
+    // Simulation space to world. The emitter transform when simulating in local space, otherwise identity.
+    simd_float4x4 model;
     simd_float4 cameraRight;
     simd_float4 cameraUp;
     simd_uint4 options; // x = ParticleBlendMode, y = has texture, z = sheet columns, w = sheet rows

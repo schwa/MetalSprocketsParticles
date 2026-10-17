@@ -138,7 +138,8 @@ kernel void updateParticles(
         float3 velocity = uniforms.emitterVelocity.xyz + rng.inUnitSphere() * uniforms.emitterVelocity.w;
         float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
-        dt *= rng.next();
+        float birthAge = rng.next();
+        dt *= birthAge;
         // New draws go after existing ones, so adding a property does not change earlier random streams.
         float angle = uniforms.rotation.x + (rng.next() * 2 - 1) * uniforms.rotation.y;
         float angularVelocity = uniforms.rotation.z + (rng.next() * 2 - 1) * uniforms.rotation.w;
@@ -154,6 +155,11 @@ kernel void updateParticles(
             velocity *= max(0.0, speed + speedOffset) / speed;
         }
         float4 colorOffset = float4(rng.next(), rng.next(), rng.next(), rng.next()) * 2 - 1;
+        // Emitter-local to simulation space. Particles born earlier in the step start further back along the
+        // emitter's path, so fast-moving emitters leave continuous trails instead of clumps.
+        position = (uniforms.emitterTransform * float4(position, 1)).xyz;
+        position += (uniforms.previousEmitterOrigin.xyz - uniforms.emitterTransform[3].xyz) * birthAge;
+        velocity = (uniforms.emitterTransform * float4(velocity, 0)).xyz + uniforms.inheritedVelocity.xyz;
         p.position = float4(position, 0);
         p.velocity = float4(velocity, lifetime);
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
@@ -317,7 +323,8 @@ vertex VertexOut particleVertex(
     float3 right = uniforms.cameraRight.xyz;
     float3 up = uniforms.cameraUp.xyz;
     float stretch = 1;
-    float3 toCamera = uniforms.cameraPosition.xyz - p.position.xyz;
+    float3 center = (uniforms.model * float4(p.position.xyz, 1)).xyz;
+    float3 toCamera = uniforms.cameraPosition.xyz - center;
     switch (uniforms.orientationMode.x) {
     case ParticleOrientationModeYAligned: {
         float3 side = cross(float3(0, 1, 0), toCamera);
@@ -328,7 +335,7 @@ vertex VertexOut particleVertex(
         break;
     }
     case ParticleOrientationModeVelocityAligned: {
-        float3 velocity = p.velocity.xyz;
+        float3 velocity = (uniforms.model * float4(p.velocity.xyz, 0)).xyz;
         float speed = length(velocity);
         float3 side = cross(velocity, toCamera);
         // Moving straight at the camera, or not moving: fall back to a billboard.
@@ -355,7 +362,7 @@ vertex VertexOut particleVertex(
     float c = cos(p.rotation.x);
     float2 stretched = float2(corner.x, corner.y * stretch);
     float2 offset = float2(c * stretched.x - s * stretched.y, s * stretched.x + c * stretched.y);
-    float3 world = p.position.xyz + (right * offset.x + up * offset.y) * size;
+    float3 world = center + (right * offset.x + up * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = applyColorVariation(sampleCurve(colorCurve, t), p.color);
     out.uv = corner;

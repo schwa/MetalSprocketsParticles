@@ -388,15 +388,18 @@ The emitter always emits continuously at full capacity. Missing: birth rate inde
 ## 22: No emitter transform or simulation space
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:emission
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T16:51:12Z
+closed: 2026-10-17T16:51:12Z
 +++
 
 The emitter has a position but no rotation, scale, or parent transform, and there is no choice of local vs world simulation space. SceneKit has isLocal; RealityKit has particlesInheritTransform and fieldSimulationSpace. Moving emitters (trails, rockets) need this.
+
+- `2026-10-17T16:51:12Z`: Added ParticleSystem.transform and simulationSpace (.world / .local), ParticleEmitter.inheritVelocity, and spawn interpolation along the emitter's path so fast emitters leave continuous trails. In local space, gravity/colliders/fields are emitter-local and wireframes draw through the transform. Rotation is not turned into inherited velocity.
 
 ---
 
