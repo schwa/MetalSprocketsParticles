@@ -77,6 +77,7 @@ Alpha-blended particles draw in buffer order, which is wrong for non-additive bl
 - `2026-10-17T14:02:37Z`: Doc review: SceneKit sortingMode (none, projectedDepth, distance, oldestFirst, youngestFirst). RealityKit sortOrder (default increasingDepth).
 - `2026-10-17T14:11:14Z`: Related: #19 (additive blending needs no sorting).
 - `2026-10-17T19:36:36Z`: Depends on #33: sorting must work across emitters sharing one buffer; build it once after that lands.
+- `2026-10-17T20:30:12Z`: See ~/Projects/Current/MetalSprockets/MetalSprocketsGaussianSplats/ for good GPU sorting algorithms.
 
 ---
 
