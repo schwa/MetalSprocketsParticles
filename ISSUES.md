@@ -38,6 +38,8 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 - `2026-10-17T14:11:14Z`: Related: #3 (SDF colliders could share the mesh SDF path).
 - `2026-10-17T15:54:23Z`: SDF volume colliders were split out of #3 and belong here: a baked 3D distance texture is the same collision path mesh colliders need. Scope now: Collider case for a 3D SDF texture + bounds/transform, kernel sampling with gradient normals, and baking from a mesh.
 - `2026-10-17T19:34:40Z`: Main consumer: MetalSprocketsSceneGraph integration, where colliders come from scene-node geometry at runtime. Mesh/SDF colliders need to accept that geometry (and its transforms) per frame.
+- `2026-10-17T21:05:19Z`: Mesh input should come from SwiftMesh (github.com/schwa/SwiftMesh), the mesh type used across the MetalSprockets ecosystem (MetalSprocketsAddOns depends on it). Mesh/SDF colliders should accept a SwiftMesh mesh plus transform, not raw arrays.
+- `2026-10-17T21:05:19Z`: Related: #38 (SwiftMesh input for EmitterMesh); share the conversion.
 
 ---
 
@@ -676,26 +678,34 @@ Emitters only emit on their own clock (birth rate, duration, idle) or when code 
 ## 35: More emitter shapes: volume, plane, circle, etc.
 
 +++
-status: new
+status: closed
 priority: medium
 kind: feature
 created: 2026-10-17T20:11:25Z
+updated: 2026-10-17T21:06:50Z
+closed: 2026-10-17T21:06:50Z
 +++
 
 Add emitter types that spawn particles from shapes: volumes (box, sphere), planes, circles/rings, and similar.
+
+- `2026-10-17T21:06:50Z`: Duplicate of #7 (done): box and sphere volumes, plane, disc (fill or rim), cylinder, cone, torus, and mesh shapes, with volume/surface birth location and sweep angle.
 
 ---
 
 ## 36: Doctor Strange portal example
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
+labels: effort:m, area:tooling
 created: 2026-10-17T20:11:25Z
+updated: 2026-10-17T21:06:50Z
 +++
 
 Add an example of a Doctor Strange-style portal: sparks thrown off a spinning ring, like a Catherine wheel.
+
+- `2026-10-17T21:06:50Z`: Triage: fits as a preset (#30). Missing pieces: emitter motion that spins over time (EmitterMotion only has a fixed yaw; Galaxy needs the same for real spiral arms), and sparks thrown tangentially; today the closest is a rotating torus/disc rim with inheritVelocity. Related: #30.
 
 ---
 
@@ -713,5 +723,54 @@ closed: 2026-10-17T20:16:20Z
 Shader code built vectors from several random draws in one expression, for example float3(next(), next(), next()). C++ leaves argument evaluation order unspecified, so the compiler may draw the values in a different order whenever surrounding code changes. Within one build results were deterministic, but an unrelated shader edit could reshuffle every particle and break all golden images. Found while adding emitter shapes (#7): the same kernel drew the position and the velocity in different orders.
 
 - `2026-10-17T20:16:20Z`: Fixed in the #7 commit: Random gains next2/next3/next4 with explicit sequential draws, used everywhere. Goldens regenerated once; they now no longer depend on compiler choices.
+
+---
+
+## 38: EmitterMesh cannot be built from a SwiftMesh mesh
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: effort:s, area:emission
+created: 2026-10-17T21:05:19Z
++++
+
+EmitterMesh (#7) only takes raw positions and triangle-list indices. Meshes in the MetalSprockets ecosystem are SwiftMesh meshes (MetalSprocketsAddOns uses it), so emitting from a model means converting by hand. Add a SwiftMesh dependency and an EmitterMesh initializer that takes a SwiftMesh mesh, handling its index format and non-triangle topology. Related: #2 (mesh colliders should take SwiftMesh too).
+
+---
+
+## 39: Inspector is long and hard to scan
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: effort:s, area:tooling
+created: 2026-10-17T21:07:28Z
++++
+
+The demo inspector (#31) lists every control as a full-size row in a long sequence of sections, so it is hard to find a setting and needs a lot of scrolling. Reorganize it: group related controls into clear sections, collapse rarely used ones behind disclosure groups (variation, sprite sheet, curves, per-collider and per-field details), use smaller control sizes (.controlSize(.small)), and keep the most-used controls (preset, playback, emitter picker, birth rate, color) near the top. Related: #31.
+
+---
+
+## 40: Demo has no real textured or flipbook particles
+
++++
+status: new
+priority: low
+kind: enhancement
+labels: effort:s, area:demo
+created: 2026-10-17T21:10:10Z
++++
+
+Textures and flipbooks (#5) work, but the demo only has the 2x2 color test sheet. No preset uses an image sequence.
+
+Idea: render emojis with Core Text into sprites and sprite sheets, so we need no image assets. For example:
+- Single emoji sprites (🔥, ❤️, ⭐, 💧) as ParticleSprite cases.
+- Emoji flipbooks, e.g. a sheet of 🌑🌒🌓🌔🌕 moon phases or 🕐…🕛 clock faces, played with an ImageSequence.
+- One or two presets that use them (e.g. hearts, moon-phase sparkle).
+
+Note: emoji glyphs are color, so the particle color tint must multiply (or be white) to keep them readable.
 
 ---
