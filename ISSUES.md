@@ -756,17 +756,20 @@ EmitterMesh (#7) only takes raw positions and triangle-list indices. Meshes in t
 ## 39: Inspector is long and hard to scan
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:s, area:tooling
 created: 2026-10-17T21:07:28Z
+updated: 2026-10-17T22:08:42Z
+closed: 2026-10-17T22:08:42Z
 +++
 
 The demo inspector (#31) lists every control as a full-size row in a long sequence of sections, so it is hard to find a setting and needs a lot of scrolling. Reorganize it: group related controls into clear sections, collapse rarely used ones behind disclosure groups (variation, sprite sheet, curves, per-collider and per-field details), use smaller control sizes (.controlSize(.small)), and keep the most-used controls (preset, playback, emitter picker, birth rate, color) near the top. Related: #31.
 
 - `2026-10-17T21:55:52Z`: Also add sub-emitter editing (#9): list a selected emitter's subEmitters with occasion, countPerEvent, velocityFactor, and the child settings (reuse the emitter sections).
 - `2026-10-17T22:04:12Z`: Also add trigger editing (#34): list an emitter's triggers (condition + action) with add/remove, and a field to send named events.
+- `2026-10-17T22:08:42Z`: Reorganized the inspector: Scene (preset, playback, speed, restart/revert) and Emitter (picker + actions menu, name, emitting, burst) at the top; per-emitter sections show the most-used controls and tuck the rest into disclosure groups (Timing, Placement, Emitter Motion, Curves, Rotation, Sprite Sheet, Variation); new Sub-Emitters (#9) and Triggers (#34) sections with Send Event; World section with collapsible collider and force-field lists; .controlSize(.small) throughout. Key-path bindings only. Not visually checked (no app launch).
 
 ---
 

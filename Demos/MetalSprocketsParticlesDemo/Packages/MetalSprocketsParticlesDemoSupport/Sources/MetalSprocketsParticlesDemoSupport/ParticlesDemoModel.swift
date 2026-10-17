@@ -58,6 +58,13 @@ final class ParticlesDemoModel {
     var animateColliders = false
     var showColliders = false
 
+    /// The event name the inspector's Send button fires.
+    var eventToSend = "boom"
+
+    func sendEvent() {
+        system?.send(event: eventToSend)
+    }
+
     /// The preset's suggested camera, updated on load.
     private(set) var cameraEye: SIMD3<Float> = [0, 3, 6]
     private(set) var cameraTarget: SIMD3<Float> = [0, 1.5, 0]
