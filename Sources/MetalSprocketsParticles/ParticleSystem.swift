@@ -5,14 +5,15 @@ import MetalSprocketsParticlesShaders
 import simd
 
 extension ColliderData {
-    init(_ collider: Collider) {
+    init(_ collider: Collider, velocity: SIMD3<Float> = .zero) {
+        let velocity = SIMD4(velocity, 0)
         switch collider {
         case let .plane(normal, distance):
-            self.init(kind: [1, 0, 0, 0], a: SIMD4(simd_normalize(normal), distance), b: .zero)
+            self.init(kind: [1, 0, 0, 0], a: SIMD4(simd_normalize(normal), distance), b: .zero, velocity: velocity)
         case let .sphere(center, radius):
-            self.init(kind: [2, 0, 0, 0], a: SIMD4(center, radius), b: .zero)
+            self.init(kind: [2, 0, 0, 0], a: SIMD4(center, radius), b: .zero, velocity: velocity)
         case let .box(center, halfExtents):
-            self.init(kind: [3, 0, 0, 0], a: SIMD4(center, 0), b: SIMD4(halfExtents, 0))
+            self.init(kind: [3, 0, 0, 0], a: SIMD4(center, 0), b: SIMD4(halfExtents, 0), velocity: velocity)
         }
     }
 }
@@ -21,6 +22,26 @@ public enum Collider: Sendable, Equatable {
     case plane(normal: SIMD3<Float>, distance: Float)
     case sphere(center: SIMD3<Float>, radius: Float)
     case box(center: SIMD3<Float>, halfExtents: SIMD3<Float>)
+}
+
+extension Collider {
+    /// Linear velocity implied by moving from `previous` to `self` over `deltaTime`. Zero if the shape changed kind
+    /// or orientation, or if no time passed.
+    func velocity(from previous: Collider, deltaTime: Float) -> SIMD3<Float> {
+        guard deltaTime > 0 else {
+            return .zero
+        }
+        switch (previous, self) {
+        case let (.plane(oldNormal, oldDistance), .plane(normal, distance)) where simd_normalize(oldNormal) == simd_normalize(normal):
+            return simd_normalize(normal) * (distance - oldDistance) / deltaTime
+        case let (.sphere(oldCenter, _), .sphere(center, _)):
+            return (center - oldCenter) / deltaTime
+        case let (.box(oldCenter, _), .box(center, _)):
+            return (center - oldCenter) / deltaTime
+        default:
+            return .zero
+        }
+    }
 }
 
 public struct ParticleEmitter: Sendable, Equatable {
@@ -81,6 +102,8 @@ public final class ParticleSystem {
     private(set) var spawner = Spawner()
     private var needsKill = false
     private var needsWarmup = true
+    /// Colliders from the previous frame, used to derive collider velocity.
+    private var previousColliders: [Collider]?
 
     public var state: SimulationState = .playing {
         didSet {
@@ -110,6 +133,18 @@ public final class ParticleSystem {
         buffer.contents().initializeMemory(as: UInt8.self, repeating: 0, count: length)
         buffer.label = "Particles"
         self.buffer = buffer
+    }
+
+    /// Colliders matched by index with last frame's get the velocity implied by their motion.
+    private func colliderData(deltaTime: Float) -> [ColliderData] {
+        let current = emitter.colliders
+        defer { previousColliders = current }
+        guard let previous = previousColliders, previous.count == current.count else {
+            return current.map { ColliderData($0) }
+        }
+        return zip(previous, current).map { previous, collider in
+            ColliderData(collider, velocity: collider.velocity(from: previous, deltaTime: deltaTime))
+        }
     }
 
     /// Emits `count` particles on the next playing step, on top of the birth rate.
@@ -157,7 +192,11 @@ public final class ParticleSystem {
 
     /// Advances the simulation one frame. Put this before the render pass that draws the particles.
     /// The result depends only on `seed`, emitter settings, playback calls, and the sequence of `deltaTime` values.
-    public func simulate(deltaTime: Float) throws -> some Element {
+    /// Pass `colliders` to move them this frame; their velocity is derived from the change since the previous frame.
+    public func simulate(deltaTime: Float, colliders: [Collider]? = nil) throws -> some Element {
+        if let colliders {
+            emitter.colliders = colliders
+        }
         var steps: [SimulationUniforms] = []
         if needsWarmup {
             needsWarmup = false
@@ -170,7 +209,7 @@ public final class ParticleSystem {
         }
         steps.append(makeStep(deltaTime: min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)))
 
-        let colliders = emitter.colliders.map(ColliderData.init)
+        let colliders = colliderData(deltaTime: steps.last?.lifetime.w ?? 0)
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
         let capacity = capacity

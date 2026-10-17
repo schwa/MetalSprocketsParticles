@@ -26,6 +26,9 @@ struct RenderCommand: ParsableCommand {
     @Option(help: "Random seed. The same seed and settings always produce the same image.")
     var seed: UInt32 = 0
 
+    @Flag(help: "Animate the colliders as in the demo app.")
+    var animateColliders = false
+
     @Option(help: "Particle count.")
     var particles = 200_000
 
@@ -48,7 +51,10 @@ struct RenderCommand: ParsableCommand {
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
 
         var rendering: OffscreenRenderer.Rendering?
-        for _ in 0..<max(frames, 1) {
+        for frame in 0..<max(frames, 1) {
+            if animateColliders {
+                system.emitter.colliders = ParticleEmitter.fountainColliders(time: Float(frame) * deltaTime)
+            }
             rendering = try renderer.render(Group {
                 try system.simulate(deltaTime: deltaTime)
                 try RenderPass {

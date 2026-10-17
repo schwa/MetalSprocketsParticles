@@ -43,6 +43,7 @@ typedef struct {
     simd_float4 kind;
     simd_float4 a;
     simd_float4 b;
+    simd_float4 velocity; // xyz = collider velocity this step
 } ColliderData;
 
 typedef struct {

@@ -449,14 +449,18 @@ Changing any emitter setting means editing code and rebuilding. The demo app nee
 ## 27: Demo colliders are static
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:collision
 created: 2026-10-17T14:17:50Z
+updated: 2026-10-17T15:48:48Z
+closed: 2026-10-17T15:48:48Z
 +++
 
 The demo's sphere and boxes never move, so it does not show particles reacting to moving geometry. Animate the colliders over time in the demo view. Moving colliders should also transfer their velocity to particles they hit; currently collision response assumes a stationary collider.
+
+- `2026-10-17T15:48:48Z`: Demo colliders now animate (ParticleEmitter.fountainColliders(time:)). Collider velocity is derived from frame-to-frame motion and collision response is computed relative to the collider, so moving colliders push and carry particles. particles-render gained --animate-colliders.
 
 ---
 

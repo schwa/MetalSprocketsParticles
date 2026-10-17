@@ -21,13 +21,16 @@ struct Random {
     }
 };
 
-static void collide(thread float3 &position, thread float3 &velocity, float3 normal, float penetration, float restitution, float friction) {
+// Response is computed relative to the collider, so moving colliders push and carry particles.
+static void collide(thread float3 &position, thread float3 &velocity, ColliderData c, float3 normal, float penetration, float restitution, float friction) {
     position += normal * penetration;
-    float vn = dot(velocity, normal);
+    float3 colliderVelocity = c.velocity.xyz;
+    float3 relative = velocity - colliderVelocity;
+    float vn = dot(relative, normal);
     if (vn < 0) {
         float3 normalVelocity = normal * vn;
-        float3 tangentVelocity = velocity - normalVelocity;
-        velocity = tangentVelocity * (1.0 - friction) - normalVelocity * restitution;
+        float3 tangentVelocity = relative - normalVelocity;
+        velocity = colliderVelocity + tangentVelocity * (1.0 - friction) - normalVelocity * restitution;
     }
 }
 
@@ -88,12 +91,12 @@ kernel void updateParticles(
         int kind = int(c.kind.x);
         if (kind == 1) {
             float distance = dot(position, c.a.xyz) - c.a.w;
-            if (distance < 0) { collide(position, velocity, c.a.xyz, -distance, restitution, friction); }
+            if (distance < 0) { collide(position, velocity, c, c.a.xyz, -distance, restitution, friction); }
         } else if (kind == 2) {
             float3 offset = position - c.a.xyz;
             float distance = length(offset);
             if (distance < c.a.w && distance > 0) {
-                collide(position, velocity, offset / distance, c.a.w - distance, restitution, friction);
+                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction);
             }
         } else if (kind == 3) {
             float3 local = position - c.a.xyz;
@@ -105,7 +108,7 @@ kernel void updateParticles(
                 if (depth.x < depth.y && depth.x < depth.z) { normal.x = sign(local.x); penetration = depth.x; }
                 else if (depth.y < depth.z) { normal.y = sign(local.y); penetration = depth.y; }
                 else { normal.z = sign(local.z); penetration = depth.z; }
-                collide(position, velocity, normal, penetration, restitution, friction);
+                collide(position, velocity, c, normal, penetration, restitution, friction);
             }
         }
     }
