@@ -147,6 +147,10 @@ public enum SimulationState: Sendable, Hashable {
 /// Owns GPU particle state. Simulation and rendering are separate elements so callers can place them in
 /// their own passes.
 public final class ParticleSystem {
+    /// Particle colors, curves, and blending are linear. Render to an sRGB target so the GPU encodes them for display;
+    /// a non-sRGB target shows linear values as if they were sRGB, which looks darker and more saturated.
+    public static let colorPixelFormat: MTLPixelFormat = .bgra8Unorm_srgb
+
     public let capacity: Int
     public var emitter: ParticleEmitter
     public let seed: UInt32

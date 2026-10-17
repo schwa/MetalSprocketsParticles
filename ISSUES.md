@@ -269,17 +269,19 @@ There is no way to render a particle scene to an image or video from the command
 ## 15: Particle colors differ between the app and the CLI
 
 +++
-status: open
+status: closed
 priority: high
 kind: bug
 labels: effort:s, area:rendering
 created: 2026-10-17T13:47:19Z
-updated: 2026-10-17T17:12:37Z
+updated: 2026-10-17T19:48:07Z
+closed: 2026-10-17T19:48:07Z
 +++
 
 particles-render output is paler and more washed out than the demo app. OffscreenRenderer renders to bgra8Unorm_srgb, so the shader's colors are probably being treated as linear in one path and sRGB in the other.
 
 - `2026-10-17T17:12:37Z`: Raised to high: golden images and pixel tests render through OffscreenRenderer's sRGB target, so if that path's color handling differs from the app, tests validate the wrong output.
+- `2026-10-17T19:48:07Z`: Cause: the demo's RenderView used MTKView's default .bgra8Unorm while OffscreenRenderer uses .bgra8Unorm_srgb. Particle colors are linear, so the sRGB path is correct. Added ParticleSystem.colorPixelFormat (.bgra8Unorm_srgb) and the demo now renders to it. Regression test compares the app's format with OffscreenRenderer's.
 
 ---
 

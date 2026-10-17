@@ -11,11 +11,14 @@ public struct ParticlesView: View {
     @State private var frameTiming: FrameTimingStatistics?
     @State private var isInspectorPresented = true
 
+    /// Matches OffscreenRenderer, so golden images and particles-render show what the app shows.
+    static let colorPixelFormat = ParticleSystem.colorPixelFormat
+
     public init() {}
 
     public var body: some View {
         if let system = model.system {
-            RenderView { context, size in
+            RenderView(colorPixelFormat: Self.colorPixelFormat) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
                 try system.simulate(

@@ -1,8 +1,18 @@
+import MetalSprockets
 import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
 import simd
 import SwiftUI
 import Testing
+
+struct ColorPipelineTests {
+    /// Golden images and particles-render use OffscreenRenderer. If the app renders to a different format, tests
+    /// check different colors than users see (#15).
+    @Test func appRendersToSameFormatAsOffscreenRenderer() throws {
+        let renderer = try OffscreenRenderer(size: CGSize(width: 4, height: 4))
+        #expect(ParticlesView.colorPixelFormat == renderer.colorTexture.pixelFormat)
+    }
+}
 
 struct InspectorAdapterTests {
     @Test func lifetimeBoundsStayOrdered() {
