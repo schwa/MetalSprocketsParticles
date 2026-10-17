@@ -37,6 +37,7 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 - `2026-10-17T14:02:37Z`: Doc review: SceneKit has colliderNodes (collide with node geometry). RealityKit ParticleEmitterComponent has no collision API at all, so this is a clear place to beat it.
 - `2026-10-17T14:11:14Z`: Related: #3 (SDF colliders could share the mesh SDF path).
 - `2026-10-17T15:54:23Z`: SDF volume colliders were split out of #3 and belong here: a baked 3D distance texture is the same collision path mesh colliders need. Scope now: Collider case for a 3D SDF texture + bounds/transform, kernel sampling with gradient normals, and baking from a mesh.
+- `2026-10-17T19:34:40Z`: Main consumer: MetalSprocketsSceneGraph integration, where colliders come from scene-node geometry at runtime. Mesh/SDF colliders need to accept that geometry (and its transforms) per frame.
 
 ---
 
@@ -66,14 +67,16 @@ status: open
 priority: medium
 kind: feature
 labels: effort:l, area:rendering
+depends: 33
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T19:36:36Z
 +++
 
 Alpha-blended particles draw in buffer order, which is wrong for non-additive blending.
 
 - `2026-10-17T14:02:37Z`: Doc review: SceneKit sortingMode (none, projectedDepth, distance, oldestFirst, youngestFirst). RealityKit sortOrder (default increasingDepth).
 - `2026-10-17T14:11:14Z`: Related: #19 (additive blending needs no sorting).
+- `2026-10-17T19:36:36Z`: Depends on #33: sorting must work across emitters sharing one buffer; build it once after that lands.
 
 ---
 
@@ -123,10 +126,10 @@ priority: medium
 kind: feature
 labels: effort:l, area:emission
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T17:16:57Z
 +++
 
-Particles spawn only inside a sphere. Missing: box, cone, disc, cylinder, torus, and mesh-surface/volume/vertex emission shapes, birth direction modes, and multiple emitters per system. Timing and bursts are tracked in #21.
+Particles spawn only inside a sphere. Missing: box, cone, disc, cylinder, torus, and mesh-surface/volume/vertex emission shapes, and birth direction modes. Timing and bursts are tracked in #21; multiple emitters per system moved to #33.
 
 - `2026-10-17T14:02:37Z`: Doc review: RealityKit EmitterShape (point, plane, box, sphere, cylinder, cone, torus) + emitterShapeSize, radialAmount, torusInnerRadius, BirthLocation (surface/volume/vertices), BirthDirection, burst()/burstCount. SceneKit emitterShape is any SCNGeometry with birthLocation (surface/volume/vertex) and birthDirection, emittingDirection, spreadingAngle.
 - `2026-10-17T14:11:13Z`: Related: #21 (timing/bursts split out), #22 (emitter transform).
@@ -159,14 +162,17 @@ status: open
 priority: medium
 kind: feature
 labels: effort:l, area:emission
+depends: 33
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:19:41Z
+updated: 2026-10-17T19:36:36Z
 +++
 
 Particles cannot spawn other particles on death or collision (sparks, splashes).
 
 - `2026-10-17T14:02:37Z`: Doc review: SceneKit systemSpawnedOnCollision/OnDying/OnLiving. RealityKit spawnedEmitter with spawnOccasion (onBirth/onDeath/onUpdate), spawnVelocityFactor, spawnSpreadFactor, spawnInheritsParentColor.
 - `2026-10-17T14:11:14Z`: Related: #23 (death on collision triggers onCollision sub-emitters).
+- `2026-10-17T17:16:57Z`: Related: #34 (event triggers). Sub-emitters are the particle-driven case of triggers; design them together.
+- `2026-10-17T19:36:36Z`: Depends on #33: sub-emitters are likely extra emitters in the same system, triggered by particle events. Design with #34.
 
 ---
 
@@ -264,14 +270,16 @@ There is no way to render a particle scene to an image or video from the command
 
 +++
 status: open
-priority: low
+priority: high
 kind: bug
 labels: effort:s, area:rendering
 created: 2026-10-17T13:47:19Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T17:12:37Z
 +++
 
 particles-render output is paler and more washed out than the demo app. OffscreenRenderer renders to bgra8Unorm_srgb, so the shader's colors are probably being treated as linear in one path and sRGB in the other.
+
+- `2026-10-17T17:12:37Z`: Raised to high: golden images and pixel tests render through OffscreenRenderer's sRGB target, so if that path's color handling differs from the app, tests validate the wrong output.
 
 ---
 
@@ -407,11 +415,11 @@ The emitter has a position but no rotation, scale, or parent transform, and ther
 
 +++
 status: open
-priority: low
+priority: medium
 kind: feature
 labels: effort:s, area:collision
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T17:12:37Z
 +++
 
 Colliding particles always bounce. SceneKit has particleDiesOnCollision and collision events. Needed for rain, sparks hitting walls, and as a trigger for sub-emitters (#9).
@@ -447,6 +455,8 @@ updated: 2026-10-17T14:13:05Z
 +++
 
 RealityKit ships ParticleEmitterComponent.Presets (fireworks, impact, magic, rain, snow, sparks). SceneKit loads .scnp files authored in Xcode's particle editor. We have one hard-coded fountain and no serializable effect format.
+
+- `2026-10-17T17:18:07Z`: Related: #30 now loads presets through a picker; saved effect files from this issue should appear in the same picker.
 
 ---
 
@@ -489,11 +499,12 @@ The demo's sphere and boxes never move, so it does not show particles reacting t
 ## 28: Spike: evaluate the AddOns point cloud renderer for very high particle counts
 
 +++
-status: new
+status: open
 priority: low
 kind: task
 labels: effort:m, area:rendering
 created: 2026-10-17T15:00:32Z
+updated: 2026-10-17T17:10:11Z
 +++
 
 MetalSprocketsAddOns has `PointCloudRasterizePass` / `PointCloudResolvePipeline`, a compute point rasterizer (Schütz et al. 2021). Find out if it is useful as an optional render mode for many small opaque particles (sparks, dust, rain).
@@ -517,16 +528,19 @@ Spike tasks:
 
 Outcome: a keep/drop decision with numbers.
 
+- `2026-10-17T17:10:11Z`: Triage note: depends on #29's measurements (step 1 of the spike is the same profiling). Opaque points would pair with blend mode .opaque (#19).
+
 ---
 
 ## 29: Measure and optimise particle system performance
 
 +++
-status: new
+status: open
 priority: medium
 kind: task
 labels: effort:l, area:simulation, area:rendering
 created: 2026-10-17T15:01:18Z
+updated: 2026-10-17T17:10:11Z
 +++
 
 Goal: the particle system (simulation + rendering) should be a very small part of a typical frame for a reasonable number of particles.
@@ -545,5 +559,99 @@ Steps:
    - Write the budgets and the results in the README.
 
 Related: #4 (sorting adds cost), #28 (point cloud renderer spike), #16 (runtime shader compile).
+
+- `2026-10-17T17:10:11Z`: Triage note: #16 (runtime shader compile) is fixed; shaders are now precompiled by MetalCompilerPlugin, so drop that CPU candidate. Instancing at capacity still applies: the ring buffer (#21) draws capacity instances even when most are dead.
+
+---
+
+## 30: Demo has no emitter presets, so most features stay hidden
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:l, area:tooling
+created: 2026-10-17T17:08:40Z
+updated: 2026-10-17T17:18:06Z
++++
+
+The demo app and particles-render only ever use the fountain emitter. Textures and sprite sheets (#5), rotation (#17), rotated boxes and capsules (#3), moving emitters, local space and inherited velocity (#22), velocity stretch (#18), and most force fields (#8) never appear outside golden tests.
+
+Add emitter presets, not separate scenes: a preset is a saved emitter configuration (ParticleEmitter plus the system-level settings it needs, such as texture, simulation space, and emitter motion). A picker in the demo inspector loads a preset into the live system, and the inspector then edits it. particles-render gets a matching --preset option.
+
+Presets come from two sources:
+- Hard-coded in Swift now. Make them good-looking: for example fireworks, sparks, smoke, snow, rain, magic trail, comet.
+- Saved effect files later, via #25, listed in the same picker.
+
+Related: #25 (saved effect files), #31 (inspector coverage), #32 (emitter DSL would make Swift presets short).
+
+- `2026-10-17T17:08:40Z`: Related: #31 (inspector coverage); scene presets should load into the same inspector.
+- `2026-10-17T18:15:36Z`: Decision: colliders are part of a preset. Loading a preset replaces the colliders along with the emitter settings. Keep this when #33 moves colliders into a shared per-system world: a preset still carries its colliders.
+- `2026-10-17T19:34:40Z`: Clarification: preset colliders are a default, not the only source. Apps supply colliders at runtime too (today via simulate(deltaTime:colliders:)); runtime colliders replace or add to the preset's.
+
+---
+
+## 31: Inspector does not expose all emitter features
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: effort:m, area:tooling
+created: 2026-10-17T17:08:40Z
++++
+
+The demo inspector (#26) covers only part of ParticleEmitter and ParticleSystem. Missing controls include: warmup; multi-stop color/size curves and the opacity curve; wind and attractor force fields and turbulence/vortex parameters beyond strength; fixed-plane orientation; saturation, brightness, alpha, friction, angle, and spin variation; angle and spin; texture choice and image sequence settings; emitter transform motion, simulation space, and inherit velocity; collider editing. Every feature that makes sense to tweak live should have a control.
+
+- `2026-10-17T17:08:40Z`: Related: #30 (preset scenes).
+
+---
+
+## 32: Emitters can only be built by mutating a ParticleEmitter struct
+
++++
+status: open
+priority: low
+kind: feature
+labels: effort:l, area:tooling
+created: 2026-10-17T17:10:23Z
++++
+
+Defining an effect means creating a ParticleEmitter and setting many properties one by one, then wiring texture, transform, and colliders on ParticleSystem separately. There is no concise, composable way to describe an effect or reuse parts of one. Stretch goal: a small Swift DSL, possibly result-builder or SwiftUI-modifier style (e.g. Emitter { ... }.birthRate(5_000).colorOverLife(...).force(.turbulence(...))), so effects compose like SwiftUI views and presets (#30, #25) become short declarations. Related: #30 (preset scenes), #25 (presets/effect files).
+
+---
+
+## 33: A particle system has only one emitter
+
++++
+status: open
+priority: high
+kind: feature
+labels: effort:l, area:emission
+created: 2026-10-17T17:16:57Z
++++
+
+Each ParticleSystem owns exactly one ParticleEmitter. Effects that combine parts (fire + smoke + embers, a fountain with spray and mist) need several systems, each with its own buffer, compute pass, draw call, and copy of the colliders and force fields. Overlapping systems draw in code order, so blending between them is wrong. A system should host many emitters that share one particle buffer, one simulation pass, and one set of scene colliders and force fields, with per-emitter settings (shape, rate, curves, texture, blend mode) and per-emitter transforms. Split out of #7, which now covers emitter shapes only. Related: #4 (sorting across emitters), #9 (sub-emitters), #29 (performance).
+
+- `2026-10-17T18:15:36Z`: Constraint from #30: presets carry colliders. A shared collider world must still be loadable from (and saved to) a preset.
+- `2026-10-17T19:34:40Z`: Colliders have two sources: presets (authoring, demo) and the app at runtime. Planned runtime source is MetalSprocketsSceneGraph scene-node geometry. The shared collider world should be fed per frame from the app, merged with any preset colliders.
+
+---
+
+## 34: Emission cannot be triggered by events
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:l, area:emission
+depends: 33
+created: 2026-10-17T17:16:57Z
+updated: 2026-10-17T19:36:36Z
++++
+
+Emitters only emit on their own clock (birth rate, duration, idle) or when code calls burst(). There is no way to make emission happen in response to something: a trigger volume that particles or scene objects enter, a collider being hit, a timer or sequence, or a named event from the app. Effects like sparks where a blade touches a wall, a splash when something enters water, or a firework that bursts at the top of its arc need triggers that start, stop, or burst an emitter, ideally evaluated on the GPU for particle-driven events. Related: #33 (multiple emitters), #9 (sub-emitters: spawn on particle birth/death/collision), #23 (die on collision).
+
+- `2026-10-17T19:36:36Z`: Depends on #33. Design with #9.
 
 ---
