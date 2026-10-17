@@ -7,13 +7,17 @@ File format: <https://github.com/schwa/issues-format>
 ## 1: Colliders are not drawn
 
 +++
-status: new
+status: closed
 priority: high
 kind: none
 created: 2026-10-17T13:27:25Z
+updated: 2026-10-17T13:54:28Z
+closed: 2026-10-17T13:54:28Z
 +++
 
 Planes, spheres and boxes affect particles but are invisible. Particles are also not depth-tested against scene geometry.
+
+- `2026-10-17T13:54:28Z`: Colliders drawn as flat-colored line wireframes (renderColliders).
 
 ---
 
@@ -166,7 +170,9 @@ Initial spawn delays use Float.random on the CPU, and the GPU RNG is seeded from
 status: new
 priority: high
 kind: task
+depends: 12
 created: 2026-10-17T13:35:53Z
+updated: 2026-10-17T13:49:11Z
 +++
 
 Rendering is only checked by running the demo app and looking at it. There are no automated tests that render particles offscreen with OffscreenRenderer and compare against reference images with GoldenImage. Depends on repeatable simulation.
@@ -176,12 +182,42 @@ Rendering is only checked by running the demo app and looking at it. There are n
 ## 14: No headless CLI for rendering particles
 
 +++
-status: new
+status: closed
 priority: medium
 kind: feature
 created: 2026-10-17T13:35:53Z
+updated: 2026-10-17T13:47:19Z
+closed: 2026-10-17T13:47:19Z
 +++
 
 There is no way to render a particle scene to an image or video from the command line without launching the demo app.
+
+- `2026-10-17T13:47:19Z`: Added particles-render executable (OffscreenRenderer + ArgumentParser).
+
+---
+
+## 15: Particle colors differ between the app and the CLI
+
++++
+status: new
+priority: low
+kind: bug
+created: 2026-10-17T13:47:19Z
++++
+
+particles-render output is paler and more washed out than the demo app. OffscreenRenderer renders to bgra8Unorm_srgb, so the shader's colors are probably being treated as linear in one path and sRGB in the other.
+
+---
+
+## 16: Shaders are compiled from source at runtime
+
++++
+status: new
+priority: medium
+kind: task
+created: 2026-10-17T13:54:28Z
++++
+
+Particles.metal ships as a copied resource and is compiled with ShaderLibrary(source:) on every launch. This costs startup time, hides shader compile errors until runtime, gives no Xcode Metal debugger support, and the Swift and Metal struct layouts are duplicated by hand. MetalSprocketsAddOns uses a separate shaders target built by MetalCompilerPlugin (~/Projects/Current/MetalCompilerPlugin), with shared C headers for the structs.
 
 ---

@@ -166,6 +166,27 @@ vertex VertexOut particleVertex(
     return out;
 }
 
+struct WireframeUniforms {
+    float4x4 viewProjection;
+    float4 color;
+};
+
+struct WireframeOut {
+    float4 position [[position]];
+};
+
+vertex WireframeOut wireframeVertex(
+    uint vertexID [[vertex_id]],
+    const device float4 *vertices [[buffer(0)]],
+    constant WireframeUniforms &uniforms [[buffer(1)]]
+) {
+    return { uniforms.viewProjection * float4(vertices[vertexID].xyz, 1) };
+}
+
+fragment float4 wireframeFragment(constant WireframeUniforms &uniforms [[buffer(0)]]) {
+    return uniforms.color;
+}
+
 fragment float4 particleFragment(VertexOut in [[stage_in]]) {
     float falloff = saturate(1.0 - length(in.uv));
     float alpha = in.color.a * falloff * falloff;
