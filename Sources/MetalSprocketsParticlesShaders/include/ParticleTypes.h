@@ -38,12 +38,14 @@ typedef struct {
     simd_uint4 spawn;
 } SimulationUniforms;
 
-// kind.x: 0 = none, 1 = plane (a = normal, distance), 2 = sphere (a = center, radius), 3 = box (a = center, b = half extents).
+// kind.x: 0 = none, 1 = plane (a = normal, distance), 2 = sphere (a = center, radius),
+// 3 = box (a = center, b = half extents, rotation = orientation), 4 = capsule (a = start, radius; b = end).
 typedef struct {
     simd_float4 kind;
     simd_float4 a;
     simd_float4 b;
     simd_float4 velocity; // xyz = collider velocity this step
+    simd_float4 rotation; // quaternion (xyz = imaginary, w = real)
 } ColliderData;
 
 typedef struct {

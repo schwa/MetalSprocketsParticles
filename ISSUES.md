@@ -36,23 +36,26 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 
 - `2026-10-17T14:02:37Z`: Doc review: SceneKit has colliderNodes (collide with node geometry). RealityKit ParticleEmitterComponent has no collision API at all, so this is a clear place to beat it.
 - `2026-10-17T14:11:14Z`: Related: #3 (SDF colliders could share the mesh SDF path).
+- `2026-10-17T15:54:23Z`: SDF volume colliders were split out of #3 and belong here: a baked 3D distance texture is the same collision path mesh colliders need. Scope now: Collider case for a 3D SDF texture + bounds/transform, kernel sampling with gradient normals, and baking from a mesh.
 
 ---
 
 ## 3: No SDF or oriented-box colliders
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:collision
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T15:54:23Z
+closed: 2026-10-17T15:54:23Z
 +++
 
 Boxes are axis-aligned only. There is no rotated box, capsule, or SDF collider.
 
 - `2026-10-17T14:11:14Z`: Related: #2.
+- `2026-10-17T15:54:23Z`: Added oriented boxes (Collider.box rotation:, defaults to identity) and capsules (Collider.capsule), with wireframes, tests, and a golden. SDF volume colliders moved to #2 since they share the baked-SDF path with mesh collision. Collider rotation is not turned into velocity: spinning boxes do not fling particles.
 
 ---
 

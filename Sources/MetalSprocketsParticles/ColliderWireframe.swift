@@ -36,9 +36,36 @@ extension Collider {
                 }
             }
             return lines.map { SIMD4($0, 1) }
-        case let .box(center, halfExtents):
+        case let .capsule(start, end, radius):
+            let axis = end - start
+            let direction = simd_length(axis) > 0 ? simd_normalize(axis) : SIMD3<Float>(0, 1, 0)
+            let helper: SIMD3<Float> = abs(direction.y) < 0.9 ? [0, 1, 0] : [1, 0, 0]
+            let u = simd_normalize(simd_cross(helper, direction))
+            let v = simd_cross(direction, u)
+            var lines: [SIMD3<Float>] = []
+            // Arc from `fromAngle` to `toAngle` in the plane spanned by `x` and `y` around `center`.
+            func arc(_ center: SIMD3<Float>, _ x: SIMD3<Float>, _ y: SIMD3<Float>, from fromAngle: Float, to toAngle: Float) {
+                let segments = 24
+                for index in 0..<segments {
+                    for step in [index, index + 1] {
+                        let angle = fromAngle + (toAngle - fromAngle) * Float(step) / Float(segments)
+                        lines.append(center + (x * cos(angle) + y * sin(angle)) * radius)
+                    }
+                }
+            }
+            arc(start, u, v, from: 0, to: 2 * .pi)
+            arc(end, u, v, from: 0, to: 2 * .pi)
+            for side in [u, -u, v, -v] {
+                lines += [start + side * radius, end + side * radius]
+            }
+            for side in [u, v] {
+                arc(end, side, direction, from: 0, to: .pi)
+                arc(start, side, -direction, from: 0, to: .pi)
+            }
+            return lines.map { SIMD4($0, 1) }
+        case let .box(center, halfExtents, rotation):
             let corners = (0..<8).map { index in
-                center + halfExtents * SIMD3<Float>(index & 1 == 0 ? -1 : 1, index & 2 == 0 ? -1 : 1, index & 4 == 0 ? -1 : 1)
+                center + rotation.act(halfExtents * SIMD3<Float>(index & 1 == 0 ? -1 : 1, index & 2 == 0 ? -1 : 1, index & 4 == 0 ? -1 : 1))
             }
             // Corners differing in exactly one bit share an edge.
             var lines: [SIMD3<Float>] = []

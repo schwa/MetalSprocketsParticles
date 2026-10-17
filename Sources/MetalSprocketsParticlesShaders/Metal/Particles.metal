@@ -21,6 +21,12 @@ struct Random {
     }
 };
 
+// Rotates `v` by unit quaternion `q` (xyz = imaginary, w = real).
+static float3 rotate(float4 q, float3 v) {
+    float3 t = 2 * cross(q.xyz, v);
+    return v + q.w * t + cross(q.xyz, t);
+}
+
 // Response is computed relative to the collider, so moving colliders push and carry particles.
 static void collide(thread float3 &position, thread float3 &velocity, ColliderData c, float3 normal, float penetration, float restitution, float friction) {
     position += normal * penetration;
@@ -99,7 +105,8 @@ kernel void updateParticles(
                 collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction);
             }
         } else if (kind == 3) {
-            float3 local = position - c.a.xyz;
+            float4 inverse = float4(-c.rotation.xyz, c.rotation.w);
+            float3 local = rotate(inverse, position - c.a.xyz);
             float3 depth = c.b.xyz - abs(local);
             if (all(depth > 0)) {
                 // Push out through the nearest face.
@@ -108,7 +115,17 @@ kernel void updateParticles(
                 if (depth.x < depth.y && depth.x < depth.z) { normal.x = sign(local.x); penetration = depth.x; }
                 else if (depth.y < depth.z) { normal.y = sign(local.y); penetration = depth.y; }
                 else { normal.z = sign(local.z); penetration = depth.z; }
-                collide(position, velocity, c, normal, penetration, restitution, friction);
+                collide(position, velocity, c, rotate(c.rotation, normal), penetration, restitution, friction);
+            }
+        } else if (kind == 4) {
+            float3 start = c.a.xyz;
+            float3 axis = c.b.xyz - start;
+            float lengthSquared = length_squared(axis);
+            float t = lengthSquared > 0 ? saturate(dot(position - start, axis) / lengthSquared) : 0;
+            float3 offset = position - (start + axis * t);
+            float distance = length(offset);
+            if (distance < c.a.w && distance > 0) {
+                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction);
             }
         }
     }

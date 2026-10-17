@@ -78,6 +78,16 @@ struct GoldenImageTests {
         #expect(try ImageComparison().compare(alpha, additive).psnr < psnrThreshold)
     }
 
+    @Test func rotatedBoxAndCapsule() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.colliders = [
+            .plane(normal: [0, 1, 0], distance: 0),
+            .box(center: [0, 2.6, 0], halfExtents: [0.8, 0.1, 0.5], rotation: simd_quatf(angle: 0.5, axis: [0, 0, 1])),
+            .capsule(start: [-1.5, 0.3, 0.5], end: [1.5, 0.3, -0.5], radius: 0.25),
+        ]
+        #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "rotated-box-and-capsule"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }
