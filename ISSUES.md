@@ -287,15 +287,18 @@ Particles.metal ships as a copied resource and is compiled with ShaderLibrary(so
 ## 17: Particles have no rotation or spin
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:rendering
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T15:33:23Z
+closed: 2026-10-17T15:33:23Z
 +++
 
 Billboards are always axis-aligned to the camera. SCNParticleSystem has particleAngle/particleAngularVelocity (+variation); RealityKit ParticleEmitter has angle/angularSpeed (+variation).
+
+- `2026-10-17T15:33:23Z`: Added per-particle angle and angular velocity (angle/angleVariation/angularSpeed/angularSpeedVariation on ParticleEmitter). The vertex shader rotates the billboard quad, not the UVs. No visible change with the current round sprite; becomes visible with textures (#5).
 
 ---
 

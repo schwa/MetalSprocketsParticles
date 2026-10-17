@@ -56,8 +56,12 @@ kernel void updateParticles(
         float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
         dt *= rng.next();
+        // Drawn after the values above so adding rotation did not change existing random streams.
+        float angle = uniforms.rotation.x + (rng.next() * 2 - 1) * uniforms.rotation.y;
+        float angularVelocity = uniforms.rotation.z + (rng.next() * 2 - 1) * uniforms.rotation.w;
         p.position = float4(position, 0);
         p.velocity = float4(velocity, lifetime);
+        p.rotation = float4(angle, angularVelocity, 0, 0);
     }
 
     float lifetime = p.velocity.w;
@@ -73,6 +77,7 @@ kernel void updateParticles(
     velocity += uniforms.gravity.xyz * dt;
     velocity *= max(0.0, 1.0 - uniforms.gravity.w * dt);
     position += velocity * dt;
+    p.rotation.x += p.rotation.y * dt;
 
     float restitution = uniforms.collision.x;
     float friction = uniforms.collision.y;
@@ -138,7 +143,11 @@ vertex VertexOut particleVertex(
     float t = saturate(age / lifetime);
     float size = mix(uniforms.size.x, uniforms.size.y, t);
     float2 corner = corners[vertexID];
-    float3 world = p.position.xyz + (uniforms.cameraRight.xyz * corner.x + uniforms.cameraUp.xyz * corner.y) * size;
+    // Rotate the quad, not the UVs, so textures spin with it.
+    float s = sin(p.rotation.x);
+    float c = cos(p.rotation.x);
+    float2 offset = float2(c * corner.x - s * corner.y, s * corner.x + c * corner.y);
+    float3 world = p.position.xyz + (uniforms.cameraRight.xyz * offset.x + uniforms.cameraUp.xyz * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = p.color;
     out.uv = corner;

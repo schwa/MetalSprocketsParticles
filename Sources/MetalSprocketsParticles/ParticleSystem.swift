@@ -39,6 +39,13 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var friction: Float = 0.2
     public var colliders: [Collider] = [.plane(normal: [0, 1, 0], distance: 0)]
 
+    /// Initial rotation in radians, ± `angleVariation`.
+    public var angle: Float = 0
+    public var angleVariation: Float = 0
+    /// Initial spin in radians per second, ± `angularSpeedVariation`.
+    public var angularSpeed: Float = 0
+    public var angularSpeedVariation: Float = 0
+
     /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
     public var birthRate: Float = 1_000
     /// Seconds of emission per cycle. `nil` emits forever.
@@ -140,6 +147,7 @@ public final class ParticleSystem {
             colorStart: emitter.colorStart,
             colorEnd: emitter.colorEnd,
             collision: [emitter.restitution, emitter.friction, Float(emitter.colliders.count), 0],
+            rotation: [emitter.angle, emitter.angleVariation, emitter.angularSpeed, emitter.angularSpeedVariation],
             random: [seed, UInt32(capacity), 0, 0],
             spawn: .zero
         )

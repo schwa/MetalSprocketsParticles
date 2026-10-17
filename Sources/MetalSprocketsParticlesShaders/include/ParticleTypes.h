@@ -8,6 +8,7 @@ typedef struct {
     simd_float4 position; // xyz, w = age
     simd_float4 velocity; // xyz, w = lifetime (0 = never spawned). Dead when age >= lifetime.
     simd_float4 color;
+    simd_float4 rotation; // x = angle (radians), y = angular velocity (radians per second)
 } Particle;
 
 typedef struct {
@@ -18,6 +19,7 @@ typedef struct {
     simd_float4 colorStart;
     simd_float4 colorEnd;
     simd_float4 collision;       // x = restitution, y = friction, z = collider count
+    simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
     simd_uint4 random;           // x = seed, y = capacity
     // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
     // w = nonzero to kill all particles before this step.
