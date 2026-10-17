@@ -314,15 +314,18 @@ Billboards are always axis-aligned to the camera. SCNParticleSystem has particle
 ## 18: Only camera-facing billboards; no velocity stretch
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:rendering
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T16:26:04Z
+closed: 2026-10-17T16:26:04Z
 +++
 
 Particles always face the camera. SceneKit orientationMode and RealityKit billboardMode offer Y-aligned, axis-locked, and free orientation. Both have stretchFactor to stretch particles along velocity (sparks, rain).
+
+- `2026-10-17T16:26:04Z`: Added ParticleEmitter.orientation: billboard (default), yAligned, velocityAligned(stretch:), fixed(normal:). Stretch scales the long axis by 1 + stretch × speed and lives on velocityAligned. Pixel-extent tests per mode and a velocity-stretched-sparks golden.
 
 ---
 

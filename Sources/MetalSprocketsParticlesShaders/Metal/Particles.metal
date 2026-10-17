@@ -276,11 +276,50 @@ vertex VertexOut particleVertex(
     float t = saturate(age / lifetime);
     float size = sampleCurve(sizeCurve, t);
     float2 corner = corners[vertexID];
+
+    // The quad's right and up axes in world space.
+    float3 right = uniforms.cameraRight.xyz;
+    float3 up = uniforms.cameraUp.xyz;
+    float stretch = 1;
+    float3 toCamera = uniforms.cameraPosition.xyz - p.position.xyz;
+    switch (uniforms.orientationMode.x) {
+    case ParticleOrientationModeYAligned: {
+        float3 side = cross(float3(0, 1, 0), toCamera);
+        if (length_squared(side) > 1e-8) {
+            right = normalize(side);
+            up = float3(0, 1, 0);
+        }
+        break;
+    }
+    case ParticleOrientationModeVelocityAligned: {
+        float3 velocity = p.velocity.xyz;
+        float speed = length(velocity);
+        float3 side = cross(velocity, toCamera);
+        // Moving straight at the camera, or not moving: fall back to a billboard.
+        if (speed > 1e-4 && length_squared(side) > 1e-8) {
+            up = velocity / speed;
+            right = normalize(side);
+            stretch = 1 + uniforms.orientation.w * speed;
+        }
+        break;
+    }
+    case ParticleOrientationModeFixed: {
+        float3 normal = normalize(uniforms.orientation.xyz);
+        float3 helper = abs(normal.y) < 0.9 ? float3(0, 1, 0) : float3(1, 0, 0);
+        right = normalize(cross(helper, normal));
+        up = cross(normal, right);
+        break;
+    }
+    default:
+        break;
+    }
+
     // Rotate the quad, not the UVs, so textures spin with it.
     float s = sin(p.rotation.x);
     float c = cos(p.rotation.x);
-    float2 offset = float2(c * corner.x - s * corner.y, s * corner.x + c * corner.y);
-    float3 world = p.position.xyz + (uniforms.cameraRight.xyz * offset.x + uniforms.cameraUp.xyz * offset.y) * size;
+    float2 stretched = float2(corner.x, corner.y * stretch);
+    float2 offset = float2(c * stretched.x - s * stretched.y, s * stretched.x + c * stretched.y);
+    float3 world = p.position.xyz + (right * offset.x + up * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = p.color * sampleCurve(colorCurve, t);
     out.uv = corner;

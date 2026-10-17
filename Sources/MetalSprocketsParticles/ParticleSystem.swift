@@ -104,6 +104,8 @@ public struct ParticleEmitter: Sendable, Equatable {
 
     public var forceFields: [ForceField] = []
 
+    public var orientation: ParticleOrientation = .billboard
+
     /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
     public var birthRate: Float = 1_000
     /// Seconds of emission per cycle. `nil` emits forever.
@@ -316,7 +318,10 @@ public final class ParticleSystem {
                 UInt32(max(sequence.columns, 1)),
                 UInt32(max(sequence.rows, 1)),
             ],
-            imageSequence: [UInt32(max(sequence.frameCount, 1)), sequence.mode.rawValue, 0, 0]
+            imageSequence: [UInt32(max(sequence.frameCount, 1)), sequence.mode.rawValue, 0, 0],
+            cameraPosition: SIMD4(cameraToWorld.columns.3.xyz, 1),
+            orientation: emitter.orientation.parameters,
+            orientationMode: [emitter.orientation.mode.rawValue, 0, 0, 0]
         )
         let capacity = capacity
         let blendMode = emitter.blendMode

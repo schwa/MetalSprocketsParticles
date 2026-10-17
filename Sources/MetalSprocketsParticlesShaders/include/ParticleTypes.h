@@ -3,6 +3,13 @@
 #import <simd/simd.h>
 #import "MetalSprocketsShaders.h"
 
+typedef MS_ENUM(uint32_t, ParticleOrientationMode) {
+    ParticleOrientationModeBillboard = 0,
+    ParticleOrientationModeYAligned = 1,
+    ParticleOrientationModeVelocityAligned = 2,
+    ParticleOrientationModeFixed = 3,
+};
+
 /// Samples per over-life lookup table (color, size).
 #define PARTICLE_CURVE_SAMPLES 64
 
@@ -74,6 +81,9 @@ typedef struct {
     simd_float4 cameraUp;
     simd_uint4 options; // x = ParticleBlendMode, y = has texture, z = sheet columns, w = sheet rows
     simd_uint4 imageSequence; // x = frame count, y = ParticleImageSequenceMode
+    simd_float4 cameraPosition;
+    simd_float4 orientation;  // xyz = fixed plane normal, w = velocity stretch factor
+    simd_uint4 orientationMode; // x = ParticleOrientationMode
 } RenderUniforms;
 
 typedef struct {

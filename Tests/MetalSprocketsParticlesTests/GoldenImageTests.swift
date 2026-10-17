@@ -157,6 +157,18 @@ struct GoldenImageTests {
         #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "force-fields"))
     }
 
+    @Test func velocityStretchedSparks() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.birthRate = 3_000
+        emitter.velocity = [0, 6, 0]
+        emitter.velocitySpread = 3
+        emitter.orientation = .velocityAligned(stretch: 0.8)
+        emitter.sizeOverLife = .constant(0.02)
+        emitter.colorOverLife = .linear(from: [1, 0.9, 0.5, 1], to: [1, 0.3, 0.05, 0])
+        emitter.blendMode = .additive
+        #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "velocity-stretched-sparks"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }
