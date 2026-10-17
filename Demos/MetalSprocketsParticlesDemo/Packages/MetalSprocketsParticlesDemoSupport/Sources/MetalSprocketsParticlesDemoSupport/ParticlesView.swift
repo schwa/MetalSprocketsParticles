@@ -24,7 +24,8 @@ public struct ParticlesView: View {
                 try system.simulate(
                     deltaTime: context.frameUniforms.deltaTime,
                     colliders: model.frameColliders(time: context.frameUniforms.time),
-                    transforms: model.frameTransforms(time: context.frameUniforms.time)
+                    transforms: model.frameTransforms(time: context.frameUniforms.time),
+                    view: cameraMatrix.inverse
                 )
                 try RenderPass {
                     if model.showColliders {

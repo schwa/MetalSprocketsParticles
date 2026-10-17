@@ -30,6 +30,9 @@ Results on an Apple M5 Max (40-core GPU), release build:
 | 1M, no turbulence | 0.217 ms | 2.203 ms | 0.52 ms |
 | 1M, sub-pixel particles | 0.240 ms | 0.547 ms | 0.52 ms |
 | 1M, particles 4× wider | 0.231 ms | 7.341 ms | 0.55 ms |
+| 10K, sorted back to front | 0.062 ms | 0.030 ms | 0.60 ms |
+| 100K, sorted back to front | 0.105 ms | 0.193 ms | 0.74 ms |
+| 1M, sorted back to front | 0.992 ms | 2.203 ms | 0.73 ms |
 
 CPU time is wall time minus GPU time for the two submissions. It is mostly fixed submission overhead, not per-particle work.
 
@@ -39,6 +42,8 @@ Before optimization, 1M particles took 2.0 ms to simulate (1.8 ms of it turbulen
 
 - **Turbulence**: curl noise uses gradient noise with analytic derivatives, so it takes 3 noise samples per particle instead of 18. Simulation at 1M dropped from 2.0 ms to 0.23 ms.
 - **Live window**: each emitter simulates and draws only the ring slots that can hold live particles. Unused capacity costs nothing, so a 1M-capacity system with 100K alive costs the same as a 100K system.
+
+Sorting (`sortMode = .backToFront`) is a two-pass 8-bit radix sort on 16-bit depth keys, ported from MetalSprocketsGaussianSplats. It adds about 0.08 ms of GPU time at 100K and 0.76 ms at 1M, plus about 0.2 ms of CPU for its extra dispatches. It is off by default; additive blending does not need it.
 
 ### Where the time goes now
 

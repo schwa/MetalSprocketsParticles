@@ -91,6 +91,7 @@ public extension ParticlePreset {
         "Campfire",
         layers: [
             Layer("Smoke", settings: emitter {
+                $0.sortMode = .backToFront
                 $0.position = [0, 1.1, 0]
                 $0.shape = .disc(radius: 0.15)
                 $0.velocity = [0, 0.8, 0]
@@ -220,6 +221,7 @@ public extension ParticlePreset {
         "Smoke",
         layers: [
             Layer("Smoke", settings: emitter {
+                $0.sortMode = .backToFront
                 $0.position = [0, 0.1, 0]
                 $0.shape = .disc(radius: 0.4)
                 $0.velocity = [0, 0.9, 0]
@@ -243,6 +245,7 @@ public extension ParticlePreset {
         "Snow",
         layers: [
             Layer("Snow", settings: emitter {
+                $0.sortMode = .backToFront
                 $0.position = [0, 5, 0]
                 $0.shape = .plane(size: [10, 10])
                 $0.velocity = [0, -0.6, 0]
@@ -425,6 +428,7 @@ public extension ParticlePreset {
                 $0.colorOverLife = .linear(from: [0.75, 0.88, 1, 0.5], to: [0.6, 0.75, 1, 0.15])
             }, capacity: 90_000),
             Layer("Mist", settings: emitter {
+                $0.sortMode = .backToFront
                 $0.position = [0, 0.2, 0.2]
                 $0.shape = .box(size: [2.4, 0.2, 1.2])
                 $0.velocity = [0, 0.4, 0.3]
@@ -454,6 +458,7 @@ public extension ParticlePreset {
         layers: [
             Layer("Confetti", settings: emitter {
                 // A slow shower from above; flat pieces that tumble in the turbulence and settle on the ground.
+                $0.sortMode = .backToFront
                 $0.position = [0, 5, 0]
                 $0.shape = .plane(size: [6, 4])
                 $0.velocity = [0, -0.5, 0]

@@ -46,6 +46,15 @@ public final class ParticleSystem {
         /// The live bound from the previous step. Each step dispatches from here, so particles that just died get one
         /// last update that stores them as dead; every slot outside the window is then known to be dead.
         var dispatchStartSerial: UInt32 = 0
+        /// Radix sort scratch, created the first time the emitter sorts.
+        var sortBuffers: ParticleSortBuffers?
+        /// Particles sorted this frame, or 0 when this frame was not sorted. Render draws sorted records when nonzero.
+        var sortedCount = 0
+
+        /// World-space center of the emitter's shape, for ordering emitters by distance.
+        var worldCenter: SIMD3<Float> {
+            (transform * SIMD4(settings.position, 1)).xyz
+        }
 
         /// Ring slots that can hold live particles: `count` slots starting at `start`, wrapping at `capacity`.
         var liveWindow: (start: Int, count: Int) {
@@ -108,6 +117,9 @@ public final class ParticleSystem {
     private let placeholderTexture: MTLTexture
     /// Bound in place of a missing emitter mesh; the counts in uniforms keep it unused.
     private let placeholderMesh: EmitterMesh
+    private let sortKernels: ParticleSortKernels
+    /// Bound in place of sort records for unsorted emitters; the shader ignores it.
+    private let placeholderSortRecords: MTLBuffer
     /// Colliders from the previous frame, used to derive collider velocity.
     private var previousColliders: [Collider]?
 
@@ -140,6 +152,12 @@ public final class ParticleSystem {
         placeholderTexture.label = "Particle placeholder texture"
         self.placeholderTexture = placeholderTexture
         placeholderMesh = try EmitterMesh(device: device, positions: [], indices: [])
+        sortKernels = try ParticleSortKernels(library: library)
+        guard let placeholderSortRecords = device.makeBuffer(length: 16, options: .storageModePrivate) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        placeholderSortRecords.label = "Particle placeholder sort records"
+        self.placeholderSortRecords = placeholderSortRecords
         buffer = try Self.makeBuffer(device: device, count: 1)
 
         try setEmitters(emitters.map { ($0, capacity) })
@@ -352,8 +370,9 @@ public final class ParticleSystem {
     /// Advances every emitter one frame in a single compute pass. Put this before the render pass that draws the
     /// particles. The result depends only on `seed`, settings, playback calls, and the sequence of `deltaTime` values.
     /// Pass `colliders` to replace `self.colliders` this frame, and `transforms` to move emitters (matched by index;
-    /// extra entries are ignored, missing ones leave the emitter where it is).
-    public func simulate(deltaTime: Float, colliders: [Collider]? = nil, transforms: [simd_float4x4]? = nil) throws -> some Element {
+    /// extra entries are ignored, missing ones leave the emitter where it is). Pass the camera's `view` matrix to sort
+    /// emitters whose `sortMode` is `.backToFront`; without it they draw unsorted.
+    public func simulate(deltaTime: Float, colliders: [Collider]? = nil, transforms: [simd_float4x4]? = nil, view: simd_float4x4? = nil) throws -> some Element {
         if let colliders {
             self.colliders = colliders
         }
@@ -369,6 +388,8 @@ public final class ParticleSystem {
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
+        let sorts = try sorts(view: view)
+        let sortKernels = sortKernels
         return try ComputePass {
             // Previous frame's vertex stage reads the buffer we are about to write.
             QueueBarrier(after: .vertex, before: .dispatch)
@@ -388,17 +409,63 @@ public final class ParticleSystem {
                 .parameter("meshTriangles", buffer: (dispatches[index].mesh ?? placeholderMesh).triangles)
                 .parameter("meshVertices", buffer: (dispatches[index].mesh ?? placeholderMesh).vertices)
             }
+            if !sorts.isEmpty {
+                // Sorting reads the particles the simulation just wrote.
+                EncoderBarrier(after: .dispatch, before: .dispatch)
+                ForEach(Array(sorts.indices), id: \.self) { index in
+                    try sortKernels.element(sorts[index], particles: buffer)
+                }
+            }
         }
         .barrierAfterPass(after: .dispatch, beforeQueueStages: .vertex)
         .gpuTimed("Simulate")
     }
 
+    /// Sort work for emitters that sort back to front. Also records which emitters are sorted this frame.
+    private func sorts(view: simd_float4x4?) throws -> [EmitterSort] {
+        var sorts: [EmitterSort] = []
+        for emitter in emitters {
+            emitter.sortedCount = 0
+            guard emitter.settings.sortMode == .backToFront, let view else {
+                continue
+            }
+            let window = emitter.liveWindow
+            guard window.count > 0 else {
+                continue
+            }
+            if emitter.sortBuffers?.capacity != emitter.capacity {
+                emitter.sortBuffers = try ParticleSortBuffers(device: device, capacity: emitter.capacity)
+            }
+            guard let buffers = emitter.sortBuffers else {
+                continue
+            }
+            let cameraToWorld = view.inverse
+            let parameters = ParticleSortKeyParams(
+                cameraPosition: SIMD4(cameraToWorld.columns.3.xyz, 1),
+                // The camera looks down its -Z axis.
+                cameraForward: SIMD4(-simd_normalize(cameraToWorld.columns.2.xyz), 0),
+                model: emitter.modelTransform,
+                window: [UInt32(window.start), UInt32(window.count), UInt32(emitter.capacity), UInt32(emitter.range.lowerBound)]
+            )
+            sorts.append(EmitterSort(buffers: buffers, keyParameters: parameters, count: window.count))
+            emitter.sortedCount = window.count
+        }
+        return sorts
+    }
+
     // MARK: Rendering
 
-    /// Draws every emitter's particles, in emitter order. Place inside a `RenderPass`.
+    /// Draws every emitter's particles. Place inside a `RenderPass`. Unsorted emitters draw first, in emitter order; then
+    /// sorted emitters, farthest first by the distance to their shape's center. Particles of different emitters are
+    /// not interleaved.
     public func render(projection: simd_float4x4, view: simd_float4x4) throws -> some Element {
         let cameraToWorld = view.inverse
-        let draws = emitters.map { emitter in
+        let cameraPosition = cameraToWorld.columns.3.xyz
+        let unsorted = emitters.filter { $0.settings.sortMode == .none }
+        let sorted = emitters.filter { $0.settings.sortMode != .none }
+            .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
+        let placeholderSortRecords = placeholderSortRecords
+        let draws = (unsorted + sorted).map { emitter in
             EmitterDraw(emitter: emitter, viewProjection: projection * view, cameraToWorld: cameraToWorld)
         }
         let buffer = buffer
@@ -419,6 +486,7 @@ public final class ParticleSystem {
             .parameter("uniforms", value: draw.uniforms)
             .parameter("colorCurve", values: draw.colorCurve)
             .parameter("sizeCurve", values: draw.sizeCurve)
+            .parameter("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
             .parameter("sprite", texture: draw.texture ?? placeholderTexture)
             .parameter("spriteSampler", samplerState: sampler)
             .renderPipelineDescriptorTransformer { descriptor in
@@ -435,8 +503,10 @@ private struct EmitterDraw {
     var sizeCurve: [Float]
     var texture: MTLTexture?
     var blendMode: ParticleBlendMode
-    /// Instance ranges in the shared buffer: the emitter's live window, split in two where it wraps.
+    /// Instance ranges: the emitter's live window in the shared buffer, split in two where it wraps; or, when
+    /// sorted, the sorted records.
     var segments: [(start: Int, count: Int)]
+    var sortRecords: MTLBuffer?
 
     init(emitter: ParticleSystem.Emitter, viewProjection: simd_float4x4, cameraToWorld: simd_float4x4) {
         let settings = emitter.settings
@@ -448,10 +518,17 @@ private struct EmitterDraw {
         sizeCurve = settings.sizeOverLife.baked()
         texture = emitter.texture
         blendMode = settings.blendMode
-        let base = emitter.range.lowerBound
-        let window = emitter.liveWindow
-        let firstCount = min(window.count, emitter.capacity - window.start)
-        segments = [(base + window.start, firstCount), (base, window.count - firstCount)]
+        if emitter.sortedCount > 0, let buffers = emitter.sortBuffers {
+            // Sorted records hold absolute particle indices, so instances start at 0.
+            segments = [(0, emitter.sortedCount)]
+            sortRecords = buffers.recordsA
+        } else {
+            let base = emitter.range.lowerBound
+            let window = emitter.liveWindow
+            let firstCount = min(window.count, emitter.capacity - window.start)
+            segments = [(base + window.start, firstCount), (base, window.count - firstCount)]
+            sortRecords = nil
+        }
         uniforms = RenderUniforms(
             viewProjection: viewProjection,
             model: emitter.modelTransform,
@@ -466,7 +543,7 @@ private struct EmitterDraw {
             imageSequence: [UInt32(max(sequence.frameCount, 1)), sequence.mode.rawValue, 0, 0],
             cameraPosition: SIMD4(cameraToWorld.columns.3.xyz, 1),
             orientation: settings.orientation.parameters,
-            orientationMode: [settings.orientation.mode.rawValue, 0, 0, 0]
+            orientationMode: [settings.orientation.mode.rawValue, sortRecords == nil ? 0 : 1, 0, 0]
         )
     }
 }

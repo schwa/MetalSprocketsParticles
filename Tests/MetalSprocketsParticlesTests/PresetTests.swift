@@ -86,7 +86,7 @@ struct PresetRenderTests {
         for frame in 0..<180 {
             let time = Float(frame) / 60
             rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: 1.0 / 60.0, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time))
+                try system.simulate(deltaTime: 1.0 / 60.0, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: view)
                 try RenderPass { try system.render(projection: projection, view: view) }
             })
         }

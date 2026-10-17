@@ -80,6 +80,8 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var angularSpeedVariation: Float = 0
 
     public var blendMode: ParticleBlendMode = .alpha
+    /// Back-to-front sorting for alpha blending. Additive blending does not need it.
+    public var sortMode: ParticleSortMode = .none
 
     /// Treats the emitter's texture as a grid of animation frames. Ignored without a texture.
     public var imageSequence: ImageSequence?

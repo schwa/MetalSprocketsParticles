@@ -65,13 +65,14 @@ Boxes are axis-aligned only. There is no rotated box, capsule, or SDF collider.
 ## 4: Transparent particles are not sorted
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:l, area:rendering
 depends: 33
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T19:36:36Z
+updated: 2026-10-17T21:37:21Z
+closed: 2026-10-17T21:37:21Z
 +++
 
 Alpha-blended particles draw in buffer order, which is wrong for non-additive blending.
@@ -80,6 +81,7 @@ Alpha-blended particles draw in buffer order, which is wrong for non-additive bl
 - `2026-10-17T14:11:14Z`: Related: #19 (additive blending needs no sorting).
 - `2026-10-17T19:36:36Z`: Depends on #33: sorting must work across emitters sharing one buffer; build it once after that lands.
 - `2026-10-17T20:30:12Z`: See ~/Projects/Current/MetalSprockets/MetalSprocketsGaussianSplats/ for good GPU sorting algorithms.
+- `2026-10-17T21:37:21Z`: Added ParticleEmitter.sortMode (.none default, .backToFront). Sorting is a GPU 8-bit LSD radix sort on 16-bit view-depth keys over each emitter's live window, ported from MetalSprocketsGaussianSplats; the vertex shader reads through the sorted records. Pass view: to simulate. Across emitters: sorted emitters draw after unsorted ones, farthest emitter first; particles of different emitters are not interleaved (separate draws per blend mode/texture). Cost: +0.08 ms GPU at 100K, +0.76 ms at 1M. Enabled for Smoke, Campfire smoke, Snow, Waterfall mist, Confetti.
 
 ---
 

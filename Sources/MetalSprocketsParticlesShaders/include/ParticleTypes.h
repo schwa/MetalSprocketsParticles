@@ -47,6 +47,22 @@ typedef struct {
     simd_float4 c;
 } EmitterMeshTriangle;
 
+/// Builds back-to-front sort records for one emitter's live window. Records are uint2(key, particle index).
+typedef struct {
+    simd_float4 cameraPosition; // World space.
+    simd_float4 cameraForward;  // World space, unit length.
+    simd_float4x4 model;        // Simulation space to world, as in RenderUniforms.
+    simd_uint4 window;          // x = first live slot, y = live count, z = emitter capacity, w = emitter slice start
+} ParticleSortKeyParams;
+
+/// One LSD radix pass over 8 bits of the key.
+typedef struct {
+    uint32_t numElements;
+    uint32_t numTiles;
+    uint32_t elementsPerTile;
+    uint32_t shift;
+} ParticleRadixParams;
+
 /// Samples per over-life lookup table (color, size).
 #define PARTICLE_CURVE_SAMPLES 64
 
@@ -141,7 +157,7 @@ typedef struct {
     simd_uint4 imageSequence; // x = frame count, y = ParticleImageSequenceMode
     simd_float4 cameraPosition;
     simd_float4 orientation;  // xyz = fixed plane normal, w = velocity stretch factor
-    simd_uint4 orientationMode; // x = ParticleOrientationMode
+    simd_uint4 orientationMode; // x = ParticleOrientationMode, y = nonzero to read particles through the sort entries
 } RenderUniforms;
 
 typedef struct {

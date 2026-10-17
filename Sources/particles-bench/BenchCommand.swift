@@ -32,6 +32,7 @@ struct BenchCommand: ParsableCommand {
         var turbulence = true
         /// Half-width in world units. 0.01 is a few pixels at 1080p from this camera.
         var size: Float = 0.01
+        var sortMode: ParticleSortMode = .none
     }
 
     func run() throws {
@@ -43,6 +44,9 @@ struct BenchCommand: ParsableCommand {
             Scenario(name: "1M, no turbulence", capacity: 1_000_000, alive: 1_000_000, turbulence: false),
             Scenario(name: "1M, sub-pixel", capacity: 1_000_000, alive: 1_000_000, size: 0.0005),
             Scenario(name: "1M, 4x size", capacity: 1_000_000, alive: 1_000_000, size: 0.04),
+            Scenario(name: "10K, sorted", capacity: 10_000, alive: 10_000, sortMode: .backToFront),
+            Scenario(name: "100K, sorted", capacity: 100_000, alive: 100_000, sortMode: .backToFront),
+            Scenario(name: "1M, sorted", capacity: 1_000_000, alive: 1_000_000, sortMode: .backToFront),
         ]
         print("Scenario              | simulate GPU | render GPU | CPU/frame")
         print("----------------------|--------------|------------|----------")
@@ -70,6 +74,7 @@ struct BenchCommand: ParsableCommand {
         emitter.lifetime = lifetime...lifetime
         emitter.birthRate = Float(scenario.alive) / lifetime
         emitter.sizeOverLife = .constant(scenario.size)
+        emitter.sortMode = scenario.sortMode
         return emitter
     }
 
@@ -87,7 +92,7 @@ struct BenchCommand: ParsableCommand {
         for frame in 0..<(warmupFrames + frames) {
             // Separate submissions so each pass gets its own GPU duration.
             let cpuStart = ContinuousClock.now
-            let simulated = try renderer.render(try system.simulate(deltaTime: 1.0 / 60.0))
+            let simulated = try renderer.render(try system.simulate(deltaTime: 1.0 / 60.0, view: view))
             let rendered = try renderer.render(try RenderPass { try system.render(projection: projection, view: view) })
             let cpu = ContinuousClock.now - cpuStart
             guard frame >= warmupFrames else {

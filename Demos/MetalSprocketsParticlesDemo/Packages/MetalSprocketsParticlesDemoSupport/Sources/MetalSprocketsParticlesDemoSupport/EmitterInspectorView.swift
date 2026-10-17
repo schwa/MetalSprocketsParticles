@@ -194,6 +194,11 @@ struct AppearanceSectionView: View {
                     Text(mode.name).tag(mode)
                 }
             }
+            Picker("Sort", selection: $emitter.settings.sortMode) {
+                ForEach(ParticleSortMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
             Picker("Orientation", selection: $emitter.settings.orientationKind) {
                 ForEach(OrientationKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)

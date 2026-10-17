@@ -36,7 +36,7 @@ struct GoldenImageTests {
         for frame in 0..<frames {
             perFrame(system, frame)
             rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: 1.0 / 60.0)
+                try system.simulate(deltaTime: 1.0 / 60.0, view: view)
                 try RenderPass {
                     if colliders {
                         try system.renderColliders(projection: projection, view: view)

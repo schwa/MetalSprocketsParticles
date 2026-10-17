@@ -67,7 +67,7 @@ struct RenderCommand: ParsableCommand {
         for frame in 0..<max(frames, 1) {
             let time = Float(frame) * deltaTime
             rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time))
+                try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: camera.inverse)
                 try RenderPass {
                     if wireframes {
                         try system.renderColliders(projection: projection, view: camera.inverse)

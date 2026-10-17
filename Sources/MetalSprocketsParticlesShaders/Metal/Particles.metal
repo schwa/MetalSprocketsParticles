@@ -526,10 +526,12 @@ vertex VertexOut particleVertex(
     const device Particle *particles [[buffer(0)]],
     constant RenderUniforms &uniforms [[buffer(1)]],
     constant float4 *colorCurve [[buffer(2)]],
-    constant float *sizeCurve [[buffer(3)]]
+    constant float *sizeCurve [[buffer(3)]],
+    const device uint2 *sortRecords [[buffer(4)]]
 ) {
     const float2 corners[4] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(1, 1) };
-    Particle p = particles[instanceID];
+    // Sorted emitters draw instance i as the i-th farthest particle.
+    Particle p = particles[uniforms.orientationMode.y != 0 ? sortRecords[instanceID].y : instanceID];
     VertexOut out;
     float age = p.position.w;
     float lifetime = p.velocity.w;
