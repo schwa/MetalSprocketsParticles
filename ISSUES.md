@@ -662,3 +662,29 @@ Emitters only emit on their own clock (birth rate, duration, idle) or when code 
 - `2026-10-17T19:36:36Z`: Depends on #33. Design with #9.
 
 ---
+
+## 35: More emitter shapes: volume, plane, circle, etc.
+
++++
+status: new
+priority: medium
+kind: feature
+created: 2026-10-17T20:11:25Z
++++
+
+Add emitter types that spawn particles from shapes: volumes (box, sphere), planes, circles/rings, and similar.
+
+---
+
+## 36: Doctor Strange portal example
+
++++
+status: new
+priority: medium
+kind: feature
+created: 2026-10-17T20:11:25Z
++++
+
+Add an example of a Doctor Strange-style portal: sparks thrown off a spinning ring, like a Catherine wheel.
+
+---
