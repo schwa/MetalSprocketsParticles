@@ -169,6 +169,16 @@ struct GoldenImageTests {
         #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "velocity-stretched-sparks"))
     }
 
+    @Test func birthVariation() throws {
+        var emitter = ParticleEmitter.fountain
+        emitter.birthRate = 6_000
+        emitter.sizeVariation = 0.8
+        emitter.speedVariation = 1.5
+        emitter.colorVariation = [0.15, 0.3, 0.2, 0]
+        emitter.restitutionVariation = 0.3
+        #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "birth-variation"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }

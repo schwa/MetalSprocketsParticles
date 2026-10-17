@@ -87,7 +87,18 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var gravity: SIMD3<Float> = [0, -9.8, 0]
     public var drag: Float = 0.1
     public var restitution: Float = 0.4
+    /// Per-particle offset range for `restitution`, picked at birth.
+    public var restitutionVariation: Float = 0
     public var friction: Float = 0.2
+    /// Per-particle offset range for `friction`, picked at birth.
+    public var frictionVariation: Float = 0
+    /// Per-particle offset range in m/s for initial speed, applied after `velocitySpread`.
+    public var speedVariation: Float = 0
+    /// Per-particle size multiplier range as a fraction: 0.25 scales `sizeOverLife` by 0.75...1.25.
+    public var sizeVariation: Float = 0
+    /// Per-particle offset ranges for hue (in turns, wraps), saturation, brightness, and alpha, applied to
+    /// `colorOverLife`.
+    public var colorVariation: SIMD4<Float> = .zero
     public var colliders: [Collider] = [.plane(normal: [0, 1, 0], distance: 0)]
 
     /// Initial rotation in radians, ± `angleVariation`.
@@ -108,6 +119,8 @@ public struct ParticleEmitter: Sendable, Equatable {
 
     /// Particles spawned per second while emitting. When the ring is full, the oldest particles are recycled.
     public var birthRate: Float = 1_000
+    /// Offset range for `birthRate`, picked once per emission cycle (once overall when emission does not loop).
+    public var birthRateVariation: Float = 0
     /// Seconds of emission per cycle. `nil` emits forever.
     public var emissionDuration: Float?
     /// Seconds without emission after each emission period. Only used when `emissionDuration` is set.
@@ -142,7 +155,7 @@ public final class ParticleSystem {
     private let sampler: MTLSamplerState
     /// Bound in place of `texture` when there is none; the shader ignores it.
     private let placeholderTexture: MTLTexture
-    private(set) var spawner = Spawner()
+    private(set) var spawner: Spawner
     private var needsKill = false
     private var needsWarmup = true
     /// Colliders from the previous frame, used to derive collider velocity.
@@ -166,6 +179,7 @@ public final class ParticleSystem {
         self.capacity = capacity
         self.emitter = emitter
         self.seed = seed
+        spawner = Spawner(seed: seed)
         library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
 
         let samplerDescriptor = MTLSamplerDescriptor()
@@ -215,7 +229,7 @@ public final class ParticleSystem {
 
     /// Removes all particles, resets the emission clock, and runs warmup again.
     public func restart() {
-        spawner = Spawner()
+        spawner = Spawner(seed: seed)
         needsKill = true
         needsWarmup = true
         if state != .playing {
@@ -250,6 +264,8 @@ public final class ParticleSystem {
                 [$0.initialFrame, $0.initialFrameVariation, $0.frameRate, $0.frameRateVariation]
             } ?? .zero,
             fields: [Float(emitter.forceFields.count), 0, 0, 0],
+            variation: [max(emitter.sizeVariation, 0), max(emitter.restitutionVariation, 0), max(emitter.frictionVariation, 0), max(emitter.speedVariation, 0)],
+            colorVariation: simd_max(emitter.colorVariation, .zero),
             random: [seed, UInt32(capacity), 0, 0],
             spawn: .zero
         )

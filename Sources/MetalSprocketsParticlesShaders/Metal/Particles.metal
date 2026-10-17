@@ -139,15 +139,26 @@ kernel void updateParticles(
         float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
         dt *= rng.next();
-        // Drawn after the values above so adding rotation did not change existing random streams.
+        // New draws go after existing ones, so adding a property does not change earlier random streams.
         float angle = uniforms.rotation.x + (rng.next() * 2 - 1) * uniforms.rotation.y;
         float angularVelocity = uniforms.rotation.z + (rng.next() * 2 - 1) * uniforms.rotation.w;
-        p.position = float4(position, 0);
-        p.velocity = float4(velocity, lifetime);
         float initialFrame = max(0.0, uniforms.imageSequence.x + (rng.next() * 2 - 1) * uniforms.imageSequence.y);
         float frameRate = uniforms.imageSequence.z + (rng.next() * 2 - 1) * uniforms.imageSequence.w;
+        float4 variation = uniforms.variation;
+        float sizeScale = max(0.0, 1 + (rng.next() * 2 - 1) * variation.x);
+        float restitutionOffset = (rng.next() * 2 - 1) * variation.y;
+        float frictionOffset = (rng.next() * 2 - 1) * variation.z;
+        float speedOffset = (rng.next() * 2 - 1) * variation.w;
+        float speed = length(velocity);
+        if (speed > 1e-6) {
+            velocity *= max(0.0, speed + speedOffset) / speed;
+        }
+        float4 colorOffset = float4(rng.next(), rng.next(), rng.next(), rng.next()) * 2 - 1;
+        p.position = float4(position, 0);
+        p.velocity = float4(velocity, lifetime);
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
-        p.color = float4(1);
+        p.color = colorOffset * uniforms.colorVariation;
+        p.properties = float4(sizeScale, restitutionOffset, frictionOffset, 0);
     }
 
     float lifetime = p.velocity.w;
@@ -171,8 +182,8 @@ kernel void updateParticles(
     position += velocity * dt;
     p.rotation.x += p.rotation.y * dt;
 
-    float restitution = uniforms.collision.x;
-    float friction = uniforms.collision.y;
+    float restitution = max(0.0, uniforms.collision.x + p.properties.y);
+    float friction = saturate(uniforms.collision.y + p.properties.z);
 
     uint colliderCount = uint(uniforms.collision.z);
     for (uint i = 0; i < colliderCount; i++) {
@@ -226,6 +237,31 @@ static T sampleCurve(constant T *curve, float t) {
     return mix(curve[index], curve[index + 1], x - float(index));
 }
 
+static float3 rgbToHSV(float3 c) {
+    float4 k = float4(0, -1.0 / 3.0, 2.0 / 3.0, -1);
+    float4 p = c.g < c.b ? float4(c.bg, k.wz) : float4(c.gb, k.xy);
+    float4 q = c.r < p.x ? float4(p.xyw, c.r) : float4(c.r, p.yzx);
+    float d = q.x - min(q.w, q.y);
+    return float3(abs(q.z + (q.w - q.y) / (6 * d + 1e-10)), d / (q.x + 1e-10), q.x);
+}
+
+static float3 hsvToRGB(float3 c) {
+    float3 p = abs(fract(c.xxx + float3(1, 2.0 / 3.0, 1.0 / 3.0)) * 6 - 3);
+    return c.z * mix(float3(1), saturate(p - 1), c.y);
+}
+
+// Shifts hue (wrapping), saturation, brightness, and alpha by the particle's offsets.
+static float4 applyColorVariation(float4 color, float4 offset) {
+    if (all(offset == 0)) {
+        return color;
+    }
+    float3 hsv = rgbToHSV(color.rgb);
+    hsv.x = fract(hsv.x + offset.x);
+    hsv.y = saturate(hsv.y + offset.y);
+    hsv.z = max(0.0, hsv.z + offset.z);
+    return float4(hsvToRGB(hsv), saturate(color.a + offset.w));
+}
+
 struct VertexOut {
     float4 position [[position]];
     float4 color;
@@ -274,7 +310,7 @@ vertex VertexOut particleVertex(
         return out;
     }
     float t = saturate(age / lifetime);
-    float size = sampleCurve(sizeCurve, t);
+    float size = sampleCurve(sizeCurve, t) * p.properties.x;
     float2 corner = corners[vertexID];
 
     // The quad's right and up axes in world space.
@@ -321,7 +357,7 @@ vertex VertexOut particleVertex(
     float2 offset = float2(c * stretched.x - s * stretched.y, s * stretched.x + c * stretched.y);
     float3 world = p.position.xyz + (right * offset.x + up * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
-    out.color = p.color * sampleCurve(colorCurve, t);
+    out.color = applyColorVariation(sampleCurve(colorCurve, t), p.color);
     out.uv = corner;
     uint columns = max(uniforms.options.z, 1u);
     uint rows = max(uniforms.options.w, 1u);

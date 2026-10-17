@@ -351,15 +351,18 @@ Particles always use premultiplied alpha blending. SceneKit blendMode and Realit
 ## 20: Per-particle properties are not randomized at birth
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:emission
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T16:38:00Z
+closed: 2026-10-17T16:38:00Z
 +++
 
 Only position, velocity, and lifetime vary per particle. Both SceneKit and RealityKit pair almost every property with a *Variation range: size, color, angle, angular speed, mass, bounce, friction, birth rate, image sequence frame and rate.
+
+- `2026-10-17T16:38:00Z`: Added sizeVariation, speedVariation, colorVariation (HSBA offsets on the curve color), restitutionVariation, frictionVariation, and birthRateVariation (per emission cycle, seeded). Per-particle bounce/friction are offsets so live emitter edits still apply. Mass skipped: no force uses it yet. Existing goldens unchanged.
 
 ---
 

@@ -32,6 +32,6 @@ struct DeterminismTests {
 
 extension Particle: @retroactive Equatable {
     public static func == (lhs: Particle, rhs: Particle) -> Bool {
-        lhs.position == rhs.position && lhs.velocity == rhs.velocity && lhs.color == rhs.color && lhs.rotation == rhs.rotation
+        lhs.position == rhs.position && lhs.velocity == rhs.velocity && lhs.color == rhs.color && lhs.rotation == rhs.rotation && lhs.properties == rhs.properties
     }
 }

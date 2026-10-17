@@ -38,8 +38,9 @@ typedef MS_ENUM(uint32_t, ParticleImageSequenceMode) {
 typedef struct {
     simd_float4 position; // xyz, w = age
     simd_float4 velocity; // xyz, w = lifetime (0 = never spawned). Dead when age >= lifetime.
-    simd_float4 color;    // Per-particle tint, multiplied with the color-over-life curve.
-    simd_float4 rotation; // x = angle (radians), y = angular velocity (radians per second), z = initial frame, w = frame rate
+    simd_float4 color;      // Per-particle hue, saturation, brightness, alpha offsets applied to the color-over-life curve.
+    simd_float4 rotation;   // x = angle (radians), y = angular velocity (radians per second), z = initial frame, w = frame rate
+    simd_float4 properties; // x = size scale, y = restitution offset, z = friction offset
 } Particle;
 
 typedef struct {
@@ -51,6 +52,8 @@ typedef struct {
     simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
     simd_float4 imageSequence;   // x = initial frame, y = initial frame variation, z = frame rate, w = frame rate variation
     simd_float4 fields;          // x = force field count, y = simulation time (seconds)
+    simd_float4 variation;       // +/- ranges: x = size (fraction), y = restitution, z = friction, w = speed
+    simd_float4 colorVariation;  // +/- ranges: hue (turns), saturation, brightness, alpha
     simd_uint4 random;           // x = seed, y = capacity
     // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
     // w = nonzero to kill all particles before this step.
