@@ -12,6 +12,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.3")),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
+        .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.6")),
     ],
     targets: [
         .target(
@@ -24,7 +25,9 @@ let package = Package(
             dependencies: [
                 "MetalSprocketsParticles",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
-            ]
+                .product(name: "GoldenImage", package: "GoldenImage"),
+            ],
+            resources: [.copy("Golden Images")]
         ),
         .executableTarget(
             name: "particles-render",

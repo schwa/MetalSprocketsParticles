@@ -1,6 +1,15 @@
 {
-  "originHash" : "53619e5cf7937aa7be153d0f548bbc27e06ccdd6ea54d9927b5598efc50b15ea",
+  "originHash" : "d74594555a3dd041e6b09b761fb9cbef69d984c44037666a21839307b01a2456",
   "pins" : [
+    {
+      "identity" : "goldenimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/schwa/GoldenImage",
+      "state" : {
+        "revision" : "03b4d1557869ebb2161551edf97f7a27630dc7a7",
+        "version" : "0.1.6"
+      }
+    },
     {
       "identity" : "metalcompilerplugin",
       "kind" : "remoteSourceControl",

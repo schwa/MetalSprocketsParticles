@@ -217,18 +217,20 @@ Initial spawn delays use Float.random on the CPU, and the GPU RNG is seeded from
 ## 13: No golden image tests
 
 +++
-status: open
+status: closed
 priority: high
 kind: task
 labels: effort:m, area:tooling
 depends: 12
 created: 2026-10-17T13:35:53Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T14:59:11Z
+closed: 2026-10-17T14:59:11Z
 +++
 
 Rendering is only checked by running the demo app and looking at it. There are no automated tests that render particles offscreen with OffscreenRenderer and compare against reference images with GoldenImage. Depends on repeatable simulation.
 
 - `2026-10-17T14:11:14Z`: Related: #15 (color differences show up in golden images).
+- `2026-10-17T14:59:11Z`: Added GoldenImageTests: three fountain renders (early, settled, no wireframes) at 640x360 compared against bundled goldens at 30 dB PSNR, plus a check that a different seed fails. Mismatched renders are written to /tmp/<name>.png for promotion.
 
 ---
 

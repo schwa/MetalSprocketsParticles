@@ -172,6 +172,8 @@ struct WireframeUniforms {
     float4 color;
 };
 
+
+
 struct WireframeOut {
     float4 position [[position]];
 };
