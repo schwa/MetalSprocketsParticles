@@ -50,6 +50,15 @@ public final class ParticleSystem {
         var sortBuffers: ParticleSortBuffers?
         /// Particles sorted this frame, or 0 when this frame was not sorted. Render draws sorted records when nonzero.
         var sortedCount = 0
+        /// For a sub-emitter instance: the emitter whose particles spawn this one's, and which of its sub-emitters this is.
+        weak var parent: Emitter?
+        var subEmitterIndex = 0
+        /// Sub-emitter instances driven by this emitter, in `settings.subEmitters` order.
+        var children: [Emitter] = []
+
+        var isSubEmitter: Bool {
+            parent != nil
+        }
 
         /// World-space center of the emitter's shape, for ordering emitters by distance.
         var worldCenter: SIMD3<Float> {
@@ -57,7 +66,11 @@ public final class ParticleSystem {
         }
 
         /// Ring slots that can hold live particles: `count` slots starting at `start`, wrapping at `capacity`.
+        /// Sub-emitter children are written by their parents, not spawned in order, so their window is everything.
         var liveWindow: (start: Int, count: Int) {
+            if isSubEmitter {
+                return (0, capacity)
+            }
             let start = spawner.liveStartSerial
             return (Int(start % UInt32(capacity)), min(Int(spawner.serial &- start), capacity))
         }
@@ -91,6 +104,15 @@ public final class ParticleSystem {
 
     public let seed: UInt32
     public private(set) var emitters: [Emitter] = []
+    /// Instances for every emitter's `settings.subEmitters`, stored after all emitters in the shared buffer.
+    private(set) var subEmitterInstances: [Emitter] = []
+    /// `countPerEvent` of each emitter's sub-emitters when the buffer was built, to notice structural changes.
+    private var subEmitterLayout: [[Int]] = []
+
+    /// Emitters and sub-emitter instances, in buffer order.
+    var allEmitters: [Emitter] {
+        emitters + subEmitterInstances
+    }
     /// World-space colliders shared by every emitter. Update them per frame to move them; their velocity is derived
     /// from the change since the previous frame.
     public var colliders: [Collider] = []
@@ -102,9 +124,9 @@ public final class ParticleSystem {
     public var state: SimulationState = .playing {
         didSet {
             if state == .stopped {
-                emitters.forEach { $0.needsKill = true }
+                allEmitters.forEach { $0.needsKill = true }
             } else if oldValue == .stopped {
-                emitters.forEach { $0.restart() }
+                allEmitters.forEach { $0.restart() }
             }
         }
     }
@@ -125,7 +147,7 @@ public final class ParticleSystem {
 
     /// Total particles across all emitters.
     public var capacity: Int {
-        emitters.reduce(0) { $0 + $1.capacity }
+        allEmitters.reduce(0) { $0 + $1.capacity }
     }
 
     /// Creates a system with one emitter per entry in `emitters`, each with room for `capacity` particles.
@@ -194,29 +216,54 @@ public final class ParticleSystem {
             created.append(Emitter(settings: entry.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(index)))
             start += capacity
         }
+        // Sub-emitter instances follow all emitters. Each parent slot owns countPerEvent child slots.
+        var children: [Emitter] = []
+        for parent in created {
+            for (subIndex, sub) in parent.settings.subEmitters.enumerated() {
+                let capacity = parent.capacity * max(sub.countPerEvent, 1)
+                let child = Emitter(settings: sub.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(created.count + children.count))
+                child.parent = parent
+                child.subEmitterIndex = subIndex
+                child.needsWarmup = false
+                parent.children.append(child)
+                children.append(child)
+                start += capacity
+            }
+        }
         buffer = try Self.makeBuffer(device: device, count: start)
         self.emitters = created
+        subEmitterInstances = children
+        subEmitterLayout = Self.subEmitterLayout(of: created)
         return created
     }
 
-    /// Adds an emitter. Reallocates the particle buffer, so all particles are removed.
-    @discardableResult
-    public func addEmitter(_ settings: ParticleEmitter, capacity: Int) throws -> Emitter {
+    private static func subEmitterLayout(of emitters: [Emitter]) -> [[Int]] {
+        emitters.map { $0.settings.subEmitters.map { max($0.countPerEvent, 1) } }
+    }
+
+    /// Rebuilds the buffer for the current emitters, keeping runtime state that is not part of the settings.
+    private func rebuild(adding extra: [(settings: ParticleEmitter, capacity: Int)] = []) throws {
         let existing = emitters
-        try setEmitters(existing.map { ($0.settings, $0.capacity) } + [(settings, capacity)])
-        // Keep runtime state that is not part of the settings.
+        try setEmitters(existing.map { ($0.settings, $0.capacity) } + extra)
         for (old, new) in zip(existing, emitters) {
             new.texture = old.texture
             new.transform = old.transform
             new.simulationSpace = old.simulationSpace
             new.isEmitting = old.isEmitting
+            new.mesh = old.mesh
         }
+    }
+
+    /// Adds an emitter. Reallocates the particle buffer, so all particles are removed.
+    @discardableResult
+    public func addEmitter(_ settings: ParticleEmitter, capacity: Int) throws -> Emitter {
+        try rebuild(adding: [(settings, capacity)])
         return emitters[emitters.count - 1]
     }
 
     /// Removes all particles from every emitter, resets their clocks, and runs warmup again.
     public func restart() {
-        emitters.forEach { $0.restart() }
+        allEmitters.forEach { $0.restart() }
         if state != .playing {
             state = .playing
         }
@@ -282,17 +329,44 @@ public final class ParticleSystem {
         var mesh: EmitterMesh?
         /// The previous dispatch wrote the same slice.
         var followsSameEmitter: Bool
+        /// The emitter's sub-emitters and the settings their children spawn with. Never empty; the count in
+        /// `uniforms.fields.z` keeps padding unused.
+        var subEmitters: [SubEmitterData]
+        var subEmitterUniforms: [SimulationUniforms]
     }
 
     private func makeStep(_ emitter: Emitter, deltaTime: Float, motion: SpawnMotion) -> (uniforms: SimulationUniforms, threadCount: Int) {
         let settings = emitter.settings
         let playing = state == .playing
         let deltaTime = playing ? deltaTime : 0
+        // Sub-emitter instances never spawn on their own; their parents write their particles.
         let spawn = playing
-            ? emitter.spawner.advance(deltaTime: deltaTime, emitter: settings, capacity: emitter.capacity, isEmitting: emitter.isEmitting)
+            ? emitter.spawner.advance(deltaTime: deltaTime, emitter: settings, capacity: emitter.capacity, isEmitting: emitter.isEmitting && !emitter.isSubEmitter)
             : Spawner.Step(cursor: emitter.spawner.cursor, count: 0, serial: emitter.spawner.serial)
+        var uniforms = self.uniforms(for: emitter, deltaTime: deltaTime, motion: motion, spawn: spawn)
+        uniforms.fields.z = Float(emitter.children.count)
+        // Touch only slots that can hold live particles, plus those that died since the last step. A kill, or a
+        // sub-emitter instance, touches all.
+        let threadCount: Int
+        if emitter.needsKill || emitter.isSubEmitter {
+            uniforms.random.w = 0
+            threadCount = emitter.capacity
+        } else {
+            let start = emitter.dispatchStartSerial
+            uniforms.random.w = start % UInt32(emitter.capacity)
+            threadCount = min(Int(emitter.spawner.serial &- start), emitter.capacity)
+        }
+        emitter.dispatchStartSerial = emitter.spawner.liveStartSerial
+        emitter.needsKill = false
+        // Never dispatch zero threads; an extra dead slot is harmless.
+        return (uniforms, max(threadCount, 1))
+    }
+
+    /// An emitter's settings for one step, without side effects. Sub-emitter children spawn with these too.
+    private func uniforms(for emitter: Emitter, deltaTime: Float, motion: SpawnMotion, spawn: Spawner.Step) -> SimulationUniforms {
+        let settings = emitter.settings
         let model = emitter.modelTransform
-        let uniforms = SimulationUniforms(
+        return SimulationUniforms(
             emitterTransform: motion.transform,
             simulationToWorld: model,
             worldToSimulation: model.inverse,
@@ -321,21 +395,30 @@ public final class ParticleSystem {
             random: [emitter.seed, UInt32(emitter.capacity), UInt32(emitter.range.lowerBound), 0],
             spawn: [spawn.cursor, spawn.count, spawn.serial, emitter.needsKill ? 1 : 0]
         )
-        // Touch only slots that can hold live particles, plus those that died since the last step. A kill touches all.
-        var dispatchUniforms = uniforms
-        let threadCount: Int
-        if emitter.needsKill {
-            dispatchUniforms.random.w = 0
-            threadCount = emitter.capacity
-        } else {
-            let start = emitter.dispatchStartSerial
-            dispatchUniforms.random.w = start % UInt32(emitter.capacity)
-            threadCount = min(Int(emitter.spawner.serial &- start), emitter.capacity)
+    }
+
+    /// What the parent's kernel needs to write `emitter`'s children.
+    private func subEmitterData(for emitter: Emitter) -> (data: [SubEmitterData], uniforms: [SimulationUniforms]) {
+        var data: [SubEmitterData] = []
+        var uniforms: [SimulationUniforms] = []
+        for child in emitter.children {
+            guard child.subEmitterIndex < emitter.settings.subEmitters.count else {
+                continue
+            }
+            let sub = emitter.settings.subEmitters[child.subEmitterIndex]
+            data.append(SubEmitterData(
+                info: [sub.occasionCode.rawValue, UInt32(max(sub.countPerEvent, 1)), UInt32(child.range.lowerBound), UInt32(child.capacity)],
+                parameters: [sub.velocityFactor, sub.interval, 0, 0]
+            ))
+            let still = Spawner.Step(cursor: 0, count: 0, serial: 0)
+            uniforms.append(self.uniforms(for: child, deltaTime: 0, motion: SpawnMotion(), spawn: still))
         }
-        emitter.dispatchStartSerial = emitter.spawner.liveStartSerial
-        emitter.needsKill = false
-        // Never dispatch zero threads; an extra dead slot is harmless.
-        return (dispatchUniforms, max(threadCount, 1))
+        // Never bind empty arrays.
+        if data.isEmpty {
+            data = [SubEmitterData(info: .zero, parameters: .zero)]
+            uniforms = [self.uniforms(for: emitter, deltaTime: 0, motion: SpawnMotion(), spawn: Spawner.Step(cursor: 0, count: 0, serial: 0))]
+        }
+        return (data, uniforms)
     }
 
     private func dispatches(_ emitter: Emitter, frameDeltaTime: Float) -> [Dispatch] {
@@ -362,8 +445,17 @@ public final class ParticleSystem {
             previousOrigin: previousOrigin,
             inheritedVelocity: emitterVelocity * emitter.settings.inheritVelocity
         )))
+        let subEmitters = subEmitterData(for: emitter)
         return steps.enumerated().map { index, step in
-            Dispatch(uniforms: step.uniforms, threadCount: step.threadCount, mesh: emitter.mesh, followsSameEmitter: index > 0)
+            Dispatch(
+                uniforms: step.uniforms,
+                threadCount: step.threadCount,
+                mesh: emitter.mesh,
+                // Sub-emitter instances run after their parents have written their children.
+                followsSameEmitter: index > 0 || emitter.isSubEmitter,
+                subEmitters: subEmitters.data,
+                subEmitterUniforms: subEmitters.uniforms
+            )
         }
     }
 
@@ -381,8 +473,16 @@ public final class ParticleSystem {
                 emitter.transform = transform
             }
         }
+        if Self.subEmitterLayout(of: emitters) != subEmitterLayout {
+            try rebuild()
+        }
+        for child in subEmitterInstances {
+            if let parent = child.parent, child.subEmitterIndex < parent.settings.subEmitters.count {
+                child.settings = parent.settings.subEmitters[child.subEmitterIndex].settings
+            }
+        }
         let frameDeltaTime = min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)
-        let dispatches = emitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime) }
+        let dispatches = allEmitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime) }
         let colliderData = colliderData(deltaTime: state == .playing ? frameDeltaTime : 0)
         let forceFieldData = forceFields.map(ForceFieldData.init)
         let placeholderMesh = placeholderMesh
@@ -408,6 +508,8 @@ public final class ParticleSystem {
                 .parameter("forceFields", values: forceFieldData.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : forceFieldData)
                 .parameter("meshTriangles", buffer: (dispatches[index].mesh ?? placeholderMesh).triangles)
                 .parameter("meshVertices", buffer: (dispatches[index].mesh ?? placeholderMesh).vertices)
+                .parameter("subEmitters", values: dispatches[index].subEmitters)
+                .parameter("subEmitterUniforms", values: dispatches[index].subEmitterUniforms)
             }
             if !sorts.isEmpty {
                 // Sorting reads the particles the simulation just wrote.
@@ -424,7 +526,7 @@ public final class ParticleSystem {
     /// Sort work for emitters that sort back to front. Also records which emitters are sorted this frame.
     private func sorts(view: simd_float4x4?) throws -> [EmitterSort] {
         var sorts: [EmitterSort] = []
-        for emitter in emitters {
+        for emitter in allEmitters {
             emitter.sortedCount = 0
             guard emitter.settings.sortMode == .backToFront, let view else {
                 continue
@@ -461,8 +563,8 @@ public final class ParticleSystem {
     public func render(projection: simd_float4x4, view: simd_float4x4) throws -> some Element {
         let cameraToWorld = view.inverse
         let cameraPosition = cameraToWorld.columns.3.xyz
-        let unsorted = emitters.filter { $0.settings.sortMode == .none }
-        let sorted = emitters.filter { $0.settings.sortMode != .none }
+        let unsorted = allEmitters.filter { $0.settings.sortMode == .none }
+        let sorted = allEmitters.filter { $0.settings.sortMode != .none }
             .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
         let placeholderSortRecords = placeholderSortRecords
         let draws = (unsorted + sorted).map { emitter in

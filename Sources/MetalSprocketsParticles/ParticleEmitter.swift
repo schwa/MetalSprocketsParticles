@@ -104,5 +104,9 @@ public struct ParticleEmitter: Sendable, Equatable {
     /// Seconds simulated before the first rendered frame, and again after `restart()`.
     public var warmupDuration: Float = 0
 
+    /// Emitters driven by this emitter's particles. Adding or removing sub-emitters, or changing `countPerEvent`,
+    /// rebuilds the system's buffer on the next `simulate`, which removes all particles.
+    public var subEmitters: [SubEmitter] = []
+
     public init() {}
 }

@@ -165,13 +165,14 @@ Only constant gravity and drag. Missing: vortex, attractors, curl noise turbulen
 ## 9: No sub-emitters
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:l, area:emission
 depends: 33
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T19:36:36Z
+updated: 2026-10-17T21:55:52Z
+closed: 2026-10-17T21:55:52Z
 +++
 
 Particles cannot spawn other particles on death or collision (sparks, splashes).
@@ -180,6 +181,7 @@ Particles cannot spawn other particles on death or collision (sparks, splashes).
 - `2026-10-17T14:11:14Z`: Related: #23 (death on collision triggers onCollision sub-emitters).
 - `2026-10-17T17:16:57Z`: Related: #34 (event triggers). Sub-emitters are the particle-driven case of triggers; design them together.
 - `2026-10-17T19:36:36Z`: Depends on #33: sub-emitters are likely extra emitters in the same system, triggered by particle events. Design with #34.
+- `2026-10-17T21:55:52Z`: Added ParticleEmitter.subEmitters ([SubEmitter]: occasion onBirth/onDeath/onCollision/whileAlive(interval:), countPerEvent, velocityFactor, child settings). Each parent particle owns countPerEvent child slots; the parent kernel writes children directly on the event, so it is deterministic and needs no atomics or CPU counts. Fireworks preset now launches rockets with trails that burst on death. Not done: inheriting parent color (color comes from curves at render time), nested sub-emitters, inspector editing (noted on #39).
 
 ---
 
@@ -674,6 +676,7 @@ updated: 2026-10-17T19:36:36Z
 Emitters only emit on their own clock (birth rate, duration, idle) or when code calls burst(). There is no way to make emission happen in response to something: a trigger volume that particles or scene objects enter, a collider being hit, a timer or sequence, or a named event from the app. Effects like sparks where a blade touches a wall, a splash when something enters water, or a firework that bursts at the top of its arc need triggers that start, stop, or burst an emitter, ideally evaluated on the GPU for particle-driven events. Related: #33 (multiple emitters), #9 (sub-emitters: spawn on particle birth/death/collision), #23 (die on collision).
 
 - `2026-10-17T19:36:36Z`: Depends on #33. Design with #9.
+- `2026-10-17T21:55:52Z`: Design note from #9: sub-emitters use fixed child slots per parent particle written directly by the parent kernel (no atomics, deterministic). Particle-driven triggers can reuse the event detection in updateParticles (birth/death/collision/whileAlive); app and volume triggers are the new part.
 
 ---
 
@@ -759,6 +762,8 @@ created: 2026-10-17T21:07:28Z
 +++
 
 The demo inspector (#31) lists every control as a full-size row in a long sequence of sections, so it is hard to find a setting and needs a lot of scrolling. Reorganize it: group related controls into clear sections, collapse rarely used ones behind disclosure groups (variation, sprite sheet, curves, per-collider and per-field details), use smaller control sizes (.controlSize(.small)), and keep the most-used controls (preset, playback, emitter picker, birth rate, color) near the top. Related: #31.
+
+- `2026-10-17T21:55:52Z`: Also add sub-emitter editing (#9): list a selected emitter's subEmitters with occasion, countPerEvent, velocityFactor, and the child settings (reuse the emitter sections).
 
 ---
 

@@ -154,39 +154,62 @@ public extension ParticlePreset {
     )
 
     static let fireworks: ParticlePreset = {
-        func shell(_ name: String, at position: SIMD3<Float>, hue: SIMD4<Float>, idle: Float) -> Layer {
-            Layer(name, settings: emitter {
-                $0.position = position
-                // A hollow shell: every star leaves the center at about the same speed.
+        // Rockets climb from the ground, leave a sparkle trail, and burst into a shell of stars when they burn out.
+        func rockets(_ name: String, at x: Float, hue: SIMD4<Float>, rate: Float) -> Layer {
+            let trail = emitter {
+                $0.shape = .point
+                $0.velocity = .zero
+                $0.velocitySpread = 0.15
+                $0.gravity = [0, -1, 0]
+                $0.lifetime = 0.3...0.6
+                $0.blendMode = .additive
+                $0.sizeOverLife = .linear(from: 0.018, to: 0.003)
+                $0.colorOverLife = .linear(from: [1, 0.85, 0.55, 1], to: [1, 0.4, 0.1, 0])
+            }
+            // A hollow shell: every star leaves the burst point at about the same speed.
+            let burst = emitter {
                 $0.shape = .sphere(radius: 0.02)
                 $0.birthLocation = .surface
                 $0.birthDirection = .normal
-                $0.velocity = [0, 3.5, 0]
+                $0.velocity = [0, 3.2, 0]
                 $0.velocitySpread = 0.25
                 $0.gravity = [0, -1.5, 0]
                 $0.drag = 1.1
-                $0.lifetime = 1.6...2.4
-                $0.birthRate = 50_000
-                $0.emissionDuration = 0.04
-                $0.idleDuration = idle
+                $0.lifetime = 1.4...2.2
                 $0.blendMode = .additive
                 $0.orientation = .velocityAligned(stretch: 0.5)
-                $0.sizeOverLife = .linear(from: 0.028, to: 0.01)
-                $0.colorOverLife = ParticleCurve([.init(0, [1, 1, 1, 1]), .init(0.15, hue), .init(1, hue * [1, 1, 1, 0])])
+                $0.sizeOverLife = .linear(from: 0.026, to: 0.008)
+                $0.colorOverLife = ParticleCurve([.init(0, [1, 1, 1, 1]), .init(0.12, hue), .init(1, hue * [1, 1, 1, 0])])
                 $0.colorVariation = [0.04, 0, 0.2, 0]
-                $0.warmupDuration = idle * 0.7
-            }, capacity: 6_000)
+            }
+            return Layer(name, settings: emitter {
+                $0.position = [x, 0, 0]
+                $0.shape = .disc(radius: 0.6)
+                $0.velocity = [0, 6.5, 0]
+                $0.velocitySpread = 0.7
+                $0.gravity = [0, -4, 0]
+                $0.drag = 0
+                $0.lifetime = 1.0...1.3
+                $0.birthRate = rate
+                $0.warmupDuration = 3
+                $0.blendMode = .additive
+                $0.sizeOverLife = .constant(0.02)
+                $0.colorOverLife = .constant([1, 0.85, 0.6, 1])
+                $0.subEmitters = [
+                    SubEmitter(occasion: .whileAlive(interval: 0.02), countPerEvent: 25, velocityFactor: 0.2, settings: trail),
+                    SubEmitter(occasion: .onDeath, countPerEvent: 500, velocityFactor: 0.3, settings: burst),
+                ]
+            }, capacity: 8)
         }
         return ParticlePreset(
             "Fireworks",
             layers: [
-                shell("Red", at: [-1.6, 3.2, 0], hue: [1, 0.2, 0.15, 1], idle: 1.7),
-                shell("Gold", at: [0, 3.8, -0.5], hue: [1, 0.75, 0.25, 1], idle: 2.3),
-                shell("Blue", at: [1.7, 3.0, 0.3], hue: [0.3, 0.5, 1, 1], idle: 1.3),
-                shell("Green", at: [0.6, 2.6, 1], hue: [0.3, 1, 0.4, 1], idle: 2.9),
+                rockets("Red", at: -1.6, hue: [1, 0.2, 0.15, 1], rate: 0.7),
+                rockets("Gold", at: 0, hue: [1, 0.75, 0.25, 1], rate: 0.6),
+                rockets("Blue", at: 1.6, hue: [0.3, 0.5, 1, 1], rate: 0.8),
             ],
-            cameraEye: [0, 2.2, 7.5],
-            cameraTarget: [0, 2.8, 0]
+            cameraEye: [0, 2.5, 10],
+            cameraTarget: [0, 3.2, 0]
         )
     }()
 

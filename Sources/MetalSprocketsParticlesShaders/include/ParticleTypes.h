@@ -47,6 +47,19 @@ typedef struct {
     simd_float4 c;
 } EmitterMeshTriangle;
 
+typedef MS_ENUM(uint32_t, ParticleSpawnOccasion) {
+    ParticleSpawnOccasionBirth = 0,
+    ParticleSpawnOccasionDeath = 1,
+    ParticleSpawnOccasionCollision = 2,
+    ParticleSpawnOccasionWhileAlive = 3,
+};
+
+/// A sub-emitter as the parent's kernel sees it. Each parent slot owns `count` child slots in the child's slice.
+typedef struct {
+    simd_uint4 info;        // x = ParticleSpawnOccasion, y = children per event, z = child slice start, w = child capacity
+    simd_float4 parameters; // x = parent velocity factor, y = interval (whileAlive)
+} SubEmitterData;
+
 /// Builds back-to-front sort records for one emitter's live window. Records are uint2(key, particle index).
 typedef struct {
     simd_float4 cameraPosition; // World space.
@@ -120,7 +133,7 @@ typedef struct {
     simd_float4 collision;       // x = restitution, y = friction, z = collider count, w = nonzero to die on contact
     simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
     simd_float4 imageSequence;   // x = initial frame, y = initial frame variation, z = frame rate, w = frame rate variation
-    simd_float4 fields;          // x = force field count, y = simulation time (seconds)
+    simd_float4 fields;          // x = force field count, y = simulation time (seconds), z = sub-emitter count
     simd_float4 variation;       // +/- ranges: x = size (fraction), y = restitution, z = friction, w = speed
     simd_float4 colorVariation;  // +/- ranges: hue (turns), saturation, brightness, alpha
     simd_uint4 random;           // x = seed, y = slice capacity, z = slice start in the shared buffer, w = first ring slot dispatched

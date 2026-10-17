@@ -300,32 +300,20 @@ static void collide(thread float3 &position, thread float3 &velocity, ColliderDa
     }
 }
 
-kernel void updateParticles(
-    device Particle *particles [[buffer(0)]],
-    constant SimulationUniforms &uniforms [[buffer(1)]],
-    constant ColliderData *colliders [[buffer(2)]],
-    constant ForceFieldData *forceFields [[buffer(3)]],
-    constant EmitterMeshTriangle *meshTriangles [[buffer(4)]],
-    constant float4 *meshVertices [[buffer(5)]],
-    uint localID [[thread_position_in_grid]]
+// A newborn particle from an emitter's settings. `origin` is added to its position and `extraVelocity` to its velocity,
+// both in the emitter's simulation space; sub-emitters use them to start children at their parent. `birthAge` returns
+// the fraction of the step the particle lives through.
+static Particle spawnParticle(
+    thread Random &rng,
+    constant SimulationUniforms &uniforms,
+    constant EmitterMeshTriangle *meshTriangles,
+    constant float4 *meshVertices,
+    float3 origin,
+    float3 extraVelocity,
+    thread float &birthAge
 ) {
-    // Each dispatch covers a window of one emitter's ring, starting at slot random.w and wrapping at its capacity.
-    uint capacity = uniforms.random.y;
-    uint slot = (uniforms.random.w + localID) % capacity;
-    uint id = uniforms.random.z + slot;
-    Particle p = particles[id];
-    float dt = uniforms.lifetime.w;
-
-    if (uniforms.spawn.w != 0) {
-        p.position.w = 0;
-        p.velocity.w = 0;
-    }
-
-    // Particles spawn into a ring: this step owns `spawn.y` slots starting at the cursor. The oldest particles get
-    // recycled first. Randomness comes from the spawn serial, not the slot, so results do not depend on thread order.
-    uint offset = (slot + capacity - uniforms.spawn.x) % capacity;
-    if (offset < uniforms.spawn.y) {
-        Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
+    Particle p;
+    {
         // The default full sphere volume keeps the original expression exactly: rewriting it changes rounding, and
         // tiny differences grow chaotically through collisions.
         bool defaultSphere = uniforms.shape.x == ParticleEmitterShapeKindSphere
@@ -355,8 +343,7 @@ kernel void updateParticles(
         float3 velocity = baseVelocity + rng.inUnitSphere() * uniforms.emitterVelocity.w;
         float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
-        float birthAge = rng.next();
-        dt *= birthAge;
+        birthAge = rng.next();
         // New draws go after existing ones, so adding a property does not change earlier random streams.
         float angle = uniforms.rotation.x + (rng.next() * 2 - 1) * uniforms.rotation.y;
         float angularVelocity = uniforms.rotation.z + (rng.next() * 2 - 1) * uniforms.rotation.w;
@@ -377,11 +364,47 @@ kernel void updateParticles(
         position = (uniforms.emitterTransform * float4(position, 1)).xyz;
         position += (uniforms.previousEmitterOrigin.xyz - uniforms.emitterTransform[3].xyz) * birthAge;
         velocity = (uniforms.emitterTransform * float4(velocity, 0)).xyz + uniforms.inheritedVelocity.xyz;
-        p.position = float4(position, 0);
-        p.velocity = float4(velocity, lifetime);
+        p.position = float4(position + origin, 0);
+        p.velocity = float4(velocity + extraVelocity, lifetime);
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
         p.color = colorOffset * uniforms.colorVariation;
         p.properties = float4(sizeScale, restitutionOffset, frictionOffset, 0);
+    }
+    return p;
+}
+
+kernel void updateParticles(
+    device Particle *particles [[buffer(0)]],
+    constant SimulationUniforms &uniforms [[buffer(1)]],
+    constant ColliderData *colliders [[buffer(2)]],
+    constant ForceFieldData *forceFields [[buffer(3)]],
+    constant EmitterMeshTriangle *meshTriangles [[buffer(4)]],
+    constant float4 *meshVertices [[buffer(5)]],
+    constant SubEmitterData *subEmitters [[buffer(6)]],
+    constant SimulationUniforms *subEmitterUniforms [[buffer(7)]],
+    uint localID [[thread_position_in_grid]]
+) {
+    // Each dispatch covers a window of one emitter's ring, starting at slot random.w and wrapping at its capacity.
+    uint capacity = uniforms.random.y;
+    uint slot = (uniforms.random.w + localID) % capacity;
+    uint id = uniforms.random.z + slot;
+    Particle p = particles[id];
+    float dt = uniforms.lifetime.w;
+
+    if (uniforms.spawn.w != 0) {
+        p.position.w = 0;
+        p.velocity.w = 0;
+    }
+
+    // Particles spawn into a ring: this step owns `spawn.y` slots starting at the cursor. The oldest particles get
+    // recycled first. Randomness comes from the spawn serial, not the slot, so results do not depend on thread order.
+    uint offset = (slot + capacity - uniforms.spawn.x) % capacity;
+    bool born = offset < uniforms.spawn.y;
+    if (born) {
+        Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
+        float birthAge;
+        p = spawnParticle(rng, uniforms, meshTriangles, meshVertices, float3(0), float3(0), birthAge);
+        dt *= birthAge;
     }
 
     float lifetime = p.velocity.w;
@@ -390,6 +413,7 @@ kernel void updateParticles(
         particles[id] = p;
         return;
     }
+    float previousAge = age;
     age += dt;
 
     // Gravity, force fields, and colliders are in world space.
@@ -451,6 +475,47 @@ kernel void updateParticles(
 
     if (hit && uniforms.collision.w != 0) {
         age = lifetime;
+    }
+
+    // Sub-emitters: on an event, write children into the slots this particle owns in each child slice. Children live in
+    // world space, so they start at this particle's world position.
+    uint subEmitterCount = uint(uniforms.fields.z);
+    for (uint i = 0; i < subEmitterCount; i++) {
+        SubEmitterData sub = subEmitters[i];
+        uint childrenPerEvent = sub.info.y;
+        float interval = sub.parameters.y;
+        uint first = 0;
+        uint count = 0;
+        switch (sub.info.x) {
+        case ParticleSpawnOccasionBirth:
+            count = born ? childrenPerEvent : 0;
+            break;
+        case ParticleSpawnOccasionDeath:
+            count = age >= lifetime ? childrenPerEvent : 0;
+            break;
+        case ParticleSpawnOccasionCollision:
+            count = hit ? childrenPerEvent : 0;
+            break;
+        case ParticleSpawnOccasionWhileAlive: {
+            // One child each time the age crosses a multiple of the interval, into a ring of the owned slots.
+            float tick = floor(age / max(interval, 1e-4));
+            if (born || tick != floor(previousAge / max(interval, 1e-4))) {
+                first = uint(tick) % max(childrenPerEvent, 1u);
+                count = 1;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+        for (uint k = 0; k < count; k++) {
+            uint childSlot = slot * childrenPerEvent + (first + k) % childrenPerEvent;
+            // Keyed by parent slot, child slot, and parent age, so results do not depend on thread order.
+            Random childRandom { hash(hash(childSlot ^ subEmitterUniforms[i].random.x) ^ as_type<uint>(age)) };
+            float childBirthAge;
+            particles[sub.info.z + childSlot] = spawnParticle(
+                childRandom, subEmitterUniforms[i], meshTriangles, meshVertices, position, velocity * sub.parameters.x, childBirthAge);
+        }
     }
 
     position = (uniforms.worldToSimulation * float4(position, 1)).xyz;
