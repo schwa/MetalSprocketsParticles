@@ -1,3 +1,4 @@
+import Metal
 import MetalSprockets
 import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
@@ -14,7 +15,7 @@ struct ColorPipelineTests {
     }
 }
 
-struct InspectorAdapterTests {
+struct EmitterAdapterTests {
     @Test func lifetimeBoundsStayOrdered() {
         var emitter = ParticleEmitter()
         emitter.lifetime = 1...2
@@ -36,21 +37,6 @@ struct InspectorAdapterTests {
         #expect(emitter.emissionDuration == nil)
     }
 
-    @Test func forceFieldStrengthAddsUpdatesAndRemoves() {
-        var fields: [ForceField] = []
-        fields.turbulenceStrength = 3
-        fields.vortexStrength = -2
-        #expect(fields.count == 2)
-        #expect(fields.turbulenceStrength == 3)
-        #expect(fields.vortexStrength == -2)
-        fields.turbulenceStrength = 5
-        #expect(fields.count == 2)
-        #expect(fields.turbulenceStrength == 5)
-        fields.turbulenceStrength = 0
-        #expect(fields.count == 1)
-        #expect(fields.turbulenceStrength == 0)
-    }
-
     @Test func orientationKindKeepsStretch() {
         var emitter = ParticleEmitter()
         emitter.velocityStretch = 0.7
@@ -58,33 +44,184 @@ struct InspectorAdapterTests {
         emitter.orientationKind = .yAligned
         #expect(emitter.orientation == .yAligned)
         #expect(emitter.velocityStretch == 0)
-        emitter.orientationKind = .velocityAligned
-        #expect(emitter.orientation == .velocityAligned(stretch: 0))
+        emitter.orientationKind = .flat
+        #expect(emitter.orientation == .fixed(normal: [0, 1, 0]))
     }
 
-    @Test func colorRoundTripsThroughLinearSRGB() {
+    @Test func shapeKindAndParameters() {
+        var emitter = ParticleEmitter()
+        emitter.shapeKind = .cone
+        emitter.shapeRadius = 0.7
+        emitter.shapeSecondary = 2
+        #expect(emitter.shape == .cone(radius: 0.7, height: 2))
+        emitter.shapeKind = .torus
+        #expect(emitter.shape == .torus(radius: 0.7, tubeRadius: 0.7 * 0.2))
+        emitter.shapeKind = .plane
+        emitter.shapeSize = [2, 9, 3]
+        #expect(emitter.shape == .plane(size: [2, 3]))
+        // Parameters that do not apply are ignored.
+        emitter.shapeRadius = 5
+        #expect(emitter.shape == .plane(size: [2, 3]))
+    }
+
+    @Test func imageSequenceToggleAndGrid() {
+        var emitter = ParticleEmitter()
+        emitter.hasImageSequence = true
+        #expect(emitter.imageSequence?.frameCount == 4)
+        emitter.editableImageSequence.gridColumns = 4
+        #expect(emitter.imageSequence?.frameCount == 8)
+        emitter.hasImageSequence = false
+        #expect(emitter.imageSequence == nil)
+    }
+
+    @Test func colorKeyframeRoundTripsThroughLinearSRGB() {
         var curve = ParticleCurve<SIMD4<Float>>.linear(from: [1, 0.7, 0.2, 1], to: [0.8, 0.1, 0.05, 0])
-        let start = curve.start
-        curve.startColor = curve.startColor
-        #expect(abs(curve.start - start).max() < 1e-4)
-        curve.endColor = Color(.sRGBLinear, red: 0, green: 0.5, blue: 1, opacity: 0.25)
-        #expect(abs(curve.end - SIMD4<Float>(0, 0.5, 1, 0.25)).max() < 1e-4)
+        let start = curve.keyframes[0].value
+        curve.keyframes[0].color = curve.keyframes[0].color
+        #expect(abs(curve.keyframes[0].value - start).max() < 1e-4)
+        curve.keyframes[1].color = Color(.sRGBLinear, red: 0, green: 0.5, blue: 1, opacity: 0.25)
+        #expect(abs(curve.keyframes[1].value - SIMD4<Float>(0, 0.5, 1, 0.25)).max() < 1e-4)
+    }
+}
+
+struct ColliderAdapterTests {
+    @Test func kindChangeKeepsCenter() {
+        var collider = Collider.sphere(center: [1, 2, 3], radius: 0.5)
+        collider.kind = .box
+        #expect(collider.center == [1, 2, 3])
+        collider.kind = .capsule
+        #expect(simd_distance(collider.center, [1, 2, 3]) < 1e-5)
     }
 
-    @MainActor
-    @Test func modelPushesChangesToSystem() throws {
+    @Test func planeCenterMovesAlongNormal() {
+        var collider = Collider.plane(normal: [0, 1, 0], distance: 0)
+        collider.center.y = 1.5
+        #expect(collider == .plane(normal: [0, 1, 0], distance: 1.5))
+    }
+
+    @Test func boxSizeAndTilt() {
+        var collider = Collider.box(center: .zero, halfExtents: [1, 1, 1])
+        collider.size = [2, 4, 6]
+        collider.tilt = 0.5
+        #expect(collider.size == [2, 4, 6])
+        #expect(abs(collider.tilt - 0.5) < 1e-5)
+    }
+
+    @Test func capsuleLengthKeepsMidpoint() {
+        var collider = Collider.capsule(start: [-1, 0, 0], end: [1, 0, 0], radius: 0.2)
+        collider.length = 4
+        #expect(collider == .capsule(start: [-2, 0, 0], end: [2, 0, 0], radius: 0.2))
+    }
+
+    @Test func animationLeavesPlanesAndMovesOthers() {
+        let plane = ColliderItem(collider: .plane(normal: [0, 1, 0], distance: 0))
+        let sphere = ColliderItem(collider: .sphere(center: .zero, radius: 1))
+        #expect(plane.animated(time: 1, index: 0) == plane.collider)
+        #expect(sphere.animated(time: 1, index: 0) != sphere.collider)
+    }
+}
+
+struct ForceFieldAdapterTests {
+    @Test func kindAndStrength() {
+        var field = ForceField.wind(velocity: [1, 0, 0], strength: 2)
+        field.strength = 5
+        #expect(field == .wind(velocity: [1, 0, 0], strength: 5))
+        field.kind = .vortex
+        field.radius = 3
+        field.center = [0, 1, 0]
+        #expect(field.kind == .vortex)
+        #expect(field.radius == 3)
+        #expect(field.center == [0, 1, 0])
+        field.kind = .turbulence
+        field.turbulenceScale = 2
+        field.turbulenceSpeed = 0.25
+        #expect(field.turbulenceScale == 2 && field.turbulenceSpeed == 0.25)
+    }
+}
+
+struct EmitterMotionTests {
+    @Test func stillIsIdentity() {
+        #expect(EmitterMotion().transform(time: 3) == matrix_identity_float4x4)
+    }
+
+    @Test func circleStaysOnRadius() {
+        let motion = EmitterMotion(kind: .circle, radius: 2, speed: 1)
+        let translation = motion.transform(time: 0.7).columns.3
+        #expect(abs(simd_length(SIMD2(translation.x, translation.z)) - 2) < 1e-5)
+    }
+}
+
+struct DemoTextureTests {
+    @Test func everyTextureExceptSoftDotBuilds() throws {
+        let device = try #require(MTLCreateSystemDefaultDevice())
+        for texture in DemoTexture.allCases {
+            let made = texture.makeTexture(device: device)
+            #expect((made == nil) == (texture == .softDot))
+        }
+        let sheet = try #require(DemoTexture.colorSheet.makeTexture(device: device))
+        #expect(sheet.width == 128 && sheet.height == 128)
+    }
+}
+
+@MainActor
+struct ModelTests {
+    @Test func pushesPlaybackToSystem() throws {
         let model = ParticlesDemoModel(capacity: 16)
         let system = try #require(model.system)
-        model.emitter.birthRate = 123
         model.speedFactor = 2
-        model.isEmitting = false
         model.playback = .paused
-        #expect(system.emitter.birthRate == 123)
         #expect(system.speedFactor == 2)
-        #expect(!system.isEmitting)
         #expect(system.state == .paused)
         model.restart()
         #expect(system.state == .playing)
         #expect(model.playback == .playing)
+    }
+
+    @Test func editingSelectedEmitterReachesSystem() throws {
+        let model = ParticlesDemoModel(capacity: 16)
+        let system = try #require(model.system)
+        model.selectedEmitter.settings.birthRate = 123
+        model.selectedEmitter.isEmitting = false
+        model.selectedEmitter.simulationSpace = .local
+        model.selectedEmitter.texture = .star
+        #expect(system.emitters[0].settings.birthRate == 123)
+        #expect(!system.emitters[0].isEmitting)
+        #expect(system.emitters[0].simulationSpace == .local)
+        #expect(system.emitters[0].texture != nil)
+    }
+
+    @Test func addingDuplicatingAndRemovingEmitters() throws {
+        let model = ParticlesDemoModel(capacity: 16)
+        let system = try #require(model.system)
+        model.selectedEmitter.texture = .ring
+        model.duplicateSelectedEmitter()
+        #expect(model.emitters.count == 2)
+        #expect(system.emitters.count == 2)
+        #expect(model.selectedEmitter.texture == .ring)
+        #expect(system.emitters[1].texture != nil)
+        model.addEmitter()
+        #expect(system.emitters.count == 3)
+        model.removeSelectedEmitter()
+        model.removeSelectedEmitter()
+        model.removeSelectedEmitter()
+        #expect(model.emitters.count == 1)
+        #expect(system.emitters.count == 1)
+    }
+
+    @Test func collidersAndForceFieldsReachSystem() throws {
+        let model = ParticlesDemoModel(capacity: 16)
+        let system = try #require(model.system)
+        model.colliders = [ColliderItem(collider: .sphere(center: .zero, radius: 1))]
+        model.forceFields = [ForceFieldItem(field: .turbulence(strength: 1))]
+        #expect(system.colliders == [.sphere(center: .zero, radius: 1)])
+        #expect(system.forceFields == [.turbulence(strength: 1)])
+        model.animateColliders = false
+        #expect(model.frameColliders(time: 5) == [.sphere(center: .zero, radius: 1)])
+    }
+
+    @Test func frameTransformsFollowEmitterMotion() {
+        let model = ParticlesDemoModel(capacity: 16)
+        model.selectedEmitter.motion = EmitterMotion(kind: .circle, radius: 1, speed: 1)
+        #expect(model.frameTransforms(time: 0).first?.columns.3 == [1, 0, 0, 1])
     }
 }

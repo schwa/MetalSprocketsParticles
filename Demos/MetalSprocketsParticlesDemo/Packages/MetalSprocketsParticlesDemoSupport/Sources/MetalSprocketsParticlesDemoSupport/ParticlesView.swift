@@ -23,7 +23,8 @@ public struct ParticlesView: View {
                 let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
                 try system.simulate(
                     deltaTime: context.frameUniforms.deltaTime,
-                    colliders: model.animateColliders ? ParticleEmitter.fountainColliders(time: context.frameUniforms.time) : nil
+                    colliders: model.frameColliders(time: context.frameUniforms.time),
+                    transforms: model.frameTransforms(time: context.frameUniforms.time)
                 )
                 try RenderPass {
                     if model.showColliders {

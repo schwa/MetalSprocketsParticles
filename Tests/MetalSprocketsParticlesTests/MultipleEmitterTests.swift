@@ -116,6 +116,19 @@ struct MultipleEmitterTests {
         }
     }
 
+    @Test func simulateAppliesTransformsByIndex() throws {
+        let system = try ParticleSystem(device: runner.device, emitters: [still(at: .zero), still(at: .zero)], capacity: 4, seed: 1)
+        var moved = matrix_identity_float4x4
+        moved.columns.3 = [3, 0, 0, 1]
+        system.emitters.forEach { $0.burst(4) }
+        try runner.run(try system.simulate(deltaTime: 0, transforms: [moved]))
+        #expect(system.emitters[0].transform == moved)
+        #expect(system.emitters[1].transform == matrix_identity_float4x4)
+        let all = particles(system)
+        #expect(all[system.emitters[0].range].allSatisfy { abs($0.position.x - 3) < 0.02 })
+        #expect(all[system.emitters[1].range].allSatisfy { abs($0.position.x) < 0.02 })
+    }
+
     @Test func restartingOneEmitterLeavesTheOthers() throws {
         let system = try ParticleSystem(device: runner.device, emitters: [still(at: .zero), still(at: .zero)], capacity: 10, seed: 1)
         system.emitters.forEach { $0.burst(10) }

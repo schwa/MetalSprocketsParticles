@@ -600,16 +600,19 @@ Related: #25 (saved effect files), #31 (inspector coverage), #32 (emitter DSL wo
 ## 31: Inspector does not expose all emitter features
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:m, area:tooling
 created: 2026-10-17T17:08:40Z
+updated: 2026-10-17T20:25:10Z
+closed: 2026-10-17T20:25:10Z
 +++
 
 The demo inspector (#26) covers only part of ParticleEmitter and ParticleSystem. Missing controls include: warmup; multi-stop color/size curves and the opacity curve; wind and attractor force fields and turbulence/vortex parameters beyond strength; fixed-plane orientation; saturation, brightness, alpha, friction, angle, and spin variation; angle and spin; texture choice and image sequence settings; emitter transform motion, simulation space, and inherit velocity; collider editing. Every feature that makes sense to tweak live should have a control.
 
 - `2026-10-17T17:08:40Z`: Related: #30 (preset scenes).
+- `2026-10-17T20:25:10Z`: Inspector now covers: multiple emitters (select, add, duplicate, remove, rename, emitting, burst); shape, birth location/direction, sweep, position; emission incl. warmup; velocity/gravity vectors, drag, emitter motion, simulation space, inherit velocity; texture choice (generated sprites) and sprite sheet settings; blend, orientation incl. flat, stretch; multi-stop color/opacity/size curves; angle and spin; all variations; bounce, friction, die on collision; editable colliders and force fields of every kind. All bindings are key-path projections through writable computed properties. Not visually checked (no app launch). Curve stops are identified by index because library keyframes have no ids.
 
 ---
 

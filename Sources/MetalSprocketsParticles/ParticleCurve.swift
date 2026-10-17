@@ -29,8 +29,14 @@ public struct ParticleCurve<Value: ParticleCurveValue>: Sendable, Equatable {
         }
     }
 
-    /// Always sorted by time and never empty.
-    public private(set) var keyframes: [Keyframe]
+    /// In any order; sampling sorts by time. Removing the last keyframe is ignored, so a curve is never empty.
+    public var keyframes: [Keyframe] {
+        didSet {
+            if keyframes.isEmpty {
+                keyframes = oldValue.isEmpty ? [] : [oldValue[0]]
+            }
+        }
+    }
 
     public init(_ keyframes: [Keyframe]) {
         precondition(!keyframes.isEmpty, "A curve needs at least one keyframe.")
@@ -55,6 +61,10 @@ public struct ParticleCurve<Value: ParticleCurveValue>: Sendable, Equatable {
     }
 
     public func value(at time: Float) -> Value {
+        Self.value(at: time, sorted: keyframes.sorted { $0.time < $1.time })
+    }
+
+    private static func value(at time: Float, sorted keyframes: [Keyframe]) -> Value {
         guard let first = keyframes.first, let last = keyframes.last else {
             preconditionFailure("A curve needs at least one keyframe.")
         }
@@ -73,23 +83,32 @@ public struct ParticleCurve<Value: ParticleCurveValue>: Sendable, Equatable {
 
     /// Evenly spaced samples over 0...1 for the GPU lookup table.
     func baked(sampleCount: Int = Int(PARTICLE_CURVE_SAMPLES)) -> [Value] {
-        (0..<sampleCount).map { value(at: Float($0) / Float(sampleCount - 1)) }
+        let sorted = keyframes.sorted { $0.time < $1.time }
+        return (0..<sampleCount).map { Self.value(at: Float($0) / Float(sampleCount - 1), sorted: sorted) }
     }
 
-    /// The first keyframe's value. Setting it changes only that keyframe.
+    private var earliestIndex: Int {
+        keyframes.indices.min { keyframes[$0].time < keyframes[$1].time } ?? 0
+    }
+
+    private var latestIndex: Int {
+        keyframes.indices.max { keyframes[$0].time < keyframes[$1].time } ?? 0
+    }
+
+    /// The earliest keyframe's value. Setting it changes only that keyframe.
     public var start: Value {
-        get { keyframes[0].value }
-        set { keyframes[0].value = newValue }
+        get { keyframes[earliestIndex].value }
+        set { keyframes[earliestIndex].value = newValue }
     }
 
-    /// The last keyframe's value. Setting it on a single-keyframe curve adds a keyframe at 1.
+    /// The latest keyframe's value. Setting it on a single-keyframe curve adds a keyframe at 1.
     public var end: Value {
-        get { keyframes[keyframes.count - 1].value }
+        get { keyframes[latestIndex].value }
         set {
             if keyframes.count == 1 {
                 keyframes.append(Keyframe(max(1, keyframes[0].time), newValue))
             } else {
-                keyframes[keyframes.count - 1].value = newValue
+                keyframes[latestIndex].value = newValue
             }
         }
     }

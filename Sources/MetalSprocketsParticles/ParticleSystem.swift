@@ -327,10 +327,16 @@ public final class ParticleSystem {
 
     /// Advances every emitter one frame in a single compute pass. Put this before the render pass that draws the
     /// particles. The result depends only on `seed`, settings, playback calls, and the sequence of `deltaTime` values.
-    /// Pass `colliders` to replace `self.colliders` this frame.
-    public func simulate(deltaTime: Float, colliders: [Collider]? = nil) throws -> some Element {
+    /// Pass `colliders` to replace `self.colliders` this frame, and `transforms` to move emitters (matched by index;
+    /// extra entries are ignored, missing ones leave the emitter where it is).
+    public func simulate(deltaTime: Float, colliders: [Collider]? = nil, transforms: [simd_float4x4]? = nil) throws -> some Element {
         if let colliders {
             self.colliders = colliders
+        }
+        if let transforms {
+            for (emitter, transform) in zip(emitters, transforms) {
+                emitter.transform = transform
+            }
         }
         let frameDeltaTime = min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)
         let dispatches = emitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime) }

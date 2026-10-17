@@ -40,6 +40,23 @@ struct ParticleCurveTests {
         #expect(constant.value(at: 1) == 8)
     }
 
+    @Test func editedKeyframesSampleInTimeOrder() {
+        var curve = ParticleCurve<Float>([.init(0, 0), .init(1, 10)])
+        // Move the first stop past the second without re-sorting.
+        curve.keyframes[0].time = 2
+        #expect(curve.value(at: 1) == 10)
+        #expect(curve.value(at: 1.5) == 5)
+        #expect(curve.start == 10)
+        #expect(curve.end == 0)
+    }
+
+    @Test func removingTheLastKeyframeIsIgnored() {
+        var curve = ParticleCurve<Float>.constant(3)
+        curve.keyframes.removeAll()
+        #expect(curve.keyframes.count == 1)
+        #expect(curve.value(at: 0.5) == 3)
+    }
+
     @Test func emitterStartEndAccessorsMatchCurves() {
         var emitter = ParticleEmitter()
         emitter.colorStart = [1, 0, 0, 1]
