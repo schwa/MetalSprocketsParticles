@@ -1,48 +1,20 @@
 import Foundation
 import Metal
 import MetalSprockets
+import MetalSprocketsParticlesShaders
 import simd
 
-// Layouts must match Particles.metal.
-struct Particle {
-    var position: SIMD4<Float>
-    var velocity: SIMD4<Float>
-    var color: SIMD4<Float>
-}
-
-struct SimulationUniforms {
-    var emitterPosition: SIMD4<Float>
-    var emitterVelocity: SIMD4<Float>
-    var gravity: SIMD4<Float>
-    var lifetime: SIMD4<Float>
-    var colorStart: SIMD4<Float>
-    var colorEnd: SIMD4<Float>
-    var collision: SIMD4<Float>
-    var random: SIMD4<UInt32>
-}
-
-struct ColliderData {
-    var kind: SIMD4<Float>
-    var a: SIMD4<Float>
-    var b: SIMD4<Float>
-
+extension ColliderData {
     init(_ collider: Collider) {
         switch collider {
         case let .plane(normal, distance):
-            kind = [1, 0, 0, 0]; a = SIMD4(simd_normalize(normal), distance); b = .zero
+            self.init(kind: [1, 0, 0, 0], a: SIMD4(simd_normalize(normal), distance), b: .zero)
         case let .sphere(center, radius):
-            kind = [2, 0, 0, 0]; a = SIMD4(center, radius); b = .zero
+            self.init(kind: [2, 0, 0, 0], a: SIMD4(center, radius), b: .zero)
         case let .box(center, halfExtents):
-            kind = [3, 0, 0, 0]; a = SIMD4(center, 0); b = SIMD4(halfExtents, 0)
+            self.init(kind: [3, 0, 0, 0], a: SIMD4(center, 0), b: SIMD4(halfExtents, 0))
         }
     }
-}
-
-struct RenderUniforms {
-    var viewProjection: simd_float4x4
-    var cameraRight: SIMD4<Float>
-    var cameraUp: SIMD4<Float>
-    var size: SIMD4<Float>
 }
 
 public enum Collider: Sendable, Equatable {
@@ -85,10 +57,7 @@ public final class ParticleSystem {
         self.capacity = capacity
         self.emitter = emitter
         self.seed = seed
-        guard let url = Bundle.module.url(forResource: "Particles", withExtension: "metal") else {
-            throw CocoaError(.fileNoSuchFile)
-        }
-        library = try ShaderLibrary(source: String(contentsOf: url, encoding: .utf8), device: device)
+        library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
 
         // Stagger first spawn across the max lifetime so emission is continuous from the start.
         let maxLifetime = emitter.lifetime.upperBound

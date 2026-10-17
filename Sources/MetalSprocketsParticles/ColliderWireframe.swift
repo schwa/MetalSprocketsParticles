@@ -1,11 +1,7 @@
 import Metal
 import MetalSprockets
+import MetalSprocketsParticlesShaders
 import simd
-
-struct WireframeUniforms {
-    var viewProjection: simd_float4x4
-    var color: SIMD4<Float>
-}
 
 extension Collider {
     /// Line-list vertices (pairs) outlining the collider.

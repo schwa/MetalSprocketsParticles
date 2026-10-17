@@ -1,0 +1,5 @@
+{
+    "include-dependencies": true,
+    "dependency-path-suffix": "include",
+    "include-paths": ["include"]
+}

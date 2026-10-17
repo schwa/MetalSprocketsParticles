@@ -1,6 +1,7 @@
 import Metal
 import MetalSprockets
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesShaders
 import Testing
 
 @Suite(.serialized)
@@ -29,7 +30,7 @@ struct DeterminismTests {
     }
 }
 
-extension Particle: Equatable {
+extension Particle: @retroactive Equatable {
     public static func == (lhs: Particle, rhs: Particle) -> Bool {
         lhs.position == rhs.position && lhs.velocity == rhs.velocity && lhs.color == rhs.color
     }

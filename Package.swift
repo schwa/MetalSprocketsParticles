@@ -13,12 +13,22 @@ let package = Package(
         .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.3")),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
         .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.6")),
+        .package(url: "https://github.com/schwa/MetalCompilerPlugin", .upToNextMinor(from: "0.4.1")),
     ],
     targets: [
         .target(
             name: "MetalSprocketsParticles",
-            dependencies: [.product(name: "MetalSprockets", package: "MetalSprockets")],
-            resources: [.copy("Shaders/Particles.metal")]
+            dependencies: [
+                "MetalSprocketsParticlesShaders",
+                .product(name: "MetalSprockets", package: "MetalSprockets"),
+            ]
+        ),
+        .target(
+            name: "MetalSprocketsParticlesShaders",
+            dependencies: [.product(name: "MetalSprocketsShaders", package: "MetalSprockets")],
+            exclude: ["Metal"],
+            cSettings: [.define("METAL_COMPILER_PLUGIN_DEBUG", .when(configuration: .debug))],
+            plugins: [.plugin(name: "MetalCompilerPlugin", package: "MetalCompilerPlugin")]
         ),
         .testTarget(
             name: "MetalSprocketsParticlesTests",

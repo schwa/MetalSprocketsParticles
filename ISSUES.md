@@ -269,15 +269,18 @@ particles-render output is paler and more washed out than the demo app. Offscree
 ## 16: Shaders are compiled from source at runtime
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: effort:m, area:tooling
 created: 2026-10-17T13:54:28Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-17T15:12:23Z
+closed: 2026-10-17T15:12:23Z
 +++
 
 Particles.metal ships as a copied resource and is compiled with ShaderLibrary(source:) on every launch. This costs startup time, hides shader compile errors until runtime, gives no Xcode Metal debugger support, and the Swift and Metal struct layouts are duplicated by hand. MetalSprocketsAddOns uses a separate shaders target built by MetalCompilerPlugin (~/Projects/Current/MetalCompilerPlugin), with shared C headers for the structs.
+
+- `2026-10-17T15:12:23Z`: Moved shaders to a MetalSprocketsParticlesShaders target compiled by MetalCompilerPlugin. Shared structs live in include/ParticleTypes.h and are imported into Swift; the Swift copies are gone. Library loads with ShaderLibrary(bundle: .metalSprocketsParticlesShaders()).
 
 ---
 
@@ -447,5 +450,67 @@ created: 2026-10-17T14:17:50Z
 +++
 
 The demo's sphere and boxes never move, so it does not show particles reacting to moving geometry. Animate the colliders over time in the demo view. Moving colliders should also transfer their velocity to particles they hit; currently collision response assumes a stationary collider.
+
+---
+
+## 28: Spike: evaluate the AddOns point cloud renderer for very high particle counts
+
++++
+status: new
+priority: low
+kind: task
+labels: effort:m, area:rendering
+created: 2026-10-17T15:00:32Z
++++
+
+MetalSprocketsAddOns has `PointCloudRasterizePass` / `PointCloudResolvePipeline`, a compute point rasterizer (Schütz et al. 2021). Find out if it is useful as an optional render mode for many small opaque particles (sparks, dust, rain).
+
+Possible gains:
+- No quad overdraw at high particle counts.
+- No sort needed (#4), because points are opaque.
+- A `describe` visible function can read `Particle` directly from the simulation buffer.
+- World-unit sizes match the current sizing.
+
+Known problems:
+- No alpha. The result is the nearest point or an average. The soft falloff, premultiplied alpha, alpha fade-out and additive glow are lost.
+- It is fast only for points of a few pixels. Large points use a per-thread loop. Default sizes are probably 10–40 px.
+- Needs Apple GPU family 8+, a depth attachment, an extra compute pass and a per-pixel buffer (8 or 28 bytes per pixel, per frame in flight).
+- Adds a dependency on MetalSprocketsAddOns.
+
+Spike tasks:
+1. Profile the current billboard renderer at high counts (1M+). Is it slow?
+2. If it is, prototype the point cloud path behind a render-mode switch. Use `describe` and send dead particles behind the camera.
+3. Compare frame time and visuals at the same counts and sizes.
+
+Outcome: a keep/drop decision with numbers.
+
+---
+
+## 29: Measure and optimise particle system performance
+
++++
+status: new
+priority: medium
+kind: task
+labels: effort:l, area:simulation, area:rendering
+created: 2026-10-17T15:01:18Z
++++
+
+Goal: the particle system (simulation + rendering) should be a very small part of a typical frame for a reasonable number of particles.
+
+Steps:
+1. Measure.
+   - Define "reasonable" counts (for example 10K, 100K, 1M) and target budgets (for example under 0.5 ms GPU at 100K on a base M-series Mac).
+   - Add a repeatable benchmark: GPU time per pass (simulate, collide, render), split from CPU encode time.
+   - Record a baseline. Capture a GPU trace for each count.
+2. Optimise. Fix the largest costs first. Candidates (not yet confirmed):
+   - Simulation kernel: memory layout and size of `Particle`, threadgroup size, collider loop cost.
+   - Rendering: overdraw and fill rate with large or overlapping billboards; instance count is `capacity` even when most particles are dead.
+   - CPU: per-frame allocations and uniform setup; runtime shader compilation (#16) at startup.
+3. Improve.
+   - Keep the benchmark as a regression check (in CI or a `just` recipe).
+   - Write the budgets and the results in the README.
+
+Related: #4 (sorting adds cost), #28 (point cloud renderer spike), #16 (runtime shader compile).
 
 ---

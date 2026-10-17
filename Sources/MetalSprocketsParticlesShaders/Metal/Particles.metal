@@ -1,37 +1,6 @@
 #include <metal_stdlib>
+#include "MetalSprocketsParticlesShaders.h"
 using namespace metal;
-
-// Layouts must match ParticleSystem.swift. Only 16-byte vector types to keep layout trivial.
-struct Particle {
-    float4 position; // xyz, w = age (negative = waiting to spawn)
-    float4 velocity; // xyz, w = lifetime (0 = never spawned)
-    float4 color;
-};
-
-struct SimulationUniforms {
-    float4 emitterPosition; // xyz, w = emitter radius
-    float4 emitterVelocity; // xyz = base velocity, w = spread
-    float4 gravity;         // xyz, w = drag
-    float4 lifetime;        // x = min, y = max, w = deltaTime
-    float4 colorStart;
-    float4 colorEnd;
-    float4 collision;       // x = restitution, y = friction, z = collider count
-    uint4 random;           // x = seed, y = step
-};
-
-// kind: 0 = none, 1 = plane (a = normal, distance), 2 = sphere (a = center, radius), 3 = box (a = center, b = half extents).
-struct ColliderData {
-    float4 kind;
-    float4 a;
-    float4 b;
-};
-
-struct RenderUniforms {
-    float4x4 viewProjection;
-    float4 cameraRight;
-    float4 cameraUp;
-    float4 size; // x = start size, y = end size
-};
 
 // PCG hash based RNG.
 static uint hash(uint v) {
@@ -166,11 +135,6 @@ vertex VertexOut particleVertex(
     out.uv = corner;
     return out;
 }
-
-struct WireframeUniforms {
-    float4x4 viewProjection;
-    float4 color;
-};
 
 
 
