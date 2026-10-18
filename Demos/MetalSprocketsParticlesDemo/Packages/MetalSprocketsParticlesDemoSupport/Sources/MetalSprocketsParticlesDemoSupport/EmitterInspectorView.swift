@@ -207,7 +207,7 @@ struct ShapeSectionView: View {
 }
 
 struct MotionSectionView: View {
-    @Binding var emitter: DemoEmitter
+    @Binding var emitter: EmitterDescription
 
     var body: some View {
         Section("Motion") {
@@ -241,7 +241,7 @@ struct MotionSectionView: View {
 }
 
 struct AppearanceSectionView: View {
-    @Binding var emitter: DemoEmitter
+    @Binding var emitter: EmitterDescription
 
     var body: some View {
         Section("Appearance") {

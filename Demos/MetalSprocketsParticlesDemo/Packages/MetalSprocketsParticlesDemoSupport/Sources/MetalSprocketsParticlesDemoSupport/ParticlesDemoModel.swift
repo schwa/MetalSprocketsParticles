@@ -8,12 +8,6 @@ import simd
 @MainActor
 final class ParticlesDemoModel {
     @ObservationIgnored let system: ParticleSystem?
-    @ObservationIgnored private var textureCache: [ParticleSprite: MTLTexture] = [:]
-    /// GPU meshes per emitter. Meshes are not edited in the demo, so one per emitter is enough.
-    @ObservationIgnored private var meshCache: [DemoEmitter.ID: EmitterMesh] = [:]
-    /// Particles per emitter. Preset layers bring their own; emitters added in the inspector get the default.
-    @ObservationIgnored private var capacities: [DemoEmitter.ID: Int] = [:]
-    private static let defaultCapacity = 50_000
 
     /// The preset last loaded. Choosing another loads it, replacing emitters, colliders, and force fields.
     var presetName: String {
@@ -24,11 +18,11 @@ final class ParticlesDemoModel {
         }
     }
 
-    var emitters: [DemoEmitter] = [] {
-        didSet { sync(from: oldValue) }
+    var emitters: [EmitterDescription] = [] {
+        didSet { _ = try? system?.apply(emitters) }
     }
 
-    var selectedEmitterID: DemoEmitter.ID?
+    var selectedEmitterID: EmitterDescription.ID?
 
     /// What the outline has selected and the inspector shows. Selecting an emitter or one of its children also
     /// selects that emitter.
@@ -41,7 +35,7 @@ final class ParticlesDemoModel {
     }
 
     /// The emitter the inspector edits. Falls back to the first emitter.
-    var selectedEmitter: DemoEmitter {
+    var selectedEmitter: EmitterDescription {
         get { emitters.first { $0.id == selectedEmitterID } ?? emitters[0] }
         set {
             if let index = emitters.firstIndex(where: { $0.id == newValue.id }) {
@@ -88,8 +82,8 @@ final class ParticlesDemoModel {
     }
 
     func load(_ preset: ParticlePreset) {
-        let emitters = preset.layers.map(DemoEmitter.init)
-        capacities = Dictionary(uniqueKeysWithValues: zip(emitters.map(\.id), preset.layers.map(\.capacity)))
+        // Fresh ids, so loading the same preset again rebuilds and clears the particles.
+        let emitters = preset.layers.map { $0.copy() }
         self.emitters = emitters
         selectedEmitterID = emitters.first?.id
         if selection != .scene {
@@ -114,20 +108,13 @@ final class ParticlesDemoModel {
     func addEmitter() {
         var settings = ParticleEmitter()
         settings.birthRate = 2_000
-        let emitter = DemoEmitter(name: "Emitter \(emitters.count + 1)", settings: settings)
+        let emitter = EmitterDescription("Emitter \(emitters.count + 1)", settings: settings)
         emitters.append(emitter)
         selection = .emitter(emitter.id)
     }
 
     func duplicateSelectedEmitter() {
-        let source = selectedEmitter
-        var copy = DemoEmitter(name: "\(source.name) Copy", settings: source.settings)
-        copy.sprite = source.sprite
-        copy.motion = source.motion
-        copy.simulationSpace = source.simulationSpace
-        copy.isEmitting = source.isEmitting
-        copy.mesh = source.mesh
-        capacities[copy.id] = capacities[source.id]
+        let copy = selectedEmitter.copy(named: "\(selectedEmitter.name) Copy")
         emitters.append(copy)
         selection = .emitter(copy.id)
     }
@@ -143,7 +130,7 @@ final class ParticlesDemoModel {
 
     // MARK: Outline
 
-    func addSubEmitter(to emitterID: DemoEmitter.ID) {
+    func addSubEmitter(to emitterID: EmitterDescription.ID) {
         guard let index = emitters.firstIndex(where: { $0.id == emitterID }) else {
             return
         }
@@ -151,7 +138,7 @@ final class ParticlesDemoModel {
         selection = .subEmitter(emitterID, emitters[index].settings.subEmitters.count - 1)
     }
 
-    func addTrigger(to emitterID: DemoEmitter.ID) {
+    func addTrigger(to emitterID: EmitterDescription.ID) {
         guard let index = emitters.firstIndex(where: { $0.id == emitterID }) else {
             return
         }
@@ -224,45 +211,5 @@ final class ParticlesDemoModel {
 
     func frameTransforms(time: Float) -> [simd_float4x4] {
         emitters.map { $0.motion.transform(time: time) }
-    }
-
-    // MARK: Sync
-
-    private func sync(from oldValue: [DemoEmitter]) {
-        guard let system else {
-            return
-        }
-        // Adding, removing, or reordering emitters rebuilds the shared buffer.
-        if oldValue.map(\.id) != emitters.map(\.id) {
-            _ = try? system.setEmitters(emitters.map { ($0.settings, capacities[$0.id] ?? Self.defaultCapacity) })
-        }
-        for (emitter, runtime) in zip(emitters, system.emitters) {
-            runtime.settings = emitter.settings
-            runtime.texture = texture(emitter.sprite, device: system.device)
-            runtime.simulationSpace = emitter.simulationSpace
-            runtime.isEmitting = emitter.isEmitting
-            runtime.mesh = emitterMesh(for: emitter, device: system.device)
-        }
-    }
-
-    private func emitterMesh(for emitter: DemoEmitter, device: MTLDevice) -> EmitterMesh? {
-        guard let mesh = emitter.mesh else {
-            return nil
-        }
-        if let cached = meshCache[emitter.id] {
-            return cached
-        }
-        let emitterMesh = try? EmitterMesh(device: device, mesh: mesh)
-        meshCache[emitter.id] = emitterMesh
-        return emitterMesh
-    }
-
-    private func texture(_ sprite: ParticleSprite, device: MTLDevice) -> MTLTexture? {
-        if let cached = textureCache[sprite] {
-            return cached
-        }
-        let texture = sprite.makeTexture(device: device)
-        textureCache[sprite] = texture
-        return texture
     }
 }

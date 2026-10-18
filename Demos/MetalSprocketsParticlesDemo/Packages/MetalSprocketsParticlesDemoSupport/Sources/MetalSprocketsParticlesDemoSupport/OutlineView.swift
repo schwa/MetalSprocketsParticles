@@ -5,14 +5,14 @@ import SwiftUI
 /// their emitter and position.
 enum OutlineItem: Hashable {
     case scene
-    case emitter(DemoEmitter.ID)
-    case subEmitter(DemoEmitter.ID, Int)
-    case trigger(DemoEmitter.ID, Int)
+    case emitter(EmitterDescription.ID)
+    case subEmitter(EmitterDescription.ID, Int)
+    case trigger(EmitterDescription.ID, Int)
     case collider(ColliderItem.ID)
     case forceField(ForceFieldItem.ID)
 
     /// The emitter this item belongs to, if any.
-    var emitterID: DemoEmitter.ID? {
+    var emitterID: EmitterDescription.ID? {
         switch self {
         case let .emitter(id), let .subEmitter(id, _), let .trigger(id, _): id
         default: nil
@@ -86,7 +86,7 @@ struct OutlineView: View {
 
 struct EmitterOutlineRow: View {
     let model: ParticlesDemoModel
-    let emitter: DemoEmitter
+    let emitter: EmitterDescription
     @State private var isExpanded = true
 
     var body: some View {

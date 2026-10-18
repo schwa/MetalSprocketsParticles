@@ -3,6 +3,7 @@ import Metal
 import MetalSprockets
 import MetalSprocketsParticlesShaders
 import simd
+import SwiftMesh
 
 public enum SimulationState: Sendable, Hashable {
     case playing
@@ -33,6 +34,8 @@ public final class ParticleSystem {
         public var isEmitting = true
         /// Triangles for `EmitterShape.mesh`.
         public var mesh: EmitterMesh?
+        /// The mesh `mesh` was made from by `ParticleSystem.apply(_:)`, to skip remaking it.
+        var meshSource: Mesh?
         /// Particles this emitter can have alive at once.
         public let capacity: Int
         /// This emitter's slice of the shared particle buffer.
@@ -118,6 +121,11 @@ public final class ParticleSystem {
     public func send(event name: String) {
         pendingEvents.append(name)
     }
+
+    /// What `apply(_:)` last built the buffer for. Empty after `setEmitters`, so the next `apply` rebuilds.
+    var appliedLayout: [AppliedEmitter] = []
+    /// Sprite textures made by `apply(_:)`.
+    var spriteTextures: [ParticleSprite: MTLTexture] = [:]
 
     /// Instances for every emitter's `settings.subEmitters`, stored after all emitters in the shared buffer.
     private(set) var subEmitterInstances: [Emitter] = []
@@ -253,6 +261,7 @@ public final class ParticleSystem {
             }
         }
         buffer = try Self.makeBuffer(device: device, count: start)
+        appliedLayout = []
         self.emitters = created
         subEmitterInstances = children
         subEmitterLayout = Self.subEmitterLayout(of: created)
@@ -266,13 +275,19 @@ public final class ParticleSystem {
     /// Rebuilds the buffer for the current emitters, keeping runtime state that is not part of the settings.
     private func rebuild(adding extra: [(settings: ParticleEmitter, capacity: Int)] = []) throws {
         let existing = emitters
+        let layout = appliedLayout
         try setEmitters(existing.map { ($0.settings, $0.capacity) } + extra)
+        // Same emitters, so a later `apply` with the same descriptions need not rebuild again.
+        if extra.isEmpty {
+            appliedLayout = layout
+        }
         for (old, new) in zip(existing, emitters) {
             new.texture = old.texture
             new.transform = old.transform
             new.simulationSpace = old.simulationSpace
             new.isEmitting = old.isEmitting
             new.mesh = old.mesh
+            new.meshSource = old.meshSource
         }
     }
 

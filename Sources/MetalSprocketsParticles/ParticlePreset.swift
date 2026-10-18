@@ -1,38 +1,10 @@
 import Metal
 import simd
-import SwiftMesh
 
 /// A complete effect: emitters with their sprites and motion, plus the colliders and force fields they play against.
 public struct ParticlePreset: Sendable, Identifiable {
     /// One emitter in a preset.
-    public struct Layer: Sendable {
-        public var name: String
-        public var settings: ParticleEmitter
-        public var sprite: ParticleSprite
-        public var motion: EmitterMotion
-        public var simulationSpace: SimulationSpace
-        public var capacity: Int
-        /// Triangles for `EmitterShape.mesh`, in emitter space.
-        public var mesh: Mesh?
-
-        public init(
-            _ name: String,
-            settings: ParticleEmitter,
-            sprite: ParticleSprite = .softDot,
-            motion: EmitterMotion = EmitterMotion(),
-            simulationSpace: SimulationSpace = .world,
-            capacity: Int = 50_000,
-            mesh: Mesh? = nil
-        ) {
-            self.mesh = mesh
-            self.name = name
-            self.settings = settings
-            self.sprite = sprite
-            self.motion = motion
-            self.simulationSpace = simulationSpace
-            self.capacity = capacity
-        }
-    }
+    public typealias Layer = EmitterDescription
 
     public var name: String
     public var layers: [Layer]
@@ -90,17 +62,7 @@ public struct ParticlePreset: Sendable, Identifiable {
 public extension ParticleSystem {
     /// Replaces every emitter, collider, and force field with the preset's. Removes all particles.
     func load(_ preset: ParticlePreset) throws {
-        try setEmitters(preset.layers.map { ($0.settings, $0.capacity) })
-        var textures: [ParticleSprite: MTLTexture] = [:]
-        for (emitter, layer) in zip(emitters, preset.layers) {
-            if textures[layer.sprite] == nil, let texture = layer.sprite.makeTexture(device: device) {
-                textures[layer.sprite] = texture
-            }
-            emitter.texture = textures[layer.sprite]
-            emitter.simulationSpace = layer.simulationSpace
-            emitter.transform = layer.motion.transform(time: 0)
-            emitter.mesh = try layer.mesh.map { try EmitterMesh(device: device, mesh: $0) }
-        }
+        try apply(preset.layers, rebuild: true)
         colliders = preset.colliders
         forceFields = preset.forceFields
     }

@@ -965,14 +965,18 @@ All editing lives in one long right-hand inspector (#39), even after reorganizin
 ## 50: Emitter description is duplicated across Layer, DemoEmitter, and ParticleSystem.Emitter
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: effort:m, area:tooling, kind:refactor
 created: 2026-10-18T01:36:03Z
+updated: 2026-10-18T01:53:09Z
+closed: 2026-10-18T01:53:09Z
 +++
 
 An emitter's full description (settings, sprite, motion, simulation space, mesh, capacity, emitting) exists three times: ParticlePreset.Layer, the demo's DemoEmitter, and the runtime ParticleSystem.Emitter. Converting between them is hand-written in ParticleSystem.load(_:), ParticlesDemoModel.sync, DemoEmitter.init(layer), and duplicateSelectedEmitter (which copies fields one by one, so a missed field is silently dropped). Sprite->texture and Mesh->EmitterMesh resolution is done twice with two caches. Adding the mesh in #43 meant touching all of them.\n\nDirection: one library value type describing an emitter (used by presets and the demo), and one place in ParticleSystem that resolves it into runtime state (textures, GPU meshes, capacity) with caching. Dependency category: in-process (Metal device only for resource resolution). Tests: one boundary test 'description in, runtime emitter out' replaces the scattered demo/preset loading checks. Source: architecture review.
+
+- `2026-10-18T01:53:09Z`: Added EmitterDescription (library; Identifiable, Equatable: name, settings, sprite, motion, simulation space, capacity, mesh, emitting) and ParticleSystem.apply(_:rebuild:), the one place descriptions become runtime emitters: rebuilds when ids/capacities change, otherwise updates in place; textures cached per sprite on the system, GPU meshes remade only when the mesh changes. ParticlePreset.Layer is now a typealias; load(_:) is apply(rebuild: true). The demo's DemoEmitter, capacity table, texture cache, mesh cache, sync, and field-by-field duplicate are gone (copy(named:)). EmitterDescriptionTests cover in-place edits, rebuilds, caching, and copy.
 
 ---
 
