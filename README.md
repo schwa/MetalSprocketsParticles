@@ -2,13 +2,13 @@
 
 MetalSprocketsParticles is a particle system for [MetalSprockets](https://github.com/schwa/MetalSprockets). It runs the simulation and the rendering on the GPU. Use it to make fire, smoke, rain, sparks, and other effects.
 
-It comes with 31 sample presets. To see each one, look at the [demo videos](Documentation/Demos/README.md).
+It comes with sample presets. To see them, look at the [demo videos](Documentation/Demos/README.md).
 
 ## Features
 
 - **Made for MetalSprockets.** Simulation and drawing are MetalSprockets elements. Put `simulate` and `render` in your
   own render graph, next to your own passes, with no extra Metal setup.
-- **Fast.** The GPU simulates and draws everything. One million particles simulate in about 0.25 ms on an M5 Max.
+- **Fast.** The GPU simulates and draws everything, so effects scale to a million particles.
 - **Many emitters in one system.** Each emitter has its own shape, sprite, curves, blend mode, and settings.
 - **Emitter shapes:** point, sphere, box, plane, disc, cylinder, cone, torus, and meshes. Meshes can deform every frame.
 - **Collisions** with planes, spheres, boxes, and capsules. Colliders can move and spin, and fast particles do not pass
@@ -22,7 +22,7 @@ It comes with 31 sample presets. To see each one, look at the [demo videos](Docu
   fade into scene geometry, and back-to-front sorting.
 - **Interactive.** Move colliders, force fields, and emitters every frame, or bind them to a point such as the mouse, a
   hand, or an object in your scene.
-- **Effect files.** Save and load effects as JSON, including your Metal code. 31 sample presets to start from.
+- **Effect files.** Save and load effects as JSON, including your Metal code. Sample presets to start from.
 - **Video export.** Render any effect to a movie, offscreen.
 
 ## Usage
@@ -31,7 +31,7 @@ Add the package to your `Package.swift`. It has three libraries:
 
 - `MetalSprocketsParticles`: the particle system.
 - `MetalSprocketsParticlesUI`: `ParticleView`, a SwiftUI view that needs no other setup.
-- `MetalSprocketsParticlesSamples`: 31 sample presets, such as `.campfire`. Optional.
+- `MetalSprocketsParticlesSamples`: sample presets, such as `.campfire`. Optional.
 
 ### Get an effect
 

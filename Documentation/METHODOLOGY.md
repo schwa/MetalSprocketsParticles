@@ -33,7 +33,7 @@ Almost all work went through an issue tracker (the `issues` CLI, which stores is
    fields etc".
 2. **Triage.** The `issues-triage` skill assigned kind, priority, and effort; the human adjusted ("15 should be high.
    it's going to impact testing", "bump priority up: 25, 32, 54", "defer 74").
-3. **Work the backlog autonomously.** The `auto-issue-fixer` skill ran ten times. Each run asked a few scope
+3. **Work the backlog autonomously.** The `auto-issue-fixer` skill did most of the work. Each run asked a few scope
    questions (how many issues, include low priority or untriaged), set a jj bookmark, printed the plan, and loaded one
    task per issue into pi's task queue. Each task: load the issue, write a failing test first for bugs, fix, build and
    test, then commit with the issue closed in the same commit. Hard or ambiguous issues were punted with a comment
@@ -90,8 +90,8 @@ The first day built the engine. The second day was mostly about finish, reach, a
 
 - **pi** (the harness): file read, edit, write, shell, a JavaScript "codemode" for batching tool calls, a task queue
   that drove the autonomous runs, and structured questions for scope decisions.
-- **A build wrapper** around `xcodebuild` and SwiftPM for every build, test, and run (about 85 builds, 129 test runs),
-  so the agent always got the same compact error and test summaries.
+- **A build wrapper** around `xcodebuild` and SwiftPM for every build, test, and run, so the agent always got the same
+  compact error and test summaries.
 - **jj** (Jujutsu) for version control: one commit per issue, bookmarks marking each autonomous run, splits and squashes
   where needed. Nothing was pushed.
 - **issues** CLI for the tracker, including dependencies and labels such as `deferred`, `needs-decision`, and
@@ -99,8 +99,6 @@ The first day built the engine. The second day was mostly about finish, reach, a
 - **GoldenImage** (a MetalSprockets package) for image regression tests, and **particles-render**, a CLI built early
   in the project, to look at results without launching the app. The human asked for this explicitly ("stop running
   the app... use golden image testing").
-- **magick** (ImageMagick) for side-by-side comparisons of renders and goldens, and **ffprobe/ffmpeg** to check video
-  exports.
 - MetalSprockets ecosystem packages: MetalCompilerPlugin (precompiled shaders), Interaction3D (camera), SwiftMesh
   (meshes, the Utah teapot), MetalSprocketsUI (RenderView, frame timing HUD, offscreen video renderer).
 
@@ -108,37 +106,32 @@ The first day built the engine. The second day was mostly about finish, reach, a
 
 pi skills are instruction files the agent loads when a task matches. Used directly in this project:
 
-- `auto-issue-fixer` (ten runs), `issues`, `issues-triage`, `writing-issues`: the tracker workflow.
+- `auto-issue-fixer`, `issues`, `issues-triage`, `writing-issues`: the tracker workflow.
 - `improve-codebase-architecture`, `swiftui-house-rules`, `swift-concurrency-pro`: reviews.
 - `swiftlint`: the lint setup. `simple-english`: the README and this document.
 - Build, `jujutsu`, `metalsprockets`, `swift-no-shadow-types`, `writing-comments`: house rules for builds, version
   control, the MetalSprockets API, Codable design, and comment style.
 
 Global instructions (`AGENTS.md`) set the working style: concise answers, no commits without permission (the
-auto-issue-fixer runs had it), ask before skipping planned work, use `rg`/`fd`, edit files only with the edit tool.
+auto-issue-fixer runs had it), and ask before skipping planned work.
 
 ## What kept the AI honest
 
 - **Tests before claims.** Bugs got a failing test first, and the commit message said what failed before the fix.
   Where a red test was impossible (SwiftUI crashes kill the test process), the exemption was recorded in the issue and
   the commit.
-- **Golden images.** 44 reference images made refactors provably behavior-neutral and made visual changes deliberate:
+- **Golden images.** Reference images made refactors provably behavior-neutral and made visual changes deliberate:
   each changed golden was reviewed before acceptance.
 - **Determinism.** One of the first fixes made the simulation repeatable from a seed, which made golden images
   possible.
 - **Measured performance.** A benchmark CLI tracked simulate and render times. When numbers looked worse, the agent
   reran them back to back against the previous commit before concluding anything; several apparent regressions were
   load from other processes.
-- **Corrections in the open.** Mistakes were stated in summaries: wrong test expectations, a reversed sign in swept
-  collision, a wrong claim about a MetalSprockets API, a miscounted preset total, a spike closed on our side's
-  measurements only, a feature audit that missed a setting (its issue was closed as invalid), and one file edited with
-  `sed` against the house rules.
-- **Evidence before explanations.** When a test run hung for 36 minutes, the agent sampled the stuck process and found
-  it waiting on a lock in the toolchain's build system, not in the tests. It said it did not know the root cause, and
-  added timeouts to later runs.
-- **Lint autofix checked.** SwiftLint's autofix broke the build in four ways (for example, it rewrote `count > 0` as
-  `isEmpty` on structs that only have a `count` field). Each was found by building and testing, then fixed or turned
-  off with a reason.
+- **Corrections in the open.** Mistakes were stated in summaries, not hidden: wrong test expectations, a reversed
+  sign in swept collision, a wrong claim about a MetalSprockets API, and a feature audit that missed a setting.
+- **Evidence before explanations.** When test runs hung, the agent sampled the stuck process before guessing, said
+  plainly when it did not know the root cause, and filed what it found.
+- **Automatic fixes checked.** Lint autofix broke the build in several ways; each was caught by building and testing.
 
 ## What the human contributed
 
