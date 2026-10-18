@@ -776,11 +776,12 @@ The demo inspector (#31) lists every control as a full-size row in a long sequen
 ## 40: Demo has no real textured or flipbook particles
 
 +++
-status: new
-priority: low
+status: open
+priority: medium
 kind: enhancement
 labels: effort:s, area:demo
 created: 2026-10-17T21:10:10Z
+updated: 2026-10-18T00:38:45Z
 +++
 
 Textures and flipbooks (#5) work, but the demo only has the 2x2 color test sheet. No preset uses an image sequence.
@@ -791,5 +792,134 @@ Idea: render emojis with Core Text into sprites and sprite sheets, so we need no
 - One or two presets that use them (e.g. hearts, moon-phase sparkle).
 
 Note: emoji glyphs are color, so the particle color tint must multiply (or be white) to keep them readable.
+
+- `2026-10-18T00:32:29Z`: Related demo gaps filed alongside this: see the area:demo issues for triggers, sorting, teapot mesh, orientation, local space, rain collision splashes, and smaller features.
+- `2026-10-18T00:38:45Z`: Triaged: medium (part of the demo-gap batch #41–#47), effort:s, area:demo.
+
+---
+
+## 41: No preset shows emission triggers
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:demo
+created: 2026-10-18T00:32:28Z
++++
+
+Triggers (#34) are not used by any preset, so they are invisible in the demo. Add a preset built around them, for example a ball (tracked object or animated collider) dropping into a water volume that bursts a splash on entry (objectEnters / particlesEnter), plus sparks that burst on every collider hit (colliderHit). Ideally the demo also offers a Send Event button target. Related: #34, #40.
+
+---
+
+## 42: No preset shows back-to-front sorting
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T00:32:29Z
++++
+
+Sorting (#4) is enabled for Smoke and Snow, but their alpha is so low that the difference cannot be seen. Add a preset with dense, fairly opaque, overlapping alpha particles (for example thick colored smoke or bubbles) where sorting clearly matters, and make it easy to compare sorted and unsorted in the demo. Related: #4, #40.
+
+---
+
+## 43: No preset emits from a mesh (teapot)
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:demo
+created: 2026-10-18T00:32:29Z
++++
+
+Mesh emission (#7) and SwiftMesh input (#38) are not shown anywhere. Add a preset that emits from the SwiftMesh teapot (SwiftMesh bundles Resources/teapot.obj), for example a teapot outlined in glowing particles or dissolving into sand that falls away. Presets would need a way to carry a mesh (ParticlePreset.Layer has no mesh today). Related: #7, #38, #40.
+
+---
+
+## 44: No preset uses flat or Y-aligned particle orientation
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T00:32:29Z
++++
+
+The flat (fixed plane) and Y-aligned orientation modes (#18) are unused. Add demos that need them: ripples spreading flat on a water surface, and upright flames or grass that turn only around Y. Related: #18, #40.
+
+---
+
+## 45: No preset shows local simulation space
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T00:32:29Z
++++
+
+Local simulation space (#22) is unused: every preset simulates in world space. Add a demo where it matters, for example a moving emitter whose particles orbit and travel with it, ideally next to the same effect in world space leaving a trail. Related: #22, #40.
+
+---
+
+## 46: Rain splashes do not come from raindrop collisions
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T00:32:29Z
++++
+
+The Rain preset spawns splashes from a separate emitter spread over the ground plane, so splashes do not line up with where drops land and miss the tilted slab. Use an onCollision sub-emitter (#9) on the raindrops instead, so each drop that hits the ground or slab makes its own splash. Related: #9, #23.
+
+---
+
+## 47: Some emitter features have no demo
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T00:32:29Z
++++
+
+A few smaller features are unused by every preset: cone and cylinder emitter shapes (#7), screen and opaque blend modes (#19), and the emit/idle/loop emission cycle (#21). Work them into existing or new presets, for example a cone-shaped thruster exhaust, a pulsing geyser on an emit/idle loop, and opaque alpha-tested debris. Related: #40.
+
+---
+
+## 48: Force fields, trigger volumes, and emitter shapes are not drawn
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:rendering
+created: 2026-10-18T00:32:50Z
++++
+
+renderColliders draws collider wireframes, but nothing else in the world is visible: force fields (attractor and vortex centers, axes, and radii; wind direction), trigger volumes (#34), and emitter shapes and transforms (where a disc, cone, torus, or mesh emitter sits and how it is oriented, including pitch/spin from #36). Tuning a scene means guessing where these are. Add debug wireframes for them, toggled like the collider wireframes (demo Wireframes toggle and particles-render --wireframes). Related: #1 (collider wireframes).
+
+---
+
+## 49: Demo editor needs an outline sidebar and a detail inspector
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: effort:m, area:tooling
+created: 2026-10-18T00:36:16Z
++++
+
+All editing lives in one long right-hand inspector (#39), even after reorganizing it. A real effect editor needs two sidebars: an outline on the left listing the scene's objects (presets/effect, emitters with their sub-emitters and triggers nested underneath, colliders, force fields, trigger volumes), and the inspector on the right showing details for whatever is selected in the outline. Selecting an item could also highlight it in the viewport (see #48 for wireframes). Use NavigationSplitView or an equivalent leading sidebar plus the existing trailing inspector. Related: #39, #48.
 
 ---
