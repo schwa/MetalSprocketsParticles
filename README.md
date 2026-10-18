@@ -2,7 +2,7 @@
 
 MetalSprocketsParticles is a particle system for [MetalSprockets](https://github.com/schwa/MetalSprockets). It runs the simulation and the rendering on the GPU. Use it to make fire, smoke, rain, sparks, and other effects.
 
-It comes with sample presets. To see them, look at the [demo videos](Documentation/Demos/README.md).
+It comes with sample presets. To see them, look at the [demo videos](Documentation/Demos/Demos.md).
 
 ## Features
 
