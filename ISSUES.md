@@ -1674,11 +1674,12 @@ Related: #82.
 ## 84: Add DocC documentation
 
 +++
-status: new
+status: open
 priority: medium
 kind: documentation
-labels: area:docs, effort:l
+labels: area:docs, effort:l, deferred
 created: 2026-10-18T15:45:41Z
+updated: 2026-10-18T21:57:36Z
 +++
 
 The package has no DocC catalog, and many public symbols have no doc comments. Add DocC documentation.
@@ -1690,6 +1691,8 @@ Scope:
 - Doc comments on the public API, and fixes to the existing ones.
 
 Rules: write in simple English (the simple-english skill), and follow the writing-comments and swift-documentation skills. The doc build must have no warnings.
+
+- `2026-10-18T21:57:36Z`: Deferred (user): docs wait until the project is close to final.
 
 ---
 
@@ -2173,6 +2176,8 @@ Dependencies: in-process.
 Tests: 'apply a changed description, check what is kept and what is rebuilt' tests replace parts of EmitterDescriptionTests, MultipleEmitterTests, and the demo model's sync tests.
 Source: improve-codebase-architecture review. Related: #100, and the player issue.
 
+- `2026-10-18T21:57:36Z`: Related: #108 gives every item a stable id, which apply needs to diff descriptions.
+
 ---
 
 ## 105: Architecture: move editor-support API out of the core library
@@ -2218,25 +2223,29 @@ Source: improve-codebase-architecture review.
 ## 107: Constrain particles to a plane
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
-labels: area:simulation,effort:s
+labels: area:simulation, effort:s
 created: 2026-10-18T21:38:49Z
+updated: 2026-10-18T21:57:36Z
 +++
 
 An emitter setting that keeps particles on a plane (z = 0 in emitter or world space): zero the plane-normal component of spawn positions, velocities, spread, turbulence, and force-field accelerations, every step. Without it, spread cones, sphere shapes, and turbulence add depth motion; under an orthographic 2D camera that is invisible but changes collisions and sorting. Useful in 3D too: flat sheets, effects on a wall, side-scrolling scenes. Split out of #99.
+
+- `2026-10-18T21:57:36Z`: Related: #99 (2D overlays use it to keep particles at z = 0).
 
 ---
 
 ## 108: Stable ids for every item in a particle system
 
 +++
-status: new
+status: open
 priority: medium
 kind: task
 labels: area:api, area:editor, effort:m
 created: 2026-10-18T21:47:02Z
+updated: 2026-10-18T21:57:36Z
 +++
 
 Colliders, force fields, lights, sub-emitters, and triggers have no identity; the demo wraps colliders and fields in ColliderItem/ForceFieldItem with UUIDs and identifies sub-emitters and triggers by index, and PointerBinding refers to items by index. The editor needs ids for selection, undo, gizmos, and drag reordering, and #104 needs them to diff descriptions.
@@ -2245,3 +2254,6 @@ Give each an id, saved in the effect file and generated when missing, so old fil
 
 Tests: old files load with fresh ids; ids round-trip; index-form pointer bindings decode to the right ids. Part of #100.
 
+- `2026-10-18T21:57:36Z`: Related: #104 (apply needs ids to diff), #100 (editor), #105. ColliderSpin also refers to colliders by index and should move to ids with PointerBinding.
+
+---
