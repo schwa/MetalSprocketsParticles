@@ -1854,3 +1854,26 @@ README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace
 - `2026-10-18T18:51:33Z`: README uses swift run -c release particles-render; METHODOLOGY describes the build wrapper generically. Docs only; not built. The swift run commands were not run here (this workspace builds through the wrapper).
 
 ---
+
+## 93: Move DEVELOPMENT_TEAM out of xcodeproj into gitignored Local.xcconfig
+
++++
+status: new
+priority: medium
+kind: task
+created: 2026-10-18T19:03:42Z
+updated: 2026-10-18T19:03:48Z
++++
+
+The demo xcodeproj has the developer team ID hardcoded in project.pbxproj. Other people must edit it to build.
+
+Fix:
+- Remove DEVELOPMENT_TEAM from project.pbxproj.
+- Add a committed Config/Base.xcconfig with an empty DEVELOPMENT_TEAM and a BUNDLE_ID_PREFIX, ending with: #include? "Local.xcconfig"
+- Add a gitignored Config/Local.xcconfig that sets the real team and bundle prefix.
+- Set Base.xcconfig as the base configuration for Debug and Release.
+- Set PRODUCT_BUNDLE_IDENTIFIER = $(BUNDLE_ID_PREFIX).<name>.
+
+Done when a fresh clone builds on macOS with no project edits.
+
+---
