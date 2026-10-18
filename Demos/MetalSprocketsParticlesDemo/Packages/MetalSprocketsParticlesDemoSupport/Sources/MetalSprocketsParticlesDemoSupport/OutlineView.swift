@@ -93,7 +93,7 @@ struct EmitterOutlineRow: View {
     var body: some View {
         let children = emitter.settings.subEmitters.count + emitter.settings.triggers.count
         if children == 0 {
-            emitterLabel
+            EmitterOutlineLabelView(model: model, emitter: emitter)
         } else {
             DisclosureGroup(isExpanded: $isExpanded) {
                 ForEach(emitter.settings.subEmitters.indices, id: \.self) { index in
@@ -106,12 +106,18 @@ struct EmitterOutlineRow: View {
                         .tag(OutlineItem.trigger(emitter.id, index))
                 }
             } label: {
-                emitterLabel
+                EmitterOutlineLabelView(model: model, emitter: emitter)
             }
         }
     }
+}
 
-    private var emitterLabel: some View {
+/// The emitter's row label: selectable, with actions to add children.
+struct EmitterOutlineLabelView: View {
+    let model: ParticlesDemoModel
+    let emitter: EmitterDescription
+
+    var body: some View {
         Label(emitter.name, systemImage: emitter.isEmitting ? "circle.dotted.circle" : "circle.dashed")
             .tag(OutlineItem.emitter(emitter.id))
             .contextMenu {

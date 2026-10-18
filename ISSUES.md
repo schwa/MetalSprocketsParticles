@@ -1247,14 +1247,18 @@ ParticlesDemoModel.selectedEmitter returns emitters.first { ... } ?? emitters[0]
 ## 64: EmitterOutlineRow.emitterLabel is a computed view property
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:xs, area:demo
 created: 2026-10-18T12:36:57Z
+updated: 2026-10-18T13:18:43Z
+closed: 2026-10-18T13:18:43Z
 +++
 
 EmitterOutlineRow uses 'private var emitterLabel: some View' (label + tag + context menu), used twice. House rule allows tiny tightly-bound fragments; consider whether it should be a struct. Low value. Source: SwiftUI review.
+
+- `2026-10-18T13:18:43Z`: Extracted into EmitterOutlineLabelView (label, selection tag, context menu). It has behavior, so per the house rule it is a struct, not a computed property. Pure refactor: no new test; build and 33 demo tests pass. Not checked in the running app (outline selection still relies on the tag inside the struct, which SwiftUI reads through custom views).
 
 ---
 
