@@ -867,14 +867,18 @@ The flat (fixed plane) and Y-aligned orientation modes (#18) are unused. Add dem
 ## 45: No preset shows local simulation space
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T00:32:29Z
+updated: 2026-10-18T00:47:50Z
+closed: 2026-10-18T00:47:50Z
 +++
 
 Local simulation space (#22) is unused: every preset simulates in world space. Add a demo where it matters, for example a moving emitter whose particles orbit and travel with it, ideally next to the same effect in world space leaving a trail. Related: #22, #40.
+
+- `2026-10-18T00:47:50Z`: Added the Swarms preset: two identical circling firefly swarms, gold in local space (travels as a tight cloud) and blue in world space (leaves a trail). Golden added.
 
 ---
 

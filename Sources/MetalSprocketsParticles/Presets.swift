@@ -11,8 +11,36 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire,
+        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms,
     ]
+
+    /// Two identical firefly swarms circling side by side. The gold one simulates in local space and travels as a
+    /// tight cloud; the blue one simulates in world space and leaves its fireflies behind as a trail.
+    static let swarms: ParticlePreset = {
+        func swarm(_ name: String, color: SIMD4<Float>, x: Float, space: SimulationSpace) -> Layer {
+            Layer(name, settings: emitter {
+                $0.shape = .sphere(radius: 0.25)
+                $0.velocity = .zero
+                $0.velocitySpread = 0.4
+                $0.gravity = .zero
+                $0.drag = 1
+                $0.lifetime = 1.5...2
+                $0.birthRate = 300
+                $0.warmupDuration = 2
+                $0.blendMode = .additive
+                $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.2, 0.04), .init(1, 0)])
+                $0.colorOverLife = .constant(color)
+            }, motion: EmitterMotion(kind: .circle, radius: 1, speed: 1.5, offset: [x, 1.5, 0]), simulationSpace: space, capacity: 1_000)
+        }
+        return ParticlePreset(
+            "Swarms",
+            layers: [
+                swarm("Local Swarm", color: [1, 0.8, 0.3, 1], x: -1.4, space: .local),
+                swarm("World Swarm", color: [0.3, 0.7, 1, 1], x: 1.4, space: .world),
+            ],
+            cameraEye: [0, 4, 6]
+        )
+    }()
 
     /// Rain drops on a pond: each drop spreads a ripple that lies flat on the water (fixed orientation).
     static let pond = ParticlePreset(
