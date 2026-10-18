@@ -1,0 +1,349 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    3,
+    6
+  ],
+  "cameraTarget" : [
+    0,
+    1.5,
+    0
+  ],
+  "colliders" : [
+
+  ],
+  "comment" : "Emoji moons orbit slowly, each cycling through the moon phases from its own starting phase. Shows a sprite-sheet flipbook with random start frames.",
+  "forceFields" : [
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "vortex" : {
+          "axis" : [
+            0,
+            1,
+            0
+          ],
+          "center" : [
+            0,
+            1.5,
+            0
+          ],
+          "radius" : 4,
+          "strength" : 0.3
+        }
+      }
+    }
+  ],
+  "layers" : [
+    {
+      "capacity" : 200,
+      "id" : "6569BC9C-019B-4C20-8161-C886515A8DE8",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Moons",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 2,
+        "birthLocation" : 0,
+        "birthRate" : 12,
+        "birthRateVariation" : 0,
+        "blendMode" : 0,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                1,
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "imageSequence" : {
+          "columns" : 4,
+          "frameCount" : 8,
+          "frameRate" : 3,
+          "frameRateVariation" : 0,
+          "initialFrame" : 0,
+          "initialFrameVariation" : 8,
+          "mode" : 0,
+          "rows" : 2
+        },
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          6,
+          8
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          1.5,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "torus" : {
+            "radius" : 1.8,
+            "tubeRadius" : 0.4
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.15,
+              "value" : 0.22
+            },
+            {
+              "time" : 0.85,
+              "value" : 0.22
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "sizeVariation" : 0.3,
+        "softness" : 0,
+        "sortMode" : "Back to Front",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0,
+          0.6
+        ],
+        "velocitySpread" : 0.05,
+        "warmupDuration" : 8
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "🌑…🌘 Moon Phases 2×4"
+    },
+    {
+      "capacity" : 1000,
+      "id" : "BBC6C0F6-F602-4BCE-8DC1-318D152FC42C",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Stardust",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 1,
+        "birthRate" : 150,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.7,
+                0.8,
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          3,
+          6
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          1.5,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "sphere" : {
+            "radius" : 4
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.5,
+              "value" : 0.02
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0,
+          0
+        ],
+        "velocitySpread" : 0.02,
+        "warmupDuration" : 6
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Moon Phases",
+  "trackedObjects" : {
+
+  }
+}

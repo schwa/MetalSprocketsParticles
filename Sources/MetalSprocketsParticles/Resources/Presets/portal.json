@@ -1,0 +1,485 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    1.6,
+    4.5
+  ],
+  "cameraTarget" : [
+    0,
+    1.6,
+    0
+  ],
+  "colliders" : [
+    {
+      "distance" : 0,
+      "kind" : "plane",
+      "normal" : [
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "comment" : "A sorcerer's portal: a spinning ring of fire that throws sparks off its rim like a Catherine wheel. Shows tangential birth direction and a spinning emitter whose births spread along its rotation.",
+  "forceFields" : [
+
+  ],
+  "layers" : [
+    {
+      "capacity" : 6000,
+      "id" : "12FD9E7B-7B6D-41D4-9569-390DB42A2DDC",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          1.6,
+          0
+        ],
+        "pitch" : 1.5707963,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 3,
+        "yaw" : 0
+      },
+      "name" : "Ring",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 2,
+        "birthLocation" : 1,
+        "birthRate" : 12000,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                0.55,
+                0.15,
+                0.2
+              ]
+            },
+            {
+              "time" : 1,
+              "value" : [
+                1,
+                0.25,
+                0.03,
+                0
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          0.15,
+          0.3
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          0,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "disc" : {
+            "radius" : 1.1
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.05
+            },
+            {
+              "time" : 1,
+              "value" : 0.015
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0.3,
+          0
+        ],
+        "velocitySpread" : 0.05,
+        "warmupDuration" : 0
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    },
+    {
+      "capacity" : 8000,
+      "id" : "7C275ABA-06CA-47F1-A4C1-ACBF68C51B10",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          1.6,
+          0
+        ],
+        "pitch" : 1.5707963,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 3,
+        "yaw" : 0
+      },
+      "name" : "Sparks",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 2,
+        "birthLocation" : 1,
+        "birthRate" : 5000,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                0.85,
+                0.45,
+                1
+              ]
+            },
+            {
+              "time" : 0.25,
+              "value" : [
+                1,
+                0.5,
+                0.1,
+                1
+              ]
+            },
+            {
+              "time" : 1,
+              "value" : [
+                0.7,
+                0.12,
+                0.02,
+                0
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.8,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          -4,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          0.4,
+          1.1
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "velocityAligned" : {
+            "stretch" : 1.8
+          }
+        },
+        "position" : [
+          0,
+          0,
+          0
+        ],
+        "restitution" : 0.3,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "disc" : {
+            "radius" : 1.1
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.009
+            },
+            {
+              "time" : 1,
+              "value" : 0.004
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 1.5,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          4,
+          0
+        ],
+        "velocitySpread" : 0.5,
+        "warmupDuration" : 0
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    },
+    {
+      "capacity" : 2000,
+      "id" : "7DECFF29-EC15-4EFD-AA05-0357DD6A27B7",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          1.6,
+          0
+        ],
+        "pitch" : -1.5707963,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : -2,
+        "yaw" : 0
+      },
+      "name" : "Inner Shimmer",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 2,
+        "birthLocation" : 1,
+        "birthRate" : 2500,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                0.85,
+                0.5,
+                0.7
+              ]
+            },
+            {
+              "time" : 1,
+              "value" : [
+                1,
+                0.4,
+                0.1,
+                0
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          0.2,
+          0.4
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "velocityAligned" : {
+            "stretch" : 0.5
+          }
+        },
+        "position" : [
+          0,
+          0,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "disc" : {
+            "radius" : 0.95
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.008
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          1.2,
+          0
+        ],
+        "velocitySpread" : 0.1,
+        "warmupDuration" : 0
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Portal",
+  "trackedObjects" : {
+
+  }
+}

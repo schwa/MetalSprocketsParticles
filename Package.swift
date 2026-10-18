@@ -24,7 +24,8 @@ let package = Package(
                 "MetalSprocketsParticlesShaders",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "SwiftMesh", package: "SwiftMesh"),
-            ]
+            ],
+            resources: [.copy("Resources/Presets")]
         ),
         .target(
             name: "MetalSprocketsParticlesShaders",

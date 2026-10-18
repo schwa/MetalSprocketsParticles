@@ -1,0 +1,220 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0.5,
+    2.5,
+    9
+  ],
+  "cameraTarget" : [
+    1,
+    2.5,
+    0
+  ],
+  "colliders" : [
+
+  ],
+  "comment" : "Soft smoke drifts up and sideways in the wind, curling in turbulence. Shows alpha-blended sprites drawn back to front, wind, and turbulence.",
+  "forceFields" : [
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "wind" : {
+          "strength" : 0.25,
+          "velocity" : [
+            0.8,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "turbulence" : {
+          "scale" : 0.8,
+          "speed" : 0.4,
+          "strength" : 0.8
+        }
+      }
+    }
+  ],
+  "layers" : [
+    {
+      "capacity" : 6000,
+      "id" : "4BEFAC83-A965-4D49-A02E-F6297913D737",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Smoke",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 800,
+        "birthRateVariation" : 0,
+        "blendMode" : 0,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.5,
+                0.5,
+                0.52,
+                0
+              ]
+            },
+            {
+              "time" : 0.1,
+              "value" : [
+                0.55,
+                0.55,
+                0.57,
+                0.07
+              ]
+            },
+            {
+              "time" : 0.5,
+              "value" : [
+                0.6,
+                0.6,
+                0.62,
+                0.05
+              ]
+            },
+            {
+              "time" : 1,
+              "value" : [
+                0.7,
+                0.7,
+                0.72,
+                0
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0.1,
+          0.03
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.25,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0.1,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          4,
+          6
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          0.1,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "disc" : {
+            "radius" : 0.4
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.15
+            },
+            {
+              "time" : 1,
+              "value" : 0.9
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "Back to Front",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0.9,
+          0
+        ],
+        "velocitySpread" : 0.2,
+        "warmupDuration" : 5
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Smoke",
+  "trackedObjects" : {
+
+  }
+}

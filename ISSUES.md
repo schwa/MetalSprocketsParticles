@@ -1488,11 +1488,13 @@ Proposal: ParticleEmitter.emissionOverTime: ParticleCurve<Float>, a multiplier o
 ## 76: Built-in presets are Swift code instead of JSON resources
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:m, area:tooling
 created: 2026-10-18T14:48:39Z
+updated: 2026-10-18T15:04:45Z
+closed: 2026-10-18T15:04:45Z
 +++
 
 All 26 presets live in Presets.swift as Swift code. Effects already round-trip through JSON (#25, meshes since #65), so the built-ins could be JSON files bundled as package resources and loaded at runtime, the same format users save and open.
@@ -1507,5 +1509,7 @@ Plan:
 - Goldens must stay identical. Layer ids are stored in JSON; loading must keep them stable or fresh consistently.
 - Decide: keep a Swift path for tests (fixtures) or load everything from resources.
 - Related: #25, #32 (result builder), #65.
+
+- `2026-10-18T15:04:45Z`: Built-in presets are now JSON resources: Sources/MetalSprocketsParticles/Resources/Presets/<slug>.json (exported with particles-render --save-effect) plus index.json for display order, bundled via Package.swift resources. ParticlePreset.all loads them once; named accessors (.fireworks, .teapot, ...) remain, backed by the resources. Presets.swift (1,176 lines) is deleted. All 27 preset goldens are unchanged (Teapot included, from the triangulated mesh in JSON). Not done: Teapot's mesh stays inline (~1.4 MB pretty JSON; a named-mesh reference or compact JSON would shrink it). The preset result builder (#32) stays as public API, but no built-in uses it now.
 
 ---

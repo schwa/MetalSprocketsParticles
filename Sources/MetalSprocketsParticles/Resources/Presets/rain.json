@@ -1,0 +1,326 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    3,
+    6
+  ],
+  "cameraTarget" : [
+    0,
+    1.5,
+    0
+  ],
+  "colliders" : [
+    {
+      "distance" : 0,
+      "kind" : "plane",
+      "normal" : [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "center" : [
+        0,
+        1.4,
+        0.5
+      ],
+      "halfExtents" : [
+        1.4,
+        0.05,
+        1.2
+      ],
+      "kind" : "box",
+      "rotation" : [
+        0,
+        0,
+        0.12467473,
+        0.9921977
+      ]
+    }
+  ],
+  "comment" : "Rain falls onto the ground and a tilted slab. Each drop dies when it hits and splashes where it lands. Shows velocity stretching, die-on-collision, and an on-collision sub-emitter.",
+  "forceFields" : [
+
+  ],
+  "layers" : [
+    {
+      "capacity" : 50000,
+      "id" : "684BBA00-BB42-43FE-AF5E-96005B9272E7",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Rain",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 12000,
+        "birthRateVariation" : 0,
+        "blendMode" : 0,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.6,
+                0.7,
+                0.9,
+                0.45
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : true,
+        "drag" : 0.1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          -9.8,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          1.5,
+          1.5
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "velocityAligned" : {
+            "stretch" : 1.2
+          }
+        },
+        "position" : [
+          0,
+          6,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "plane" : {
+            "size" : [
+              10,
+              8
+            ]
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.008
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0,
+        "subEmitters" : [
+          {
+            "countPerEvent" : 3,
+            "occasion" : {
+              "onCollision" : {
+
+              }
+            },
+            "settings" : {
+              "angle" : 0,
+              "angleVariation" : 0,
+              "angularSpeed" : 0,
+              "angularSpeedVariation" : 0,
+              "birthDirection" : 0,
+              "birthLocation" : 0,
+              "birthRate" : 1000,
+              "birthRateVariation" : 0,
+              "blendMode" : 0,
+              "collisionMask" : 4294967295,
+              "colorOverLife" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : [
+                      0.7,
+                      0.8,
+                      1,
+                      0.7
+                    ]
+                  },
+                  {
+                    "time" : 1,
+                    "value" : [
+                      0.7,
+                      0.8,
+                      1,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "colorVariation" : [
+                0,
+                0,
+                0,
+                0
+              ],
+              "diesOnCollision" : false,
+              "drag" : 0.1,
+              "emissionOverTime" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : 1
+                  }
+                ]
+              },
+              "fieldMask" : 4294967295,
+              "friction" : 0.2,
+              "frictionVariation" : 0,
+              "gravity" : [
+                0,
+                -9.8,
+                0
+              ],
+              "idleDuration" : 0,
+              "inheritVelocity" : 0,
+              "isLit" : false,
+              "lifetime" : [
+                0.25,
+                0.4
+              ],
+              "loops" : true,
+              "opacityOverLife" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : 1
+                  }
+                ]
+              },
+              "orientation" : {
+                "billboard" : {
+
+                }
+              },
+              "position" : [
+                0,
+                0,
+                0
+              ],
+              "restitution" : 0.4,
+              "restitutionVariation" : 0,
+              "shape" : {
+                "point" : {
+
+                }
+              },
+              "sizeOverLife" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : 0.012
+                  },
+                  {
+                    "time" : 1,
+                    "value" : 0.003
+                  }
+                ]
+              },
+              "sizeVariation" : 0,
+              "softness" : 0,
+              "sortMode" : "None",
+              "speedVariation" : 0,
+              "subEmitters" : [
+
+              ],
+              "sweepAngle" : 6.283185,
+              "triggers" : [
+
+              ],
+              "velocity" : [
+                0,
+                1.2,
+                0
+              ],
+              "velocitySpread" : 0.6,
+              "warmupDuration" : 0
+            },
+            "velocityFactor" : 0
+          }
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0.6,
+          -8,
+          0
+        ],
+        "velocitySpread" : 0.2,
+        "warmupDuration" : 0
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Rain",
+  "trackedObjects" : {
+
+  }
+}

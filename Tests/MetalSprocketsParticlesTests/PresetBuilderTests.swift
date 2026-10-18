@@ -2,6 +2,18 @@
 import simd
 import Testing
 
+/// #76: built-in presets come from JSON resources.
+struct BuiltInPresetTests {
+    @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() throws {
+        let slugs = ParticlePreset.builtInSlugs
+        #expect(slugs.count >= 27)
+        #expect(ParticlePreset.all.count == slugs.count)
+        #expect(Set(ParticlePreset.all.map(\.name)).count == slugs.count)
+        #expect(ParticlePreset.all.allSatisfy { !$0.comment.isEmpty && !$0.layers.isEmpty })
+        #expect(ParticlePreset.teapot.layers.allSatisfy { $0.mesh != nil })
+    }
+}
+
 struct PresetBuilderTests {
     func settings(_ birthRate: Float) -> ParticleEmitter {
         var settings = ParticleEmitter()

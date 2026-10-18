@@ -1,0 +1,492 @@
+{
+  "ambientLight" : [
+    0.05,
+    0.05,
+    0.07
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    1.8,
+    4.5
+  ],
+  "cameraTarget" : [
+    0,
+    1.3,
+    0
+  ],
+  "colliders" : [
+
+  ],
+  "comment" : "Smoke and dust lit by a warm lantern and cool moonlight. Shows particle lighting: point and directional lights over low ambient light.",
+  "forceFields" : [
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "turbulence" : {
+          "scale" : 0.8,
+          "speed" : 0.3,
+          "strength" : 0.4
+        }
+      }
+    }
+  ],
+  "layers" : [
+    {
+      "capacity" : 400,
+      "id" : "BD68590B-4D30-4B10-86D5-389977C7097C",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Smoke",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 3.1415925,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0.3,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 30,
+        "birthRateVariation" : 0,
+        "blendMode" : 0,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.9,
+                0.9,
+                0.9,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.3,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : true,
+        "lifetime" : [
+          4,
+          5
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.15,
+              "value" : 0.7
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          0.2,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "disc" : {
+            "radius" : 0.3
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.25
+            },
+            {
+              "time" : 1,
+              "value" : 0.9
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "Back to Front",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0.7,
+          0
+        ],
+        "velocitySpread" : 0.2,
+        "warmupDuration" : 5
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Smoke Puff"
+    },
+    {
+      "capacity" : 1000,
+      "id" : "365FC63F-96CF-4E92-98F7-0FD4ECC72862",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Dust",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 120,
+        "birthRateVariation" : 0,
+        "blendMode" : 0,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                1,
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : true,
+        "lifetime" : [
+          3,
+          6
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          1.2,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "sphere" : {
+            "radius" : 1.4
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.3,
+              "value" : 0.02
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0,
+          0
+        ],
+        "velocitySpread" : 0.05,
+        "warmupDuration" : 6
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    },
+    {
+      "capacity" : 40,
+      "id" : "34F74075-8A8D-4A07-B960-049119699C9F",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Lantern Glow",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 20,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                0.65,
+                0.25,
+                0.8
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.1,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          1,
+          1
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          0.6,
+          0.8
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "point" : {
+
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.18
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "Back to Front",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0,
+          0
+        ],
+        "velocitySpread" : 0,
+        "warmupDuration" : 1
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+    {
+      "point" : {
+        "color" : [
+          1,
+          0.6,
+          0.25
+        ],
+        "intensity" : 2.5,
+        "position" : [
+          0,
+          0.6,
+          0.8
+        ],
+        "range" : 2.5
+      }
+    },
+    {
+      "directional" : {
+        "color" : [
+          0.4,
+          0.5,
+          0.8
+        ],
+        "direction" : [
+          1,
+          -0.3,
+          -0.2
+        ],
+        "intensity" : 0.6
+      }
+    }
+  ],
+  "name" : "Lantern",
+  "trackedObjects" : {
+
+  }
+}
