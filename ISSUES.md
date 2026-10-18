@@ -903,14 +903,18 @@ The Rain preset spawns splashes from a separate emitter spread over the ground p
 ## 47: Some emitter features have no demo
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T00:32:29Z
+updated: 2026-10-18T00:49:55Z
+closed: 2026-10-18T00:49:55Z
 +++
 
 A few smaller features are unused by every preset: cone and cylinder emitter shapes (#7), screen and opaque blend modes (#19), and the emit/idle/loop emission cycle (#21). Work them into existing or new presets, for example a cone-shaped thruster exhaust, a pulsing geyser on an emit/idle loop, and opaque alpha-tested debris. Related: #40.
+
+- `2026-10-18T00:49:55Z`: Added the Geyser preset: emit/idle loop (1.5 s on, 2.5 s off), cylinder-shaped water column, opaque tumbling rock debris, and screen-blended steam from a cone. Golden added.
 
 ---
 

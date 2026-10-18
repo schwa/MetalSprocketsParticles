@@ -11,8 +11,70 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms,
+        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser,
     ]
+
+    /// A geyser that erupts for 1.5 seconds every 4 (emit/idle loop): a water column from a cylinder, opaque rock
+    /// debris, and steam rising from a cone, blended with screen so it brightens without blowing out.
+    static let geyser: ParticlePreset = {
+        func erupting(_ configure: (inout ParticleEmitter) -> Void) -> ParticleEmitter {
+            emitter {
+                $0.emissionDuration = 1.5
+                $0.idleDuration = 2.5
+                $0.loops = true
+                configure(&$0)
+            }
+        }
+        return ParticlePreset(
+            "Geyser",
+            layers: [
+                Layer("Water", settings: erupting {
+                    $0.shape = .cylinder(radius: 0.15, height: 0.1)
+                    $0.velocity = [0, 9, 0]
+                    $0.velocitySpread = 0.8
+                    $0.lifetime = 1.5...2
+                    $0.birthRate = 8_000
+                    $0.restitution = 0.1
+                    $0.sizeOverLife = .linear(from: 0.02, to: 0.01)
+                    $0.colorOverLife = .linear(from: [0.75, 0.9, 1, 0.8], to: [0.6, 0.8, 1, 0])
+                }, capacity: 20_000),
+                Layer("Rocks", settings: erupting {
+                    $0.shape = .cylinder(radius: 0.2, height: 0.1)
+                    $0.velocity = [0, 7, 0]
+                    $0.velocitySpread = 2
+                    $0.lifetime = 3...3
+                    $0.birthRate = 40
+                    $0.restitution = 0.3
+                    $0.friction = 0.8
+                    $0.blendMode = .opaque
+                    $0.sizeOverLife = .constant(0.05)
+                    $0.sizeVariation = 0.5
+                    $0.colorOverLife = .constant([0.35, 0.3, 0.27, 1])
+                    $0.colorVariation = [0, 0, 0.15, 0]
+                    $0.angleVariation = .pi
+                    $0.angularSpeedVariation = 10
+                }, sprite: .triangle, capacity: 300),
+                Layer("Steam", settings: emitter {
+                    $0.shape = .cone(radius: 0.5, height: 0.6)
+                    $0.velocity = [0, 1, 0]
+                    $0.velocitySpread = 0.3
+                    $0.gravity = .zero
+                    $0.lifetime = 2...3
+                    $0.birthRate = 40
+                    $0.warmupDuration = 3
+                    $0.blendMode = .screen
+                    $0.sizeOverLife = .linear(from: 0.2, to: 0.8)
+                    $0.opacityOverLife = ParticleCurve([.init(0, 0), .init(0.2, 0.2), .init(1, 0)])
+                    $0.colorOverLife = .constant([0.6, 0.65, 0.7, 1])
+                    $0.angleVariation = .pi
+                }, sprite: .smoke, capacity: 500),
+            ],
+            colliders: [ground],
+            forceFields: [.wind(velocity: [0.6, 0, 0], strength: 0.4)],
+            cameraEye: [0, 3, 8],
+            cameraTarget: [0, 2.5, 0]
+        )
+    }()
 
     /// Two identical firefly swarms circling side by side. The gold one simulates in local space and travels as a
     /// tight cloud; the blue one simulates in world space and leaves its fireflies behind as a trail.
