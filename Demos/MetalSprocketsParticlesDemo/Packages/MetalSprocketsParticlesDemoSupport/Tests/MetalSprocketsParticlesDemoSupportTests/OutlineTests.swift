@@ -122,6 +122,19 @@ struct OutlineTests {
         #expect(model.presetName == "Fireworks (File)")
     }
 
+    /// #63: an effect with no emitters must not trap the inspector, and edits to the placeholder go nowhere.
+    @Test func effectWithNoEmittersIsSafe() {
+        let model = ParticlesDemoModel()
+        model.open(ParticlePreset("Empty", layers: []), named: "Empty")
+        #expect(model.emitters.isEmpty)
+        _ = model.selectedEmitter
+        model.selectedEmitter.settings.birthRate = 99
+        #expect(model.emitters.isEmpty)
+        model.burstSelectedEmitter()
+        model.addEmitter()
+        #expect(model.emitters.count == 1)
+    }
+
     @Test func presetMeshReachesTheSystem() throws {
         let model = ParticlesDemoModel(preset: .teapot)
         let system = try #require(model.system)

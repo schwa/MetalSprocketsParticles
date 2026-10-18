@@ -26,6 +26,8 @@ final class ParticlesDemoModel {
 
     var selectedEmitterID: EmitterDescription.ID?
 
+    private static let placeholderEmitter = EmitterDescription("No Emitter", settings: ParticleEmitter(), isEmitting: false)
+
     /// What the outline has selected and the inspector shows. Selecting an emitter or one of its children also
     /// selects that emitter.
     var selection: OutlineItem? = .scene {
@@ -38,7 +40,8 @@ final class ParticlesDemoModel {
 
     /// The emitter the inspector edits. Falls back to the first emitter.
     var selectedEmitter: EmitterDescription {
-        get { emitters.first { $0.id == selectedEmitterID } ?? emitters[0] }
+        // An effect file can have no emitters; then reads get a placeholder and writes (unknown id) are dropped.
+        get { emitters.first { $0.id == selectedEmitterID } ?? emitters.first ?? Self.placeholderEmitter }
         set {
             if let index = emitters.firstIndex(where: { $0.id == newValue.id }) {
                 emitters[index] = newValue

@@ -1229,14 +1229,18 @@ RemoveSectionView (EmitterInspectorView.swift) is one destructive button in a Se
 ## 63: selectedEmitter falls back to emitters[0]
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:xs, area:demo
 created: 2026-10-18T12:36:57Z
+updated: 2026-10-18T13:17:57Z
+closed: 2026-10-18T13:17:57Z
 +++
 
 ParticlesDemoModel.selectedEmitter returns emitters.first { ... } ?? emitters[0], which traps if emitters is ever empty. Safe today only because the model keeps at least one emitter (removeSelectedEmitter refuses the last, presets all have layers). Make the invariant explicit or return a placeholder like selectedCollider (#56). Source: SwiftUI review.
+
+- `2026-10-18T13:17:57Z`: Reachable: opening an effect file with no layers left emitters empty and selectedEmitter trapped on emitters[0]. It now falls back to the first emitter, then a placeholder whose writes are dropped (unknown id). No red-first test: the old code traps and kills the test process; OutlineTests.effectWithNoEmittersIsSafe covers the empty-effect path.
 
 ---
 
