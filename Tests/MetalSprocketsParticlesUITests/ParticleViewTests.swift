@@ -10,7 +10,7 @@ struct ParticleViewTests {
     let size = CGSize(width: 800, height: 450)
 
     func frame(_ state: ParticleViewState, _ system: ParticleSystem, runtime: ParticleSystemRuntime? = nil, time: Float = 0) throws -> ParticleViewFrame {
-        try state.frame(system: system, runtime: runtime, camera: (system.cameraEye, system.cameraTarget), drawableSize: size, time: time)
+        try state.frame(system: system, runtime: runtime, camera: .system, size: (size, size), time: time)
     }
 
     @Test func loadsTheSystemOnceAndReloadsWhenItChanges() throws {
@@ -36,6 +36,24 @@ struct ParticleViewTests {
         #expect(try frame(state, .campfire).sceneDepth == nil)
         let fog = try #require(try frame(state, .fog).sceneDepth)
         #expect(fog.width == 800 && fog.height == 450)
+    }
+
+    @Test func overlayCameraMapsPointsToTheView() throws {
+        let view = CGSize(width: 400, height: 200)
+        let matrices = ParticleViewCamera.overlay.matrices(for: .campfire, size: view)
+        let clip = matrices.projection * matrices.cameraToWorld.inverse * SIMD4<Float>(100, 50, 0, 1)
+        let ndc = SIMD3(clip.x, clip.y, clip.z) / clip.w
+        // (100, 50) in points from the top left is a quarter across and a quarter down.
+        #expect(abs(ndc.x - -0.5) < 1e-4 && abs(ndc.y - 0.5) < 1e-4)
+        #expect((0...1).contains(ndc.z))
+        // Camera-facing sprites stay upright: the camera's up is screen up, which is world -y.
+        #expect(simd_distance(matrices.cameraToWorld.columns.1.xyz, [0, -1, 0]) < 1e-5)
+        // A mouse location a quarter across and down is that point in the world.
+        let point = try #require(PointerProjection.worldPosition(
+            of: CGPoint(x: 0.25, y: 0.25), in: CGSize(width: 1, height: 1),
+            projection: matrices.projection, cameraToWorld: matrices.cameraToWorld, planePoint: matrices.focus
+        ))
+        #expect(simd_distance(point, [100, 50, 0]) < 1e-2)
     }
 
     @Test func thePointerDrivesBindingsAndFallsBackToItsPath() throws {

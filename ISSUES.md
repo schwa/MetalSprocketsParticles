@@ -2001,7 +2001,7 @@ Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 
 
 ---
 
-## 99: 2D overlay mode for particle effects
+## 99: 2D overlays with ParticleView
 
 +++
 status: open
@@ -2009,30 +2009,32 @@ priority: medium
 kind: feature
 labels: area:api, effort:l
 created: 2026-10-18T19:51:12Z
-updated: 2026-10-18T20:33:26Z
+updated: 2026-10-18T21:38:49Z
 +++
 
-Particles in view space over an app's normal UI: confetti over a window when something succeeds, sparkles on a button, a burst where the user taps. Today everything is a 3D scene with a perspective camera and world units.
+Particles over an app's normal UI: confetti over a window, sparkles on a button, a burst where the user taps. No special view: a ParticleView placed with SwiftUI's own tools.
+
+    content.overlay {
+        ParticleView(confetti)
+            .camera(.overlay)
+            .allowsHitTesting(false)
+    }
 
 Decisions:
-- No separate 2D particle type. 2D is the existing 3D simulation in the z = 0 plane, seen through an orthographic camera looking down -Z.
-- Units are points. The camera maps one world unit to one point, origin at the view's top left with y down (or bottom left with y up; pick one and document it), so sizes, speeds, and gravity read as points and points per second.
-- Billboards facing that camera are flat sprites; particle spin is already rotation around the view axis.
-- Add a per-emitter planar setting (or a system-wide one) that keeps particles at z = 0: zero the z of spawn positions, velocities, spread, turbulence, and force fields. Without it, z motion is invisible but can change collisions.
-- Colliders: planes act as lines. Add a helper that turns a view's frame (CGRect) into a box collider, and the view's edges into four planes.
-- 3D-only features (lighting, soft particles, depth sorting, camera-facing velocity alignment) stay as they are; in 2D they are unused, not removed.
-- API: a SwiftUI modifier, for example .particleOverlay(system, isActive:), and a ParticleView option for 2D. The overlay is transparent and passes hits through to the views below.
-- Triggers: fire bursts at a point in view coordinates (a tap location, a button's center), for example runtime.burst(at:).
+- No 2D particle type. 2D is the 3D simulation seen through an orthographic camera.
+- ParticleView is transparent by default (clear color alpha 0 over a non-opaque layer), so it composites over SwiftUI content. A background is a SwiftUI .background.
+- An overlay camera: one world unit is one point, origin at the view's top left, y down (matching SwiftUI), so a tap location is a world position. Gravity down the screen is +y.
+- Constraining particles to the z = 0 plane is a separate emitter setting (#107), useful in 3D too.
+- 3D-only features (lighting, soft particles, sorting) stay; unused in 2D.
 
 Steps:
-1. Spike: orthographic camera with point units over a transparent view; check that existing presets authored for 2D look right. Confirm z leaking is the only real gap.
-2. Planar setting.
-3. View-frame colliders and edges.
-4. Overlay modifier and ParticleView 2D option.
-5. Burst-at-point API.
-6. A few 2D samples (confetti cannon from a button, sparkles, tap bursts) and a demo screen that uses them.
+1. Transparent ParticleView by default. (done with the camera)
+2. ParticleView camera option: the system's camera, look-at, or overlay.
+3. runtime.burst(at:) (or emitter transform helper) for bursts at a point.
+4. Helpers: a view's frame as a box collider, the view's edges as four planes.
+5. 2D samples (confetti cannon, sparkles, tap bursts) and a demo screen.
 
-Related: #97 (ParticleView), #101 (rename).
+Related: #97, #107.
 
 ---
 
@@ -2042,12 +2044,12 @@ Related: #97 (ParticleView), #101 (rename).
 status: open
 priority: medium
 kind: feature
-labels: area:demo, effort:xl, needs-design
+labels: area:editor, effort:xl, needs-design
 created: 2026-10-18T19:51:12Z
-updated: 2026-10-18T20:29:27Z
+updated: 2026-10-18T21:47:02Z
 +++
 
-Replace the demo's debug-style inspector with a real editor app for particle systems. It should be something an artist or developer would choose to use, not a test harness. The user is collecting ideas; this issue holds the direction until a design exists.
+Replace the demo's debug-style inspector with a real editor app for particle systems. It should be something an artist or developer would choose to use, not a test harness.
 
 Direction:
 - Document-based: each document is one particle system (the JSON effect file), opened, saved, and versioned like any other document (SwiftUI DocumentGroup, undo/redo, autosave, recent files, Save As, duplicate). Samples open as untitled copies.
@@ -2056,9 +2058,39 @@ Direction:
 - Editing user Metal functions (update, spawn, collision, death) with error display.
 - Export: effect files, images, videos.
 
-The current demo (MetalSprocketsParticlesDemo) is the starting point but should be refactored, not patched: separate document model, editor views, and viewport. Nested sub-emitter editing (the original scope of this issue) is part of it.
+Decisions (draft):
 
-Open: the app's name and whether it stays in this repo; which platforms; whether ParticleView or the editor viewport share code; how much of the current inspector survives. Break into smaller issues once the design exists. Related: #97 (ParticleView), #101 (ParticlePreset -> ParticleSystem rename).
+Open questions, with recommendations:
+- Name: "Particle Editor" for now (target ParticleEditor, package ParticleEditorKit). Pick a product name before anything ships; nothing in the design depends on it.
+- Repo: stays in this repo, under Apps/ParticleEditor, replacing Demos/MetalSprocketsParticlesDemo. The library API is still moving (#101, #103, #104), and the editor is its main client; one repo keeps changes atomic. Revisit when the library has a release.
+- Platforms: macOS first and polished. iPadOS second: the same package must build for iOS from the start (DocumentGroup works there), but touch gizmos and layout come later. No iPhone or visionOS editor; ParticleView covers viewing there.
+- ParticleView and the editor viewport share the player (#103), not the view. Both are thin layers over one player that owns the frame loop. The viewport adds an interactive camera, overlays, gizmos, and stats; ParticleView adds nothing an app would not want.
+- What survives from the demo: the outline (as the start of the structure view), the small controls in InspectorControls, the event and trigger adapters, and their tests. The long inspector forms (EmitterInspectorView, ParticleEmitter+Inspector), the preset picker, and ParticlesDemoModel's mirrored state do not. The demo is removed once the editor reaches parity (#119).
+
+Document model:
+- The document is a ParticleSystem value. It is the only copy of the description; the runtime is derived from it (#104), and the editor keeps no mirrored item lists (no ColliderItem/ForceFieldItem, no didSet sync).
+- EffectDocument is a ReferenceFileDocument (an @Observable class holding `system: ParticleSystem`) so edits go through one place: `edit(_ actionName:, _ change: (inout ParticleSystem) -> Void)`, which registers undo with the document's UndoManager. Continuous edits (slider drags, gizmo drags, curve point drags) coalesce into one undo step between begin and end. Snapshots are the value, so saving is cheap and off the main actor.
+- Every item has a stable id (#108): emitters already do; colliders, force fields, lights, sub-emitters, and triggers get one, saved in the file and generated when missing. Pointer bindings refer to ids. Selection, undo, gizmos, and runtime diffing all key on ids instead of indices.
+- File format: plain JSON, still diffable and versionable in git. A declared UTType ("Particle Effect", conforming to public.json, extension .particles); .json files still open. Add a format version field. When custom sprite images arrive, move to a package (a folder with effect.json and images); until then, a single file.
+- Not in the document: playback time, interactive camera, selection, viewport toggles, inspector state. Those are per window (SceneStorage where it makes sense). The document's suggested camera is set by an explicit "Use Current View as Default Camera" command.
+- Per-frame inputs (pointer, animated and spinning colliders, tracked object motion) are computed by the player from the description each frame and never written back.
+
+Architecture:
+- MetalSprocketsParticles: ParticleSystem, runtime, player (#103), apply(system) (#104). No editor API (#105).
+- ParticleEditorKit (Swift package in Apps/ParticleEditor/Packages): EffectDocument, edit and undo, selection, structure view, item editors, curve and gradient editors, viewport, gizmos, function editor, export. Takes over ParticleKind and the demo's inspector adapters (#105). Everything here is testable without the app.
+- ParticleEditor (app target): DocumentGroup, commands and menus, the welcome window with samples, settings. Thin.
+- Data flow: views read `document.system`; every change goes through `edit`; the player is told `apply(document.system)` after each change and keeps particles when only settings changed. Gizmos and inspectors use the same edit path, so direct manipulation is undoable like any other change.
+- Selection: a set of item paths built from ids (emitter, sub-emitter by id chain at any depth, trigger, collider, force field, light, tracked object by name). The inspector edits a single selection; multi-selection supports delete, duplicate, and toggling.
+- Window layout: structure view (leading sidebar), viewport with timeline below (center), item editor (trailing inspector). Function editing opens in a larger sheet or a separate tab within the inspector area, not inline in a form.
+
+Phases:
+- M1, replaces the demo: #108, #109, #110, #111, #112, #113, #115, then #119.
+- M2, the real editor: #114, #116, #117, #118.
+- Depends on #103 and #104 for #111; #105 lands with #113.
+
+Sub-issues: #108 stable ids, #109 app and package skeleton, #110 document and undo, #111 viewport, #112 structure view, #113 item editors, #114 curve and gradient editors, #115 playback timeline, #116 gizmos, #117 function editor, #118 export, #119 retire the demo.
+
+Related: #97 (ParticleView), #101 (rename, done), #103, #104, #105.
 
 ---
 
@@ -2171,7 +2203,6 @@ priority: medium
 kind: task
 labels: area:simulation, effort:m, needs-design
 created: 2026-10-18T21:33:49Z
-updated: 2026-10-18T21:33:49Z
 +++
 
 Each new per-emitter setting goes through: ParticleEmitter (property and Codable line), ParticleTypes.h (SimulationUniforms or RenderUniforms), FramePlan.uniforms(for:) (or the render draw), Particles.metal, the demo inspector, and sometimes ParticleKind. The Swift and Metal structs are mirrored by hand. Softness, user functions, and transitions all went through every step.
@@ -2183,3 +2214,34 @@ Tests: little change; behavior tests already cover settings.
 Source: improve-codebase-architecture review.
 
 ---
+
+## 107: Constrain particles to a plane
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:simulation,effort:s
+created: 2026-10-18T21:38:49Z
++++
+
+An emitter setting that keeps particles on a plane (z = 0 in emitter or world space): zero the plane-normal component of spawn positions, velocities, spread, turbulence, and force-field accelerations, every step. Without it, spread cones, sphere shapes, and turbulence add depth motion; under an orthographic 2D camera that is invisible but changes collisions and sorting. Useful in 3D too: flat sheets, effects on a wall, side-scrolling scenes. Split out of #99.
+
+---
+
+## 108: Stable ids for every item in a particle system
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:api, area:editor, effort:m
+created: 2026-10-18T21:47:02Z
++++
+
+Colliders, force fields, lights, sub-emitters, and triggers have no identity; the demo wraps colliders and fields in ColliderItem/ForceFieldItem with UUIDs and identifies sub-emitters and triggers by index, and PointerBinding refers to items by index. The editor needs ids for selection, undo, gizmos, and drag reordering, and #104 needs them to diff descriptions.
+
+Give each an id, saved in the effect file and generated when missing, so old files load. Pointer bindings refer to ids; decode the old index form. Emitters keep their existing id. Decide whether ids sit on the library types or a small Identified<T> wrapper used in ParticleSystem; prefer on the types if the Codable shape stays flat.
+
+Tests: old files load with fresh ids; ids round-trip; index-form pointer bindings decode to the right ids. Part of #100.
+

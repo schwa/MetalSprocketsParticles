@@ -11,14 +11,22 @@ import SwiftUI
 /// ParticleView(try ParticleSystem(contentsOf: campfireURL))
 /// ```
 ///
-/// The view uses the system's camera, draws colliders as solids when the system asks for it, and moves pointer-bound
-/// colliders, force fields, and emitters with the mouse. To restart, pause, change speed, or send events, make the
-/// runtime yourself and pass it with `init(runtime:system:)`.
+/// The view is transparent, so it can sit over other SwiftUI content; give it a `.background` for a solid color. It uses
+/// the system's camera unless you choose another (`camera(_:)`), draws colliders as solids when the system asks for it,
+/// and moves pointer-bound colliders, force fields, and emitters with the mouse. To restart, pause, change speed, or send
+/// events, make the runtime yourself and pass it with `init(runtime:system:)`.
+///
+/// For effects over an app's UI, use the overlay camera and let hits pass through:
+///
+/// ```swift
+/// content.overlay {
+///     ParticleView(confetti).camera(.overlay).allowsHitTesting(false)
+/// }
+/// ```
 public struct ParticleView: View {
     private let system: ParticleSystem
     private let runtime: ParticleSystemRuntime?
-    private var cameraEye: SIMD3<Float>?
-    private var cameraTarget: SIMD3<Float>?
+    private var camera: ParticleViewCamera = .system
     @State private var state: ParticleViewState
     @State private var viewSize: CGSize = .zero
 
@@ -37,23 +45,27 @@ public struct ParticleView: View {
         _state = State(initialValue: ParticleViewState(seed: 0))
     }
 
-    /// Looks from `eye` at `target` instead of the system's camera.
-    public func camera(eye: SIMD3<Float>, target: SIMD3<Float>) -> Self {
+    /// Uses `camera` instead of the system's camera.
+    public func camera(_ camera: ParticleViewCamera) -> Self {
         var view = self
-        view.cameraEye = eye
-        view.cameraTarget = target
+        view.camera = camera
         return view
     }
 
+    /// Looks from `eye` at `target` instead of the system's camera.
+    public func camera(eye: SIMD3<Float>, target: SIMD3<Float>) -> Self {
+        camera(.lookAt(eye: eye, target: target))
+    }
+
     public var body: some View {
-        let eye = cameraEye ?? system.cameraEye
-        let target = cameraTarget ?? system.cameraTarget
+        let camera = camera
+        let sizeInPoints = viewSize
         RenderView(colorPixelFormat: ParticleSystemRuntime.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
             let frame = try state.frame(
                 system: system,
                 runtime: runtime,
-                camera: (eye, target),
-                drawableSize: size,
+                camera: camera,
+                size: (points: sizeInPoints, pixels: size),
                 time: context.frameUniforms.time
             )
             try frame.runtime.simulate(
@@ -65,6 +77,8 @@ public struct ParticleView: View {
             )
             try frame.runtime.renderScene(projection: frame.projection, view: frame.view, sceneDepth: frame.sceneDepth)
         }
+        // Transparent, so the view composites over whatever is behind it.
+        .metalClearColor(MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0))
         .onGeometryChange(for: CGSize.self, of: \.size) { viewSize = $0 }
         .onContinuousHover { phase in
             switch phase {
@@ -105,17 +119,20 @@ final class ParticleViewState {
     func frame(
         system: ParticleSystem,
         runtime callerRuntime: ParticleSystemRuntime?,
-        camera: (eye: SIMD3<Float>, target: SIMD3<Float>),
-        drawableSize: CGSize,
+        camera: ParticleViewCamera,
+        size: (points: CGSize, pixels: CGSize),
         time: Float
     ) throws -> ParticleViewFrame {
-        let (eye, target) = camera
+        let drawableSize = size.pixels
         let runtime = try callerRuntime ?? ownRuntime(for: system)
-        let aspect = Float(drawableSize.width / max(drawableSize.height, 1))
-        let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
-        let cameraToWorld = simd_float4x4(lookingFrom: eye, at: target)
+        // The overlay camera works in points, so it needs the view's size, not the drawable's pixels.
+        let matrices = camera.matrices(for: system, size: camera == .overlay ? size.points : drawableSize)
+        let projection = matrices.projection
+        let cameraToWorld = matrices.cameraToWorld
         let pointer = pointerLocation.flatMap {
-            PointerProjection.worldPosition(of: $0, in: CGSize(width: 1, height: 1), projection: projection, cameraToWorld: cameraToWorld, planePoint: target)
+            PointerProjection.worldPosition(
+                of: $0, in: CGSize(width: 1, height: 1), projection: projection, cameraToWorld: cameraToWorld, planePoint: matrices.focus
+            )
         }
         runtime.forceFields = system.forceFields(at: time, pointer: pointer)
         return ParticleViewFrame(
