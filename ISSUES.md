@@ -961,3 +961,110 @@ All editing lives in one long right-hand inspector (#39), even after reorganizin
 - `2026-10-18T00:44:00Z`: NavigationSplitView: outline sidebar (Scene, Emitters with nested sub-emitters and triggers, Colliders, Force Fields; Add menu, context menus, Delete key) and a trailing inspector that shows details for the selection. Not visually checked (no app launch). Viewport highlighting of the selection is left to #48.
 
 ---
+
+## 50: Emitter description is duplicated across Layer, DemoEmitter, and ParticleSystem.Emitter
+
++++
+status: open
+priority: medium
+kind: task
+labels: effort:m, area:tooling, kind:refactor
+created: 2026-10-18T01:36:03Z
++++
+
+An emitter's full description (settings, sprite, motion, simulation space, mesh, capacity, emitting) exists three times: ParticlePreset.Layer, the demo's DemoEmitter, and the runtime ParticleSystem.Emitter. Converting between them is hand-written in ParticleSystem.load(_:), ParticlesDemoModel.sync, DemoEmitter.init(layer), and duplicateSelectedEmitter (which copies fields one by one, so a missed field is silently dropped). Sprite->texture and Mesh->EmitterMesh resolution is done twice with two caches. Adding the mesh in #43 meant touching all of them.\n\nDirection: one library value type describing an emitter (used by presets and the demo), and one place in ParticleSystem that resolves it into runtime state (textures, GPU meshes, capacity) with caching. Dependency category: in-process (Metal device only for resource resolution). Tests: one boundary test 'description in, runtime emitter out' replaces the scattered demo/preset loading checks. Source: architecture review.
+
+---
+
+## 51: ParticleSystem mixes frame planning with GPU encoding
+
++++
+status: open
+priority: medium
+kind: task
+labels: effort:l, area:simulation, kind:refactor
+created: 2026-10-18T01:36:03Z
++++
+
+ParticleSystem.swift (~700 lines) plus ParticleSystem+Triggers, Spawner, and ParticleSort own: shared-buffer layout and rebuild, sub-emitter slot layout, emission timing, trigger evaluation, uniform building, the simulate encoder, sorting, and rendering. Every feature in #4, #9, and #34 required reading most of the file. Nearly all behavior can only be tested by running a GPU frame and reading particles back.\n\nDirection: split a pure CPU 'frame planner' (given emitters, time, events, counters -> which emitters spawn how many from which slots with which uniforms) from the GPU executor that encodes it. Dependency category: in-process for the planner; Metal stays a local stand-in for the executor. Tests: timing, trigger, and slot-layout tests move to the planner without the GPU; GPU tests shrink to integration and goldens. Source: architecture review.
+
+---
+
+## 52: Swift and Metal agree on uniform packing only by convention
+
++++
+status: open
+priority: medium
+kind: task
+labels: effort:m, area:simulation, kind:refactor
+created: 2026-10-18T01:36:03Z
++++
+
+ParticleTypes.h structs are filled by hand in Swift (the ~40-field SimulationUniforms setup in ParticleSystem) and by per-type packers (EmitterShape.parameters, ParticleOrientation.parameters, ForceFieldData, TriggerVolumeData). Several fields are packed uint4/float4 lanes with undocumented meanings (triggers.x = volume count, triggers.y = collider flag; imageSequence lanes; shape parameters per kind), and limits like PARTICLE_TRIGGER_MAX_* are shared constants. Nothing but golden images would catch a mismatch.\n\nDirection: give each packed type one Swift encoder next to its decoder contract, name the lanes (or use explicit structs instead of packed vectors), and add round-trip tests: encode in Swift, decode with a tiny test kernel calling the same Metal helper the simulation uses, compare. Dependency category: in-process plus GPU as local stand-in. Source: architecture review.
+
+\- `2026-10-18T01:39:13Z`: Chosen direction: follow the MetalSprockets header style (MetalSprocketsShaders.h, AddOns ColorSource.h, PBR PBRShaderTypes.h) instead of codegen or round-trip kernels for everything.
+
+1. Enums: keep MS_ENUM from MetalSprocketsShaders.h (already imported via the package dependency; MetalCompilerPlugin has include-dependencies on). Store enums as enum-typed fields (ParticleEmitterShapeKind kind;), never as uint4/float4 lanes. Force-field and trigger-volume kinds become MS_ENUMs instead of float4 kind.
+2. Replace grab-bag simd_float4/simd_uint4 lanes in SimulationUniforms, SubEmitterData, ForceFieldData, TriggerVolumeData, RenderUniforms with named scalar fields, grouped into sub-structs per concern (e.g. ParticleShapeData { kind, birthLocation, birthDirection, radius, height, size, sweep }, ParticleCollisionData, ParticleImageSequenceData, ParticleVariationData), like PBRTextureSlot.
+3. Put decoding/sampling methods on those structs in the header under #if defined(__METAL_VERSION__) (like ColorSourceArgumentBuffer::resolve), so each meaning is written once next to its fields.
+4. Shared limits stay #define k... constants; note Swift mirror types in comments.
+5. Swift fills fields by name; delete the per-type parameters packers.
+6. Shared types used by other Metal packages can be imported from them rather than redefined.
+
+Check: struct layout changes, so all goldens and determinism tests must still pass unchanged. Round-trip test kernels only for helpers with real logic (shape sampling).
+
+---
+
+## 53: Demo mirrors every library enum with hand-written Kind adapters
+
++++
+status: open
+priority: medium
+kind: task
+labels: effort:m, area:demo, kind:refactor
+created: 2026-10-18T01:36:03Z
++++
+
+ParticleEmitter+Inspector.swift (~500 lines) and Inspector+Events.swift (~260 lines) mirror each library enum with associated values (EmitterShape, SubEmitter.Occasion, EmissionTrigger.Condition/Action, TriggerVolume, Collider, ForceField, orientation) as a separate Kind enum plus one writable computed property per associated value, with defaults chosen ad hoc when switching kinds. Each new library case needs 3-5 edits in the demo, and the adapters need their own round-trip tests.\n\nDirection: let the library expose a case kind (CaseIterable) and a default value per kind for these enums, so the demo needs only a generic kind binding plus per-field properties; or a small generic adapter. Dependency category: in-process. Tests: one generic kind round-trip test per enum replaces the per-adapter tests. Source: architecture review.
+
+---
+
+## 54: Emitters can't opt out of specific force fields or colliders
+
++++
+status: new
+priority: medium
+kind: feature
+labels: effort:m, area:simulation
+created: 2026-10-18T01:43:22Z
++++
+
+Every force field and collider affects every emitter's particles. Often only some should interact, e.g. smoke should feel wind but not a vortex, or sparks should bounce off the floor but rain should pass through a roof.
+
+Proposal: bitmask categories, like SpriteKit/SceneKit physics:
+- Each force field and collider gets a categoryBitMask (UInt32, default all bits).
+- Each emitter gets affectedByMask / collisionMask (default all bits).
+- A field/collider applies when (emitter mask & category) != 0.
+- Pass the per-emitter mask in the simulate uniforms; test it in the shader loop over fields/colliders.
+
+Defaults keep today's behavior. Add tests for masked vs unmasked particles and expose the masks in the demo inspector.
+
+---
+
+## 55: Consider Canvas3D for debug wireframes
+
++++
+status: new
+priority: low
+kind: task
+labels: effort:m, area:rendering
+created: 2026-10-18T01:45:02Z
++++
+
+Debug wireframes (DebugWireframes.swift, ColliderWireframe.swift) use a hand-rolled WireframeBuilder and a custom line-list RenderPipeline (wireframeVertex/wireframeFragment), one flat color per kind.
+
+Evaluate replacing this with Canvas3D. Possible wins: less custom shader/pipeline code, shared look with other MetalSprockets tools, and features we lack (line width, depth fade, labels).
+
+Check first: dependency weight for the library target (maybe keep wireframes in an optional target), and that it fits inside a RenderPass the same way renderWireframes does now. Keep the particles-render --wireframes flag and the demo toggle working.
+
+---
