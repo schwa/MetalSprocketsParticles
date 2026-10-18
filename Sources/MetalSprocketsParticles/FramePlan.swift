@@ -91,7 +91,9 @@ extension ParticleSystem {
             }
         }
         return zip(previous, current).enumerated().map { index, pair in
-            var data = ColliderData(pair.1, velocity: pair.1.velocity(from: pair.0, deltaTime: deltaTime))
+            let motion = pair.1.motion(from: pair.0, deltaTime: deltaTime)
+            var data = ColliderData(pair.1, velocity: motion.linear)
+            data.angularVelocity = motion.angular
             data.triggerIndex = UInt32(index)
             return data
         }

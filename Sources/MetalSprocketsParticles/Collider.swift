@@ -63,6 +63,39 @@ extension Collider {
             return .zero
         }
     }
+
+    /// Linear velocity and angular velocity (axis times radians per second) implied by moving from `previous`. Boxes
+    /// turn with their rotation and capsules with their direction, the shorter way round; other shapes do not turn.
+    func motion(from previous: Collider, deltaTime: Float) -> (linear: SIMD3<Float>, angular: SIMD3<Float>) {
+        guard deltaTime > 0 else {
+            return (.zero, .zero)
+        }
+        var angular: SIMD3<Float> = .zero
+        switch (previous.shape, shape) {
+        case let (.box(_, _, oldRotation), .box(_, _, rotation)):
+            var delta = simd_normalize(rotation * simd_normalize(oldRotation).inverse)
+            if delta.real < 0 {
+                delta = simd_quatf(vector: -delta.vector)
+            }
+            if delta.angle > 1e-6 {
+                angular = simd_normalize(delta.axis) * delta.angle / deltaTime
+            }
+        case let (.capsule(oldStart, oldEnd, _), .capsule(start, end, _)):
+            let old = oldEnd - oldStart
+            let new = end - start
+            if simd_length(old) > 0, simd_length(new) > 0 {
+                let from = simd_normalize(old)
+                let to = simd_normalize(new)
+                let axis = simd_cross(from, to)
+                if simd_length(axis) > 1e-6 {
+                    angular = simd_normalize(axis) * acos(min(max(simd_dot(from, to), -1), 1)) / deltaTime
+                }
+            }
+        default:
+            break
+        }
+        return (velocity(from: previous, deltaTime: deltaTime), angular)
+    }
 }
 
 extension ColliderData {
@@ -70,6 +103,14 @@ extension ColliderData {
         self.init()
         self.velocity = velocity
         rotation = [0, 0, 0, 1]
+        switch collider.shape {
+        case let .sphere(center, _), let .box(center, _, _):
+            pivot = center
+        case let .capsule(start, end, _):
+            pivot = (start + end) / 2
+        case .plane:
+            break
+        }
         switch collider.shape {
         case let .plane(normal, distance):
             kind = .plane

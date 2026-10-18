@@ -1405,16 +1405,19 @@ Births within a step are spread along the emitter's path by interpolating only i
 ## 72: Colliders ignore rotation speed and can be tunneled through
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:collision
 created: 2026-10-18T13:39:41Z
+updated: 2026-10-18T14:11:11Z
+closed: 2026-10-18T14:11:11Z
 +++
 
 Collider velocity comes only from frame-to-frame translation (Collider.velocity(from:deltaTime:)), so a rotating box or capsule (paddle, fan blade) does not fling particles, and spinning boxes are explicitly zero. Collision is also discrete: a fast or thin collider can jump past a particle within one step and the particle passes through. Fix: derive angular velocity from rotation change and use point velocity (v + omega × r) at the contact; add a swept test (or substeps for colliders moving more than their thickness per step). Needed for animated scene-graph colliders.
 
 - `2026-10-18T13:52:13Z`: Seen in practice while building the Awning preset (#66): an 8 cm thick box let falling sparks (~8 cm per step at 60 fps) pass through; the preset uses 30 cm as a workaround.
+- `2026-10-18T14:11:11Z`: Rotation speed: Collider.motion(from:deltaTime:) derives angular velocity for boxes (rotation change) and capsules (direction change); contacts use the point velocity v + omega x (p - pivot), so spinning paddles fling particles (exactly v when not rotating). Tunneling: after the penetration tests, particles that ended outside a sphere, box, or capsule are swept from their start (shifted into the collider's current frame by its own motion) to their end; a crossing moves them to the entry point and applies the collision. Covers fast particles and fast-moving thin colliders; capsule sweep is an approximation (closest approach of the path to the axis); rotation during the step is not swept. Tests fail before the fix (paddle: no fling; thin box/capsule: particle ended at y = -2.29; rising thin box passed the particle). Golden rotated-box-and-capsule updated (some fast particles now hit the thin shapes; reviewed); bench unchanged in interleaved runs.
 
 ---
 

@@ -312,7 +312,8 @@ static float3 rotate(float4 q, float3 v) {
 static void collide(thread float3 &position, thread float3 &velocity, ColliderData c, float3 normal, float penetration, float restitution, float friction, thread bool &hit) {
     hit = true;
     position += normal * penetration;
-    float3 colliderVelocity = c.velocity;
+    // The contact point's velocity: rotating colliders fling particles. Exactly c.velocity when not rotating.
+    float3 colliderVelocity = c.velocity + cross(c.angularVelocity, position - c.pivot);
     float3 relative = velocity - colliderVelocity;
     float vn = dot(relative, normal);
     if (vn < 0) {
@@ -320,6 +321,114 @@ static void collide(thread float3 &position, thread float3 &velocity, ColliderDa
         float3 tangentVelocity = relative - normalVelocity;
         velocity = colliderVelocity + tangentVelocity * (1.0 - friction) - normalVelocity * restitution;
     }
+}
+
+// Swept tests for a particle that ended a step outside a collider but crossed it during the step (fast particles, thin
+// or fast colliders). `start` is the particle's start in the collider's current frame. On a hit, `t` is the fraction of
+// the step at entry and `normal` the outward normal there. Planes are half-spaces and never need this.
+static bool sweepSphere(float3 start, float3 end, float3 center, float radius, thread float &t, thread float3 &normal) {
+    float3 d = end - start;
+    float3 m = start - center;
+    float a = dot(d, d);
+    float b = dot(m, d);
+    float c = dot(m, m) - radius * radius;
+    if (a < 1e-12 || c <= 0 || b >= 0) {
+        return false;
+    }
+    float discriminant = b * b - a * c;
+    if (discriminant < 0) {
+        return false;
+    }
+    t = (-b - sqrt(discriminant)) / a;
+    if (t < 0 || t > 1) {
+        return false;
+    }
+    normal = normalize(m + d * t);
+    return true;
+}
+
+static bool sweepBox(float3 start, float3 end, ColliderData c, thread float &t, thread float3 &normal) {
+    float4 inverse = float4(-c.rotation.xyz, c.rotation.w);
+    float3 s = rotate(inverse, start - c.center);
+    float3 d = rotate(inverse, end - c.center) - s;
+    float enter = 0;
+    float exit = 1;
+    int axis = -1;
+    for (int i = 0; i < 3; i++) {
+        if (abs(d[i]) < 1e-9) {
+            if (abs(s[i]) > c.halfExtents[i]) {
+                return false;
+            }
+            continue;
+        }
+        float t0 = (-c.halfExtents[i] - s[i]) / d[i];
+        float t1 = (c.halfExtents[i] - s[i]) / d[i];
+        if (t0 > t1) {
+            float swap = t0;
+            t0 = t1;
+            t1 = swap;
+        }
+        if (t0 > enter) {
+            enter = t0;
+            axis = i;
+        }
+        exit = min(exit, t1);
+        if (enter > exit) {
+            return false;
+        }
+    }
+    if (axis < 0) {
+        return false; // Started inside: the penetration test handles it.
+    }
+    t = enter;
+    float3 local = float3(0);
+    local[axis] = d[axis] > 0 ? -1 : 1;
+    normal = rotate(c.rotation, local);
+    return true;
+}
+
+// Approximate: the closest approach between the particle's path and the capsule's axis.
+static bool sweepCapsule(float3 start, float3 end, ColliderData c, thread float &t, thread float3 &normal) {
+    float3 d1 = end - start;
+    float3 d2 = c.end - c.center;
+    float3 r = start - c.center;
+    float a = dot(d1, d1);
+    float e = dot(d2, d2);
+    float f = dot(d2, r);
+    if (a < 1e-12) {
+        return false;
+    }
+    float s;
+    float u;
+    float cc = dot(d1, r);
+    if (e < 1e-12) {
+        s = saturate(-cc / a);
+        u = 0;
+    } else {
+        float b = dot(d1, d2);
+        float denominator = a * e - b * b;
+        s = denominator > 1e-12 ? saturate((b * f - cc * e) / denominator) : 0;
+        u = (b * s + f) / e;
+        if (u < 0) {
+            u = 0;
+            s = saturate(-cc / a);
+        } else if (u > 1) {
+            u = 1;
+            s = saturate((b - cc) / a);
+        }
+    }
+    float3 onPath = start + d1 * s;
+    float3 onAxis = c.center + d2 * u;
+    float3 offset = onPath - onAxis;
+    float distance = length(offset);
+    if (distance >= c.radius) {
+        return false;
+    }
+    // Back up to where the path first came within the radius, approximately.
+    float back = (c.radius - distance) / max(length(d1), 1e-6);
+    t = max(0.0, s - back);
+    normal = distance > 1e-6 ? offset / distance : -normalize(d1);
+    return true;
 }
 
 // A newborn particle from an emitter's settings. `origin` is added to its position and `extraVelocity` to its velocity,
@@ -510,6 +619,20 @@ kernel void updateParticles(
             float distance = length(offset);
             if (distance < c.radius && distance > 0) {
                 collide(position, velocity, c, offset / distance, c.radius - distance, restitution, friction, hit);
+            }
+        }
+        if (!hit && c.kind != ParticleColliderKindPlane) {
+            // Crossed during the step? Test in the collider's current frame: where the particle started, relative to
+            // where the collider is now (the collider moved by velocity * dt, so the start is shifted the same way).
+            float3 start = startPosition + c.velocity * dt;
+            float t;
+            float3 normal;
+            bool crossed = c.kind == ParticleColliderKindSphere ? sweepSphere(start, position, c.center, c.radius, t, normal)
+                : c.kind == ParticleColliderKindBox ? sweepBox(start, position, c, t, normal)
+                : sweepCapsule(start, position, c, t, normal);
+            if (crossed) {
+                position = start + (position - start) * t + normal * 1e-4;
+                collide(position, velocity, c, normal, 0, restitution, friction, hit);
             }
         }
         if (hit && uniforms.countsColliderHits != 0 && c.triggerIndex < PARTICLE_TRIGGER_MAX_COLLIDERS) {
