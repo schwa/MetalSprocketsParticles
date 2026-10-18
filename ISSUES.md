@@ -1607,12 +1607,13 @@ Only Magic Trail uses angularSpeed, and only subtly. Add a preset where spinning
 ## 82: Make Confetti a finite effect with a Restart button in the viewport
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:presets, area:demo, effort:s
 created: 2026-10-18T15:43:07Z
-updated: 2026-10-18T15:44:08Z
+updated: 2026-10-18T15:53:13Z
+closed: 2026-10-18T15:53:13Z
 +++
 
 Add a built-in preset that runs for a set time and then finishes. Confetti is a good fit: a party-popper burst that falls, settles on the ground, and fades. The system then reports isFinished.
@@ -1622,6 +1623,8 @@ Use emissionOverTime or loops = false (#80) so emission stops, and limit particl
 The demo already has Restart in the inspector, and the HUD shows 'Finished'. Add a Restart button to the viewport, next to the Finished label, so a finite effect is easy to replay.
 
 Related: #75 (Flare is finite too, but long and subtle), #80.
+
+- `2026-10-18T15:53:13Z`: Confetti is now a party-popper burst: 0.35 s of emission (emissionOverTime), 6-8 s lifetimes with a fade-out, then the system reports isFinished (about 8.4 s). No separate viewport Restart button: #83 put Restart in the toolbar, next to the scene picker, so it is always visible. Golden, demo clip, and poster updated; test confettiPresetFinishes added.
 
 ---
 
@@ -1644,5 +1647,27 @@ The viewport Restart button from #82 may then be unnecessary; decide when doing 
 Related: #82.
 
 - `2026-10-18T15:45:33Z`: Preset picker, Play/Pause/Stop, Restart, Revert, and Speed moved to SceneToolbarView in the .principal toolbar item. The inspector's scene section (titled with the preset name) keeps the comment, Open/Save Effect, and Export Video. Not visually checked (demo app not launched); build and demo tests pass.
+
+---
+
+## 84: Add DocC documentation
+
++++
+status: new
+priority: medium
+kind: documentation
+labels: area:docs, effort:l
+created: 2026-10-18T15:45:41Z
++++
+
+The package has no DocC catalog, and many public symbols have no doc comments. Add DocC documentation.
+
+Use MetalSprockets as the model for good DocC: its catalog layout, landing page, topic groups, articles, and tutorials (Sources/MetalSprockets/MetalSprockets.docc).
+
+Scope:
+- A MetalSprocketsParticles.docc catalog: a landing page, topic curation, and articles. Possible articles: getting started, presets and effect files, emitters and settings, colliders and force fields, sub-emitters and triggers, lighting and soft particles, performance.
+- Doc comments on the public API, and fixes to the existing ones.
+
+Rules: write in simple English (the simple-english skill), and follow the writing-comments and swift-documentation skills. The doc build must have no warnings.
 
 ---

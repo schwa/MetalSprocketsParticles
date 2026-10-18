@@ -26,7 +26,7 @@
       ]
     }
   ],
-  "comment" : "Confetti flutters down, tumbling as it falls, and settles on the ground. Shows textured sprites with random spin, turbulence, and friction.",
+  "comment" : "A party popper fires one burst of confetti, which flutters down, settles on the ground, and fades. Shows a finite effect (when every piece is gone the HUD says Finished; Restart in the toolbar plays it again), textured sprites with random spin, turbulence, and friction.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,
@@ -65,7 +65,7 @@
         "angularSpeedVariation" : 8,
         "birthDirection" : 0,
         "birthLocation" : 0,
-        "birthRate" : 500,
+        "birthRate" : 12000,
         "birthRateVariation" : 0,
         "blendMode" : 0,
         "collisionMask" : 4294967295,
@@ -89,12 +89,20 @@
           0
         ],
         "diesOnCollision" : false,
-        "drag" : 2,
+        "drag" : 1.2,
         "emissionOverTime" : {
           "keyframes" : [
             {
               "time" : 0,
               "value" : 1
+            },
+            {
+              "time" : 0.3,
+              "value" : 1
+            },
+            {
+              "time" : 0.35,
+              "value" : 0
             }
           ]
         },
@@ -110,8 +118,8 @@
         "inheritVelocity" : 0,
         "isLit" : false,
         "lifetime" : [
-          9,
-          9
+          6,
+          8
         ],
         "loops" : true,
         "opacityOverLife" : {
@@ -119,6 +127,14 @@
             {
               "time" : 0,
               "value" : 1
+            },
+            {
+              "time" : 0.8,
+              "value" : 1
+            },
+            {
+              "time" : 1,
+              "value" : 0
             }
           ]
         },
@@ -129,17 +145,14 @@
         },
         "position" : [
           0,
-          5,
+          0.1,
           0
         ],
         "restitution" : 0,
         "restitutionVariation" : 0,
         "shape" : {
-          "plane" : {
-            "size" : [
-              6,
-              4
-            ]
+          "disc" : {
+            "radius" : 0.15
           }
         },
         "sizeOverLife" : {
@@ -161,7 +174,7 @@
         "sizeVariation" : 0.3,
         "softness" : 0,
         "sortMode" : "Back to Front",
-        "speedVariation" : 0,
+        "speedVariation" : 0.5,
         "subEmitters" : [
 
         ],
@@ -171,11 +184,11 @@
         ],
         "velocity" : [
           0,
-          -0.5,
+          7,
           0
         ],
-        "velocitySpread" : 0.3,
-        "warmupDuration" : 7
+        "velocitySpread" : 1,
+        "warmupDuration" : 0
       },
       "simulationSpace" : {
         "world" : {

@@ -65,6 +65,15 @@ struct EmissionEnvelopeTests {
         #expect(system.isFinished)
     }
 
+    @Test func confettiPresetFinishes() throws {
+        let system = try ParticleSystem(device: device, emitters: [], capacity: 1)
+        try system.load(.confetti)
+        _ = try births(system, seconds: 2)
+        #expect(!system.isFinished)
+        _ = try births(system, seconds: 8)
+        #expect(system.isFinished)
+    }
+
     @Test func infiniteEmittersAndTriggeredEmittersNeverFinish() throws {
         let infinite = try ParticleSystem(device: device, capacity: 500, emitter: emitter { _ in })
         _ = try births(infinite, seconds: 3)

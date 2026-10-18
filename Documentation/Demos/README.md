@@ -91,7 +91,7 @@ A sheet of water pours over a ledge, hits rocks, and throws up mist. Shows a box
 
 ## Confetti
 
-Confetti flutters down, tumbling as it falls, and settles on the ground. Shows textured sprites with random spin, turbulence, and friction.
+A party popper fires one burst of confetti, which flutters down, settles on the ground, and fades. Shows a finite effect, textured sprites with random spin, turbulence, and friction. The clip ends when the effect finishes.
 
 [![confetti](posters/confetti.jpg)](videos/confetti.mp4)
 
