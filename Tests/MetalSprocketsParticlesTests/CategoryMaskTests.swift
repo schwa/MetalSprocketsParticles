@@ -69,7 +69,7 @@ struct CategoryMaskTests {
         let masked = Collider.sphere(center: .zero, radius: 1, categoryBitMask: 0b100)
         #expect(try JSONDecoder().decode(Collider.self, from: try JSONEncoder().encode(masked)) == masked)
         let plain = try JSONEncoder().encode(Collider.sphere(center: .zero, radius: 1))
-        #expect(!String(decoding: plain, as: UTF8.self).contains("categoryBitMask"))
+        #expect(String(bytes: plain, encoding: .utf8)?.contains("categoryBitMask") == false)
         // Files saved before categories existed still load, with all bits set.
         let old = Data(#"{ "kind": "sphere", "center": [0, 0, 0], "radius": 1 }"#.utf8)
         #expect(try JSONDecoder().decode(Collider.self, from: old).categoryBitMask == .max)

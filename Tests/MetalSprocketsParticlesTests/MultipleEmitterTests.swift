@@ -136,7 +136,7 @@ struct MultipleEmitterTests {
         system.emitters[0].restart()
         try runner.run(try system.simulate(deltaTime: 0))
         let all = particles(system)
-        #expect(all[system.emitters[0].range].filter(isAlive).isEmpty)
+        #expect(!all[system.emitters[0].range].contains(where: isAlive))
         #expect(all[system.emitters[1].range].filter(isAlive).count == 10)
     }
 
@@ -150,7 +150,7 @@ struct MultipleEmitterTests {
         #expect(system.emitters.count == 2)
         #expect(system.texture === texture)
         #expect(added.range == 10..<15)
-        #expect(particles(system).filter(isAlive).isEmpty)
+        #expect(!particles(system).contains(where: isAlive))
     }
 
     /// Two emitters side by side with different colors and blend modes both draw.

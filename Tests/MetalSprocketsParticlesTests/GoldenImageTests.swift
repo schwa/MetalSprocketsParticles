@@ -190,6 +190,8 @@ struct GoldenImageTests {
         emitter.gravity = [0, -0.5, 0]
         emitter.birthRate = 8_000
         emitter.inheritVelocity = 0.3
+        // render takes two closures (configure, perFrame); a trailing closure would bind to configure.
+        // swiftlint:disable:next trailing_closure
         let image = try render(emitter: emitter, frames: 120, worldColliders: [.plane(normal: [0, 1, 0], distance: 0)], perFrame: { system, frame in
             let angle = Float(frame) / 60 * 2.5
             var transform = matrix_identity_float4x4

@@ -193,8 +193,17 @@ public final class ParticleSystem {
     private let sortKernels: ParticleSortKernels
     /// Bound in place of sort records for unsorted emitters; the shader ignores it.
     private let placeholderSortRecords: MTLBuffer
-    /// Colliders from the previous frame, used to derive collider velocity.
+    // Colliders from the previous frame, used to derive collider velocity. Nil before the first frame, unlike empty.
+    // swiftlint:disable:next discouraged_optional_collection
     var previousColliders: [Collider]?
+
+    /// The system's default Metal device. Every Mac and device this package supports has one.
+    public static func defaultDevice() -> MTLDevice {
+        guard let device = MTLCreateSystemDefaultDevice() else {
+            preconditionFailure("No Metal device.")
+        }
+        return device
+    }
 
     /// True when every emitter is finished (see `Emitter.isFinished`): nothing will spawn and nothing is alive.
     public var isFinished: Bool {
@@ -207,7 +216,7 @@ public final class ParticleSystem {
     }
 
     /// Creates a system with one emitter per entry in `emitters`, each with room for `capacity` particles.
-    public init(device: MTLDevice = MTLCreateSystemDefaultDevice()!, emitters: [ParticleEmitter], capacity: Int, seed: UInt32 = 0) throws {
+    public init(device: MTLDevice = ParticleSystem.defaultDevice(), emitters: [ParticleEmitter], capacity: Int, seed: UInt32 = 0) throws {
         self.device = device
         self.seed = seed
         library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
@@ -256,7 +265,7 @@ public final class ParticleSystem {
     }
 
     /// Creates a system with a single emitter.
-    public convenience init(device: MTLDevice = MTLCreateSystemDefaultDevice()!, capacity: Int, emitter: ParticleEmitter = ParticleEmitter(), seed: UInt32 = 0) throws {
+    public convenience init(device: MTLDevice = ParticleSystem.defaultDevice(), capacity: Int, emitter: ParticleEmitter = ParticleEmitter(), seed: UInt32 = 0) throws {
         try self.init(device: device, emitters: [emitter], capacity: capacity, seed: seed)
     }
 
@@ -381,6 +390,9 @@ public final class ParticleSystem {
 
     // MARK: Simulation
 
+    // Nil collections mean "leave as they are", which differs from empty ("none").
+    // swiftlint:disable discouraged_optional_collection
+
     /// Advances every emitter one frame in a single compute pass. Put this before the render pass that draws the
     /// particles. The result depends only on `seed`, settings, playback calls, and the sequence of `deltaTime` values.
     /// Pass `colliders` to replace `self.colliders` this frame, and `transforms` to move emitters (matched by index;
@@ -394,6 +406,7 @@ public final class ParticleSystem {
         trackedObjects: [String: SIMD3<Float>]? = nil,
         view: simd_float4x4? = nil
     ) throws -> some Element {
+        // swiftlint:enable discouraged_optional_collection
         let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
         return try encode(plan, sorts: try sorts(view: view))
     }
@@ -525,7 +538,9 @@ public final class ParticleSystem {
             .parameter("lights", values: lightData.isEmpty ? [ParticleLightData()] : lightData)
             .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
             .renderPipelineDescriptorTransformer { descriptor in
-                draw.blendMode.configure(descriptor.colorAttachments[0]!)
+                if let attachment = descriptor.colorAttachments[0] {
+                    draw.blendMode.configure(attachment)
+                }
             }
         }
     }

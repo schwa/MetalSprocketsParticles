@@ -42,8 +42,8 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     }
 
     /// The same emitter under a new id, so `apply(_:)` treats it as a different emitter.
-    public func copy(named name: String? = nil) -> EmitterDescription {
-        EmitterDescription(
+    public func copy(named name: String? = nil) -> Self {
+        Self(
             name ?? self.name,
             settings: settings,
             sprite: sprite,

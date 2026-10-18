@@ -36,8 +36,9 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
         sheetLayout.map { ImageSequence(rows: $0.rows, columns: $0.columns, frameRate: Float($0.rows * $0.columns)) }
     }
 
-    /// Emoji glyphs, one per sheet cell. Emoji are already colored, so tint particles white to keep them true.
-    var emoji: [String]? {
+    /// Emoji glyphs, one per sheet cell; empty for drawn sprites. Emoji are already colored, so tint particles white to
+    /// keep them true.
+    var emoji: [String] {
         switch self {
         case .heart: ["❤️"]
         case .fire: ["🔥"]
@@ -45,7 +46,7 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
         case .glowingStar: ["🌟"]
         case .moonPhases: ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
         case .clockFaces: ["🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"]
-        default: nil
+        default: []
         }
     }
 
@@ -55,12 +56,12 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
             return nil
         }
         let layout = sheetLayout ?? (1, 1)
-        let cell = emoji == nil ? 64 : 128
+        let cell = emoji.isEmpty ? 64 : 128
         let width = layout.columns * cell
         let height = layout.rows * cell
         guard let context = CGContext(
             data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            space: Self.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else {
             return nil
         }
@@ -85,7 +86,8 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
         let center = CGPoint(x: rect.midX, y: rect.midY)
         context.saveGState()
         defer { context.restoreGState() }
-        if let emoji {
+        let emoji = self.emoji
+        if !emoji.isEmpty {
             drawEmoji(emoji[index % emoji.count], in: context, rect: rect)
             return
         }
@@ -152,8 +154,15 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
         CTLineDraw(line, context)
     }
 
+    private static let sRGB: CGColorSpace = {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB) else {
+            preconditionFailure("The sRGB color space is unavailable.")
+        }
+        return space
+    }()
+
     private func radialGlow(_ context: CGContext, center: CGPoint, radius: CGFloat, falloff: CGFloat, alpha: CGFloat = 1) {
-        let space = CGColorSpace(name: CGColorSpace.sRGB)!
+        let space = Self.sRGB
         let stops: [CGFloat] = [0, 0.4, 1]
         let colors = stops.map { stop in
             CGColor(srgbRed: 1, green: 1, blue: 1, alpha: alpha * pow(1 - stop, falloff))

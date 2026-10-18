@@ -141,6 +141,8 @@ struct SubEmitterTests {
             let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
             return (0..<system.capacity).map { pointer[$0].position }
         }
+        // Two runs on purpose: results must be deterministic.
+        // swiftlint:disable:next identical_operands
         #expect(try run() == run())
     }
 

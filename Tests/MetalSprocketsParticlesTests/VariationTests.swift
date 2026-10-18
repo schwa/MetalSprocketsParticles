@@ -112,6 +112,8 @@ struct BirthRateVariationTests {
     @Test func rateIsDeterministicForSeed() {
         var emitter = ParticleEmitter()
         emitter.birthRateVariation = 500
+        // Same seed twice on purpose: the rate must be deterministic.
+        // swiftlint:disable:next identical_operands
         #expect(Spawner(seed: 1).birthRate(emitter: emitter) == Spawner(seed: 1).birthRate(emitter: emitter))
         #expect(Spawner(seed: 1).birthRate(emitter: emitter) != Spawner(seed: 2).birthRate(emitter: emitter))
     }

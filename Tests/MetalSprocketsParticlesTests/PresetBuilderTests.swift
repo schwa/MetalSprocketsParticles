@@ -4,7 +4,7 @@ import Testing
 
 /// #76: built-in presets come from JSON resources.
 struct BuiltInPresetTests {
-    @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() throws {
+    @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() {
         let slugs = ParticlePreset.builtInSlugs
         #expect(slugs.count >= 27)
         #expect(ParticlePreset.all.count == slugs.count)

@@ -21,12 +21,12 @@ public struct Collider: Sendable, Equatable {
         self.categoryBitMask = categoryBitMask
     }
 
-    public static func plane(normal: SIMD3<Float>, distance: Float, categoryBitMask: UInt32 = .max) -> Collider {
-        Collider(.plane(normal: normal, distance: distance), categoryBitMask: categoryBitMask)
+    public static func plane(normal: SIMD3<Float>, distance: Float, categoryBitMask: UInt32 = .max) -> Self {
+        Self(.plane(normal: normal, distance: distance), categoryBitMask: categoryBitMask)
     }
 
-    public static func sphere(center: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Collider {
-        Collider(.sphere(center: center, radius: radius), categoryBitMask: categoryBitMask)
+    public static func sphere(center: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Self {
+        Self(.sphere(center: center, radius: radius), categoryBitMask: categoryBitMask)
     }
 
     public static func box(
@@ -34,12 +34,12 @@ public struct Collider: Sendable, Equatable {
         halfExtents: SIMD3<Float>,
         rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1),
         categoryBitMask: UInt32 = .max
-    ) -> Collider {
-        Collider(.box(center: center, halfExtents: halfExtents, rotation: rotation), categoryBitMask: categoryBitMask)
+    ) -> Self {
+        Self(.box(center: center, halfExtents: halfExtents, rotation: rotation), categoryBitMask: categoryBitMask)
     }
 
-    public static func capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Collider {
-        Collider(.capsule(start: start, end: end, radius: radius), categoryBitMask: categoryBitMask)
+    public static func capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Self {
+        Self(.capsule(start: start, end: end, radius: radius), categoryBitMask: categoryBitMask)
     }
 }
 

@@ -67,7 +67,7 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     }
 
     /// The same preset with `comment` set.
-    public func commented(_ comment: String) -> ParticlePreset {
+    public func commented(_ comment: String) -> Self {
         var preset = self
         preset.comment = comment
         return preset
@@ -92,7 +92,7 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     }
 
     /// Finds a preset by name, ignoring case, spaces, and hyphens.
-    public static func named(_ name: String) -> ParticlePreset? {
+    public static func named(_ name: String) -> Self? {
         func normalized(_ string: String) -> String {
             string.lowercased().filter { $0.isLetter || $0.isNumber }
         }

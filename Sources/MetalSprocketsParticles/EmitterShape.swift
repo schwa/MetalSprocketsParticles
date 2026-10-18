@@ -123,7 +123,9 @@ public final class EmitterMesh {
     }
 
     static func makeBuffer<T>(device: MTLDevice, _ values: [T], label: String) throws -> MTLBuffer {
-        guard let buffer = values.withUnsafeBytes({ device.makeBuffer(bytes: $0.baseAddress!, length: $0.count, options: .storageModeShared) }) else {
+        guard let buffer = values.withUnsafeBytes({ bytes in
+            bytes.baseAddress.flatMap { device.makeBuffer(bytes: $0, length: bytes.count, options: .storageModeShared) }
+        }) else {
             throw CocoaError(.featureUnsupported)
         }
         buffer.label = label

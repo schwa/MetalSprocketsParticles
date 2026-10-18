@@ -25,12 +25,12 @@ public struct ForceField: Sendable, Equatable {
         self.categoryBitMask = categoryBitMask
     }
 
-    public static func wind(velocity: SIMD3<Float>, strength: Float, categoryBitMask: UInt32 = .max) -> ForceField {
-        ForceField(.wind(velocity: velocity, strength: strength), categoryBitMask: categoryBitMask)
+    public static func wind(velocity: SIMD3<Float>, strength: Float, categoryBitMask: UInt32 = .max) -> Self {
+        Self(.wind(velocity: velocity, strength: strength), categoryBitMask: categoryBitMask)
     }
 
-    public static func attractor(center: SIMD3<Float>, strength: Float, radius: Float = 0, categoryBitMask: UInt32 = .max) -> ForceField {
-        ForceField(.attractor(center: center, strength: strength, radius: radius), categoryBitMask: categoryBitMask)
+    public static func attractor(center: SIMD3<Float>, strength: Float, radius: Float = 0, categoryBitMask: UInt32 = .max) -> Self {
+        Self(.attractor(center: center, strength: strength, radius: radius), categoryBitMask: categoryBitMask)
     }
 
     public static func vortex(
@@ -39,12 +39,12 @@ public struct ForceField: Sendable, Equatable {
         strength: Float,
         radius: Float = 0,
         categoryBitMask: UInt32 = .max
-    ) -> ForceField {
-        ForceField(.vortex(center: center, axis: axis, strength: strength, radius: radius), categoryBitMask: categoryBitMask)
+    ) -> Self {
+        Self(.vortex(center: center, axis: axis, strength: strength, radius: radius), categoryBitMask: categoryBitMask)
     }
 
-    public static func turbulence(strength: Float, scale: Float = 1, speed: Float = 0, categoryBitMask: UInt32 = .max) -> ForceField {
-        ForceField(.turbulence(strength: strength, scale: scale, speed: speed), categoryBitMask: categoryBitMask)
+    public static func turbulence(strength: Float, scale: Float = 1, speed: Float = 0, categoryBitMask: UInt32 = .max) -> Self {
+        Self(.turbulence(strength: strength, scale: scale, speed: speed), categoryBitMask: categoryBitMask)
     }
 }
 

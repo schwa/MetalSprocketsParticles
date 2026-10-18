@@ -44,6 +44,8 @@ struct FramePlanTests {
         })
         let first = try system.planFrame(deltaTime: deltaTime)
         #expect(first.dispatches.count == 31)
+        // A key path here makes #expect think the call can throw.
+        // swiftlint:disable:next prefer_key_path
         #expect(first.dispatches.dropFirst().allSatisfy { $0.followsSameEmitter })
         // 0.5 s of warmup plus one frame at 60 per second; the fractional accumulator may land one short.
         #expect((30...31).contains(spawned(first, system.emitters[0])))

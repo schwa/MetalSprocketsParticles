@@ -35,6 +35,9 @@ struct FramePlan {
 }
 
 extension ParticleSystem {
+    // Nil collections mean "leave as they are", which differs from empty ("none").
+    // swiftlint:disable discouraged_optional_collection
+
     /// The CPU half of `simulate`: applies `colliders` and `transforms`, rebuilds after sub-emitter layout changes,
     /// evaluates triggers, and plans every dispatch. Advances emitter state, so plan each frame exactly once.
     func planFrame(
@@ -43,6 +46,7 @@ extension ParticleSystem {
         transforms: [simd_float4x4]? = nil,
         trackedObjects: [String: SIMD3<Float>]? = nil
     ) throws -> FramePlan {
+        // swiftlint:enable discouraged_optional_collection
         if let trackedObjects {
             self.trackedObjects = trackedObjects
         }

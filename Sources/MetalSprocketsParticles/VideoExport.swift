@@ -14,7 +14,7 @@ public extension ParticlePreset {
     @discardableResult
     func exportVideo(
         to url: URL,
-        size: CGSize = CGSize(width: 1920, height: 1080),
+        size: CGSize = CGSize(width: 1_920, height: 1_080),
         frameRate: Double = 30,
         duration: TimeInterval = 5,
         seed: UInt32 = 0,

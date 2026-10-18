@@ -73,7 +73,7 @@ struct ForceFieldTests {
         let speeds = particles.map { simd_length(velocity($0)) }
         #expect(speeds.allSatisfy { $0 > 0 })
         // Different places in the noise field push different ways.
-        #expect(Set(particles.map { $0.velocity.x.sign }).count == 2)
+        #expect(Set(particles.map(\.velocity.x.sign)).count == 2)
     }
 
     @Test func zeroStrengthTurbulenceDoesNothing() throws {

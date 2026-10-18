@@ -57,7 +57,7 @@ struct SortTests {
         let firstDead = depths.firstIndex { $0 == nil } ?? depths.count
         #expect(depths[firstDead...].allSatisfy { $0 == nil })
         let live = depths[..<firstDead].compactMap(\.self)
-        #expect(live.count > 0)
+        #expect(!live.isEmpty)
         // Keys are 16-bit halves, so neighbors may tie or swap within half precision.
         for (farther, nearer) in zip(live, live.dropFirst()) {
             #expect(farther >= nearer - max(abs(farther), abs(nearer)) * 0.002)

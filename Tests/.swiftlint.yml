@@ -1,0 +1,6 @@
+# Tests may force-unwrap and force-cast: a failure there is a failing test, not a crash in shipped code.
+# Render-and-inspect tests read naturally as render(Group { ... }).cgImage.pixel(), a chain spanning the closure.
+disabled_rules:
+  - force_unwrapping
+  - force_cast
+  - multiline_function_chains

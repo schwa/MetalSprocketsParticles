@@ -58,7 +58,7 @@ struct RenderCommand: AsyncParsableCommand {
     var seed: UInt32 = 0
 
     @Option(help: "Image width in pixels.")
-    var width = 1280
+    var width = 1_280
 
     @Option(help: "Image height in pixels.")
     var height = 720
@@ -142,7 +142,7 @@ struct RenderCommand: AsyncParsableCommand {
         }
         guard let rendering else { return }
         try writePNG(try rendering.cgImage, to: URL(fileURLWithPath: output))
-        print("Wrote \(output): \(preset.name) after \(frames) frames (last frame GPU \(rendering.gpuTime.map { String(format: "%.2f ms", $0 * 1000) } ?? "n/a"))")
+        print("Wrote \(output): \(preset.name) after \(frames) frames (last frame GPU \(rendering.gpuTime.map { String(format: "%.2f ms", $0 * 1_000) } ?? "n/a"))")
     }
 
     private func parseVector(_ string: String) throws -> SIMD3<Float> {

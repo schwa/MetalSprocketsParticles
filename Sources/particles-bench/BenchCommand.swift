@@ -20,10 +20,10 @@ struct BenchCommand: ParsableCommand {
     var frames = 60
 
     @Option(help: "Image width in pixels.")
-    var width = 1920
+    var width = 1_920
 
     @Option(help: "Image height in pixels.")
-    var height = 1080
+    var height = 1_080
 
     struct Scenario {
         var name: String

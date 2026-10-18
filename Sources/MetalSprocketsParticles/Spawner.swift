@@ -110,7 +110,7 @@ struct Spawner: Equatable {
 
     mutating func advance(deltaTime: Float, emitter: ParticleEmitter, capacity: Int, isEmitting: Bool) -> Step {
         var count = 0
-        if isEmitting && Self.isInEmissionWindow(time: time, emitter: emitter) {
+        if isEmitting, Self.isInEmissionWindow(time: time, emitter: emitter) {
             // Rate times the envelope's area over the step. A constant envelope keeps the plain product, so default
             // emitters spawn exactly as before.
             let envelope = emitter.emissionOverTime

@@ -60,6 +60,8 @@ public enum ParticlePresetBuilder {
         components.flatMap(\.self)
     }
 
+    // The result builder protocol fixes this signature.
+    // swiftlint:disable:next discouraged_optional_collection
     public static func buildOptional(_ components: [PresetComponent]?) -> [PresetComponent] {
         components ?? []
     }
