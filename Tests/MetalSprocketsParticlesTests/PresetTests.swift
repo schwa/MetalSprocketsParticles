@@ -79,20 +79,10 @@ struct PresetRenderTests {
         let preset = try #require(ParticleSystem.named(name))
         let size = CGSize(width: 480, height: 270)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1, seed: 0)
-        try system.load(preset)
-        let view = simd_float4x4(lookingFrom: preset.cameraEye, at: preset.cameraTarget).inverse
-        let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
-        let sceneDepth = preset.drawsColliders ? try SceneDepth(device: renderer.device, width: Int(size.width), height: Int(size.height)) : nil
+        let player = try ParticlePlayer(system: preset, device: renderer.device)
         var rendering: OffscreenRenderer.Rendering?
-        for frame in 0..<180 {
-            let time = Float(frame) / 60
-            system.trackedObjects = preset.trackedObjectPositions(at: time)
-            system.forceFields = preset.forceFields(at: time)
-            rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: 1.0 / 60.0, colliders: preset.colliders(at: time, pointer: nil), transforms: preset.transforms(at: time, pointer: nil), view: view)
-                try system.renderScene(projection: projection, view: view, sceneDepth: sceneDepth)
-            })
+        for _ in 0..<180 {
+            rendering = try renderer.render(try player.frame(deltaTime: 1.0 / 60.0, size: size))
         }
         let slug = name.lowercased().replacingOccurrences(of: " ", with: "-")
         #expect(try #require(rendering).cgImage.matchesGolden(named: "preset-\(slug)"))

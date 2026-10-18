@@ -94,22 +94,17 @@ struct ParticleViewportView: View {
             RenderView(colorPixelFormat: Self.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
-                let time = context.frameUniforms.time
-                let pointer = model.preparePointer(for: system, time: time, projection: projection, cameraToWorld: cameraMatrix)
-                try system.simulate(
-                    deltaTime: context.frameUniforms.deltaTime,
-                    colliders: model.frameColliders(time: time, pointer: pointer),
-                    transforms: model.frameTransforms(time: time, pointer: pointer),
-                    trackedObjects: model.frameTrackedObjects(time: context.frameUniforms.time),
-                    view: cameraMatrix.inverse
-                )
-                try system.renderScene(
-                    projection: projection,
-                    view: cameraMatrix.inverse,
-                    sceneDepth: model.sceneDepth(width: Int(size.width), height: Int(size.height)),
-                    wireframes: model.showColliders
-                )
-                .gpuTimed("Render")
+                // The demo owns its camera (the orbit controls), so it passes matrices to the player.
+                if let player = try model.player(projection: projection, cameraToWorld: cameraMatrix) {
+                    try player.frame(
+                        deltaTime: context.frameUniforms.deltaTime,
+                        projection: projection,
+                        view: cameraMatrix.inverse,
+                        sceneDepth: player.sceneDepth(size: size),
+                        wireframes: model.showColliders
+                    )
+                    .gpuTimed("Render")
+                }
             }
             .background(.black)
             .onFrameTimingChange { statistics in

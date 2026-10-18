@@ -169,14 +169,14 @@ struct ModelTests {
         #expect(Set(model.currentEffect.pointerBindings) == Set(preset.pointerBindings))
 
         let pointer: SIMD3<Float> = [1, 2, 3]
-        #expect(model.frameColliders(time: 0, pointer: pointer)[1] == .sphere(center: pointer, radius: 0.5))
-        #expect(model.frameForceFields(pointer: pointer)[1] == .attractor(center: pointer, strength: 2))
-        #expect(model.frameTransforms(time: 0, pointer: pointer)[0].columns.3 == SIMD4(pointer, 1))
+        #expect(model.currentEffect.colliders(at: 0, pointer: pointer)[1] == .sphere(center: pointer, radius: 0.5))
+        #expect(model.currentEffect.forceFields(at: 0, pointer: pointer)[1] == .attractor(center: pointer, strength: 2))
+        #expect(model.currentEffect.transforms(at: 0, pointer: pointer)[0].columns.3 == SIMD4(pointer, 1))
 
         // Removing the first collider keeps the sphere bound; its saved index moves down.
         model.colliders.removeFirst()
         #expect(model.pointerBindings.contains(.collider(0)))
-        #expect(model.frameColliders(time: 0, pointer: pointer)[0] == .sphere(center: pointer, radius: 0.5))
+        #expect(model.currentEffect.colliders(at: 0, pointer: pointer)[0] == .sphere(center: pointer, radius: 0.5))
     }
 
     @Test func stepPresetWrapsAround() {
@@ -253,12 +253,12 @@ struct ModelTests {
         #expect(system.colliders == [.sphere(center: .zero, radius: 1)])
         #expect(system.forceFields == [.turbulence(strength: 1)])
         model.animateColliders = false
-        #expect(model.frameColliders(time: 5, pointer: .zero) == [.sphere(center: .zero, radius: 1)])
+        #expect(model.currentEffect.colliders(at: 5) == [.sphere(center: .zero, radius: 1)])
     }
 
-    @Test func frameTransformsFollowEmitterMotion() {
+    @Test func emitterMotionReachesTheEffect() {
         let model = ParticlesDemoModel()
         model.selectedEmitter.motion = EmitterMotion(kind: .circle, radius: 1, speed: 1)
-        #expect(model.frameTransforms(time: 0, pointer: .zero).first?.columns.3 == [1, 0, 0, 1])
+        #expect(model.currentEffect.transforms(at: 0).first?.columns.3 == [1, 0, 0, 1])
     }
 }

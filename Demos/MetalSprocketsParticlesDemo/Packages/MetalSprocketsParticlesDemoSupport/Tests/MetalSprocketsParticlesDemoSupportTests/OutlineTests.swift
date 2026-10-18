@@ -139,12 +139,12 @@ struct OutlineTests {
     /// #69: tracked objects come from the preset, move each frame, and are saved with the effect.
     @Test func trackedObjectsFollowThePreset() {
         let model = ParticlesDemoModel(preset: .dunk)
-        let start = model.frameTrackedObjects(time: 0)["ball"]
-        let later = model.frameTrackedObjects(time: 0.5)["ball"]
+        let start = model.currentEffect.trackedObjectPositions(at: 0)["ball"]
+        let later = model.currentEffect.trackedObjectPositions(at: 0.5)["ball"]
         #expect(start != nil && later != nil && start != later)
         #expect(model.currentEffect.trackedObjects == ParticleSystem.dunk.trackedObjects)
         model.presetName = ParticleSystem.rain.name
-        #expect(model.frameTrackedObjects(time: 0).isEmpty)
+        #expect(model.currentEffect.trackedObjectPositions(at: 0).isEmpty)
     }
 
     @Test func presetCommentIsShownAndSaved() {

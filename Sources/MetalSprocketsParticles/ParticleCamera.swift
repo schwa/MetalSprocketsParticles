@@ -1,9 +1,9 @@
 import CoreGraphics
-import MetalSprocketsParticles
 import simd
 
-/// How a `ParticleView` looks at its particle system.
-public enum ParticleViewCamera: Sendable, Equatable {
+/// How a `ParticlePlayer` (and `ParticleView`) looks at a particle system. Hosts with their own camera, such as a scene
+/// graph, pass their own matrices to `ParticlePlayer.frame(deltaTime:projection:view:sceneDepth:wireframes:)` instead.
+public enum ParticleCamera: Sendable, Equatable {
     /// The system's `cameraEye` and `cameraTarget`, with a perspective projection.
     case system
     /// A perspective camera at `eye`, looking at `target`.
@@ -15,9 +15,9 @@ public enum ParticleViewCamera: Sendable, Equatable {
     /// How far the overlay camera sits from the z = 0 plane, and how deep its view is.
     static let overlayDepth: Float = 1_000
 
-    /// Projection, camera-to-world transform, and the point the camera looks at (used for the pointer plane), for a
-    /// view of `size` (pixels for perspective cameras, points for the overlay).
-    func matrices(for system: ParticleSystem, size: CGSize) -> (projection: simd_float4x4, cameraToWorld: simd_float4x4, focus: SIMD3<Float>) {
+    /// Projection, camera-to-world transform, and the point the camera looks at (a good plane for the pointer), for a
+    /// view of `size`. Perspective cameras only use its aspect; the overlay maps one unit to one point of it.
+    public func matrices(for system: ParticleSystem, size: CGSize) -> (projection: simd_float4x4, cameraToWorld: simd_float4x4, focus: SIMD3<Float>) {
         switch self {
         case .system:
             return Self.perspective(eye: system.cameraEye, target: system.cameraTarget, size: size)

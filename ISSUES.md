@@ -2146,12 +2146,13 @@ A full library test run hung for 10 minutes (killed by the timeout) and passed i
 ## 103: Architecture: a player that owns the per-frame loop for a particle system
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 created: 2026-10-18T21:33:49Z
-updated: 2026-10-18T22:18:47Z
+updated: 2026-10-18T22:27:44Z
+closed: 2026-10-18T22:27:44Z
 +++
 
 Five callers repeat the same per-frame sequence by hand: particles-render, ParticleSystem.exportVideo, the preset golden test, ParticleView (ParticleViewState), and the demo (ParticlesDemoModel+Pointer, ParticlesView). The sequence: work out the pointer, colliders(at:pointer:), forceFields(at:pointer:) and assign them to the runtime (simulate does not take fields), transforms(at:pointer:), trackedObjectPositions(at:), make or resize a SceneDepth when drawsColliders, simulate, then renderScene. The copies differ in small ways (tracked objects set before simulate vs passed in; the demo has its own colliders function with animate-colliders), and two bugs have come from this seam (per-frame force fields missed; colliders without the pointer).
@@ -2162,12 +2163,14 @@ Dependencies: in-process, plus the GPU through OffscreenRenderer/Runner, which a
 Tests: boundary tests on the player (deterministic frames, pointer bindings, finite effects, scene depth sizing) replace the scattered per-caller checks in PresetTests, ParticleViewTests, and the demo's frame tests.
 Source: improve-codebase-architecture review. Related: #100, #99.
 
-- `2026-10-18T22:18:47Z`: Decisions (user):
+\- `2026-10-18T22:18:47Z`: Decisions (user):
 1. The player owns its clock and advances it by deltaTime (deterministic; matches the CLI, video export, and goldens).
 2. Move ParticleViewCamera into the core as ParticleCamera (system, lookAt, overlay); the player builds projection and view from the output size. One camera path for the CLI, video, goldens, and ParticleView; also enables a camera kind for 2D presets later.
 3. Live edits: player.system = edited replaces the description, reloading only when the emitter layout changes (existing apply logic). Proper diffing stays with #104.
 4. Name: ParticlePlayer.
 Shape: let player = try ParticlePlayer(system:); player.pointer = worldPoint (optional); try player.frame(deltaTime:size:) gives the simulate and render elements. Callers to migrate: particles-render, exportVideo, the preset golden test, ParticleView, the demo.
+
+- `2026-10-18T22:27:44Z`: ParticlePlayer (core): owns a runtime, the ParticleSystem description, a clock (advances while playing, scaled by speedFactor), a ParticleCamera, an optional world-space pointer, and a scene depth texture. frame(deltaTime:size:scale:wireframes:) uses the camera and its own depth; frame(deltaTime:projection:view:sceneDepth:wireframes:) is for hosts with their own camera and depth (the demo uses it; a scene graph would too). update(_:) replaces the description, rebuilding only on emitter layout changes. ParticleCamera moved from the UI library into the core. Callers migrated: particles-render, exportVideo, the preset golden test, ParticleView (now a thin wrapper), and the demo (its own per-frame functions and scene-depth cache are gone; it feeds currentEffect to the player). All goldens unchanged. The runtime API (simulate, render, renderScene) is untouched and stays first-class for hosts like MetalSprocketsSceneGraph. Tests: clock, identical output to the hand-written loop, update vs rebuild, scene depth, pointer; ParticleView setup and overlay mapping; demo tests now check currentEffect.
 
 ---
 

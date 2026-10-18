@@ -37,30 +37,15 @@ public extension ParticleSystem {
         guard let device = MTLCreateSystemDefaultDevice() else {
             throw CocoaError(.featureUnsupported)
         }
-        let system = try ParticleSystemRuntime(device: device, emitters: [], capacity: 1, seed: seed)
-        try system.load(self)
-        let camera = simd_float4x4(lookingFrom: eye ?? cameraEye, at: target ?? cameraTarget)
-        let view = camera.inverse
-        let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / max(size.height, 1)), near: 0.1, far: 100)
-        let sceneDepth = drawsColliders ? try SceneDepth(device: device, width: Int(size.width), height: Int(size.height)) : nil
+        let player = try ParticlePlayer(system: self, device: device, seed: seed)
+        player.camera = .lookAt(eye: eye ?? cameraEye, target: target ?? cameraTarget)
         let deltaTime = Float(1 / frameRate)
         let frameCount = max(Int((duration * frameRate).rounded()), 1)
         var framesWritten = 0
         for frame in 0..<frameCount {
-            let time = Float(frame) * deltaTime
-            system.forceFields = forceFields(at: time)
-            try await renderer.render(Group {
-                try system.simulate(
-                    deltaTime: deltaTime,
-                    colliders: colliders(at: time, pointer: nil),
-                    transforms: transforms(at: time, pointer: nil),
-                    trackedObjects: trackedObjectPositions(at: time),
-                    view: view
-                )
-                try system.renderScene(projection: projection, view: view, sceneDepth: sceneDepth, wireframes: wireframes)
-            })
+            try await renderer.render(try player.frame(deltaTime: deltaTime, size: size, wireframes: wireframes))
             framesWritten += 1
-            if !progress(Double(frame + 1) / Double(frameCount)) || stopWhenFinished && system.isFinished {
+            if !progress(Double(frame + 1) / Double(frameCount)) || stopWhenFinished && player.runtime.isFinished {
                 break
             }
         }

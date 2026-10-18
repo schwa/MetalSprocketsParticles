@@ -5,7 +5,7 @@ import simd
 import SwiftUI
 
 /// Shows a particle system with no MetalSprockets setup: no render passes, simulate or render calls, or camera
-/// matrices.
+/// matrices. It plays the system with a `ParticlePlayer`.
 ///
 /// ```swift
 /// ParticleView(try ParticleSystem(contentsOf: campfireURL))
@@ -26,15 +26,16 @@ import SwiftUI
 public struct ParticleView: View {
     private let system: ParticleSystem
     private let runtime: ParticleSystemRuntime?
-    private var camera: ParticleViewCamera = .system
-    @State private var state: ParticleViewState
+    private let seed: UInt32
+    private var camera: ParticleCamera = .system
+    @State private var state = ParticleViewState()
     @State private var viewSize: CGSize = .zero
 
     /// Shows `system` in a runtime the view makes. A different system (by name) starts over.
     public init(_ system: ParticleSystem, seed: UInt32 = 0) {
         self.system = system
         self.runtime = nil
-        _state = State(initialValue: ParticleViewState(seed: seed))
+        self.seed = seed
     }
 
     /// Shows your `runtime`, which should have `system` loaded. The view simulates and draws it; you keep control of
@@ -42,11 +43,11 @@ public struct ParticleView: View {
     public init(runtime: ParticleSystemRuntime, system: ParticleSystem) {
         self.system = system
         self.runtime = runtime
-        _state = State(initialValue: ParticleViewState(seed: 0))
+        self.seed = 0
     }
 
     /// Uses `camera` instead of the system's camera.
-    public func camera(_ camera: ParticleViewCamera) -> Self {
+    public func camera(_ camera: ParticleCamera) -> Self {
         var view = self
         view.camera = camera
         return view
@@ -58,24 +59,16 @@ public struct ParticleView: View {
     }
 
     public var body: some View {
+        let system = system
+        let runtime = runtime
+        let seed = seed
         let camera = camera
         let sizeInPoints = viewSize
         RenderView(colorPixelFormat: ParticleSystemRuntime.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
-            let frame = try state.frame(
-                system: system,
-                runtime: runtime,
-                camera: camera,
-                size: (points: sizeInPoints, pixels: size),
-                time: context.frameUniforms.time
-            )
-            try frame.runtime.simulate(
-                deltaTime: context.frameUniforms.deltaTime,
-                colliders: frame.colliders,
-                transforms: frame.transforms,
-                trackedObjects: frame.trackedObjects,
-                view: frame.view
-            )
-            try frame.runtime.renderScene(projection: frame.projection, view: frame.view, sceneDepth: frame.sceneDepth)
+            // Before the first layout pass the view's size is unknown; treat pixels as points until then.
+            let points = sizeInPoints.width > 0 ? sizeInPoints : size
+            let player = try state.player(system: system, runtime: runtime, seed: seed, camera: camera, size: points)
+            try player.frame(deltaTime: context.frameUniforms.deltaTime, size: points, scale: size.width / max(points.width, 1))
         }
         // Transparent, so the view composites over whatever is behind it.
         .metalClearColor(MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0))
@@ -91,84 +84,34 @@ public struct ParticleView: View {
     }
 }
 
-/// What one frame needs, worked out by `ParticleViewState`.
-struct ParticleViewFrame {
-    var runtime: ParticleSystemRuntime
-    var projection: simd_float4x4
-    var view: simd_float4x4
-    var sceneDepth: SceneDepth?
-    var colliders: [Collider]
-    var transforms: [simd_float4x4]
-    var trackedObjects: [String: SIMD3<Float>]
-}
-
-/// The view's long-lived state: its own runtime (when the caller passes none), the scene depth texture, and the
-/// pointer. Rendering reads and writes it every frame, so nothing here is observed.
+/// The view's long-lived state: its player and the mouse. Rendering reads and writes it every frame, so nothing here is
+/// observed.
 final class ParticleViewState {
-    private let seed: UInt32
-    private(set) var ownedRuntime: ParticleSystemRuntime?
-    private var loadedSystemName: String?
-    private var sceneDepth: SceneDepth?
+    private(set) var player: ParticlePlayer?
     /// The mouse location as a fraction of the view (0...1, origin top left), or nil when it is outside.
     var pointerLocation: CGPoint?
 
-    init(seed: UInt32) {
-        self.seed = seed
-    }
-
-    func frame(
-        system: ParticleSystem,
-        runtime callerRuntime: ParticleSystemRuntime?,
-        camera: ParticleViewCamera,
-        size: (points: CGSize, pixels: CGSize),
-        time: Float
-    ) throws -> ParticleViewFrame {
-        let drawableSize = size.pixels
-        let runtime = try callerRuntime ?? ownRuntime(for: system)
-        // The overlay camera works in points, so it needs the view's size, not the drawable's pixels.
-        let matrices = camera.matrices(for: system, size: camera == .overlay ? size.points : drawableSize)
-        let projection = matrices.projection
-        let cameraToWorld = matrices.cameraToWorld
-        let pointer = pointerLocation.flatMap {
+    /// The player for this frame, set up with the current system, camera, and pointer. A new player when the caller's
+    /// runtime changes, or (for the view's own runtime) when the system's name changes; otherwise the system is updated
+    /// in place, which keeps the particles.
+    func player(system: ParticleSystem, runtime: ParticleSystemRuntime?, seed: UInt32, camera: ParticleCamera, size: CGSize) throws -> ParticlePlayer {
+        let player: ParticlePlayer
+        if let existing = self.player, runtime.map({ $0 === existing.runtime }) ?? (existing.system.name == system.name) {
+            player = existing
+            try player.update(system)
+        } else if let runtime {
+            player = ParticlePlayer(runtime: runtime, system: system)
+        } else {
+            player = try ParticlePlayer(system: system, seed: seed)
+        }
+        self.player = player
+        player.camera = camera
+        let matrices = camera.matrices(for: system, size: size)
+        player.pointer = pointerLocation.flatMap {
             PointerProjection.worldPosition(
-                of: $0, in: CGSize(width: 1, height: 1), projection: projection, cameraToWorld: cameraToWorld, planePoint: matrices.focus
+                of: $0, in: CGSize(width: 1, height: 1), projection: matrices.projection, cameraToWorld: matrices.cameraToWorld, planePoint: matrices.focus
             )
         }
-        runtime.forceFields = system.forceFields(at: time, pointer: pointer)
-        return ParticleViewFrame(
-            runtime: runtime,
-            projection: projection,
-            view: cameraToWorld.inverse,
-            sceneDepth: try sceneDepth(for: system, device: runtime.device, size: drawableSize),
-            colliders: system.colliders(at: time, pointer: pointer),
-            transforms: system.transforms(at: time, pointer: pointer),
-            trackedObjects: system.trackedObjectPositions(at: time)
-        )
-    }
-
-    /// The view's own runtime, loaded with `system`; a different system starts over.
-    func ownRuntime(for system: ParticleSystem) throws -> ParticleSystemRuntime {
-        if let ownedRuntime, loadedSystemName == system.name {
-            return ownedRuntime
-        }
-        let runtime = try ParticleSystemRuntime(emitters: [], capacity: 1, seed: seed)
-        try runtime.load(system)
-        ownedRuntime = runtime
-        loadedSystemName = system.name
-        return runtime
-    }
-
-    /// A scene depth texture of the drawable's size when the system draws colliders.
-    func sceneDepth(for system: ParticleSystem, device: MTLDevice, size: CGSize) throws -> SceneDepth? {
-        guard system.drawsColliders else {
-            return nil
-        }
-        let width = Int(size.width)
-        let height = Int(size.height)
-        if let sceneDepth, sceneDepth.width == width, sceneDepth.height == height {
-            return sceneDepth
-        }
-        sceneDepth = try SceneDepth(device: device, width: width, height: height)
-        return sceneDepth
+        return player
     }
 }

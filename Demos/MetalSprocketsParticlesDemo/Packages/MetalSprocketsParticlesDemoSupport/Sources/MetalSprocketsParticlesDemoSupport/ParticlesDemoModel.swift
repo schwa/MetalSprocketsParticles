@@ -143,18 +143,25 @@ final class ParticlesDemoModel {
     /// The preset's spinning colliders, by index.
     var colliderSpins: [ColliderSpin] = []
 
-    @ObservationIgnored private var cachedSceneDepth: SceneDepth?
+    @ObservationIgnored private var cachedPlayer: ParticlePlayer?
 
-    /// A scene depth texture of the drawable's size when `drawColliders` is on; recreated when the size changes.
-    func sceneDepth(width: Int, height: Int) -> SceneDepth? {
-        guard drawColliders, let device = system?.device else {
+    /// Plays the system for the viewport. Each frame it gets the scene as edited (`currentEffect`), so animation,
+    /// spinning colliders, pointer bindings, and tracked objects follow the inspector, and the mouse as its pointer.
+    /// Edits already reached the runtime, so the update keeps the particles.
+    func player(projection: simd_float4x4, cameraToWorld: simd_float4x4) throws -> ParticlePlayer? {
+        guard let system else {
             return nil
         }
-        if let cachedSceneDepth, cachedSceneDepth.width == width, cachedSceneDepth.height == height {
-            return cachedSceneDepth
+        let player: ParticlePlayer
+        if let cachedPlayer, cachedPlayer.runtime === system {
+            player = cachedPlayer
+            try player.update(currentEffect)
+        } else {
+            player = ParticlePlayer(runtime: system, system: currentEffect)
+            cachedPlayer = player
         }
-        cachedSceneDepth = try? SceneDepth(device: device, width: width, height: height)
-        return cachedSceneDepth
+        player.pointer = pointerPosition(projection: projection, cameraToWorld: cameraToWorld)
+        return player
     }
 
     /// The event name the inspector's Send button fires.
@@ -375,7 +382,11 @@ final class ParticlesDemoModel {
     }
 
     func restart() {
-        system?.restart()
+        if let cachedPlayer, cachedPlayer.runtime === system {
+            cachedPlayer.restart()
+        } else {
+            system?.restart()
+        }
         playback = .playing
     }
 
@@ -416,10 +427,4 @@ final class ParticlesDemoModel {
     var trackedObjects: [String: EmitterMotion] = [:]
 
     /// Tracked object positions at `time`, for `ParticleSystemRuntime.trackedObjects`.
-    func frameTrackedObjects(time: Float) -> [String: SIMD3<Float>] {
-        trackedObjects.mapValues { motion in
-            let column = motion.transform(time: time).columns.3
-            return SIMD3(column.x, column.y, column.z)
-        }
-    }
 }

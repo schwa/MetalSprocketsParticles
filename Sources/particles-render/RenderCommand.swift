@@ -126,21 +126,12 @@ struct RenderCommand: AsyncParsableCommand {
             return
         }
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
-        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1, seed: seed)
-        try system.load(preset)
-        let camera = simd_float4x4(lookingFrom: eye, at: target)
-        let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
-        let sceneDepth = preset.drawsColliders ? try SceneDepth(device: renderer.device, width: width, height: height) : nil
-
+        let player = try ParticlePlayer(system: preset, device: renderer.device, seed: seed)
+        player.camera = .lookAt(eye: eye, target: target)
+        let size = CGSize(width: width, height: height)
         var rendering: OffscreenRenderer.Rendering?
-        for frame in 0..<max(frames, 1) {
-            let time = Float(frame) * deltaTime
-            system.trackedObjects = preset.trackedObjectPositions(at: time)
-            system.forceFields = preset.forceFields(at: time)
-            rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time, pointer: nil), transforms: preset.transforms(at: time, pointer: nil), view: camera.inverse)
-                try system.renderScene(projection: projection, view: camera.inverse, sceneDepth: sceneDepth, wireframes: wireframes)
-            })
+        for _ in 0..<max(frames, 1) {
+            rendering = try renderer.render(try player.frame(deltaTime: deltaTime, size: size, wireframes: wireframes))
         }
         guard let rendering else { return }
         try writePNG(try rendering.cgImage, to: URL(fileURLWithPath: output))
