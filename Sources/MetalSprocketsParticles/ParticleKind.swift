@@ -278,20 +278,21 @@ public extension ForceField.Effect {
 // MARK: - Sub-emitters and triggers
 
 extension ParticleSpawnOccasion: @retroactive CaseIterable, @retroactive Identifiable, ParticleKind {
-    public static var allCases: [ParticleSpawnOccasion] { [.birth, .death, .collision, .whileAlive] }
+    public static var allCases: [ParticleSpawnOccasion] { [.birth, .death, .collision, .whileAlive, .age] }
 
     public var name: String {
         switch self {
         case .death: "On Death"
         case .collision: "On Collision"
         case .whileAlive: "While Alive"
+        case .age: "At Age"
         default: "On Birth"
         }
     }
 }
 
 public extension SubEmitter.Occasion {
-    /// Setting it to `.whileAlive` starts with a 0.05 second interval.
+    /// Setting it to `.whileAlive` starts with a 0.05 second interval, and `.age` at 1 second.
     var kind: ParticleSpawnOccasion {
         get {
             switch self {
@@ -299,6 +300,7 @@ public extension SubEmitter.Occasion {
             case .onDeath: .death
             case .onCollision: .collision
             case .whileAlive: .whileAlive
+            case .atAge: .age
             }
         }
         set {
@@ -309,6 +311,7 @@ public extension SubEmitter.Occasion {
             case .death: .onDeath
             case .collision: .onCollision
             case .whileAlive: .whileAlive(interval: 0.05)
+            case .age: .atAge(seconds: 1)
             default: .onBirth
             }
         }

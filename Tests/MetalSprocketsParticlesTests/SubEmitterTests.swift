@@ -1,3 +1,4 @@
+import Foundation
 import Metal
 import MetalSprockets
 @testable import MetalSprocketsParticles
@@ -50,6 +51,52 @@ struct SubEmitterTests {
     func alive(_ system: ParticleSystem, _ emitter: ParticleSystem.Emitter) -> [Particle] {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return emitter.range.map { pointer[$0] }.filter { $0.velocity.w > 0 && $0.position.w < $0.velocity.w }
+    }
+
+    @Test func atAgeTransitionTurnsTheParentIntoItsChild() throws {
+        // The parent lives 5 s but turns into a still-spawned child at 0.25 s, keeping its position and velocity.
+        let transition = SubEmitter.transition(on: .atAge(seconds: 0.25), into: stillChild())
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 5...5 })
+        system.burst(4)
+        try step(system, seconds: 0.2)
+        #expect(alive(system, system.emitters[0]).count == 4)
+        #expect(alive(system, system.subEmitterInstances[0]).isEmpty)
+        try step(system, seconds: 0.2)
+        #expect(alive(system, system.emitters[0]).isEmpty)
+        let children = alive(system, system.subEmitterInstances[0])
+        #expect(children.count == 4)
+        // Moving at 1 unit/s along x for 0.4 s in total, with no break at the transition.
+        #expect(children.allSatisfy { abs($0.velocity.x - 1) < 1e-4 && abs($0.position.x - 0.4) < 0.03 && abs($0.position.y - 1) < 1e-4 })
+    }
+
+    @Test func collisionTransitionReplacesOnlyParticlesThatHit() throws {
+        let transition = SubEmitter.transition(on: .onCollision, into: stillChild(), sprite: .spark)
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) {
+            $0.lifetime = 5...5
+            $0.velocity = .zero
+            $0.gravity = [0, -9.8, 0]
+        })
+        system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
+        system.burst(4)
+        try step(system, seconds: 0.3)
+        #expect(alive(system, system.emitters[0]).count == 4)
+        try step(system, seconds: 0.3)
+        #expect(alive(system, system.emitters[0]).isEmpty)
+        #expect(alive(system, system.subEmitterInstances[0]).count == 4)
+        // The child draws with its own sprite.
+        #expect(system.subEmitterInstances[0].texture != nil)
+    }
+
+    @Test func transitionSettingsRoundTripAndOldFilesStillLoad() throws {
+        let transition = SubEmitter.transition(on: .atAge(seconds: 2), into: stillChild(), sprite: .star)
+        let decoded = try JSONDecoder().decode(SubEmitter.self, from: try JSONEncoder().encode(transition))
+        #expect(decoded == transition)
+        // Saved before sprite and replacesParent existed.
+        var old = try #require(try JSONSerialization.jsonObject(with: try JSONEncoder().encode(SubEmitter(occasion: .onDeath, countPerEvent: 3, settings: stillChild()))) as? [String: Any])
+        old["sprite"] = nil
+        old["replacesParent"] = nil
+        let loaded = try JSONDecoder().decode(SubEmitter.self, from: try JSONSerialization.data(withJSONObject: old))
+        #expect(loaded.sprite == .softDot && !loaded.replacesParent && loaded.countPerEvent == 3)
     }
 
     @Test func instancesFollowEmittersInTheBuffer() throws {

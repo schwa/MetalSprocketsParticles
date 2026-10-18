@@ -32,6 +32,7 @@ H.264 MP4, 30 fps, seed 0, the preset's camera). Finite effects play until they 
 - [Flag](#flag)
 - [Strange Attractor](#strange-attractor)
 - [Pointer Stir](#pointer-stir)
+- [Embers to Ash](#embers-to-ash)
 - [Awning](#awning)
 - [Lantern](#lantern)
 - [Dunk](#dunk)
@@ -192,6 +193,12 @@ Glowing particles trace the Lorenz attractor. A user Metal function (updateFunct
 Glowing dust hangs in the air. Move the mouse over the view: a vortex and a ball follow the pointer, stirring the dust and pushing it aside. Shows pointer bindings (pointerBindings); without a mouse, the pointer traces a figure eight (pointerMotion).
 
 [![pointer-stir](posters/pointer-stir.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/pointer-stir.mp4)
+
+## Embers to Ash
+
+Glowing embers rise from a fire, and after 1.4 seconds each one turns into a gray flake of ash that drifts down and settles. Shows a transition: a sub-emitter that replaces its parent (SubEmitter.transition) at an age, keeping its position and velocity, with its own sprite and settings.
+
+[![embers-to-ash](posters/embers-to-ash.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/embers-to-ash.mp4)
 
 ## Awning
 

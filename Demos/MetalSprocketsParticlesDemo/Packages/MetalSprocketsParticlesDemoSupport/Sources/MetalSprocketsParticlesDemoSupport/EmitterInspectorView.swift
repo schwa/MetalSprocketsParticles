@@ -458,6 +458,12 @@ struct SubEmitterEditorView: View {
             if subEmitter.occasion.kind == .whileAlive {
                 ParameterSliderView("Interval", value: $subEmitter.trailInterval, in: 0.005...0.5, format: .number.precision(.fractionLength(3)))
             }
+            if subEmitter.occasion.kind == .age {
+                ParameterSliderView("Age", value: $subEmitter.transitionAge, in: 0...10)
+            }
+            Toggle("Replaces Parent", isOn: $subEmitter.replacesParent)
+                .help("The parent dies when it spawns children, so it turns into them.")
+            KindPicker("Sprite", selection: $subEmitter.sprite)
             Stepper("Per Event: \(subEmitter.countPerEvent)", value: $subEmitter.countPerEvent, in: 1...1_000, step: 10)
             ParameterSliderView("Inherit Velocity", value: $subEmitter.velocityFactor, in: 0...1)
             ParameterSliderView("Lifetime Min", value: $subEmitter.settings.lifetimeMinimum, in: 0.05...5)

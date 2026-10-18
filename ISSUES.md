@@ -1821,12 +1821,13 @@ Do:
 ## 91: Particle transitions: turn into another particle type on an event
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:collision, effort:l
 created: 2026-10-18T17:20:05Z
-updated: 2026-10-18T18:50:43Z
+updated: 2026-10-18T19:14:52Z
+closed: 2026-10-18T19:14:52Z
 +++
 
 Let a particle become a different particle type (move to another emitter) when something happens, keeping its position and velocity (and optionally age). The new emitter's sprite, curves, color, size, and settings then apply. A color change is just a transition to an emitter with a different color.
@@ -1836,6 +1837,8 @@ Events: on collision, after a time (age), on death, on entering a trigger volume
 Today the closest is diesOnCollision plus an onCollision sub-emitter, which spawns new particles a frame late and loses the parent's motion.
 
 Design notes: transitions are set on the source emitter (event, target emitter, what to keep). The target needs free slots, like sub-emitter children. Should work in presets and the demo without code. Related: #46, #89.
+
+- `2026-10-18T19:14:53Z`: Built on sub-emitters, which already spawn children the same frame at the parent's position with a share of its velocity. Added SubEmitter.replacesParent (the parent dies when it spawns children, so it turns into them), the .atAge(seconds:) occasion, a per-sub-emitter sprite (children were always soft dots), and SubEmitter.transition(on:into:sprite:) (one child, full velocity, replaces the parent). Events covered: collision, age, death (onDeath), birth. Not done: trigger-volume transitions, and keeping the parent's age (children start at age 0). Demo sub-emitter editor: At Age occasion, Replaces Parent, Sprite. New Embers to Ash preset. Tests: age transition keeps position and velocity, collision transition and child sprite, Codable round trip and old files without the new keys.
 
 ---
 

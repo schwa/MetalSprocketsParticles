@@ -1,0 +1,348 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    1.6,
+    4.6
+  ],
+  "cameraTarget" : [
+    0,
+    1.3,
+    0
+  ],
+  "colliderSpins" : [
+
+  ],
+  "colliders" : [
+    {
+      "distance" : 0,
+      "kind" : "plane",
+      "normal" : [
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "comment" : "Glowing embers rise from a fire, and after 1.4 seconds each one turns into a gray flake of ash that drifts down and settles. Shows a transition: a sub-emitter that replaces its parent (SubEmitter.transition) at an age, keeping its position and velocity, with its own sprite and settings.",
+  "drawsColliders" : false,
+  "forceFields" : [
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "turbulence" : {
+          "scale" : 0.8,
+          "speed" : 0.4,
+          "strength" : 0.6
+        }
+      }
+    }
+  ],
+  "layers" : [
+    {
+      "capacity" : 3000,
+      "id" : "EE3B1444-5F53-4A15-844D-3B070A8EFD92",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Embers",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 600,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                1,
+                0.85,
+                0.4,
+                1
+              ]
+            },
+            {
+              "time" : 0.28,
+              "value" : [
+                1,
+                0.35,
+                0.1,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0.04,
+          0.1,
+          0.1,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.6,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0.2,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          5,
+          5
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "orientation" : {
+          "velocityAligned" : {
+            "stretch" : 0.04
+          }
+        },
+        "position" : [
+          0,
+          0.1,
+          0
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "disc" : {
+            "radius" : 0.5
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.025
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0.4,
+        "subEmitters" : [
+          {
+            "countPerEvent" : 1,
+            "occasion" : {
+              "atAge" : {
+                "seconds" : 1.4
+              }
+            },
+            "replacesParent" : true,
+            "settings" : {
+              "angle" : 0,
+              "angleVariation" : 3.14,
+              "angularSpeed" : 0,
+              "angularSpeedVariation" : 4,
+              "birthDirection" : 0,
+              "birthLocation" : 0,
+              "birthRate" : 20000,
+              "birthRateVariation" : 0,
+              "blendMode" : 0,
+              "collisionMask" : 4294967295,
+              "colorOverLife" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : [
+                      0.35,
+                      0.33,
+                      0.32,
+                      1
+                    ]
+                  },
+                  {
+                    "time" : 1,
+                    "value" : [
+                      0.18,
+                      0.18,
+                      0.18,
+                      1
+                    ]
+                  }
+                ]
+              },
+              "colorVariation" : [
+                0,
+                0,
+                0.15,
+                0
+              ],
+              "diesOnCollision" : false,
+              "drag" : 2.5,
+              "emissionOverTime" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : 1
+                  }
+                ]
+              },
+              "fieldMask" : 4294967295,
+              "friction" : 1,
+              "frictionVariation" : 0,
+              "gravity" : [
+                0,
+                -1.4,
+                0
+              ],
+              "idleDuration" : 0,
+              "inheritVelocity" : 0,
+              "isLit" : false,
+              "lifetime" : [
+                4,
+                5
+              ],
+              "loops" : true,
+              "opacityOverLife" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : 1
+                  },
+                  {
+                    "time" : 0.8,
+                    "value" : 1
+                  },
+                  {
+                    "time" : 1,
+                    "value" : 0
+                  }
+                ]
+              },
+              "orientation" : {
+                "billboard" : {
+
+                }
+              },
+              "position" : [
+                0,
+                0.5,
+                0
+              ],
+              "restitution" : 0,
+              "restitutionVariation" : 0,
+              "shape" : {
+                "point" : {
+
+                }
+              },
+              "sizeOverLife" : {
+                "keyframes" : [
+                  {
+                    "time" : 0,
+                    "value" : 0.018
+                  }
+                ]
+              },
+              "sizeVariation" : 0,
+              "softness" : 0,
+              "sortMode" : "None",
+              "speedVariation" : 0,
+              "subEmitters" : [
+
+              ],
+              "sweepAngle" : 6.283185,
+              "triggers" : [
+
+              ],
+              "velocity" : [
+                0,
+                0,
+                0
+              ],
+              "velocitySpread" : 0,
+              "warmupDuration" : 0
+            },
+            "sprite" : "Triangle",
+            "velocityFactor" : 1
+          }
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          1.6,
+          0
+        ],
+        "velocitySpread" : 0.5,
+        "warmupDuration" : 5
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Spark"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Embers to Ash",
+  "pointerBindings" : [
+
+  ],
+  "pointerMotion" : {
+    "kind" : "Still",
+    "offset" : [
+      0,
+      0,
+      0
+    ],
+    "pitch" : 0,
+    "radius" : 1.5,
+    "speed" : 1,
+    "spin" : 0,
+    "yaw" : 0
+  },
+  "trackedObjects" : {
+
+  }
+}

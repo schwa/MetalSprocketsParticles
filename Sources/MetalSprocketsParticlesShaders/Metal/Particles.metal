@@ -734,6 +734,9 @@ kernel void updateParticles(
         case ParticleSpawnOccasionCollision:
             count = hit ? childrenPerEvent : 0;
             break;
+        case ParticleSpawnOccasionAge:
+            count = (born ? interval <= age : previousAge < interval && interval <= age) ? childrenPerEvent : 0;
+            break;
         case ParticleSpawnOccasionWhileAlive: {
             // One child each time the age crosses a multiple of the interval, into a ring of the owned slots.
             float tick = floor(age / max(interval, 1e-4));
@@ -753,6 +756,10 @@ kernel void updateParticles(
             float childBirthAge;
             particles[sub.childSliceStart + childSlot] = spawnParticle(
                 childRandom, subEmitterUniforms[i], mesh, position, velocity * sub.velocityFactor, childBirthAge);
+        }
+        // A transition: the parent turns into its children. On-death sub-emitters listed after this one fire too.
+        if (count > 0 && sub.replacesParent != 0) {
+            age = lifetime;
         }
     }
 

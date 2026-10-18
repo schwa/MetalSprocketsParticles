@@ -77,7 +77,10 @@ extension ParticleSystem {
         evaluateTriggers(deltaTime: state == .playing ? frameDeltaTime : 0)
         for child in subEmitterInstances {
             if let parent = child.parent, child.subEmitterIndex < parent.settings.subEmitters.count {
-                child.settings = parent.settings.subEmitters[child.subEmitterIndex].settings
+                let sub = parent.settings.subEmitters[child.subEmitterIndex]
+                child.settings = sub.settings
+                // Cached per sprite, so this is a dictionary lookup.
+                child.texture = texture(for: sub.sprite)
             }
         }
         for emitter in emitters where emitter.meshDeformation != .none {
@@ -258,7 +261,8 @@ extension ParticleSystem {
                 childSliceStart: UInt32(child.range.lowerBound),
                 childCapacity: UInt32(child.capacity),
                 velocityFactor: sub.velocityFactor,
-                interval: sub.interval
+                interval: sub.interval,
+                replacesParent: sub.replacesParent ? 1 : 0
             ))
             let still = Spawner.Step(cursor: 0, count: 0, serial: 0)
             uniforms.append(self.uniforms(for: child, deltaTime: 0, motion: SpawnMotion(), spawn: still))

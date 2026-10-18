@@ -14,6 +14,8 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         /// One child every `interval` seconds of the parent's life, reusing the parent's slots in turn: a trail of
         /// `countPerEvent` points.
         case whileAlive(interval: Float)
+        /// Once, when the parent is `seconds` old.
+        case atAge(seconds: Float)
     }
 
     public var occasion: Occasion
@@ -23,6 +25,10 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// The children's settings. Their shape is centered on the parent particle; birth rate, timing, warmup, and nested
     /// sub-emitters are ignored.
     public var settings: ParticleEmitter
+    /// How the children are drawn. Soft dots by default.
+    public var sprite: ParticleSprite = .softDot
+    /// The parent dies when it spawns children, so it turns into them: a transition to another particle type.
+    public var replacesParent = false
 
     public init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, settings: ParticleEmitter) {
         self.occasion = occasion
@@ -31,10 +37,37 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         self.settings = settings
     }
 
+    /// The parent turns into one particle with `settings` and `sprite` when `occasion` happens, keeping its position
+    /// and velocity. Set the child's own velocity and spread to zero to keep exactly the parent's motion.
+    public static func transition(on occasion: Occasion, into settings: ParticleEmitter, sprite: ParticleSprite = .softDot) -> Self {
+        var transition = Self(occasion: occasion, countPerEvent: 1, velocityFactor: 1, settings: settings)
+        transition.sprite = sprite
+        transition.replacesParent = true
+        return transition
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case occasion, countPerEvent, velocityFactor, settings, sprite, replacesParent
+    }
+
+    /// Missing keys keep their defaults, so effects saved before a setting existed still load.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            occasion: try container.decode(Occasion.self, forKey: .occasion),
+            countPerEvent: try container.decode(Int.self, forKey: .countPerEvent),
+            velocityFactor: try container.decodeIfPresent(Float.self, forKey: .velocityFactor) ?? 0,
+            settings: try container.decode(ParticleEmitter.self, forKey: .settings)
+        )
+        try container.update(&sprite, .sprite)
+        try container.update(&replacesParent, .replacesParent)
+    }
+
     var interval: Float {
-        if case let .whileAlive(interval) = occasion {
-            return interval
+        switch occasion {
+        case let .whileAlive(interval): interval
+        case let .atAge(seconds): seconds
+        default: 0
         }
-        return 0
     }
 }

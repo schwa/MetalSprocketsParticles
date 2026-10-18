@@ -16,6 +16,17 @@ extension SubEmitter {
         set { occasion = .whileAlive(interval: newValue) }
     }
 
+    /// The `atAge` seconds, or 1 for other occasions. Setting it switches to `atAge`.
+    var transitionAge: Float {
+        get {
+            if case let .atAge(seconds) = occasion {
+                return seconds
+            }
+            return 1
+        }
+        set { occasion = .atAge(seconds: newValue) }
+    }
+
     /// A small burst of short-lived sparks, a sensible starting point for a new sub-emitter.
     static var sparks: SubEmitter {
         var settings = ParticleEmitter()
