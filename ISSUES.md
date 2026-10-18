@@ -1316,14 +1316,18 @@ Category masks (#54) are unused by every preset. Add a demo where they matter, e
 ## 67: No preset shows particle lighting
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T13:34:41Z
+updated: 2026-10-18T13:54:07Z
+closed: 2026-10-18T13:54:07Z
 +++
 
 Lighting (#10: ParticleSystem.lights, ambientLight, ParticleEmitter.isLit) is unused by every preset. Add lit smoke or dust beside a moving point light (lantern, campfire glow), ideally with a directional light too. Related: #10.
+
+- `2026-10-18T13:54:07Z`: New Lantern preset: lit smoke and dust motes (isLit) with a warm point light (lantern, range 2.5) near their base and cool directional moonlight from the side over low ambient; smoke is warm near the lantern and blue-grey above. The lantern's glow is a small sorted additive emitter so it draws in front of the sorted smoke. Lights are static (presets have no light animation). Golden added.
 
 ---
 

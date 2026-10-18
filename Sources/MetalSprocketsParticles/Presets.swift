@@ -13,8 +13,73 @@ public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
         .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot, .timeWarp,
-        .awning,
+        .awning, .lantern,
     ]
+
+    /// Lighting: smoke and dust motes lit by a warm lantern (point light) near their base and cool moonlight from the
+    /// side, over low ambient light. The lantern's glow is a small unlit emitter.
+    static let lantern: ParticlePreset = {
+        let lanternPosition: SIMD3<Float> = [0, 0.6, 0.8]
+        return ParticlePreset(
+            "Lantern",
+            layers: [
+                Layer("Smoke", settings: emitter {
+                    $0.isLit = true
+                    $0.sortMode = .backToFront
+                    $0.position = [0, 0.2, 0]
+                    $0.shape = .disc(radius: 0.3)
+                    $0.velocity = [0, 0.7, 0]
+                    $0.velocitySpread = 0.2
+                    $0.gravity = .zero
+                    $0.drag = 0.3
+                    $0.lifetime = 4...5
+                    $0.birthRate = 30
+                    $0.warmupDuration = 5
+                    $0.sizeOverLife = .linear(from: 0.25, to: 0.9)
+                    $0.opacityOverLife = ParticleCurve([.init(0, 0), .init(0.15, 0.7), .init(1, 0)])
+                    $0.colorOverLife = .constant([0.9, 0.9, 0.9, 1])
+                    $0.angleVariation = .pi
+                    $0.angularSpeedVariation = 0.3
+                }, sprite: .smoke, capacity: 400),
+                Layer("Dust", settings: emitter {
+                    $0.isLit = true
+                    $0.position = [0, 1.2, 0]
+                    $0.shape = .sphere(radius: 1.4)
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0.05
+                    $0.gravity = .zero
+                    $0.lifetime = 3...6
+                    $0.birthRate = 120
+                    $0.warmupDuration = 6
+                    $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.3, 0.02), .init(1, 0)])
+                    $0.colorOverLife = .constant([1, 1, 1, 1])
+                }, capacity: 1_000),
+                Layer("Lantern Glow", settings: emitter {
+                    // Sorted like the smoke, so it draws in front of it (the lantern is nearer the camera).
+                    $0.sortMode = .backToFront
+                    $0.position = lanternPosition
+                    $0.shape = .point
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0
+                    $0.gravity = .zero
+                    $0.lifetime = 1...1
+                    $0.birthRate = 20
+                    $0.warmupDuration = 1
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .constant(0.18)
+                    $0.colorOverLife = .constant([1, 0.65, 0.25, 0.8])
+                }, capacity: 40),
+            ],
+            forceFields: [.turbulence(strength: 0.4, scale: 0.8, speed: 0.3)],
+            lights: [
+                .point(position: lanternPosition, color: [1, 0.6, 0.25], intensity: 2.5, range: 2.5),
+                .directional(direction: [1, -0.3, -0.2], color: [0.4, 0.5, 0.8], intensity: 0.6),
+            ],
+            ambientLight: [0.05, 0.05, 0.07],
+            cameraEye: [0, 1.8, 4.5],
+            cameraTarget: [0, 1.3, 0]
+        )
+    }()
 
     /// Category masks: rain (category 1) falls through a tilted awning (category 2) and slants in the wind (category 1),
     /// while sparks from a grinder above collide with both and ignore the wind.
