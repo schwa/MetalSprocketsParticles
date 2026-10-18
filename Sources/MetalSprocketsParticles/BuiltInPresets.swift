@@ -60,6 +60,7 @@ public extension ParticlePreset {
     static var teapot: ParticlePreset { builtIn("Teapot") }
     static var flag: ParticlePreset { builtIn("Flag") }
     static var strangeAttractor: ParticlePreset { builtIn("Strange Attractor") }
+    static var pointerStir: ParticlePreset { builtIn("Pointer Stir") }
     static var awning: ParticlePreset { builtIn("Awning") }
     static var lantern: ParticlePreset { builtIn("Lantern") }
     static var dunk: ParticlePreset { builtIn("Dunk") }

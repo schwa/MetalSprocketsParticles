@@ -157,6 +157,27 @@ struct ModelTests {
         }
     }
 
+    @Test func pointerBindingsLoadSaveAndSurviveRemovals() {
+        let model = ParticlesDemoModel()
+        var preset = ParticlePreset("Pointer", layers: [ParticlePreset.Layer("A", settings: ParticleEmitter())])
+        preset.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: .zero, radius: 0.5)]
+        preset.forceFields = [.wind(velocity: [1, 0, 0], strength: 1), .attractor(center: .zero, strength: 2)]
+        preset.pointerBindings = [.collider(1), .forceField(1), .emitter(0)]
+        model.open(preset, named: "Pointer")
+        #expect(Set(model.pointerBindings) == Set(preset.pointerBindings))
+        #expect(Set(model.currentEffect.pointerBindings) == Set(preset.pointerBindings))
+
+        let pointer: SIMD3<Float> = [1, 2, 3]
+        #expect(model.frameColliders(time: 0, pointer: pointer)[1] == .sphere(center: pointer, radius: 0.5))
+        #expect(model.frameForceFields(pointer: pointer)[1] == .attractor(center: pointer, strength: 2))
+        #expect(model.frameTransforms(time: 0, pointer: pointer)[0].columns.3 == SIMD4(pointer, 1))
+
+        // Removing the first collider keeps the sphere bound; its saved index moves down.
+        model.colliders.removeFirst()
+        #expect(model.pointerBindings.contains(.collider(0)))
+        #expect(model.frameColliders(time: 0, pointer: pointer)[0] == .sphere(center: pointer, radius: 0.5))
+    }
+
     @Test func stepPresetWrapsAround() {
         let model = ParticlesDemoModel()
         let names = model.presets.map(\.name)
@@ -231,12 +252,12 @@ struct ModelTests {
         #expect(system.colliders == [.sphere(center: .zero, radius: 1)])
         #expect(system.forceFields == [.turbulence(strength: 1)])
         model.animateColliders = false
-        #expect(model.frameColliders(time: 5) == [.sphere(center: .zero, radius: 1)])
+        #expect(model.frameColliders(time: 5, pointer: .zero) == [.sphere(center: .zero, radius: 1)])
     }
 
     @Test func frameTransformsFollowEmitterMotion() {
         let model = ParticlesDemoModel()
         model.selectedEmitter.motion = EmitterMotion(kind: .circle, radius: 1, speed: 1)
-        #expect(model.frameTransforms(time: 0).first?.columns.3 == [1, 0, 0, 1])
+        #expect(model.frameTransforms(time: 0, pointer: .zero).first?.columns.3 == [1, 0, 0, 1])
     }
 }

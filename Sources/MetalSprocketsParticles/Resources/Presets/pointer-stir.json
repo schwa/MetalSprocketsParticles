@@ -1,0 +1,247 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    1.6,
+    4.6
+  ],
+  "cameraTarget" : [
+    0,
+    1.5,
+    0
+  ],
+  "colliderSpins" : [
+
+  ],
+  "colliders" : [
+    {
+      "center" : [
+        0,
+        1.5,
+        0
+      ],
+      "kind" : "sphere",
+      "radius" : 0.25
+    }
+  ],
+  "comment" : "Glowing dust hangs in the air. Move the mouse over the view: a vortex and a ball follow the pointer, stirring the dust and pushing it aside. Shows pointer bindings (pointerBindings); without a mouse, the pointer traces a figure eight (pointerMotion).",
+  "drawsColliders" : true,
+  "forceFields" : [
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "vortex" : {
+          "axis" : [
+            0,
+            0,
+            1
+          ],
+          "center" : [
+            0,
+            1.5,
+            0
+          ],
+          "radius" : 1.2,
+          "strength" : 5
+        }
+      }
+    }
+  ],
+  "layers" : [
+    {
+      "capacity" : 40000,
+      "id" : "B323FA56-6016-46DE-9A35-AE9F3DDA9B48",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Dust",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 5000,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.4,
+                0.8,
+                1,
+                1
+              ]
+            },
+            {
+              "time" : 1,
+              "value" : [
+                0.7,
+                0.5,
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0.08,
+          0.1,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 1.2,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          6,
+          8
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.15,
+              "value" : 0.7
+            },
+            {
+              "time" : 0.85,
+              "value" : 0.7
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0,
+          1.5,
+          0
+        ],
+        "restitution" : 0.2,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "box" : {
+            "size" : [
+              5,
+              2.6,
+              1.2
+            ]
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.014
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0.5,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0,
+          0.03,
+          0
+        ],
+        "velocitySpread" : 0.2,
+        "warmupDuration" : 6
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Pointer Stir",
+  "pointerBindings" : [
+    {
+      "collider" : {
+        "_0" : 0
+      }
+    },
+    {
+      "forceField" : {
+        "_0" : 0
+      }
+    }
+  ],
+  "pointerMotion" : {
+    "kind" : "Figure Eight",
+    "offset" : [
+      0,
+      1.5,
+      0
+    ],
+    "pitch" : 1.5707963,
+    "radius" : 1.6,
+    "speed" : 0.8,
+    "spin" : 0,
+    "yaw" : 0
+  },
+  "trackedObjects" : {
+
+  }
+}

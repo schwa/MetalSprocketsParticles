@@ -46,6 +46,7 @@ struct EmitterInspectorView: View {
                 if model.colliders[id: id] != nil {
                     Section("Collider") {
                         ColliderEditorView(collider: $model.selectedCollider)
+                        Toggle("Follow Pointer", isOn: $model.selectedColliderFollowsPointer)
                     }
                     RemoveSectionView(title: "Remove Collider")
                 }
@@ -53,6 +54,8 @@ struct EmitterInspectorView: View {
                 if model.forceFields[id: id] != nil {
                     Section("Force Field") {
                         ForceFieldEditorView(field: $model.selectedForceField)
+                        Toggle("Follow Pointer", isOn: $model.selectedForceFieldFollowsPointer)
+                            .help("Attractors and vortices center on the mouse. Wind and turbulence have no position.")
                     }
                     RemoveSectionView(title: "Remove Force Field")
                 }
@@ -335,15 +338,18 @@ struct ShapeSectionView: View {
 }
 
 struct MotionSectionView: View {
+    @Environment(ParticlesDemoModel.self) private var model
     @Binding var emitter: EmitterDescription
 
     var body: some View {
+        @Bindable var model = model
         Section("Motion") {
             VectorEditorView("Velocity", value: $emitter.settings.velocity, in: -20...20)
             ParameterSliderView("Spread", value: $emitter.settings.velocitySpread, in: 0...10)
             VectorEditorView("Gravity", value: $emitter.settings.gravity, in: -20...20)
             ParameterSliderView("Drag", value: $emitter.settings.drag, in: 0...5)
             DisclosureGroup("Emitter Motion") {
+                Toggle("Follow Pointer", isOn: $model.selectedEmitterFollowsPointer)
                 KindPicker("Path", selection: $emitter.motion.kind)
                 if emitter.motion.kind != .still {
                     ParameterSliderView("Path Radius", value: $emitter.motion.radius, in: 0...4)

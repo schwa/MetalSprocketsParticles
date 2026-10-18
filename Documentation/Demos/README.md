@@ -31,6 +31,7 @@ H.264 MP4, 30 fps, seed 0, the preset's camera). Finite effects play until they 
 - [Teapot](#teapot)
 - [Flag](#flag)
 - [Strange Attractor](#strange-attractor)
+- [Pointer Stir](#pointer-stir)
 - [Awning](#awning)
 - [Lantern](#lantern)
 - [Dunk](#dunk)
@@ -185,6 +186,12 @@ A flag of glowing sparks waves from a pole. The flag is a mesh that the system d
 Glowing particles trace the Lorenz attractor. A user Metal function (updateFunction) sets each particle's velocity from the Lorenz equations every step; nothing in the built-in settings moves them.
 
 [![strange-attractor](posters/strange-attractor.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/strange-attractor.mp4)
+
+## Pointer Stir
+
+Glowing dust hangs in the air. Move the mouse over the view: a vortex and a ball follow the pointer, stirring the dust and pushing it aside. Shows pointer bindings (pointerBindings); without a mouse, the pointer traces a figure eight (pointerMotion).
+
+[![pointer-stir](posters/pointer-stir.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/pointer-stir.mp4)
 
 ## Awning
 

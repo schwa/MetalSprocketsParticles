@@ -1528,12 +1528,13 @@ Plan:
 ## 77: Interactive particles: react to the camera and the mouse
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:demo, effort:l
 created: 2026-10-18T15:36:26Z
-updated: 2026-10-18T18:50:43Z
+updated: 2026-10-18T19:06:22Z
+closed: 2026-10-18T19:06:22Z
 +++
 
 Particles can't react to the user. Let them respond to the camera and the pointer.
@@ -1547,6 +1548,7 @@ Probably a library API (pointer ray or position in, as a tracked object or force
 Open questions: which interactions first, and whether the pointer is a ray or a point on a plane.
 
 - `2026-10-18T18:50:43Z`: Decision (user): bind force fields, colliders, or emitters to the mouse; that is enough for now. Camera reactions later.
+- `2026-10-18T19:06:22Z`: Pointer bindings: PointerBinding (collider, forceField, emitter by index) on ParticlePreset.pointerBindings, with pointerMotion standing in for the mouse in renders, videos, and goldens. ParticlePreset.colliders(at:pointer:), forceFields(at:pointer:), transforms(at:pointer:); PointerProjection.worldPosition projects a view point onto the plane through the camera target. Demo: hover drives the pointer (falls back to pointerMotion off the view); Follow Pointer toggles on colliders, force fields, and emitters, stored by item id so removals do not shift them. New Pointer Stir preset (vortex and ball follow the pointer). Camera reactions and click-to-burst are left for later. Tests: projection, bindings, pointerMotion fallback, JSON; demo load/save/removal. Not checked live (app not launched).
 
 ---
 

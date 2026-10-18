@@ -131,8 +131,9 @@ struct RenderCommand: AsyncParsableCommand {
         for frame in 0..<max(frames, 1) {
             let time = Float(frame) * deltaTime
             system.trackedObjects = preset.trackedObjectPositions(at: time)
+            system.forceFields = preset.forceFields(at: time)
             rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: camera.inverse)
+                try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time, pointer: nil), transforms: preset.transforms(at: time, pointer: nil), view: camera.inverse)
                 try system.renderScene(projection: projection, view: camera.inverse, sceneDepth: sceneDepth, wireframes: wireframes)
             })
         }

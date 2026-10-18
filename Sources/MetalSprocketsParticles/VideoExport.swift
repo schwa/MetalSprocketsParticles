@@ -48,11 +48,12 @@ public extension ParticlePreset {
         var framesWritten = 0
         for frame in 0..<frameCount {
             let time = Float(frame) * deltaTime
+            system.forceFields = forceFields(at: time)
             try await renderer.render(Group {
                 try system.simulate(
                     deltaTime: deltaTime,
-                    colliders: colliders(at: time),
-                    transforms: transforms(at: time),
+                    colliders: colliders(at: time, pointer: nil),
+                    transforms: transforms(at: time, pointer: nil),
                     trackedObjects: trackedObjectPositions(at: time),
                     view: view
                 )

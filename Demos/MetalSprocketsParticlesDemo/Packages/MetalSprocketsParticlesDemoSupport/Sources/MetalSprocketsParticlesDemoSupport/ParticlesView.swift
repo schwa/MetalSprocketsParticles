@@ -77,6 +77,7 @@ struct ParticleViewportView: View {
     @State private var frameTiming: FrameTimingStatistics?
     @State private var aliveParticles = 0
     @State private var isFinished = false
+    @State private var viewSize: CGSize = .zero
 
     /// Matches OffscreenRenderer, so golden images and particles-render show what the app shows.
     static let colorPixelFormat = ParticleSystem.colorPixelFormat
@@ -86,10 +87,12 @@ struct ParticleViewportView: View {
             RenderView(colorPixelFormat: Self.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
+                let time = context.frameUniforms.time
+                let pointer = model.preparePointer(for: system, time: time, projection: projection, cameraToWorld: cameraMatrix)
                 try system.simulate(
                     deltaTime: context.frameUniforms.deltaTime,
-                    colliders: model.frameColliders(time: context.frameUniforms.time),
-                    transforms: model.frameTransforms(time: context.frameUniforms.time),
+                    colliders: model.frameColliders(time: time, pointer: pointer),
+                    transforms: model.frameTransforms(time: time, pointer: pointer),
                     trackedObjects: model.frameTrackedObjects(time: context.frameUniforms.time),
                     view: cameraMatrix.inverse
                 )
@@ -108,6 +111,16 @@ struct ParticleViewportView: View {
                 isFinished = system.isFinished
             }
             .interactiveCamera(cameraMatrix: $cameraMatrix, target: model.cameraTarget)
+            .onGeometryChange(for: CGSize.self, of: \.size) { viewSize = $0 }
+            // Pointer bindings follow the mouse while it is over the view.
+            .onContinuousHover { phase in
+                switch phase {
+                case let .active(location) where viewSize.width > 0 && viewSize.height > 0:
+                    model.pointerLocation = CGPoint(x: location.x / viewSize.width, y: location.y / viewSize.height)
+                default:
+                    model.pointerLocation = nil
+                }
+            }
             .onChange(of: model.presetName) {
                 cameraMatrix = simd_float4x4(lookingFrom: model.cameraEye, at: model.cameraTarget)
             }

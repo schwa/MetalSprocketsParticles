@@ -87,8 +87,9 @@ struct PresetRenderTests {
         for frame in 0..<180 {
             let time = Float(frame) / 60
             system.trackedObjects = preset.trackedObjectPositions(at: time)
+            system.forceFields = preset.forceFields(at: time)
             rendering = try renderer.render(Group {
-                try system.simulate(deltaTime: 1.0 / 60.0, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: view)
+                try system.simulate(deltaTime: 1.0 / 60.0, colliders: preset.colliders(at: time, pointer: nil), transforms: preset.transforms(at: time, pointer: nil), view: view)
                 try system.renderScene(projection: projection, view: view, sceneDepth: sceneDepth)
             })
         }

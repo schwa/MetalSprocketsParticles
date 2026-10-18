@@ -19,6 +19,11 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     public var drawsColliders = false
     /// Colliders that turn at a steady rate; see `colliders(at:)`.
     public var colliderSpins: [ColliderSpin] = []
+    /// Colliders, force fields, and emitters that follow the pointer. Apps pass the mouse's world position to
+    /// `colliders(at:pointer:)`, `forceFields(at:pointer:)`, and `transforms(at:pointer:)`.
+    public var pointerBindings: [PointerBinding] = []
+    /// Stands in for the pointer when there is no live input, so renders and videos still show the bindings.
+    public var pointerMotion = EmitterMotion()
     public var forceFields: [ForceField]
     /// Lights for emitters with `isLit`.
     public var lights: [ParticleLight]
@@ -64,6 +69,8 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         try container.update(&animatesColliders, .animatesColliders)
         try container.update(&drawsColliders, .drawsColliders)
         try container.update(&colliderSpins, .colliderSpins)
+        try container.update(&pointerBindings, .pointerBindings)
+        try container.update(&pointerMotion, .pointerMotion)
         try container.update(&forceFields, .forceFields)
         try container.update(&lights, .lights)
         try container.update(&ambientLight, .ambientLight)

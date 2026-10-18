@@ -114,6 +114,15 @@ final class ParticlesDemoModel {
         didSet { system?.colliders = colliders.map(\.collider) }
     }
 
+    // Pointer bindings live on the items (and as emitter ids) so removing or reordering items cannot shift them; the
+    // index-based PointerBinding form is only for saved effects.
+    var pointerEmitterIDs: Set<EmitterDescription.ID> = []
+    /// Stands in for the mouse when it is not over the view.
+    var pointerMotion = EmitterMotion()
+    /// The mouse location as a fraction of the view (0...1, origin top left), or nil when it is outside. Not observed:
+    /// it changes on every mouse move and is only read while rendering.
+    @ObservationIgnored var pointerLocation: CGPoint?
+
     var forceFields: [ForceFieldItem] = [] {
         didSet { system?.forceFields = forceFields.map(\.field) }
     }
@@ -203,6 +212,8 @@ final class ParticlesDemoModel {
         )
         preset.drawsColliders = drawColliders
         preset.colliderSpins = colliderSpins
+        preset.pointerBindings = pointerBindings
+        preset.pointerMotion = pointerMotion
         preset.comment = presetComment
         return preset
     }
@@ -244,8 +255,14 @@ final class ParticlesDemoModel {
         if selection != .scene {
             selection = emitters.first.map { .emitter($0.id) }
         }
-        colliders = preset.colliders.map { ColliderItem(collider: $0) }
-        forceFields = preset.forceFields.map { ForceFieldItem(field: $0) }
+        colliders = preset.colliders.enumerated().map { index, collider in
+            ColliderItem(collider: collider, followsPointer: preset.pointerBindings.contains(.collider(index)))
+        }
+        forceFields = preset.forceFields.enumerated().map { index, field in
+            ForceFieldItem(field: field, followsPointer: preset.pointerBindings.contains(.forceField(index)))
+        }
+        pointerEmitterIDs = Set(emitters.indices.filter { preset.pointerBindings.contains(.emitter($0)) }.map { emitters[$0].id })
+        pointerMotion = preset.pointerMotion
         animateColliders = preset.animatesColliders
         drawColliders = preset.drawsColliders
         colliderSpins = preset.colliderSpins
@@ -403,17 +420,5 @@ final class ParticlesDemoModel {
             let column = motion.transform(time: time).columns.3
             return SIMD3(column.x, column.y, column.z)
         }
-    }
-
-    func frameColliders(time: Float) -> [Collider] {
-        let spun = colliders.map(\.collider).spun(colliderSpins, at: time)
-        guard animateColliders else {
-            return spun
-        }
-        return spun.enumerated().map { index, collider in collider.animated(time: time, index: index) }
-    }
-
-    func frameTransforms(time: Float) -> [simd_float4x4] {
-        emitters.map { $0.motion.transform(time: time) }
     }
 }
