@@ -116,6 +116,16 @@ public final class ParticleSystem {
     var pendingEvents: [String] = []
     /// Monotonic GPU counters: collider hits, then particles entering trigger volumes.
     let triggerCounters: MTLBuffer
+    /// Live-particle counts, one slot per recent frame; see `aliveParticleCount`.
+    let aliveCounters: MTLBuffer
+    /// Frames planned so far; picks the alive-counter slot.
+    var frameIndex = 0
+    /// The alive-counter slot this frame's dispatches add to.
+    var aliveCounterSlot: UInt32 = 0
+
+    /// Live particles, counted on the GPU a few frames ago (the latest count that is surely finished). For statistics
+    /// displays; 0 until enough frames have run.
+    public internal(set) var aliveParticleCount = 0
 
     /// Fires `EmissionTrigger.Condition.event(name)` triggers at the start of the next `simulate`.
     public func send(event name: String) {
@@ -214,6 +224,13 @@ public final class ParticleSystem {
         triggerCounters.contents().initializeMemory(as: UInt8.self, repeating: 0, count: counterLength)
         triggerCounters.label = "Particle trigger counters"
         self.triggerCounters = triggerCounters
+        let aliveLength = Int(PARTICLE_ALIVE_COUNTER_SLOTS) * MemoryLayout<UInt32>.stride
+        guard let aliveCounters = device.makeBuffer(length: aliveLength, options: .storageModeShared) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        aliveCounters.contents().initializeMemory(as: UInt8.self, repeating: 0, count: aliveLength)
+        aliveCounters.label = "Particle alive counters"
+        self.aliveCounters = aliveCounters
         buffer = try Self.makeBuffer(device: device, count: 1)
 
         try setEmitters(emitters.map { ($0, capacity) })
@@ -367,6 +384,7 @@ public final class ParticleSystem {
         let dispatches = plan.dispatches
         let volumeData = plan.triggerVolumes
         let triggerCounters = triggerCounters
+        let aliveCounters = aliveCounters
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
@@ -395,6 +413,7 @@ public final class ParticleSystem {
                 .parameter("subEmitters", values: dispatches[index].subEmitters)
                 .parameter("subEmitterUniforms", values: dispatches[index].subEmitterUniforms)
                 .parameter("triggerCounters", buffer: triggerCounters)
+                .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }
             if !sorts.isEmpty {

@@ -58,6 +58,16 @@ extension ParticleSystem {
             try rebuild()
         }
         let frameDeltaTime = min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)
+        // Live-particle statistics: read the oldest slot (its frame has surely finished, with at most a few frames in
+        // flight), then clear it for this frame to fill.
+        let slots = Int(PARTICLE_ALIVE_COUNTER_SLOTS)
+        let counters = aliveCounters.contents().bindMemory(to: UInt32.self, capacity: slots)
+        aliveCounterSlot = UInt32(frameIndex % slots)
+        if frameIndex >= slots {
+            aliveParticleCount = Int(counters[Int(aliveCounterSlot)])
+        }
+        counters[Int(aliveCounterSlot)] = 0
+        frameIndex += 1
         evaluateTriggers(deltaTime: state == .playing ? frameDeltaTime : 0)
         for child in subEmitterInstances {
             if let parent = child.parent, child.subEmitterIndex < parent.settings.subEmitters.count {
@@ -291,6 +301,9 @@ extension ParticleSystem {
             var uniforms = step.uniforms
             uniforms.colliderCount = UInt32(colliders.count)
             uniforms.forceFieldCount = UInt32(forceFields.count)
+            // Count each emitter once a frame, on its last step (after any warmup steps).
+            uniforms.countsAlive = index == steps.count - 1 ? 1 : 0
+            uniforms.aliveCounterSlot = aliveCounterSlot
             return FramePlan.Dispatch(
                 uniforms: uniforms,
                 threadCount: step.threadCount,

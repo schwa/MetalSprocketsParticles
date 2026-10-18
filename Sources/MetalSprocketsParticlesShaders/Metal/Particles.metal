@@ -525,6 +525,7 @@ kernel void updateParticles(
     constant float4 *meshVertices [[buffer(5)]],
     constant uint *meshIndices [[buffer(10)]],
     const device uchar *meshDeformedPositions [[buffer(11)]],
+    device atomic_uint *aliveCounters [[buffer(12)]],
     constant SubEmitterData *subEmitters [[buffer(6)]],
     constant SimulationUniforms *subEmitterUniforms [[buffer(7)]],
     device atomic_uint *triggerCounters [[buffer(8)]],
@@ -699,6 +700,14 @@ kernel void updateParticles(
     p.position = float4(position, age);
     p.velocity = float4(velocity, lifetime);
     particles[id] = p;
+
+    // Statistics: one atomic per SIMD group, not per particle. Particles that were already dead returned earlier.
+    if (uniforms.countsAlive != 0) {
+        uint alive = simd_sum(age < lifetime ? 1u : 0u);
+        if (simd_is_first()) {
+            atomic_fetch_add_explicit(&aliveCounters[uniforms.aliveCounterSlot], alive, memory_order_relaxed);
+        }
+    }
 }
 
 // Linear lookup into a PARTICLE_CURVE_SAMPLES-entry table covering normalized life 0...1.

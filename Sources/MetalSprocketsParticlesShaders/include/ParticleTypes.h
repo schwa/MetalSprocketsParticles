@@ -233,7 +233,14 @@ typedef struct {
     uint32_t subEmitterCount;
     uint32_t triggerVolumeCount;
     ParticleSpawnData spawn;
+    // Live-particle counting for statistics: nonzero on each emitter's last dispatch of a frame, which adds its live
+    // particles to aliveCounters[aliveCounterSlot].
+    uint32_t countsAlive;
+    uint32_t aliveCounterSlot;
 } SimulationUniforms;
+
+/// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.
+#define PARTICLE_ALIVE_COUNTER_SLOTS 5
 
 /// Mirrored by the Swift Collider.
 typedef MS_ENUM(uint32_t, ParticleColliderKind) {
