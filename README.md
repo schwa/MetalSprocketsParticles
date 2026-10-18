@@ -131,7 +131,7 @@ There is also a command-line tool, `particles-render`, that renders presets and 
 
 ## 100% vibe coded
 
-An AI agent wrote all of the code in this repository. A person gave the directions and did the reviews. For more information, read [METHODOLOGY.md](Documentation/METHODOLOGY.md).
+An AI agent wrote all of the code in this repository. A person gave the directions and did the reviews. For more information, read [Methodology](Documentation/Methodology.md).
 
 ## License
 
