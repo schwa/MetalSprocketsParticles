@@ -13,12 +13,12 @@ public struct ParticlesView: View {
 
     public var body: some View {
         NavigationSplitView {
-            OutlineView(model: model)
+            OutlineView()
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
-            ParticleViewportView(model: model)
+            ParticleViewportView()
                 .inspector(isPresented: $isInspectorPresented) {
-                    EmitterInspectorView(model: model)
+                    EmitterInspectorView()
                         .inspectorColumnWidth(min: 300, ideal: 340)
                 }
                 .toolbar {
@@ -27,12 +27,13 @@ public struct ParticlesView: View {
                     }
                 }
         }
+        .environment(model)
     }
 }
 
 /// The 3D view: simulates and draws the model's particle system each frame, with an orbit camera and frame timing.
 struct ParticleViewportView: View {
-    let model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
     @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
     @State private var frameTiming: FrameTimingStatistics?
 

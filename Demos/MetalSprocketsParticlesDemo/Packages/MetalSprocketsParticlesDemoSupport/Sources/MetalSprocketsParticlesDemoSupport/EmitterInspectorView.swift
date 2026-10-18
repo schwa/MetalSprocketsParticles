@@ -6,17 +6,18 @@ import UniformTypeIdentifiers
 /// The trailing inspector: details for whatever the outline has selected. The most-used controls stay visible; the
 /// rest are in disclosure groups. Controls are small so more fit without scrolling.
 struct EmitterInspectorView: View {
-    @Bindable var model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         Form {
             switch model.selection {
             case .scene, nil:
-                SceneSectionView(model: model)
-                WorldSectionView(model: model)
-                SendEventSectionView(model: model)
+                SceneSectionView()
+                WorldSectionView()
+                SendEventSectionView()
             case .emitter:
-                EmitterSectionView(model: model)
+                EmitterSectionView()
                 EmissionSectionView(settings: $model.selectedEmitter.settings)
                 ShapeSectionView(settings: $model.selectedEmitter.settings)
                 MotionSectionView(emitter: $model.selectedEmitter)
@@ -31,29 +32,29 @@ struct EmitterInspectorView: View {
                     } footer: {
                         Text("Adding, removing, or resizing a sub-emitter clears the particles.")
                     }
-                    RemoveSectionView(title: "Remove Sub-Emitter", model: model)
+                    RemoveSectionView(title: "Remove Sub-Emitter")
                 }
             case let .trigger(_, index):
                 if index < model.selectedEmitter.settings.triggers.count {
                     Section("Trigger on \(model.selectedEmitter.name)") {
                         TriggerEditorView(trigger: $model.selectedTrigger)
                     }
-                    SendEventSectionView(model: model)
-                    RemoveSectionView(title: "Remove Trigger", model: model)
+                    SendEventSectionView()
+                    RemoveSectionView(title: "Remove Trigger")
                 }
             case let .collider(id):
                 if model.colliders[id: id] != nil {
                     Section("Collider") {
                         ColliderEditorView(collider: $model.selectedCollider)
                     }
-                    RemoveSectionView(title: "Remove Collider", model: model)
+                    RemoveSectionView(title: "Remove Collider")
                 }
             case let .forceField(id):
                 if model.forceFields[id: id] != nil {
                     Section("Force Field") {
                         ForceFieldEditorView(field: $model.selectedForceField)
                     }
-                    RemoveSectionView(title: "Remove Force Field", model: model)
+                    RemoveSectionView(title: "Remove Force Field")
                 }
             }
         }
@@ -64,7 +65,7 @@ struct EmitterInspectorView: View {
 
 struct RemoveSectionView: View {
     let title: String
-    let model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
         Section {
@@ -74,9 +75,10 @@ struct RemoveSectionView: View {
 }
 
 struct SendEventSectionView: View {
-    @Bindable var model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         Section("Events") {
             HStack {
                 TextField("Event", text: $model.eventToSend)
@@ -89,13 +91,14 @@ struct SendEventSectionView: View {
 // MARK: - Scene and emitter
 
 struct SceneSectionView: View {
-    @Bindable var model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
     @State private var isImporting = false
     @State private var isExporting = false
     @State private var isShowingError = false
     @State private var errorMessage = ""
 
     var body: some View {
+        @Bindable var model = model
         Section("Scene") {
             Picker("Preset", selection: $model.presetName) {
                 ForEach(model.presets) { preset in
@@ -141,9 +144,10 @@ struct SceneSectionView: View {
 }
 
 struct EmitterSectionView: View {
-    @Bindable var model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         Section("Emitter") {
             HStack {
                 TextField("Name", text: $model.selectedEmitter.name)
@@ -397,9 +401,10 @@ struct TriggerVolumeEditorView: View {
 // MARK: - World
 
 struct WorldSectionView: View {
-    @Bindable var model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         Section("World") {
             HStack {
                 Toggle("Animate Colliders", isOn: $model.animateColliders)
@@ -482,6 +487,7 @@ extension ImageSequence {
 }
 
 #Preview("Inspector") {
-    EmitterInspectorView(model: ParticlesDemoModel(preset: .fireworks))
+    EmitterInspectorView()
+        .environment(ParticlesDemoModel(preset: .fireworks))
         .frame(width: 380, height: 1_000)
 }

@@ -1201,14 +1201,18 @@ Leaf views without #Preview: KindPicker, ColliderEditorView, ForceFieldEditorVie
 ## 61: Demo model is threaded through ~10 views by hand
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:s, area:demo
 created: 2026-10-18T12:36:57Z
+updated: 2026-10-18T13:21:26Z
+closed: 2026-10-18T13:21:26Z
 +++
 
 ParticlesDemoModel is passed explicitly into OutlineView, EmitterOutlineRow, EmitterInspectorView, SceneSectionView, EmitterSectionView, SendEventSectionView, WorldSectionView, RemoveSectionView, TriggersSectionView, etc. House rule suggests @Environment(ParticlesDemoModel.self) (with a local @Bindable) for shared app models. Optional: explicit passing is also clear. Source: SwiftUI review.
+
+- `2026-10-18T13:21:26Z`: ParticlesView puts the model in the environment (.environment(model)); the 10 views read it with @Environment(ParticlesDemoModel.self) and a local @Bindable where they need bindings. All model: model arguments are gone (EmitterOutlineRow no longer needs the model at all). The inspector preview supplies the model through .environment. Pure refactor; demo tests and app build pass. Not checked in the running app.
 
 ---
 

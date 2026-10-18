@@ -35,15 +35,16 @@ extension Array where Element: Identifiable {
 
 /// The leading sidebar: everything in the scene, nested emitter children included.
 struct OutlineView: View {
-    @Bindable var model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         List(selection: $model.selection) {
             Label("Scene", systemImage: "cube.transparent")
                 .tag(OutlineItem.scene)
             Section("Emitters") {
                 ForEach(model.emitters) { emitter in
-                    EmitterOutlineRow(model: model, emitter: emitter)
+                    EmitterOutlineRow(emitter: emitter)
                 }
             }
             Section("Colliders") {
@@ -86,14 +87,13 @@ struct OutlineView: View {
 }
 
 struct EmitterOutlineRow: View {
-    let model: ParticlesDemoModel
     let emitter: EmitterDescription
     @State private var isExpanded = true
 
     var body: some View {
         let children = emitter.settings.subEmitters.count + emitter.settings.triggers.count
         if children == 0 {
-            EmitterOutlineLabelView(model: model, emitter: emitter)
+            EmitterOutlineLabelView(emitter: emitter)
         } else {
             DisclosureGroup(isExpanded: $isExpanded) {
                 ForEach(emitter.settings.subEmitters.indices, id: \.self) { index in
@@ -106,7 +106,7 @@ struct EmitterOutlineRow: View {
                         .tag(OutlineItem.trigger(emitter.id, index))
                 }
             } label: {
-                EmitterOutlineLabelView(model: model, emitter: emitter)
+                EmitterOutlineLabelView(emitter: emitter)
             }
         }
     }
@@ -114,7 +114,7 @@ struct EmitterOutlineRow: View {
 
 /// The emitter's row label: selectable, with actions to add children.
 struct EmitterOutlineLabelView: View {
-    let model: ParticlesDemoModel
+    @Environment(ParticlesDemoModel.self) private var model
     let emitter: EmitterDescription
 
     var body: some View {
