@@ -776,12 +776,13 @@ The demo inspector (#31) lists every control as a full-size row in a long sequen
 ## 40: Demo has no real textured or flipbook particles
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:s, area:demo
 created: 2026-10-17T21:10:10Z
-updated: 2026-10-18T00:38:45Z
+updated: 2026-10-18T00:41:18Z
+closed: 2026-10-18T00:41:18Z
 +++
 
 Textures and flipbooks (#5) work, but the demo only has the 2x2 color test sheet. No preset uses an image sequence.
@@ -795,6 +796,7 @@ Note: emoji glyphs are color, so the particle color tint must multiply (or be wh
 
 - `2026-10-18T00:32:29Z`: Related demo gaps filed alongside this: see the area:demo issues for triggers, sorting, teapot mesh, orientation, local space, rain collision splashes, and smaller features.
 - `2026-10-18T00:38:45Z`: Triaged: medium (part of the demo-gap batch #41–#47), effort:s, area:demo.
+- `2026-10-18T00:41:18Z`: Added Core Text emoji sprites (heart, fire, droplet, glowing star) and emoji flipbook sheets (moon phases 2x4, clock faces 3x4) to ParticleSprite, plus defaultImageSequence. New presets Hearts and Moon Phases (flipbook with per-particle starting phase) with goldens.
 
 ---
 

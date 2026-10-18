@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreText
 import Foundation
 import Metal
 
@@ -11,12 +12,41 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable {
     case ring = "Ring"
     case triangle = "Triangle"
     case colorSheet = "Color Sheet 2×2"
+    case heart = "❤️ Heart"
+    case fire = "🔥 Fire"
+    case droplet = "💧 Droplet"
+    case glowingStar = "🌟 Star"
+    case moonPhases = "🌑…🌘 Moon Phases 2×4"
+    case clockFaces = "🕐…🕛 Clock Faces 3×4"
 
     public var id: Self { self }
 
     /// Rows and columns when the texture is a sprite sheet.
     public var sheetLayout: (rows: Int, columns: Int)? {
-        self == .colorSheet ? (2, 2) : nil
+        switch self {
+        case .colorSheet: (2, 2)
+        case .moonPhases: (2, 4)
+        case .clockFaces: (3, 4)
+        default: nil
+        }
+    }
+
+    /// An image sequence that plays every cell of a sprite sheet once per second, or `nil` for single sprites.
+    public var defaultImageSequence: ImageSequence? {
+        sheetLayout.map { ImageSequence(rows: $0.rows, columns: $0.columns, frameRate: Float($0.rows * $0.columns)) }
+    }
+
+    /// Emoji glyphs, one per sheet cell. Emoji are already colored, so tint particles white to keep them true.
+    var emoji: [String]? {
+        switch self {
+        case .heart: ["❤️"]
+        case .fire: ["🔥"]
+        case .droplet: ["💧"]
+        case .glowingStar: ["🌟"]
+        case .moonPhases: ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+        case .clockFaces: ["🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"]
+        default: nil
+        }
     }
 
     /// `nil` for the soft dot, which the shader draws without a texture.
@@ -25,7 +55,7 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable {
             return nil
         }
         let layout = sheetLayout ?? (1, 1)
-        let cell = 64
+        let cell = emoji == nil ? 64 : 128
         let width = layout.columns * cell
         let height = layout.rows * cell
         guard let context = CGContext(
@@ -55,8 +85,12 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable {
         let center = CGPoint(x: rect.midX, y: rect.midY)
         context.saveGState()
         defer { context.restoreGState() }
+        if let emoji {
+            drawEmoji(emoji[index % emoji.count], in: context, rect: rect)
+            return
+        }
         switch self {
-        case .softDot:
+        case .softDot, .heart, .fire, .droplet, .glowingStar, .moonPhases, .clockFaces:
             break
         case .star:
             let points = 5
@@ -100,6 +134,22 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable {
             context.setFillColor(colors[index % colors.count])
             context.fillEllipse(in: rect.insetBy(dx: 6, dy: 6))
         }
+    }
+
+    private func drawEmoji(_ string: String, in context: CGContext, rect: CGRect) {
+        let font = CTFontCreateWithName("Apple Color Emoji" as CFString, rect.height * 0.8, nil)
+        let attributed = NSAttributedString(string: string, attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font])
+        let line = CTLineCreateWithAttributedString(attributed)
+        var ascent: CGFloat = 0
+        var descent: CGFloat = 0
+        let width = CGFloat(CTLineGetTypographicBounds(line, &ascent, &descent, nil))
+        context.clip(to: rect)
+        // The context is flipped for top-left cells; text needs y up, so flip back around the cell.
+        context.translateBy(x: 0, y: rect.maxY + rect.minY)
+        context.scaleBy(x: 1, y: -1)
+        context.textMatrix = .identity
+        context.textPosition = CGPoint(x: rect.midX - width / 2, y: rect.midY - (ascent - descent) / 2)
+        CTLineDraw(line, context)
     }
 
     private func radialGlow(_ context: CGContext, center: CGPoint, radius: CGFloat, falloff: CGFloat, alpha: CGFloat = 1) {

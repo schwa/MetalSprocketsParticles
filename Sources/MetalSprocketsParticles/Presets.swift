@@ -11,8 +11,87 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal,
+        .portal, .hearts, .moonPhases,
     ]
+
+    /// Emoji hearts drift up and wobble, with a few sparkles. Emoji sprites keep their own colors (white tint).
+    static let hearts = ParticlePreset(
+        "Hearts",
+        layers: [
+            Layer("Hearts", settings: emitter {
+                $0.sortMode = .backToFront
+                $0.shape = .disc(radius: 1.2)
+                $0.velocity = [0, 0.9, 0]
+                $0.velocitySpread = 0.3
+                $0.gravity = .zero
+                $0.drag = 0.3
+                $0.lifetime = 4...5
+                $0.birthRate = 25
+                $0.warmupDuration = 5
+                $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.1, 0.18), .init(1, 0.12)])
+                $0.sizeVariation = 0.4
+                $0.opacityOverLife = ParticleCurve([.init(0, 1), .init(0.75, 1), .init(1, 0)])
+                $0.colorOverLife = .constant([1, 1, 1, 1])
+                $0.angleVariation = 0.35
+                $0.angularSpeedVariation = 0.8
+            }, sprite: .heart, capacity: 500),
+            Layer("Sparkles", settings: emitter {
+                $0.shape = .disc(radius: 1.2)
+                $0.velocity = [0, 0.7, 0]
+                $0.velocitySpread = 0.5
+                $0.gravity = .zero
+                $0.lifetime = 2...3
+                $0.birthRate = 30
+                $0.warmupDuration = 3
+                $0.blendMode = .additive
+                $0.sizeOverLife = .linear(from: 0.06, to: 0)
+                $0.colorOverLife = .linear(from: [1, 0.6, 0.8, 1], to: [1, 0.3, 0.5, 0])
+                $0.angularSpeedVariation = 3
+            }, sprite: .spark, capacity: 500),
+        ],
+        forceFields: [.turbulence(strength: 0.8, scale: 0.8, speed: 0.4)]
+    )
+
+    /// Emoji moons orbit slowly, each playing the moon-phase flipbook from its own starting phase.
+    static let moonPhases = ParticlePreset(
+        "Moon Phases",
+        layers: [
+            Layer("Moons", settings: emitter {
+                $0.sortMode = .backToFront
+                $0.position = [0, 1.5, 0]
+                $0.shape = .torus(radius: 1.8, tubeRadius: 0.4)
+                $0.birthDirection = .tangent
+                $0.velocity = [0, 0, 0.6]
+                $0.velocitySpread = 0.05
+                $0.gravity = .zero
+                $0.lifetime = 6...8
+                $0.birthRate = 12
+                $0.warmupDuration = 8
+                $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.15, 0.22), .init(0.85, 0.22), .init(1, 0)])
+                $0.sizeVariation = 0.3
+                $0.colorOverLife = .constant([1, 1, 1, 1])
+                var phases = ParticleSprite.moonPhases.defaultImageSequence!
+                phases.frameRate = 3
+                phases.initialFrameVariation = 8
+                $0.imageSequence = phases
+            }, sprite: .moonPhases, capacity: 200),
+            Layer("Stardust", settings: emitter {
+                $0.position = [0, 1.5, 0]
+                $0.shape = .sphere(radius: 4)
+                $0.birthLocation = .surface
+                $0.velocity = .zero
+                $0.velocitySpread = 0.02
+                $0.gravity = .zero
+                $0.lifetime = 3...6
+                $0.birthRate = 150
+                $0.warmupDuration = 6
+                $0.blendMode = .additive
+                $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.5, 0.02), .init(1, 0)])
+                $0.colorOverLife = .constant([0.7, 0.8, 1, 1])
+            }, capacity: 1_000),
+        ],
+        forceFields: [.vortex(center: [0, 1.5, 0], axis: [0, 1, 0], strength: 0.3, radius: 4)]
+    )
 
     /// A sorcerer's portal: a spinning ring of fire that throws sparks off its rim like a Catherine wheel.
     static let portal: ParticlePreset = {
