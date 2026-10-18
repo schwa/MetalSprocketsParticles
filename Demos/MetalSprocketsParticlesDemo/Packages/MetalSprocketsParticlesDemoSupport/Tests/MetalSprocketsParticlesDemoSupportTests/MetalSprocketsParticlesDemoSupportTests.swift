@@ -157,6 +157,18 @@ struct ModelTests {
         }
     }
 
+    @Test func stepPresetWrapsAround() {
+        let model = ParticlesDemoModel()
+        let names = model.presets.map(\.name)
+        model.presetName = names[0]
+        model.stepPreset(by: 1)
+        #expect(model.presetName == names[1])
+        model.stepPreset(by: -2)
+        #expect(model.presetName == names[names.count - 1])
+        model.stepPreset(by: 1)
+        #expect(model.presetName == names[0])
+    }
+
     @Test func revertDiscardsEdits() {
         let model = ParticlesDemoModel()
         model.selectedEmitter.settings.birthRate = 1

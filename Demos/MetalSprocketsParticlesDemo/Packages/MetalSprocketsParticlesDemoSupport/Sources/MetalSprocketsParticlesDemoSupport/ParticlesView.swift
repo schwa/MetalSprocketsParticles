@@ -22,9 +22,7 @@ public struct ParticlesView: View {
                         .inspectorColumnWidth(min: 300, ideal: 340)
                 }
                 .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        SceneToolbarView()
-                    }
+                    SceneToolbarContent()
                     ToolbarItem {
                         Button("Inspector", systemImage: "sidebar.trailing") {
                             isInspectorPresented.toggle()

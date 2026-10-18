@@ -134,13 +134,18 @@ struct SceneSectionView: View {
     }
 }
 
-/// Scene picker and playback controls, in the window toolbar so they stay visible.
-struct SceneToolbarView: View {
+/// Scene picker and playback controls, in the window toolbar so they stay visible. Each control is its own item.
+struct SceneToolbarContent: ToolbarContent {
     @Environment(ParticlesDemoModel.self) private var model
 
-    var body: some View {
+    var body: some ToolbarContent {
         @Bindable var model = model
-        HStack {
+        ToolbarItem(placement: .principal) {
+            Button("Previous Preset", systemImage: "chevron.backward") { model.stepPreset(by: -1) }
+                .keyboardShortcut("[", modifiers: .command)
+                .help("Previous preset (⌘[)")
+        }
+        ToolbarItem(placement: .principal) {
             Picker("Preset", selection: $model.presetName) {
                 ForEach(model.presets) { preset in
                     Text(preset.name).tag(preset.name)
@@ -148,6 +153,13 @@ struct SceneToolbarView: View {
             }
             .labelsHidden()
             .fixedSize()
+        }
+        ToolbarItem(placement: .principal) {
+            Button("Next Preset", systemImage: "chevron.forward") { model.stepPreset(by: 1) }
+                .keyboardShortcut("]", modifiers: .command)
+                .help("Next preset (⌘])")
+        }
+        ToolbarItem(placement: .principal) {
             Picker("Playback", selection: $model.playback) {
                 Label("Play", systemImage: "play.fill").tag(SimulationState.playing)
                 Label("Pause", systemImage: "pause.fill").tag(SimulationState.paused)
@@ -156,8 +168,25 @@ struct SceneToolbarView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
+        }
+        ToolbarItem(placement: .principal) {
             Button("Restart", systemImage: "arrow.counterclockwise") { model.restart() }
+        }
+        ToolbarItem(placement: .principal) {
             Button("Revert", systemImage: "arrow.uturn.backward") { model.reloadPreset() }
+        }
+        ToolbarItem(placement: .principal) {
+            SpeedControlView()
+        }
+    }
+}
+
+struct SpeedControlView: View {
+    @Environment(ParticlesDemoModel.self) private var model
+
+    var body: some View {
+        @Bindable var model = model
+        HStack {
             Slider(value: $model.speedFactor, in: 0...3) {
                 Text("Speed")
             }

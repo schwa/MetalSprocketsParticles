@@ -173,6 +173,16 @@ final class ParticlesDemoModel {
         ParticlePreset.all + openedEffects
     }
 
+    /// Switches to the preset `offset` places away in `presets`, wrapping around at either end.
+    func stepPreset(by offset: Int) {
+        let names = presets.map(\.name)
+        guard !names.isEmpty else {
+            return
+        }
+        let index = names.firstIndex(of: presetName) ?? 0
+        presetName = names[((index + offset) % names.count + names.count) % names.count]
+    }
+
     func preset(named name: String) -> ParticlePreset? {
         presets.first { $0.name == name }
     }
