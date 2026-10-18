@@ -56,7 +56,7 @@ public enum EmitterShape: Sendable, Equatable {
 public final class EmitterMesh {
     let triangles: MTLBuffer
     let vertices: MTLBuffer
-    let triangleCount: Int
+    public let triangleCount: Int
     let vertexCount: Int
 
     /// `indices` are triangle-list indices into `positions`, in emitter space.

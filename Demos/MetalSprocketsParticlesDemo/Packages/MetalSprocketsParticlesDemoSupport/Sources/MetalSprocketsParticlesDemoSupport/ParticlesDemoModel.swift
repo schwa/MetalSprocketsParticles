@@ -9,6 +9,8 @@ import simd
 final class ParticlesDemoModel {
     @ObservationIgnored let system: ParticleSystem?
     @ObservationIgnored private var textureCache: [ParticleSprite: MTLTexture] = [:]
+    /// GPU meshes per emitter. Meshes are not edited in the demo, so one per emitter is enough.
+    @ObservationIgnored private var meshCache: [DemoEmitter.ID: EmitterMesh] = [:]
     /// Particles per emitter. Preset layers bring their own; emitters added in the inspector get the default.
     @ObservationIgnored private var capacities: [DemoEmitter.ID: Int] = [:]
     private static let defaultCapacity = 50_000
@@ -124,6 +126,7 @@ final class ParticlesDemoModel {
         copy.motion = source.motion
         copy.simulationSpace = source.simulationSpace
         copy.isEmitting = source.isEmitting
+        copy.mesh = source.mesh
         capacities[copy.id] = capacities[source.id]
         emitters.append(copy)
         selection = .emitter(copy.id)
@@ -238,7 +241,20 @@ final class ParticlesDemoModel {
             runtime.texture = texture(emitter.sprite, device: system.device)
             runtime.simulationSpace = emitter.simulationSpace
             runtime.isEmitting = emitter.isEmitting
+            runtime.mesh = emitterMesh(for: emitter, device: system.device)
         }
+    }
+
+    private func emitterMesh(for emitter: DemoEmitter, device: MTLDevice) -> EmitterMesh? {
+        guard let mesh = emitter.mesh else {
+            return nil
+        }
+        if let cached = meshCache[emitter.id] {
+            return cached
+        }
+        let emitterMesh = try? EmitterMesh(device: device, mesh: mesh)
+        meshCache[emitter.id] = emitterMesh
+        return emitterMesh
     }
 
     private func texture(_ sprite: ParticleSprite, device: MTLDevice) -> MTLTexture? {

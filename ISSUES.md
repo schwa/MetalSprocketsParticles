@@ -839,14 +839,18 @@ Sorting (#4) is enabled for Smoke and Snow, but their alpha is so low that the d
 ## 43: No preset emits from a mesh (teapot)
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:demo
 created: 2026-10-18T00:32:29Z
+updated: 2026-10-18T00:55:31Z
+closed: 2026-10-18T00:55:31Z
 +++
 
 Mesh emission (#7) and SwiftMesh input (#38) are not shown anywhere. Add a preset that emits from the SwiftMesh teapot (SwiftMesh bundles Resources/teapot.obj), for example a teapot outlined in glowing particles or dissolving into sand that falls away. Presets would need a way to carry a mesh (ParticlePreset.Layer has no mesh today). Related: #7, #38, #40.
+
+- `2026-10-18T00:55:31Z`: Added ParticlePreset.Layer.mesh (SwiftMesh Mesh), loaded into EmitterMesh by ParticleSystem.load and by the demo model. New Teapot preset: SwiftMesh's Utah teapot, side on, outlined in glowing particles and dissolving into sand that piles on the ground. Golden added.
 
 ---
 

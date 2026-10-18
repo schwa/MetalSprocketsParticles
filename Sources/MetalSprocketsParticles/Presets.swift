@@ -1,4 +1,5 @@
 import simd
+import SwiftMesh
 
 private func emitter(_ configure: (inout ParticleEmitter) -> Void) -> ParticleEmitter {
     var emitter = ParticleEmitter()
@@ -11,8 +12,51 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper,
+        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot,
     ]
+
+    /// The Utah teapot (from SwiftMesh) outlined in glowing particles and slowly dissolving into sand that pours onto
+    /// the ground. Both layers emit from the mesh surface.
+    static let teapot: ParticlePreset = {
+        let mesh = Mesh.teapot(diameter: 2.4)
+        // Side on, so the spout and handle show.
+        let motion = EmitterMotion(offset: [0, 1, 0], yaw: .pi / 2)
+        return ParticlePreset(
+            "Teapot",
+            layers: [
+                Layer("Glow", settings: emitter {
+                    $0.shape = .mesh
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0.02
+                    $0.gravity = .zero
+                    $0.lifetime = 0.6...1
+                    $0.birthRate = 40_000
+                    $0.warmupDuration = 1
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.3, 0.008), .init(1, 0)])
+                    $0.colorOverLife = .constant([0.3, 0.7, 1, 1])
+                }, motion: motion, capacity: 50_000, mesh: mesh),
+                Layer("Sand", settings: emitter {
+                    $0.shape = .mesh
+                    $0.velocity = [0.4, 0.3, 0]
+                    $0.velocitySpread = 0.3
+                    $0.gravity = [0, -4, 0]
+                    $0.lifetime = 3...4
+                    $0.birthRate = 6_000
+                    $0.warmupDuration = 3
+                    $0.restitution = 0
+                    $0.friction = 0.9
+                    $0.sizeOverLife = .constant(0.01)
+                    $0.colorOverLife = ParticleCurve([.init(0, [1, 0.85, 0.5, 1]), .init(0.8, [0.9, 0.6, 0.3, 1]), .init(1, [0.9, 0.6, 0.3, 0])])
+                    $0.colorVariation = [0.03, 0.1, 0.2, 0]
+                }, motion: motion, capacity: 30_000, mesh: mesh),
+            ],
+            colliders: [ground],
+            forceFields: [.turbulence(strength: 0.5, scale: 1.5, speed: 0.4)],
+            cameraEye: [0, 2.5, 5],
+            cameraTarget: [0, 1, 0]
+        )
+    }()
 
     /// Emission triggers: balls drop onto a bumper (collider hit: spark burst), some bounce into a goal on the left
     /// (particles enter a volume: star burst), a ring pulses on the ground every 2 seconds (timer), and

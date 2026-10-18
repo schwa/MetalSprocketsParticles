@@ -1,5 +1,6 @@
 import Metal
 import simd
+import SwiftMesh
 
 /// A complete effect: emitters with their sprites and motion, plus the colliders and force fields they play against.
 public struct ParticlePreset: Sendable, Identifiable {
@@ -11,6 +12,8 @@ public struct ParticlePreset: Sendable, Identifiable {
         public var motion: EmitterMotion
         public var simulationSpace: SimulationSpace
         public var capacity: Int
+        /// Triangles for `EmitterShape.mesh`, in emitter space.
+        public var mesh: Mesh?
 
         public init(
             _ name: String,
@@ -18,8 +21,10 @@ public struct ParticlePreset: Sendable, Identifiable {
             sprite: ParticleSprite = .softDot,
             motion: EmitterMotion = EmitterMotion(),
             simulationSpace: SimulationSpace = .world,
-            capacity: Int = 50_000
+            capacity: Int = 50_000,
+            mesh: Mesh? = nil
         ) {
+            self.mesh = mesh
             self.name = name
             self.settings = settings
             self.sprite = sprite
@@ -94,6 +99,7 @@ public extension ParticleSystem {
             emitter.texture = textures[layer.sprite]
             emitter.simulationSpace = layer.simulationSpace
             emitter.transform = layer.motion.transform(time: 0)
+            emitter.mesh = try layer.mesh.map { try EmitterMesh(device: device, mesh: $0) }
         }
         colliders = preset.colliders
         forceFields = preset.forceFields

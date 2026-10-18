@@ -47,6 +47,14 @@ struct OutlineTests {
         #expect(model.forceFields.count == 1)
     }
 
+    @Test func presetMeshReachesTheSystem() throws {
+        let model = ParticlesDemoModel(preset: .teapot)
+        let system = try #require(model.system)
+        #expect(system.emitters.allSatisfy { ($0.mesh?.triangleCount ?? 0) > 1_000 })
+        model.duplicateSelectedEmitter()
+        #expect(system.emitters.last?.mesh != nil)
+    }
+
     @Test func changingPresetKeepsSceneSelectedOrSelectsFirstEmitter() {
         let model = ParticlesDemoModel()
         model.presetName = ParticlePreset.campfire.name
