@@ -2250,9 +2250,9 @@ An emitter setting that keeps particles on a plane (z = 0 in emitter or world sp
 status: open
 priority: medium
 kind: task
-labels: area:api, area:editor, effort:m
+labels: area:api, area:editor, effort:m, needs-decision
 created: 2026-10-18T21:47:02Z
-updated: 2026-10-18T21:57:36Z
+updated: 2026-10-18T22:13:27Z
 +++
 
 Colliders, force fields, lights, sub-emitters, and triggers have no identity; the demo wraps colliders and fields in ColliderItem/ForceFieldItem with UUIDs and identifies sub-emitters and triggers by index, and PointerBinding refers to items by index. The editor needs ids for selection, undo, gizmos, and drag reordering, and #104 needs them to diff descriptions.
@@ -2262,5 +2262,6 @@ Give each an id, saved in the effect file and generated when missing, so old fil
 Tests: old files load with fresh ids; ids round-trip; index-form pointer bindings decode to the right ids. Part of #100.
 
 - `2026-10-18T21:57:36Z`: Related: #104 (apply needs ids to diff), #100 (editor), #105. ColliderSpin also refers to colliders by index and should move to ids with PointerBinding.
+- `2026-10-18T22:13:27Z`: Tried: checked how ids would sit on Collider, ForceField, ParticleLight, SubEmitter, and EmissionTrigger. Punting: putting a generated id on the types changes their value equality, which about 40 call sites rely on (tests, the demo, ParticleKind): factories like .sphere(center:radius:) would make a fresh id each call, so colliders[1] == .sphere(...) stops matching. ParticleLight is an enum and has no place for an id without becoming a struct. Options: (A) id on each type, excluded from == and hash (value equality stays; Identifiable for lists and diffing; a little surprising). (B) An Identified<T> wrapper used only in ParticleSystem's lists (ids are a description concern; the runtime and factories stay plain values; ParticleSystem.colliders becomes [Identified<Collider>], a wide API change, with JSON as { id, ...flattened fields }). (C) id on each type and included in ==, updating tests to compare shapes or ignore ids (most honest, most churn). Which do you want? My pick is B if #104 (apply) and the editor are the main users, A if lists elsewhere also need ids.
 
 ---
