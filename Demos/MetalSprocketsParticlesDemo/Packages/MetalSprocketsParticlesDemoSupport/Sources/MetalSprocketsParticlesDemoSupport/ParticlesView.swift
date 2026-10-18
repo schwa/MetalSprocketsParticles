@@ -85,7 +85,7 @@ struct ParticleViewportView: View {
 
     var body: some View {
         if let system = model.system {
-            RenderView(colorPixelFormat: Self.colorPixelFormat) { context, size in
+            RenderView(colorPixelFormat: Self.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
                 try system.simulate(
@@ -95,12 +95,12 @@ struct ParticleViewportView: View {
                     trackedObjects: model.frameTrackedObjects(time: context.frameUniforms.time),
                     view: cameraMatrix.inverse
                 )
-                try RenderPass {
-                    if model.showColliders {
-                        try system.renderWireframes(projection: projection, view: cameraMatrix.inverse)
-                    }
-                    try system.render(projection: projection, view: cameraMatrix.inverse)
-                }
+                try system.renderScene(
+                    projection: projection,
+                    view: cameraMatrix.inverse,
+                    sceneDepth: model.sceneDepth(width: Int(size.width), height: Int(size.height)),
+                    wireframes: model.showColliders
+                )
                 .gpuTimed("Render")
             }
             .background(.black)

@@ -125,6 +125,7 @@ struct RenderCommand: AsyncParsableCommand {
         try system.load(preset)
         let camera = simd_float4x4(lookingFrom: eye, at: target)
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
+        let sceneDepth = preset.drawsColliders ? try SceneDepth(device: renderer.device, width: width, height: height) : nil
 
         var rendering: OffscreenRenderer.Rendering?
         for frame in 0..<max(frames, 1) {
@@ -132,12 +133,7 @@ struct RenderCommand: AsyncParsableCommand {
             system.trackedObjects = preset.trackedObjectPositions(at: time)
             rendering = try renderer.render(Group {
                 try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: camera.inverse)
-                try RenderPass {
-                    if wireframes {
-                        try system.renderWireframes(projection: projection, view: camera.inverse)
-                    }
-                    try system.render(projection: projection, view: camera.inverse)
-                }
+                try system.renderScene(projection: projection, view: camera.inverse, sceneDepth: sceneDepth, wireframes: wireframes)
             })
         }
         guard let rendering else { return }

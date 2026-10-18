@@ -128,6 +128,22 @@ final class ParticlesDemoModel {
 
     var animateColliders = false
     var showColliders = false
+    /// Draws colliders as solids and gives soft particles their depth.
+    var drawColliders = false
+
+    @ObservationIgnored private var cachedSceneDepth: SceneDepth?
+
+    /// A scene depth texture of the drawable's size when `drawColliders` is on; recreated when the size changes.
+    func sceneDepth(width: Int, height: Int) -> SceneDepth? {
+        guard drawColliders, let device = system?.device else {
+            return nil
+        }
+        if let cachedSceneDepth, cachedSceneDepth.width == width, cachedSceneDepth.height == height {
+            return cachedSceneDepth
+        }
+        cachedSceneDepth = try? SceneDepth(device: device, width: width, height: height)
+        return cachedSceneDepth
+    }
 
     /// The event name the inspector's Send button fires.
     var eventToSend = "boom"
@@ -161,7 +177,7 @@ final class ParticlesDemoModel {
 
     /// The scene as it is now, for saving.
     var currentEffect: ParticlePreset {
-        ParticlePreset(
+        var preset = ParticlePreset(
             presetName,
             layers: emitters,
             colliders: colliders.map(\.collider),
@@ -173,7 +189,9 @@ final class ParticlesDemoModel {
             cameraEye: cameraEye,
             cameraTarget: cameraTarget
         )
-        .commented(presetComment)
+        preset.drawsColliders = drawColliders
+        preset.comment = presetComment
+        return preset
     }
 
     /// Reads a saved effect and loads it, named after the file.
@@ -211,6 +229,7 @@ final class ParticlesDemoModel {
         colliders = preset.colliders.map { ColliderItem(collider: $0) }
         forceFields = preset.forceFields.map { ForceFieldItem(field: $0) }
         animateColliders = preset.animatesColliders
+        drawColliders = preset.drawsColliders
         system?.lights = preset.lights
         system?.ambientLight = preset.ambientLight
         trackedObjects = preset.trackedObjects

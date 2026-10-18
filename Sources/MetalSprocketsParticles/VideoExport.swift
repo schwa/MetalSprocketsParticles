@@ -42,6 +42,7 @@ public extension ParticlePreset {
         let camera = simd_float4x4(lookingFrom: eye ?? cameraEye, at: target ?? cameraTarget)
         let view = camera.inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / max(size.height, 1)), near: 0.1, far: 100)
+        let sceneDepth = drawsColliders ? try SceneDepth(device: device, width: Int(size.width), height: Int(size.height)) : nil
         let deltaTime = Float(1 / frameRate)
         let frameCount = max(Int((duration * frameRate).rounded()), 1)
         var framesWritten = 0
@@ -55,12 +56,7 @@ public extension ParticlePreset {
                     trackedObjects: trackedObjectPositions(at: time),
                     view: view
                 )
-                try RenderPass {
-                    if wireframes {
-                        try system.renderWireframes(projection: projection, view: view)
-                    }
-                    try system.render(projection: projection, view: view)
-                }
+                try system.renderScene(projection: projection, view: view, sceneDepth: sceneDepth, wireframes: wireframes)
             })
             framesWritten += 1
             if !progress(Double(frame + 1) / Double(frameCount)) || stopWhenFinished && system.isFinished {

@@ -19,6 +19,7 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Hearts](#hearts)
 - [Moon Phases](#moon-phases)
 - [Color Smoke](#color-smoke)
+- [Fog](#fog)
 - [Pond](#pond)
 - [Ring of Fire](#ring-of-fire)
 - [Swarms](#swarms)
@@ -118,6 +119,12 @@ Emoji moons orbit slowly, each cycling through the moon phases from its own star
 Thick, nearly opaque colored smoke billows up and out. Every puff overlaps others, so drawing back to front matters: set Sort to None to see far puffs paint over near ones.
 
 [![color-smoke](posters/color-smoke.jpg)](videos/color-smoke.mp4)
+
+## Fog
+
+Low fog drifts across the ground and around a box, a ball, and a log. The colliders are drawn as solids, and the fog is soft: each puff fades where it meets a surface instead of cutting a hard line through it.
+
+[![fog](posters/fog.jpg)](videos/fog.mp4)
 
 ## Pond
 

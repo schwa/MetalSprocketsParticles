@@ -82,13 +82,14 @@ struct PresetRenderTests {
         try system.load(preset)
         let view = simd_float4x4(lookingFrom: preset.cameraEye, at: preset.cameraTarget).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
+        let sceneDepth = preset.drawsColliders ? try SceneDepth(device: renderer.device, width: Int(size.width), height: Int(size.height)) : nil
         var rendering: OffscreenRenderer.Rendering?
         for frame in 0..<180 {
             let time = Float(frame) / 60
             system.trackedObjects = preset.trackedObjectPositions(at: time)
             rendering = try renderer.render(Group {
                 try system.simulate(deltaTime: 1.0 / 60.0, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: view)
-                try RenderPass { try system.render(projection: projection, view: view) }
+                try system.renderScene(projection: projection, view: view, sceneDepth: sceneDepth)
             })
         }
         let slug = name.lowercased().replacingOccurrences(of: " ", with: "-")

@@ -90,6 +90,43 @@ struct LightingTests {
         #expect(outOfRange < 0.02)
     }
 
+    /// Center brightness with `colliders` drawn as solids into a scene depth (via `renderScene`).
+    func centerBrightnessWithSolids(_ colliders: [Collider], softness: Float) throws -> Float {
+        let renderer = try OffscreenRenderer(size: size)
+        var emitter = ParticleEmitter()
+        emitter.radius = 0
+        emitter.velocity = .zero
+        emitter.velocitySpread = 0
+        emitter.gravity = .zero
+        emitter.lifetime = 10...10
+        emitter.birthRate = 0
+        emitter.sizeOverLife = .constant(0.5)
+        emitter.colorOverLife = .constant([1, 1, 1, 1])
+        emitter.softness = softness
+        let system = try ParticleSystem(device: renderer.device, capacity: 1, emitter: emitter)
+        system.colliders = colliders
+        system.burst(1)
+        let sceneDepth = try SceneDepth(device: renderer.device, width: Int(size.width), height: Int(size.height))
+        let rendering = try renderer.render(Group {
+            try system.simulate(deltaTime: 1.0 / 60.0, view: view)
+            try system.renderScene(projection: projection, view: view, sceneDepth: sceneDepth)
+        })
+        return try centerPixel(rendering.cgImage)
+    }
+
+    @Test func colliderSolidsFeedSoftParticles() throws {
+        // A wall just behind the particle (3.05 from the camera) softens it; with softness off it stays bright and
+        // covers the wall. A wall in front hides it.
+        let behind = Collider.plane(normal: [0, 0, 1], distance: -0.05)
+        let inFront = Collider.plane(normal: [0, 0, 1], distance: 0.5)
+        let soft = try centerBrightnessWithSolids([behind], softness: 0.5)
+        let hard = try centerBrightnessWithSolids([behind], softness: 0)
+        let hidden = try centerBrightnessWithSolids([inFront], softness: 0.5)
+        #expect(hard > 0.95)
+        #expect(soft < hard - 0.3)
+        #expect(hidden < 0.3)
+    }
+
     @Test func softParticlesFadeNearTheSceneDepth() throws {
         // The particle is 3 units away. A surface at 3.05 is within 0.5 of softness; one at 10 is not.
         let hard = try centerBrightness({ $0.softness = 0.5 }, sceneDepth: 3.05)

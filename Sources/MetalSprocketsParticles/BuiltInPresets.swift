@@ -50,6 +50,7 @@ public extension ParticlePreset {
     static var hearts: ParticlePreset { builtIn("Hearts") }
     static var moonPhases: ParticlePreset { builtIn("Moon Phases") }
     static var colorSmoke: ParticlePreset { builtIn("Color Smoke") }
+    static var fog: ParticlePreset { builtIn("Fog") }
     static var pond: ParticlePreset { builtIn("Pond") }
     static var ringOfFire: ParticlePreset { builtIn("Ring of Fire") }
     static var swarms: ParticlePreset { builtIn("Swarms") }

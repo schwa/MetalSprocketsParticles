@@ -1,0 +1,246 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    0,
+    3.4,
+    4.6
+  ],
+  "cameraTarget" : [
+    0,
+    0.2,
+    -0.3
+  ],
+  "colliders" : [
+    {
+      "distance" : 0,
+      "kind" : "plane",
+      "normal" : [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "center" : [
+        -1.2,
+        0.5,
+        0.2
+      ],
+      "halfExtents" : [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "kind" : "box",
+      "rotation" : [
+        0,
+        0.258819,
+        0,
+        0.9659258
+      ]
+    },
+    {
+      "center" : [
+        1.1,
+        0.55,
+        -0.4
+      ],
+      "kind" : "sphere",
+      "radius" : 0.55
+    },
+    {
+      "end" : [
+        1.4,
+        0.25,
+        0.8
+      ],
+      "kind" : "capsule",
+      "radius" : 0.25,
+      "start" : [
+        -0.2,
+        0.25,
+        1.1
+      ]
+    }
+  ],
+  "comment" : "Low fog drifts across the ground and around a box, a ball, and a log. The colliders are drawn as solids, and the fog is soft: each puff fades where it meets a surface instead of cutting a hard line through it. Set Softness to 0 to see the hard edges.",
+  "drawsColliders" : true,
+  "forceFields" : [
+    {
+      "categoryBitMask" : 4294967295,
+      "effect" : {
+        "turbulence" : {
+          "scale" : 0.8,
+          "speed" : 0.3,
+          "strength" : 0.25
+        }
+      }
+    }
+  ],
+  "layers" : [
+    {
+      "capacity" : 2000,
+      "id" : "B6E1437E-7243-4DC2-8CAF-7C2A40B038D6",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Fog",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 3.1415925,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0.3,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 45,
+        "birthRateVariation" : 0,
+        "blendMode" : 0,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.78,
+                0.82,
+                0.88,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0,
+          0,
+          0.05,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0.3,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          -0.06,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          6,
+          8
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.15,
+              "value" : 0.22
+            },
+            {
+              "time" : 0.75,
+              "value" : 0.22
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          -0.5,
+          0.25,
+          0
+        ],
+        "restitution" : 0,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "plane" : {
+            "size" : [
+              6,
+              4
+            ]
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.5
+            },
+            {
+              "time" : 1,
+              "value" : 0.9
+            }
+          ]
+        },
+        "sizeVariation" : 0.3,
+        "softness" : 0.6,
+        "sortMode" : "Back to Front",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "velocity" : [
+          0.35,
+          0.03,
+          0
+        ],
+        "velocitySpread" : 0.4,
+        "warmupDuration" : 8
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Smoke Puff"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Fog",
+  "trackedObjects" : {
+
+  }
+}

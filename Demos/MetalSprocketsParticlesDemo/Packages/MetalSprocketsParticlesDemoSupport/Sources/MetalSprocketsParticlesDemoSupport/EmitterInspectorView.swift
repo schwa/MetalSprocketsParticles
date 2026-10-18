@@ -487,6 +487,8 @@ struct WorldSectionView: View {
         Section("World") {
             HStack {
                 Toggle("Animate Colliders", isOn: $model.animateColliders)
+                Toggle("Solid Colliders", isOn: $model.drawColliders)
+                    .help("Draw colliders as solids. Emitters with Softness fade where they meet them.")
                 Toggle("Wireframes", isOn: $model.showColliders)
             }
         }

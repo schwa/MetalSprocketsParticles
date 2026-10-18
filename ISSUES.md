@@ -1336,12 +1336,13 @@ Lighting (#10: ParticleSystem.lights, ambientLight, ParticleEmitter.isLit) is un
 ## 68: Soft particles cannot be demoed: no scene depth
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:demo
 created: 2026-10-18T13:34:41Z
-updated: 2026-10-18T15:36:11Z
+updated: 2026-10-18T16:04:08Z
+closed: 2026-10-18T16:04:08Z
 +++
 
 Soft particles (#10) need a scene depth texture, but the demo and particles-render draw no scene geometry or depth. Add one: e.g. render a ground plane/box into a depth texture (or a pre-filled depth like LightingTests) and pass it as render(..., sceneDepth:), then a preset or demo toggle with softness on smoke meeting the ground. Related: #10.
@@ -1349,6 +1350,7 @@ Soft particles (#10) need a scene depth texture, but the demo and particles-rend
 - `2026-10-18T14:00:06Z`: Investigated. Punting: bigger than m and partly blocked on MetalSprockets API. Soft particles only show against opaque, depth-tested geometry, and the demo/CLI draw none (wireframes only); particles are not depth-tested, so nothing clips hard and fading near invisible surfaces would barely show. Needed: (1) draw colliders as shaded solids (SwiftMesh quad/box/sphere/capsule), (2) depth-test particles against them (test, no write), (3) a readable copy of the depth for the fragment shader (a pass can't read its own depth attachment). Blockers: MetalSprockets DepthState is package-internal (only a raw depthStencilDescriptor environment value is public; I haven't verified what depth state particles draw with now), and RenderView does not expose its depth texture to content, so the demo needs its own view-sized depth texture and a collider depth pre-pass per frame. Question: OK to (a) add a public depth-state modifier and depth-texture access to MetalSprockets, or (b) do it all inside this project with its own depth texture and pre-pass?
 - `2026-10-18T14:27:44Z`: Correction: MetalSprockets does have a public depth-test modifier, Element.depthCompare(function:enabled:) (where 'enabled' means depth writes; filed MetalSprockets #531 on the naming). Only its full DepthState modifier is package-internal. So depth-testing particles needs no upstream change. The real upstream gap is reading the frame's depth: RenderViewContext does not expose the depth attachment and the MTKView depth texture is memoryless; filed MetalSprockets #530. Updated options: (A) wait for/implement MetalSprockets #530, or (B) in this project, keep our own view-sized depth texture with a collider depth pre-pass.
 - `2026-10-18T15:36:09Z`: Unblocked: MetalSprockets main (1ee86220) closes #530 and #531. RenderViewContext.depthTexture exposes the frame depth, readable in a later pass when configured with .metalDepthStencilAttachmentTextureUsage([.renderTarget, .shaderRead]), .metalDepthStencilStorageMode(.private) and .metalDepthStoreAction(.store). depthCompare(function:enabled:) is now depthCompare(function:writes:). Package now tracks MetalSprockets main. Option A is available.
+- `2026-10-18T16:04:08Z`: Done with a self-contained scene depth rather than RenderViewContext.depthTexture: ParticleSystem.renderSceneDepth(into: SceneDepth) draws colliders' depth into an r32Float texture the existing soft-particle shader reads, and renderColliderSolids draws them as shaded solids in the main pass. renderScene(projection:view:sceneDepth:wireframes:) composes both and is used by particles-render, video export, preset goldens, and the demo (RenderView now has a depth32Float attachment; Solid Colliders toggle). ParticlePreset.drawsColliders turns it on; new Fog preset shows it. Test colliderSolidsFeedSoftParticles; Fog golden, clip, poster. Not checked in the live app (not launched). RenderViewContext.depthTexture (MetalSprockets #530) is still useful for apps with their own scene geometry; using it directly would need the shader to read a depth2d texture.
 
 ---
 

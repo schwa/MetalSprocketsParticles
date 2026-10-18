@@ -14,6 +14,9 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     public var colliders: [Collider]
     /// Moves the colliders with `Collider.animated(time:index:)`.
     public var animatesColliders: Bool
+    /// Draw the colliders as shaded solids and give their depth to the particles, so emitters with `softness` fade
+    /// where they meet them. See `ParticleSystem.renderColliderSolids` and `renderSceneDepth`.
+    public var drawsColliders = false
     public var forceFields: [ForceField]
     /// Lights for emitters with `isLit`.
     public var lights: [ParticleLight]
@@ -57,6 +60,7 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         self.init(try container.decode(String.self, forKey: .name), layers: try container.decode([Layer].self, forKey: .layers))
         try container.update(&colliders, .colliders)
         try container.update(&animatesColliders, .animatesColliders)
+        try container.update(&drawsColliders, .drawsColliders)
         try container.update(&forceFields, .forceFields)
         try container.update(&lights, .lights)
         try container.update(&ambientLight, .ambientLight)
