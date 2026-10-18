@@ -2149,8 +2149,9 @@ A full library test run hung for 10 minutes (killed by the timeout) and passed i
 status: open
 priority: medium
 kind: task
-labels: area:api, effort:m, needs-design
+labels: area:api, effort:m
 created: 2026-10-18T21:33:49Z
+updated: 2026-10-18T22:18:47Z
 +++
 
 Five callers repeat the same per-frame sequence by hand: particles-render, ParticleSystem.exportVideo, the preset golden test, ParticleView (ParticleViewState), and the demo (ParticlesDemoModel+Pointer, ParticlesView). The sequence: work out the pointer, colliders(at:pointer:), forceFields(at:pointer:) and assign them to the runtime (simulate does not take fields), transforms(at:pointer:), trackedObjectPositions(at:), make or resize a SceneDepth when drawsColliders, simulate, then renderScene. The copies differ in small ways (tracked objects set before simulate vs passed in; the demo has its own colliders function with animate-colliders), and two bugs have come from this seam (per-frame force fields missed; colliders without the pointer).
@@ -2160,6 +2161,13 @@ Deepen into one module that owns a runtime, a ParticleSystem, the clock, the sce
 Dependencies: in-process, plus the GPU through OffscreenRenderer/Runner, which already work in tests.
 Tests: boundary tests on the player (deterministic frames, pointer bindings, finite effects, scene depth sizing) replace the scattered per-caller checks in PresetTests, ParticleViewTests, and the demo's frame tests.
 Source: improve-codebase-architecture review. Related: #100, #99.
+
+- `2026-10-18T22:18:47Z`: Decisions (user):
+1. The player owns its clock and advances it by deltaTime (deterministic; matches the CLI, video export, and goldens).
+2. Move ParticleViewCamera into the core as ParticleCamera (system, lookAt, overlay); the player builds projection and view from the output size. One camera path for the CLI, video, goldens, and ParticleView; also enables a camera kind for 2D presets later.
+3. Live edits: player.system = edited replaces the description, reloading only when the emitter layout changes (existing apply logic). Proper diffing stays with #104.
+4. Name: ParticlePlayer.
+Shape: let player = try ParticlePlayer(system:); player.pointer = worldPoint (optional); try player.frame(deltaTime:size:) gives the simulate and render elements. Callers to migrate: particles-render, exportVideo, the preset golden test, ParticleView, the demo.
 
 ---
 
