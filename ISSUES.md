@@ -1080,3 +1080,28 @@ Evaluate replacing this with Canvas3D. Possible wins: less custom shader/pipelin
 Check first: dependency weight for the library target (maybe keep wireframes in an optional target), and that it fits inside a RenderPass the same way renderWireframes does now. Keep the particles-render --wireframes flag and the demo toggle working.
 
 ---
+
+## 56: Crash when removing a collider while the simulation is running
+
++++
+status: new
+priority: high
+kind: bug
+labels: area:demo
+created: 2026-10-18T02:07:29Z
+updated: 2026-10-18T02:08:03Z
++++
+
+Removing a collider while the particle system is running crashes the app (seen in the demo).
+
+Not yet investigated. Guess: the collider buffer or count used by an in-flight simulate pass goes stale when the array shrinks.
+
+To do: get the crash log/backtrace, write a test that removes a collider mid-run, fix.
+
+\- `2026-10-18T02:08:03Z`: Backtrace: EXC_BREAKPOINT in SwiftUICore BindingOperations.ForceUnwrapping.get, during NSHostingView.layout. Not a GPU/simulation bug; my earlier guess was wrong.
+
+Likely cause: EmitterInspectorView.swift:44 uses 'if let collider = Binding($model.colliders[id: id])'. Binding(optional) force-unwraps on every read. After removal, ColliderEditorView's child bindings update before the parent body re-runs, so the unwrap hits nil. Same pattern at line 51 for force fields, so removing a force field probably crashes too.
+
+Fix: drop Binding(optional). Use a custom Binding whose get falls back to a cached/default value and whose set ignores missing ids, or pass the id down and look it up in the model.
+
+---
