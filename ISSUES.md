@@ -460,11 +460,11 @@ SceneKit lets callers attach event handlers (birth, death, collision) and per-fr
 
 +++
 status: open
-priority: low
+priority: medium
 kind: feature
 labels: effort:m, area:tooling
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-18T12:39:44Z
 +++
 
 RealityKit ships ParticleEmitterComponent.Presets (fireworks, impact, magic, rain, snow, sparks). SceneKit loads .scnp files authored in Xcode's particle editor. We have one hard-coded fountain and no serializable effect format.
@@ -631,10 +631,11 @@ The demo inspector (#26) covers only part of ParticleEmitter and ParticleSystem.
 
 +++
 status: open
-priority: low
+priority: medium
 kind: feature
 labels: effort:l, area:tooling
 created: 2026-10-17T17:10:23Z
+updated: 2026-10-18T12:39:44Z
 +++
 
 Defining an effect means creating a ParticleEmitter and setting many properties one by one, then wiring texture, transform, and colliders on ParticleSystem separately. There is no concise, composable way to describe an effect or reuse parts of one. Stretch goal: a small Swift DSL, possibly result-builder or SwiftUI-modifier style (e.g. Emitter { ... }.birthRate(5_000).colorOverLife(...).force(.turbulence(...))), so effects compose like SwiftUI views and presets (#30, #25) become short declarations. Related: #30 (preset scenes), #25 (presets/effect files).
@@ -1048,11 +1049,12 @@ ParticleEmitter+Inspector.swift (~500 lines) and Inspector+Events.swift (~260 li
 ## 54: Emitters can't opt out of specific force fields or colliders
 
 +++
-status: new
-priority: medium
+status: open
+priority: high
 kind: feature
 labels: effort:m, area:simulation
 created: 2026-10-18T01:43:22Z
+updated: 2026-10-18T12:40:25Z
 +++
 
 Every force field and collider affects every emitter's particles. Often only some should interact, e.g. smoke should feel wind but not a vortex, or sparks should bounce off the floor but rain should pass through a roof.
@@ -1065,16 +1067,19 @@ Proposal: bitmask categories, like SpriteKit/SceneKit physics:
 
 Defaults keep today's behavior. Add tests for masked vs unmasked particles and expose the masks in the demo inspector.
 
+- `2026-10-18T12:40:25Z`: Triaged: High (raised by user), feature, effort:m, area:simulation.
+
 ---
 
 ## 55: Consider Canvas3D for debug wireframes
 
 +++
-status: new
+status: open
 priority: low
 kind: task
 labels: effort:m, area:rendering
 created: 2026-10-18T01:45:02Z
+updated: 2026-10-18T12:40:25Z
 +++
 
 Debug wireframes (DebugWireframes.swift, ColliderWireframe.swift) use a hand-rolled WireframeBuilder and a custom line-list RenderPipeline (wireframeVertex/wireframeFragment), one flat color per kind.
@@ -1082,6 +1087,8 @@ Debug wireframes (DebugWireframes.swift, ColliderWireframe.swift) use a hand-rol
 Evaluate replacing this with Canvas3D. Possible wins: less custom shader/pipeline code, shared look with other MetalSprockets tools, and features we lack (line width, depth fade, labels).
 
 Check first: dependency weight for the library target (maybe keep wireframes in an optional target), and that it fits inside a RenderPass the same way renderWireframes does now. Keep the particles-render --wireframes flag and the demo toggle working.
+
+- `2026-10-18T12:40:25Z`: Triaged: Low, task, effort:m, area:rendering.
 
 ---
 
@@ -1110,5 +1117,122 @@ Likely cause: EmitterInspectorView.swift:44 uses 'if let collider = Binding($mod
 Fix: drop Binding(optional). Use a custom Binding whose get falls back to a cached/default value and whose set ignores missing ids, or pass the id down and look it up in the model.
 
 - `2026-10-18T12:35:29Z`: Fixed: the inspector bound colliders and force fields with Binding(optional), which force-unwraps on every read; after a removal SwiftUI read it once more and trapped. Sub-emitter and trigger editors had the same class of bug (array index binding out of range after removal). All four now bind through non-optional model properties (selectedCollider, selectedForceField, selectedSubEmitter, selectedTrigger) that read a placeholder and drop writes when the item is gone. Regression test exemption: the trap is inside SwiftUI's binding and kills the test process, so no red-first test; OutlineTests.selectedItemsSurviveRemoval checks the model contract instead. Not verified in the running app.
+
+---
+
+## 57: Curve stop rows can crash when a stop is removed
+
++++
+status: open
+priority: high
+kind: bug
+labels: effort:s, area:demo
+created: 2026-10-18T12:36:56Z
++++
+
+ColorCurveEditorView and FloatCurveEditorView (InspectorControls.swift) use ForEach(curve.keyframes.indices, id: \.self) and bind .keyframes[index] in rows that also contain their own Remove button. After removing a stop (especially the last), SwiftUI can read a stale row binding one past the end of the array and trap: the same class of bug as #56. Fix with stable ids for stops, or route reads/writes through an accessor that returns a placeholder and drops writes for missing indices. Source: SwiftUI review.
+
+---
+
+## 58: Rename demo views missing the View suffix
+
++++
+status: closed
+priority: low
+kind: task
+labels: effort:xs, area:demo
+created: 2026-10-18T12:36:56Z
+updated: 2026-10-18T12:37:41Z
+closed: 2026-10-18T12:37:41Z
++++
+
+House rule: SwiftUI view types end in View. KindPicker -> KindPickerView (InspectorControls.swift), EmitterOutlineRow -> EmitterOutlineRowView (OutlineView.swift). Source: SwiftUI review.
+
+- `2026-10-18T12:37:41Z`: Closed by request without changes.
+
+---
+
+## 59: Extract ParticlesView.viewport into its own view
+
++++
+status: open
+priority: low
+kind: task
+labels: effort:s, area:demo
+created: 2026-10-18T12:36:57Z
++++
+
+ParticlesView has a large computed 'private var viewport: some View' (render closure, camera, overlay, onChange, ContentUnavailableView branch). House rule: extract into a struct (e.g. ParticleViewportView) taking the model, a camera binding, and the frame timing binding. Source: SwiftUI review.
+
+---
+
+## 60: Add previews for demo leaf views
+
++++
+status: open
+priority: low
+kind: task
+labels: effort:s, area:demo, deferred
+created: 2026-10-18T12:36:57Z
+updated: 2026-10-18T12:37:34Z
++++
+
+Leaf views without #Preview: KindPicker, ColliderEditorView, ForceFieldEditorView, TriggerEditorView, SubEmitterEditorView, OutlineView. Each needs only a line or two of fixture state. ParticlesView needs Metal and can stay without one. Source: SwiftUI review.
+
+---
+
+## 61: Demo model is threaded through ~10 views by hand
+
++++
+status: open
+priority: low
+kind: task
+labels: effort:s, area:demo
+created: 2026-10-18T12:36:57Z
++++
+
+ParticlesDemoModel is passed explicitly into OutlineView, EmitterOutlineRow, EmitterInspectorView, SceneSectionView, EmitterSectionView, SendEventSectionView, WorldSectionView, RemoveSectionView, TriggersSectionView, etc. House rule suggests @Environment(ParticlesDemoModel.self) (with a local @Bindable) for shared app models. Optional: explicit passing is also clear. Source: SwiftUI review.
+
+---
+
+## 62: RemoveSectionView is a near zero-value wrapper
+
++++
+status: open
+priority: low
+kind: task
+labels: effort:xs, area:demo
+created: 2026-10-18T12:36:57Z
++++
+
+RemoveSectionView (EmitterInspectorView.swift) is one destructive button in a Section, no state, four call sites. House rule flags thin wrappers as removal candidates; four call sites may justify it. Decide whether to inline. Source: SwiftUI review.
+
+---
+
+## 63: selectedEmitter falls back to emitters[0]
+
++++
+status: open
+priority: low
+kind: task
+labels: effort:xs, area:demo
+created: 2026-10-18T12:36:57Z
++++
+
+ParticlesDemoModel.selectedEmitter returns emitters.first { ... } ?? emitters[0], which traps if emitters is ever empty. Safe today only because the model keeps at least one emitter (removeSelectedEmitter refuses the last, presets all have layers). Make the invariant explicit or return a placeholder like selectedCollider (#56). Source: SwiftUI review.
+
+---
+
+## 64: EmitterOutlineRow.emitterLabel is a computed view property
+
++++
+status: open
+priority: low
+kind: task
+labels: effort:xs, area:demo
+created: 2026-10-18T12:36:57Z
++++
+
+EmitterOutlineRow uses 'private var emitterLabel: some View' (label + tag + context menu), used twice. House rule allows tiny tightly-bound fragments; consider whether it should be a struct. Low value. Source: SwiftUI review.
 
 ---
