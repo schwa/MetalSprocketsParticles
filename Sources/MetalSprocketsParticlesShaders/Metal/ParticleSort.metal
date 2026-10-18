@@ -22,18 +22,18 @@ kernel void buildSortRecords(
     constant ParticleSortKeyParams &p [[buffer(2)]],
     uint i [[thread_position_in_grid]]
 ) {
-    uint count = p.window.y;
+    uint count = p.liveCount;
     if (i >= count) {
         return;
     }
-    uint index = p.window.w + (p.window.x + i) % p.window.z;
+    uint index = p.sliceStart + (p.firstSlot + i) % p.capacity;
     Particle particle = particles[index];
     bool alive = particle.velocity.w > 0 && particle.position.w < particle.velocity.w;
     // Farther first: sort ascending on negated view depth. Dead particles go last.
     ushort key = 0xFFFFu;
     if (alive) {
         float3 world = (p.model * float4(particle.position.xyz, 1)).xyz;
-        float depth = dot(world - p.cameraPosition.xyz, p.cameraForward.xyz);
+        float depth = dot(world - p.cameraPosition, p.cameraForward);
         key = min(floatFlip16(as_type<ushort>(half(-depth))), ushort(0xFFFEu));
     }
     records[i] = uint2(key, index);

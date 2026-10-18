@@ -348,13 +348,13 @@ public final class ParticleSystem {
     /// One compute dispatch: an emitter's slice for one step.
     private struct Dispatch {
         var uniforms: SimulationUniforms
-        /// Slots this step touches; see `random.w` for the first one.
+        /// Slots this step touches; see `spawn.firstSlot` for the first one.
         var threadCount: Int
         var mesh: EmitterMesh?
         /// The previous dispatch wrote the same slice.
         var followsSameEmitter: Bool
-        /// The emitter's sub-emitters and the settings their children spawn with. Never empty; the count in
-        /// `uniforms.fields.z` keeps padding unused.
+        /// The emitter's sub-emitters and the settings their children spawn with. Never empty;
+        /// `uniforms.subEmitterCount` keeps padding unused.
         var subEmitters: [SubEmitterData]
         var subEmitterUniforms: [SimulationUniforms]
     }
@@ -368,16 +368,16 @@ public final class ParticleSystem {
             ? emitter.spawner.advance(deltaTime: deltaTime, emitter: settings, capacity: emitter.capacity, isEmitting: emitter.isEmitting && !emitter.isSubEmitter)
             : Spawner.Step(cursor: emitter.spawner.cursor, count: 0, serial: emitter.spawner.serial)
         var uniforms = self.uniforms(for: emitter, deltaTime: deltaTime, motion: motion, spawn: spawn)
-        uniforms.fields.z = Float(emitter.children.count)
+        uniforms.subEmitterCount = UInt32(emitter.children.count)
         // Touch only slots that can hold live particles, plus those that died since the last step. A kill, or a
         // sub-emitter instance, touches all.
         let threadCount: Int
         if emitter.needsKill || emitter.isSubEmitter {
-            uniforms.random.w = 0
+            uniforms.spawn.firstSlot = 0
             threadCount = emitter.capacity
         } else {
             let start = emitter.dispatchStartSerial
-            uniforms.random.w = start % UInt32(emitter.capacity)
+            uniforms.spawn.firstSlot = start % UInt32(emitter.capacity)
             threadCount = min(Int(emitter.spawner.serial &- start), emitter.capacity)
         }
         emitter.dispatchStartSerial = emitter.spawner.liveStartSerial
@@ -390,36 +390,55 @@ public final class ParticleSystem {
     private func uniforms(for emitter: Emitter, deltaTime: Float, motion: SpawnMotion, spawn: Spawner.Step) -> SimulationUniforms {
         let settings = emitter.settings
         let model = emitter.modelTransform
-        return SimulationUniforms(
-            emitterTransform: motion.transform,
-            simulationToWorld: model,
-            worldToSimulation: model.inverse,
-            previousEmitterOrigin: SIMD4(motion.previousOrigin, 0),
-            inheritedVelocity: SIMD4(motion.inheritedVelocity, 0),
-            emitterPosition: SIMD4(settings.position, 0),
-            shape: [settings.shape.kind.rawValue, settings.birthLocation.rawValue, settings.birthDirection.rawValue, 0],
-            shapeParameters: {
-                var parameters = settings.shape.parameters
-                parameters.w = max(settings.sweepAngle, 0)
-                return parameters
-            }(),
-            meshCounts: settings.shape == .mesh ? [UInt32(emitter.mesh?.triangleCount ?? 0), UInt32(emitter.mesh?.vertexCount ?? 0), 0, 0] : .zero,
-            emitterVelocity: SIMD4(settings.velocity, settings.velocitySpread),
-            gravity: SIMD4(settings.gravity, settings.drag),
-            lifetime: [settings.lifetime.lowerBound, settings.lifetime.upperBound, 0, deltaTime],
-            collision: [settings.restitution, settings.friction, Float(colliders.count), settings.diesOnCollision ? 1 : 0],
-            rotation: [settings.angle, settings.angleVariation, settings.angularSpeed, settings.angularSpeedVariation],
-            imageSequence: settings.imageSequence.map {
-                [$0.initialFrame, $0.initialFrameVariation, $0.frameRate, $0.frameRateVariation]
-            } ?? .zero,
-            // The emitter clock, not wall time, so turbulence stays deterministic.
-            fields: [Float(forceFields.count), emitter.spawner.time, 0, 0],
-            variation: [max(settings.sizeVariation, 0), max(settings.restitutionVariation, 0), max(settings.frictionVariation, 0), max(settings.speedVariation, 0)],
-            colorVariation: simd_max(settings.colorVariation, .zero),
-            triggers: [UInt32(min(triggerVolumes.count, Int(PARTICLE_TRIGGER_MAX_VOLUMES))), countsColliderHits ? 1 : 0, 0, 0],
-            random: [emitter.seed, UInt32(emitter.capacity), UInt32(emitter.range.lowerBound), 0],
-            spawn: [spawn.cursor, spawn.count, spawn.serial, emitter.needsKill ? 1 : 0]
+        var uniforms = SimulationUniforms()
+        uniforms.emitterTransform = motion.transform
+        uniforms.simulationToWorld = model
+        uniforms.worldToSimulation = model.inverse
+        uniforms.previousEmitterOrigin = motion.previousOrigin
+        uniforms.inheritedVelocity = motion.inheritedVelocity
+        uniforms.shape = ParticleShapeData(settings, mesh: emitter.mesh)
+        uniforms.velocity = settings.velocity
+        uniforms.velocitySpread = settings.velocitySpread
+        uniforms.gravity = settings.gravity
+        uniforms.drag = settings.drag
+        uniforms.lifetimeMinimum = settings.lifetime.lowerBound
+        uniforms.lifetimeMaximum = settings.lifetime.upperBound
+        uniforms.deltaTime = deltaTime
+        // The emitter clock, not wall time, so turbulence stays deterministic.
+        uniforms.time = emitter.spawner.time
+        uniforms.restitution = settings.restitution
+        uniforms.friction = settings.friction
+        uniforms.diesOnCollision = settings.diesOnCollision ? 1 : 0
+        uniforms.countsColliderHits = countsColliderHits ? 1 : 0
+        uniforms.angle = settings.angle
+        uniforms.angularSpeed = settings.angularSpeed
+        uniforms.initialFrame = settings.imageSequence?.initialFrame ?? 0
+        uniforms.frameRate = settings.imageSequence?.frameRate ?? 0
+        uniforms.variation = ParticleVariationData(
+            size: max(settings.sizeVariation, 0),
+            restitution: max(settings.restitutionVariation, 0),
+            friction: max(settings.frictionVariation, 0),
+            speed: max(settings.speedVariation, 0),
+            color: simd_max(settings.colorVariation, .zero),
+            angle: settings.angleVariation,
+            angularSpeed: settings.angularSpeedVariation,
+            initialFrame: settings.imageSequence?.initialFrameVariation ?? 0,
+            frameRate: settings.imageSequence?.frameRateVariation ?? 0
         )
+        uniforms.colliderCount = UInt32(colliders.count)
+        uniforms.forceFieldCount = UInt32(forceFields.count)
+        uniforms.triggerVolumeCount = UInt32(min(triggerVolumes.count, Int(PARTICLE_TRIGGER_MAX_VOLUMES)))
+        uniforms.spawn = ParticleSpawnData(
+            seed: emitter.seed,
+            capacity: UInt32(emitter.capacity),
+            sliceStart: UInt32(emitter.range.lowerBound),
+            firstSlot: 0,
+            cursor: spawn.cursor,
+            count: spawn.count,
+            serial: spawn.serial,
+            kill: emitter.needsKill ? 1 : 0
+        )
+        return uniforms
     }
 
     /// What the parent's kernel needs to write `emitter`'s children.
@@ -432,15 +451,19 @@ public final class ParticleSystem {
             }
             let sub = emitter.settings.subEmitters[child.subEmitterIndex]
             data.append(SubEmitterData(
-                info: [sub.occasionCode.rawValue, UInt32(max(sub.countPerEvent, 1)), UInt32(child.range.lowerBound), UInt32(child.capacity)],
-                parameters: [sub.velocityFactor, sub.interval, 0, 0]
+                occasion: sub.occasionCode,
+                countPerEvent: UInt32(max(sub.countPerEvent, 1)),
+                childSliceStart: UInt32(child.range.lowerBound),
+                childCapacity: UInt32(child.capacity),
+                velocityFactor: sub.velocityFactor,
+                interval: sub.interval
             ))
             let still = Spawner.Step(cursor: 0, count: 0, serial: 0)
             uniforms.append(self.uniforms(for: child, deltaTime: 0, motion: SpawnMotion(), spawn: still))
         }
         // Never bind empty arrays.
         if data.isEmpty {
-            data = [SubEmitterData(info: .zero, parameters: .zero)]
+            data = [SubEmitterData()]
             uniforms = [self.uniforms(for: emitter, deltaTime: 0, motion: SpawnMotion(), spawn: Spawner.Step(cursor: 0, count: 0, serial: 0))]
         }
         return (data, uniforms)
@@ -573,11 +596,14 @@ public final class ParticleSystem {
             }
             let cameraToWorld = view.inverse
             let parameters = ParticleSortKeyParams(
-                cameraPosition: SIMD4(cameraToWorld.columns.3.xyz, 1),
+                cameraPosition: cameraToWorld.columns.3.xyz,
                 // The camera looks down its -Z axis.
-                cameraForward: SIMD4(-simd_normalize(cameraToWorld.columns.2.xyz), 0),
+                cameraForward: -simd_normalize(cameraToWorld.columns.2.xyz),
                 model: emitter.modelTransform,
-                window: [UInt32(window.start), UInt32(window.count), UInt32(emitter.capacity), UInt32(emitter.range.lowerBound)]
+                firstSlot: UInt32(window.start),
+                liveCount: UInt32(window.count),
+                capacity: UInt32(emitter.capacity),
+                sliceStart: UInt32(emitter.range.lowerBound)
             )
             sorts.append(EmitterSort(buffers: buffers, keyParameters: parameters, count: window.count))
             emitter.sortedCount = window.count
@@ -664,18 +690,19 @@ private struct EmitterDraw {
         uniforms = RenderUniforms(
             viewProjection: viewProjection,
             model: emitter.modelTransform,
-            cameraRight: SIMD4(simd_normalize(cameraToWorld.columns.0.xyz), 0),
-            cameraUp: SIMD4(simd_normalize(cameraToWorld.columns.1.xyz), 0),
-            options: [
-                settings.blendMode.rawValue,
-                emitter.texture == nil ? 0 : 1,
-                UInt32(max(sequence.columns, 1)),
-                UInt32(max(sequence.rows, 1)),
-            ],
-            imageSequence: [UInt32(max(sequence.frameCount, 1)), sequence.mode.rawValue, 0, 0],
-            cameraPosition: SIMD4(cameraToWorld.columns.3.xyz, 1),
-            orientation: settings.orientation.parameters,
-            orientationMode: [settings.orientation.mode.rawValue, sortRecords == nil ? 0 : 1, 0, 0]
+            cameraRight: simd_normalize(cameraToWorld.columns.0.xyz),
+            cameraUp: simd_normalize(cameraToWorld.columns.1.xyz),
+            cameraPosition: cameraToWorld.columns.3.xyz,
+            fixedNormal: settings.orientation.fixedNormal,
+            velocityStretch: settings.orientation.velocityStretch,
+            orientationMode: settings.orientation.mode,
+            blendMode: settings.blendMode,
+            hasTexture: emitter.texture == nil ? 0 : 1,
+            sheetColumns: UInt32(max(sequence.columns, 1)),
+            sheetRows: UInt32(max(sequence.rows, 1)),
+            frameCount: UInt32(max(sequence.frameCount, 1)),
+            sequenceMode: sequence.mode,
+            readsSortRecords: sortRecords == nil ? 0 : 1
         )
     }
 }

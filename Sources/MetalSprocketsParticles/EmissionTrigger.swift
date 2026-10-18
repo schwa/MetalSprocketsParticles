@@ -57,9 +57,9 @@ public enum TriggerVolume: Sendable, Equatable {
     var data: TriggerVolumeData {
         switch self {
         case let .sphere(center, radius):
-            TriggerVolumeData(kind: [1, 0, 0, 0], a: SIMD4(center, radius), b: .zero)
+            TriggerVolumeData(kind: .sphere, radius: radius, center: center, halfExtents: .zero)
         case let .box(center, halfExtents):
-            TriggerVolumeData(kind: [2, 0, 0, 0], a: SIMD4(center, 0), b: SIMD4(halfExtents, 0))
+            TriggerVolumeData(kind: .box, radius: 0, center: center, halfExtents: halfExtents)
         }
     }
 }

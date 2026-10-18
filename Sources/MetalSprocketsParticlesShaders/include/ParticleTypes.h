@@ -54,30 +54,54 @@ typedef MS_ENUM(uint32_t, ParticleSpawnOccasion) {
     ParticleSpawnOccasionWhileAlive = 3,
 };
 
-/// A sub-emitter as the parent's kernel sees it. Each parent slot owns `count` child slots in the child's slice.
+/// A sub-emitter as the parent's kernel sees it. Each parent slot owns `countPerEvent` child slots in the child's
+/// slice. Mirrored by the Swift SubEmitter.
 typedef struct {
-    simd_uint4 info;        // x = ParticleSpawnOccasion, y = children per event, z = child slice start, w = child capacity
-    simd_float4 parameters; // x = parent velocity factor, y = interval (whileAlive)
+    ParticleSpawnOccasion occasion;
+    uint32_t countPerEvent;
+    uint32_t childSliceStart; // In the shared particle buffer.
+    uint32_t childCapacity;
+    float velocityFactor;     // Fraction of the parent's velocity children inherit.
+    float interval;           // Seconds between children for ParticleSpawnOccasionWhileAlive.
 } SubEmitterData;
 
 /// Trigger counters: one per collider, then one per trigger volume. Monotonic; the CPU diffs them between frames.
 #define PARTICLE_TRIGGER_MAX_COLLIDERS 64
 #define PARTICLE_TRIGGER_MAX_VOLUMES 64
 
-/// A volume that counts particles entering it. kind.x: 1 = sphere (a = center, radius), 2 = box (a = center, b = half
-/// extents). World space.
-typedef struct {
-    simd_float4 kind;
-    simd_float4 a;
-    simd_float4 b;
-} TriggerVolumeData;
+/// Mirrored by the Swift TriggerVolume.
+typedef MS_ENUM(uint32_t, ParticleTriggerVolumeKind) {
+    ParticleTriggerVolumeKindSphere = 1,
+    ParticleTriggerVolumeKindBox = 2,
+};
+
+/// A volume that counts particles entering it. World space.
+struct TriggerVolumeData {
+    ParticleTriggerVolumeKind kind;
+    float radius;            // Sphere.
+    simd_float3 center;
+    simd_float3 halfExtents; // Box.
+
+#if defined(__METAL_VERSION__)
+    bool contains(float3 point) const {
+        if (kind == ParticleTriggerVolumeKindSphere) {
+            return metal::distance(point, center) < radius;
+        }
+        return metal::all(metal::abs(point - center) < halfExtents);
+    }
+#endif
+};
+typedef struct TriggerVolumeData TriggerVolumeData;
 
 /// Builds back-to-front sort records for one emitter's live window. Records are uint2(key, particle index).
 typedef struct {
-    simd_float4 cameraPosition; // World space.
-    simd_float4 cameraForward;  // World space, unit length.
+    simd_float3 cameraPosition; // World space.
+    simd_float3 cameraForward;  // World space, unit length.
     simd_float4x4 model;        // Simulation space to world, as in RenderUniforms.
-    simd_uint4 window;          // x = first live slot, y = live count, z = emitter capacity, w = emitter slice start
+    uint32_t firstSlot;         // First live slot in the emitter's ring.
+    uint32_t liveCount;
+    uint32_t capacity;          // Emitter capacity (ring size).
+    uint32_t sliceStart;        // Emitter slice start in the shared buffer.
 } ParticleSortKeyParams;
 
 /// One LSD radix pass over 8 bits of the key.
@@ -111,8 +135,7 @@ typedef MS_ENUM(uint32_t, ParticleImageSequenceMode) {
     ParticleImageSequenceModeAutoReverse = 2,
 };
 
-// Shared between Swift and Metal. Only 16-byte vector types, so layouts match without padding rules.
-
+// Per-particle storage, packed into float4s to keep particles small. Everything else uses named fields.
 typedef struct {
     simd_float4 position; // xyz, w = age
     simd_float4 velocity; // xyz, w = lifetime (0 = never spawned). Dead when age >= lifetime.
@@ -120,6 +143,47 @@ typedef struct {
     simd_float4 rotation;   // x = angle (radians), y = angular velocity (radians per second), z = initial frame, w = frame rate
     simd_float4 properties; // x = size scale, y = restitution offset, z = friction offset
 } Particle;
+
+/// Where newborn particles are placed, in emitter space. Mirrored by the Swift EmitterShape plus the birth settings on
+/// ParticleEmitter. Fields a kind does not use are zero.
+typedef struct {
+    ParticleEmitterShapeKind kind;
+    ParticleBirthLocation birthLocation;
+    ParticleBirthDirection birthDirection;
+    float sweep;                // Radians of azimuth around +Y that emit.
+    simd_float3 center;         // ParticleEmitter.position.
+    simd_float3 size;           // Box: full size. Plane: full size in x and z.
+    float radius;               // Sphere, disc, cylinder, cone, torus.
+    float height;               // Cylinder, cone.
+    float tubeRadius;           // Torus.
+    uint32_t meshTriangleCount; // Mesh.
+    uint32_t meshVertexCount;   // Mesh.
+} ParticleShapeData;
+
+/// Per-particle random offsets at birth: each value is drawn from -range...+range.
+typedef struct {
+    float size;        // Fraction of the size.
+    float restitution;
+    float friction;
+    float speed;
+    simd_float4 color; // Hue (turns), saturation, brightness, alpha.
+    float angle;
+    float angularSpeed;
+    float initialFrame;
+    float frameRate;
+} ParticleVariationData;
+
+/// Which part of the shared buffer an emitter owns and which of its slots a step touches.
+typedef struct {
+    uint32_t seed;
+    uint32_t capacity;   // Slots in the emitter's ring.
+    uint32_t sliceStart; // Ring start in the shared buffer.
+    uint32_t firstSlot;  // First ring slot this dispatch covers.
+    uint32_t cursor;     // First slot to spawn into.
+    uint32_t count;      // Particles to spawn this step.
+    uint32_t serial;     // Spawn serial of the first spawned particle.
+    uint32_t kill;       // Nonzero to kill every particle before this step.
+} ParticleSpawnData;
 
 // One emitter's settings for one simulation step. Each emitter owns a slice of the shared particle buffer.
 typedef struct {
@@ -129,61 +193,94 @@ typedef struct {
     // the step and back. Identity for world-space emitters.
     simd_float4x4 simulationToWorld;
     simd_float4x4 worldToSimulation;
-    // xyz = simulation-space translation of the emitter at the start of the step, so births within the step can be
-    // placed along the emitter's path. w unused.
-    simd_float4 previousEmitterOrigin;
-    // xyz = velocity added to every newborn particle (inherited emitter velocity), in simulation space.
-    simd_float4 inheritedVelocity;
-    simd_float4 emitterPosition; // xyz = shape center, w unused
-    simd_uint4 shape;            // x = ParticleEmitterShapeKind, y = ParticleBirthLocation, z = ParticleBirthDirection
-    simd_float4 shapeParameters; // per kind: sphere x = radius; box xyz = size; plane xy = size; disc x = radius;
-                                 // cylinder/cone x = radius, y = height; torus x = radius, y = tube radius. w = sweep
-    simd_uint4 meshCounts;       // x = triangle count, y = vertex count
-    simd_float4 emitterVelocity; // xyz = base velocity, w = spread
-    simd_float4 gravity;         // xyz (world space), w = drag
-    simd_float4 lifetime;        // x = min, y = max, w = deltaTime
-    simd_float4 collision;       // x = restitution, y = friction, z = collider count, w = nonzero to die on contact
-    simd_float4 rotation;        // x = angle, y = angle variation, z = angular speed, w = angular speed variation
-    simd_float4 imageSequence;   // x = initial frame, y = initial frame variation, z = frame rate, w = frame rate variation
-    simd_float4 fields;          // x = force field count, y = simulation time (seconds), z = sub-emitter count
-    simd_float4 variation;       // +/- ranges: x = size (fraction), y = restitution, z = friction, w = speed
-    simd_float4 colorVariation;  // +/- ranges: hue (turns), saturation, brightness, alpha
-    simd_uint4 triggers;         // x = trigger volume count, y = nonzero to count collider hits
-    simd_uint4 random;           // x = seed, y = slice capacity, z = slice start in the shared buffer, w = first ring slot dispatched
-    // x = ring cursor (first slot to spawn into), y = spawn count, z = spawn serial of the first spawned particle,
-    // w = nonzero to kill all particles before this step.
-    simd_uint4 spawn;
+    // Simulation-space translation of the emitter at the start of the step, so births within the step can be placed
+    // along the emitter's path.
+    simd_float3 previousEmitterOrigin;
+    // Added to every newborn particle (inherited emitter velocity), in simulation space.
+    simd_float3 inheritedVelocity;
+    ParticleShapeData shape;
+    simd_float3 velocity; // Base birth velocity, emitter space.
+    float velocitySpread;
+    simd_float3 gravity;  // World space.
+    float drag;
+    float lifetimeMinimum;
+    float lifetimeMaximum;
+    float deltaTime;
+    float time;           // Emitter clock in seconds; drives turbulence.
+    float restitution;
+    float friction;
+    uint32_t diesOnCollision;
+    uint32_t countsColliderHits; // Nonzero to add collider hits to the trigger counters.
+    float angle;
+    float angularSpeed;
+    float initialFrame;
+    float frameRate;
+    ParticleVariationData variation;
+    uint32_t colliderCount;
+    uint32_t forceFieldCount;
+    uint32_t subEmitterCount;
+    uint32_t triggerVolumeCount;
+    ParticleSpawnData spawn;
 } SimulationUniforms;
 
-// kind.x: 0 = none, 1 = plane (a = normal, distance), 2 = sphere (a = center, radius),
-// 3 = box (a = center, b = half extents, rotation = orientation), 4 = capsule (a = start, radius; b = end).
+/// Mirrored by the Swift Collider.
+typedef MS_ENUM(uint32_t, ParticleColliderKind) {
+    ParticleColliderKindPlane = 1,
+    ParticleColliderKindSphere = 2,
+    ParticleColliderKindBox = 3,
+    ParticleColliderKindCapsule = 4,
+};
+
+// World space. Fields a kind does not use are zero.
 typedef struct {
-    simd_float4 kind;
-    simd_float4 a;
-    simd_float4 b;
-    simd_float4 velocity; // xyz = collider velocity this step
-    simd_float4 rotation; // quaternion (xyz = imaginary, w = real)
+    ParticleColliderKind kind;
+    float radius;            // Sphere, capsule.
+    float distance;          // Plane: offset along the normal.
+    simd_float3 normal;      // Plane, unit length.
+    simd_float3 center;      // Sphere, box. Capsule: start.
+    simd_float3 end;         // Capsule.
+    simd_float3 halfExtents; // Box.
+    simd_float4 rotation;    // Box orientation quaternion (xyz = imaginary, w = real).
+    simd_float3 velocity;    // Collider velocity this step.
 } ColliderData;
 
-// kind.x: 1 = wind (a = velocity, strength), 2 = attractor (a = center, strength; b.x = radius),
-// 3 = vortex (a = center, strength; b = axis, radius), 4 = turbulence (a.x = strength, a.y = scale, a.z = speed).
+/// Mirrored by the Swift ForceField.
+typedef MS_ENUM(uint32_t, ParticleForceFieldKind) {
+    ParticleForceFieldKindWind = 1,
+    ParticleForceFieldKindAttractor = 2,
+    ParticleForceFieldKindVortex = 3,
+    ParticleForceFieldKindTurbulence = 4,
+};
+
+// World space. Fields a kind does not use are zero.
 typedef struct {
-    simd_float4 kind;
-    simd_float4 a;
-    simd_float4 b;
+    ParticleForceFieldKind kind;
+    float strength;
+    float radius;         // Attractor, vortex. 0 means unlimited range.
+    float scale;          // Turbulence: noise frequency per world unit.
+    float speed;          // Turbulence: how fast the pattern changes.
+    simd_float3 velocity; // Wind.
+    simd_float3 center;   // Attractor, vortex.
+    simd_float3 axis;     // Vortex, unit length.
 } ForceFieldData;
 
 typedef struct {
     simd_float4x4 viewProjection;
     // Simulation space to world. The emitter transform when simulating in local space, otherwise identity.
     simd_float4x4 model;
-    simd_float4 cameraRight;
-    simd_float4 cameraUp;
-    simd_uint4 options; // x = ParticleBlendMode, y = has texture, z = sheet columns, w = sheet rows
-    simd_uint4 imageSequence; // x = frame count, y = ParticleImageSequenceMode
-    simd_float4 cameraPosition;
-    simd_float4 orientation;  // xyz = fixed plane normal, w = velocity stretch factor
-    simd_uint4 orientationMode; // x = ParticleOrientationMode, y = nonzero to read particles through the sort entries
+    simd_float3 cameraRight;
+    simd_float3 cameraUp;
+    simd_float3 cameraPosition;
+    simd_float3 fixedNormal; // ParticleOrientationModeFixed: plane normal, unit length.
+    float velocityStretch;   // ParticleOrientationModeVelocityAligned.
+    ParticleOrientationMode orientationMode;
+    ParticleBlendMode blendMode;
+    uint32_t hasTexture;
+    uint32_t sheetColumns;
+    uint32_t sheetRows;
+    uint32_t frameCount;
+    ParticleImageSequenceMode sequenceMode;
+    uint32_t readsSortRecords; // Nonzero to read particles through the sort records.
 } RenderUniforms;
 
 typedef struct {

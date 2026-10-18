@@ -16,16 +16,28 @@ public enum ForceField: Sendable, Equatable {
 
 extension ForceFieldData {
     init(_ field: ForceField) {
+        self.init()
         switch field {
         case let .wind(velocity, strength):
-            self.init(kind: [1, 0, 0, 0], a: SIMD4(velocity, strength), b: .zero)
+            kind = .wind
+            self.velocity = velocity
+            self.strength = strength
         case let .attractor(center, strength, radius):
-            self.init(kind: [2, 0, 0, 0], a: SIMD4(center, strength), b: [radius, 0, 0, 0])
+            kind = .attractor
+            self.center = center
+            self.strength = strength
+            self.radius = radius
         case let .vortex(center, axis, strength, radius):
-            let axis = simd_length(axis) > 0 ? simd_normalize(axis) : SIMD3<Float>(0, 1, 0)
-            self.init(kind: [3, 0, 0, 0], a: SIMD4(center, strength), b: SIMD4(axis, radius))
+            kind = .vortex
+            self.center = center
+            self.axis = simd_length(axis) > 0 ? simd_normalize(axis) : [0, 1, 0]
+            self.strength = strength
+            self.radius = radius
         case let .turbulence(strength, scale, speed):
-            self.init(kind: [4, 0, 0, 0], a: [strength, scale, speed, 0], b: .zero)
+            kind = .turbulence
+            self.strength = strength
+            self.scale = scale
+            self.speed = speed
         }
     }
 }

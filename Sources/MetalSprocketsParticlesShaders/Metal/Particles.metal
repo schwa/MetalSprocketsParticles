@@ -88,27 +88,28 @@ static float fieldFalloff(float distance, float radius) {
 }
 
 static float3 fieldAcceleration(ForceFieldData field, float3 position, float3 velocity, float time) {
-    int kind = int(field.kind.x);
-    if (kind == 1) {
-        return (field.a.xyz - velocity) * field.a.w;
-    }
-    if (kind == 2) {
-        float3 offset = field.a.xyz - position;
+    switch (field.kind) {
+    case ParticleForceFieldKindWind:
+        return (field.velocity - velocity) * field.strength;
+    case ParticleForceFieldKindAttractor: {
+        float3 offset = field.center - position;
         float distance = length(offset);
-        return distance > 1e-4 ? offset / distance * field.a.w * fieldFalloff(distance, field.b.x) : float3(0);
+        return distance > 1e-4 ? offset / distance * field.strength * fieldFalloff(distance, field.radius) : float3(0);
     }
-    if (kind == 3) {
-        float3 axis = normalize(field.b.xyz);
-        float3 offset = position - field.a.xyz;
+    case ParticleForceFieldKindVortex: {
+        float3 axis = normalize(field.axis);
+        float3 offset = position - field.center;
         float3 radial = offset - axis * dot(offset, axis);
         float distance = length(radial);
-        return distance > 1e-4 ? cross(axis, radial / distance) * field.a.w * fieldFalloff(distance, field.b.w) : float3(0);
+        return distance > 1e-4 ? cross(axis, radial / distance) * field.strength * fieldFalloff(distance, field.radius) : float3(0);
     }
-    if (kind == 4) {
-        float3 sample = position * field.a.y + float3(0, 0, time * field.a.z);
-        return curlNoise(sample) * field.a.x;
+    case ParticleForceFieldKindTurbulence: {
+        float3 sample = position * field.scale + float3(0, 0, time * field.speed);
+        return curlNoise(sample) * field.strength;
     }
-    return float3(0);
+    default:
+        return float3(0);
+    }
 }
 
 // Draw several values with next2/next3/next4, never float3(next(), next(), next()): C++ leaves argument evaluation
@@ -162,13 +163,13 @@ static ShapeSample sampleShape(
     constant EmitterMeshTriangle *triangles,
     constant float4 *vertices
 ) {
-    float4 parameters = uniforms.shapeParameters;
-    float sweep = parameters.w;
-    bool surface = uniforms.shape.y != ParticleBirthLocationVolume;
+    ParticleShapeData shape = uniforms.shape;
+    float sweep = shape.sweep;
+    bool surface = shape.birthLocation != ParticleBirthLocationVolume;
     const float twoPi = 6.2831853;
-    switch (uniforms.shape.x) {
+    switch (shape.kind) {
     case ParticleEmitterShapeKindSphere: {
-        float radius = parameters.x;
+        float radius = shape.radius;
         if (!surface && sweep >= twoPi) {
             // Same draws as the original sphere emitter, so default results do not change.
             float3 offset = rng.inUnitSphere();
@@ -180,7 +181,7 @@ static ShapeSample sampleShape(
         return { direction * distance, direction };
     }
     case ParticleEmitterShapeKindBox: {
-        float3 halfSize = parameters.xyz * 0.5;
+        float3 halfSize = shape.size * 0.5;
         float3 point = (rng.next3() * 2 - 1) * halfSize;
         if (!surface) {
             return { point, sweptDirection(rng, twoPi) };
@@ -196,26 +197,26 @@ static ShapeSample sampleShape(
         return { point, normal };
     }
     case ParticleEmitterShapeKindPlane: {
-        float2 halfSize = parameters.xy * 0.5;
+        float2 halfSize = shape.size.xz * 0.5;
         float2 point = (rng.next2() * 2 - 1) * halfSize;
         return { float3(point.x, 0, point.y), float3(0, 1, 0) };
     }
     case ParticleEmitterShapeKindDisc: {
         float angle = rng.next() * sweep;
-        float distance = surface ? parameters.x : parameters.x * sqrt(rng.next());
+        float distance = surface ? shape.radius : shape.radius * sqrt(rng.next());
         return { float3(cos(angle), 0, sin(angle)) * distance, float3(0, 1, 0) };
     }
     case ParticleEmitterShapeKindCylinder: {
         float angle = rng.next() * sweep;
         float3 radial = float3(cos(angle), 0, sin(angle));
-        float distance = surface ? parameters.x : parameters.x * sqrt(rng.next());
-        float y = (rng.next() - 0.5) * parameters.y;
+        float distance = surface ? shape.radius : shape.radius * sqrt(rng.next());
+        float y = (rng.next() - 0.5) * shape.height;
         return { radial * distance + float3(0, y, 0), radial };
     }
     case ParticleEmitterShapeKindCone: {
-        // Base of radius parameters.x at y = 0, apex at y = parameters.y.
-        float radius = parameters.x;
-        float height = parameters.y;
+        // Base at y = 0, apex at y = height.
+        float radius = shape.radius;
+        float height = shape.height;
         float angle = rng.next() * sweep;
         float3 radial = float3(cos(angle), 0, sin(angle));
         // Cross-section area falls off with height, so sample height with matching density.
@@ -226,8 +227,8 @@ static ShapeSample sampleShape(
         return { radial * distance + float3(0, fraction * height, 0), normal };
     }
     case ParticleEmitterShapeKindTorus: {
-        float radius = parameters.x;
-        float tube = parameters.y;
+        float radius = shape.radius;
+        float tube = shape.tubeRadius;
         float angle = rng.next() * sweep;
         // Rejection-sample the tube angle so points are uniform over the surface, not bunched on the inside.
         float tubeAngle = 0;
@@ -243,12 +244,12 @@ static ShapeSample sampleShape(
         return { radial * radius + normal * distance, normal };
     }
     case ParticleEmitterShapeKindMesh: {
-        uint vertexCount = uniforms.meshCounts.y;
-        if (uniforms.shape.y == ParticleBirthLocationVertices && vertexCount > 0) {
+        uint vertexCount = shape.meshVertexCount;
+        if (shape.birthLocation == ParticleBirthLocationVertices && vertexCount > 0) {
             uint index = min(uint(rng.next() * vertexCount), vertexCount - 1);
             return { vertices[index].xyz, sweptDirection(rng, twoPi) };
         }
-        uint count = uniforms.meshCounts.x;
+        uint count = shape.meshTriangleCount;
         if (count == 0) {
             return { float3(0), sweptDirection(rng, twoPi) };
         }
@@ -290,7 +291,7 @@ static float3 rotate(float4 q, float3 v) {
 static void collide(thread float3 &position, thread float3 &velocity, ColliderData c, float3 normal, float penetration, float restitution, float friction, thread bool &hit) {
     hit = true;
     position += normal * penetration;
-    float3 colliderVelocity = c.velocity.xyz;
+    float3 colliderVelocity = c.velocity;
     float3 relative = velocity - colliderVelocity;
     float vn = dot(relative, normal);
     if (vn < 0) {
@@ -316,44 +317,44 @@ static Particle spawnParticle(
     {
         // The default full sphere volume keeps the original expression exactly: rewriting it changes rounding, and
         // tiny differences grow chaotically through collisions.
-        bool defaultSphere = uniforms.shape.x == ParticleEmitterShapeKindSphere
-            && uniforms.shape.y == ParticleBirthLocationVolume
-            && uniforms.shapeParameters.w >= 6.2831853;
+        bool defaultSphere = uniforms.shape.kind == ParticleEmitterShapeKindSphere
+            && uniforms.shape.birthLocation == ParticleBirthLocationVolume
+            && uniforms.shape.sweep >= 6.2831853;
         ShapeSample sample;
         float3 position;
         if (defaultSphere) {
             float3 offset = rng.inUnitSphere();
-            position = uniforms.emitterPosition.xyz + offset * uniforms.shapeParameters.x;
+            position = uniforms.shape.center + offset * uniforms.shape.radius;
             float offsetLength = length(offset);
             sample.normal = offsetLength > 1e-6 ? offset / offsetLength : float3(0, 1, 0);
         } else {
             sample = sampleShape(rng, uniforms, meshTriangles, meshVertices);
-            position = uniforms.emitterPosition.xyz + sample.position;
+            position = uniforms.shape.center + sample.position;
         }
-        float baseSpeed = length(uniforms.emitterVelocity.xyz);
-        float3 baseVelocity = uniforms.emitterVelocity.xyz;
-        if (uniforms.shape.z == ParticleBirthDirectionNormal) {
+        float baseSpeed = length(uniforms.velocity);
+        float3 baseVelocity = uniforms.velocity;
+        if (uniforms.shape.birthDirection == ParticleBirthDirectionNormal) {
             baseVelocity = sample.normal * baseSpeed;
-        } else if (uniforms.shape.z == ParticleBirthDirectionTangent) {
+        } else if (uniforms.shape.birthDirection == ParticleBirthDirectionTangent) {
             // Around +Y through the shape center. On the axis itself there is no tangent; use the normal.
-            float3 around = cross(float3(0, 1, 0), position - uniforms.emitterPosition.xyz);
+            float3 around = cross(float3(0, 1, 0), position - uniforms.shape.center);
             float aroundLength = length(around);
             baseVelocity = (aroundLength > 1e-6 ? around / aroundLength : sample.normal) * baseSpeed;
         }
-        float3 velocity = baseVelocity + rng.inUnitSphere() * uniforms.emitterVelocity.w;
-        float lifetime = mix(uniforms.lifetime.x, uniforms.lifetime.y, rng.next());
+        float3 velocity = baseVelocity + rng.inUnitSphere() * uniforms.velocitySpread;
+        float lifetime = mix(uniforms.lifetimeMinimum, uniforms.lifetimeMaximum, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
         birthAge = rng.next();
         // New draws go after existing ones, so adding a property does not change earlier random streams.
-        float angle = uniforms.rotation.x + (rng.next() * 2 - 1) * uniforms.rotation.y;
-        float angularVelocity = uniforms.rotation.z + (rng.next() * 2 - 1) * uniforms.rotation.w;
-        float initialFrame = max(0.0, uniforms.imageSequence.x + (rng.next() * 2 - 1) * uniforms.imageSequence.y);
-        float frameRate = uniforms.imageSequence.z + (rng.next() * 2 - 1) * uniforms.imageSequence.w;
-        float4 variation = uniforms.variation;
-        float sizeScale = max(0.0, 1 + (rng.next() * 2 - 1) * variation.x);
-        float restitutionOffset = (rng.next() * 2 - 1) * variation.y;
-        float frictionOffset = (rng.next() * 2 - 1) * variation.z;
-        float speedOffset = (rng.next() * 2 - 1) * variation.w;
+        ParticleVariationData variation = uniforms.variation;
+        float angle = uniforms.angle + (rng.next() * 2 - 1) * variation.angle;
+        float angularVelocity = uniforms.angularSpeed + (rng.next() * 2 - 1) * variation.angularSpeed;
+        float initialFrame = max(0.0, uniforms.initialFrame + (rng.next() * 2 - 1) * variation.initialFrame);
+        float frameRate = uniforms.frameRate + (rng.next() * 2 - 1) * variation.frameRate;
+        float sizeScale = max(0.0, 1 + (rng.next() * 2 - 1) * variation.size);
+        float restitutionOffset = (rng.next() * 2 - 1) * variation.restitution;
+        float frictionOffset = (rng.next() * 2 - 1) * variation.friction;
+        float speedOffset = (rng.next() * 2 - 1) * variation.speed;
         float speed = length(velocity);
         if (speed > 1e-6) {
             velocity *= max(0.0, speed + speedOffset) / speed;
@@ -362,12 +363,12 @@ static Particle spawnParticle(
         // Emitter-local to simulation space. Particles born earlier in the step start further back along the
         // emitter's path, so fast-moving emitters leave continuous trails instead of clumps.
         position = (uniforms.emitterTransform * float4(position, 1)).xyz;
-        position += (uniforms.previousEmitterOrigin.xyz - uniforms.emitterTransform[3].xyz) * birthAge;
-        velocity = (uniforms.emitterTransform * float4(velocity, 0)).xyz + uniforms.inheritedVelocity.xyz;
+        position += (uniforms.previousEmitterOrigin - uniforms.emitterTransform[3].xyz) * birthAge;
+        velocity = (uniforms.emitterTransform * float4(velocity, 0)).xyz + uniforms.inheritedVelocity;
         p.position = float4(position + origin, 0);
         p.velocity = float4(velocity + extraVelocity, lifetime);
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
-        p.color = colorOffset * uniforms.colorVariation;
+        p.color = colorOffset * variation.color;
         p.properties = float4(sizeScale, restitutionOffset, frictionOffset, 0);
     }
     return p;
@@ -386,24 +387,25 @@ kernel void updateParticles(
     constant TriggerVolumeData *triggerVolumes [[buffer(9)]],
     uint localID [[thread_position_in_grid]]
 ) {
-    // Each dispatch covers a window of one emitter's ring, starting at slot random.w and wrapping at its capacity.
-    uint capacity = uniforms.random.y;
-    uint slot = (uniforms.random.w + localID) % capacity;
-    uint id = uniforms.random.z + slot;
+    // Each dispatch covers a window of one emitter's ring, starting at spawn.firstSlot and wrapping at its capacity.
+    ParticleSpawnData spawn = uniforms.spawn;
+    uint capacity = spawn.capacity;
+    uint slot = (spawn.firstSlot + localID) % capacity;
+    uint id = spawn.sliceStart + slot;
     Particle p = particles[id];
-    float dt = uniforms.lifetime.w;
+    float dt = uniforms.deltaTime;
 
-    if (uniforms.spawn.w != 0) {
+    if (spawn.kill != 0) {
         p.position.w = 0;
         p.velocity.w = 0;
     }
 
-    // Particles spawn into a ring: this step owns `spawn.y` slots starting at the cursor. The oldest particles get
+    // Particles spawn into a ring: this step owns `spawn.count` slots starting at the cursor. The oldest particles get
     // recycled first. Randomness comes from the spawn serial, not the slot, so results do not depend on thread order.
-    uint offset = (slot + capacity - uniforms.spawn.x) % capacity;
-    bool born = offset < uniforms.spawn.y;
+    uint offset = (slot + capacity - spawn.cursor) % capacity;
+    bool born = offset < spawn.count;
     if (born) {
-        Random rng { hash(hash(uniforms.spawn.z + offset) ^ uniforms.random.x) };
+        Random rng { hash(hash(spawn.serial + offset) ^ spawn.seed) };
         float birthAge;
         p = spawnParticle(rng, uniforms, meshTriangles, meshVertices, float3(0), float3(0), birthAge);
         dt *= birthAge;
@@ -422,41 +424,38 @@ kernel void updateParticles(
     float3 position = (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz;
     float3 velocity = (uniforms.simulationToWorld * float4(p.velocity.xyz, 0)).xyz;
     float3 startPosition = position;
-    velocity += uniforms.gravity.xyz * dt;
-    uint fieldCount = uint(uniforms.fields.x);
+    velocity += uniforms.gravity * dt;
     float3 acceleration = 0;
-    for (uint i = 0; i < fieldCount; i++) {
-        acceleration += fieldAcceleration(forceFields[i], position, velocity, uniforms.fields.y);
+    for (uint i = 0; i < uniforms.forceFieldCount; i++) {
+        acceleration += fieldAcceleration(forceFields[i], position, velocity, uniforms.time);
     }
     velocity += acceleration * dt;
-    velocity *= max(0.0, 1.0 - uniforms.gravity.w * dt);
+    velocity *= max(0.0, 1.0 - uniforms.drag * dt);
     position += velocity * dt;
     p.rotation.x += p.rotation.y * dt;
 
-    float restitution = max(0.0, uniforms.collision.x + p.properties.y);
-    float friction = saturate(uniforms.collision.y + p.properties.z);
+    float restitution = max(0.0, uniforms.restitution + p.properties.y);
+    float friction = saturate(uniforms.friction + p.properties.z);
 
     bool hit = false;
-    uint colliderCount = uint(uniforms.collision.z);
-    for (uint i = 0; i < colliderCount; i++) {
+    for (uint i = 0; i < uniforms.colliderCount; i++) {
         // Hits on earlier colliders this step do not count toward this one.
         bool hitBefore = hit;
         hit = false;
         ColliderData c = colliders[i];
-        int kind = int(c.kind.x);
-        if (kind == 1) {
-            float distance = dot(position, c.a.xyz) - c.a.w;
-            if (distance < 0) { collide(position, velocity, c, c.a.xyz, -distance, restitution, friction, hit); }
-        } else if (kind == 2) {
-            float3 offset = position - c.a.xyz;
+        if (c.kind == ParticleColliderKindPlane) {
+            float distance = dot(position, c.normal) - c.distance;
+            if (distance < 0) { collide(position, velocity, c, c.normal, -distance, restitution, friction, hit); }
+        } else if (c.kind == ParticleColliderKindSphere) {
+            float3 offset = position - c.center;
             float distance = length(offset);
-            if (distance < c.a.w && distance > 0) {
-                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction, hit);
+            if (distance < c.radius && distance > 0) {
+                collide(position, velocity, c, offset / distance, c.radius - distance, restitution, friction, hit);
             }
-        } else if (kind == 3) {
+        } else if (c.kind == ParticleColliderKindBox) {
             float4 inverse = float4(-c.rotation.xyz, c.rotation.w);
-            float3 local = rotate(inverse, position - c.a.xyz);
-            float3 depth = c.b.xyz - abs(local);
+            float3 local = rotate(inverse, position - c.center);
+            float3 depth = c.halfExtents - abs(local);
             if (all(depth > 0)) {
                 // Push out through the nearest face.
                 float3 normal = float3(0);
@@ -466,52 +465,45 @@ kernel void updateParticles(
                 else { normal.z = sign(local.z); penetration = depth.z; }
                 collide(position, velocity, c, rotate(c.rotation, normal), penetration, restitution, friction, hit);
             }
-        } else if (kind == 4) {
-            float3 start = c.a.xyz;
-            float3 axis = c.b.xyz - start;
+        } else if (c.kind == ParticleColliderKindCapsule) {
+            float3 start = c.center;
+            float3 axis = c.end - start;
             float lengthSquared = length_squared(axis);
             float t = lengthSquared > 0 ? saturate(dot(position - start, axis) / lengthSquared) : 0;
             float3 offset = position - (start + axis * t);
             float distance = length(offset);
-            if (distance < c.a.w && distance > 0) {
-                collide(position, velocity, c, offset / distance, c.a.w - distance, restitution, friction, hit);
+            if (distance < c.radius && distance > 0) {
+                collide(position, velocity, c, offset / distance, c.radius - distance, restitution, friction, hit);
             }
         }
-        if (hit && uniforms.triggers.y != 0 && i < PARTICLE_TRIGGER_MAX_COLLIDERS) {
+        if (hit && uniforms.countsColliderHits != 0 && i < PARTICLE_TRIGGER_MAX_COLLIDERS) {
             atomic_fetch_add_explicit(&triggerCounters[i], 1u, memory_order_relaxed);
         }
         hit = hit || hitBefore;
     }
 
     // Trigger volumes count particles that were outside at the start of the step and inside at the end.
-    uint volumeCount = min(uniforms.triggers.x, uint(PARTICLE_TRIGGER_MAX_VOLUMES));
+    uint volumeCount = min(uniforms.triggerVolumeCount, uint(PARTICLE_TRIGGER_MAX_VOLUMES));
     for (uint i = 0; i < volumeCount; i++) {
         TriggerVolumeData volume = triggerVolumes[i];
-        auto inside = [&](float3 point) {
-            if (volume.kind.x == 1) {
-                return distance(point, volume.a.xyz) < volume.a.w;
-            }
-            return all(abs(point - volume.a.xyz) < volume.b.xyz);
-        };
-        if (inside(position) && !inside(startPosition)) {
+        if (volume.contains(position) && !volume.contains(startPosition)) {
             atomic_fetch_add_explicit(&triggerCounters[PARTICLE_TRIGGER_MAX_COLLIDERS + i], 1u, memory_order_relaxed);
         }
     }
 
-    if (hit && uniforms.collision.w != 0) {
+    if (hit && uniforms.diesOnCollision != 0) {
         age = lifetime;
     }
 
     // Sub-emitters: on an event, write children into the slots this particle owns in each child slice. Children live in
     // world space, so they start at this particle's world position.
-    uint subEmitterCount = uint(uniforms.fields.z);
-    for (uint i = 0; i < subEmitterCount; i++) {
+    for (uint i = 0; i < uniforms.subEmitterCount; i++) {
         SubEmitterData sub = subEmitters[i];
-        uint childrenPerEvent = sub.info.y;
-        float interval = sub.parameters.y;
+        uint childrenPerEvent = sub.countPerEvent;
+        float interval = sub.interval;
         uint first = 0;
         uint count = 0;
-        switch (sub.info.x) {
+        switch (sub.occasion) {
         case ParticleSpawnOccasionBirth:
             count = born ? childrenPerEvent : 0;
             break;
@@ -536,10 +528,10 @@ kernel void updateParticles(
         for (uint k = 0; k < count; k++) {
             uint childSlot = slot * childrenPerEvent + (first + k) % childrenPerEvent;
             // Keyed by parent slot, child slot, and parent age, so results do not depend on thread order.
-            Random childRandom { hash(hash(childSlot ^ subEmitterUniforms[i].random.x) ^ as_type<uint>(age)) };
+            Random childRandom { hash(hash(childSlot ^ subEmitterUniforms[i].spawn.seed) ^ as_type<uint>(age)) };
             float childBirthAge;
-            particles[sub.info.z + childSlot] = spawnParticle(
-                childRandom, subEmitterUniforms[i], meshTriangles, meshVertices, position, velocity * sub.parameters.x, childBirthAge);
+            particles[sub.childSliceStart + childSlot] = spawnParticle(
+                childRandom, subEmitterUniforms[i], meshTriangles, meshVertices, position, velocity * sub.velocityFactor, childBirthAge);
         }
     }
 
@@ -621,7 +613,7 @@ vertex VertexOut particleVertex(
 ) {
     const float2 corners[4] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(1, 1) };
     // Sorted emitters draw instance i as the i-th farthest particle.
-    Particle p = particles[uniforms.orientationMode.y != 0 ? sortRecords[instanceID].y : instanceID];
+    Particle p = particles[uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID];
     VertexOut out;
     float age = p.position.w;
     float lifetime = p.velocity.w;
@@ -637,12 +629,12 @@ vertex VertexOut particleVertex(
     float2 corner = corners[vertexID];
 
     // The quad's right and up axes in world space.
-    float3 right = uniforms.cameraRight.xyz;
-    float3 up = uniforms.cameraUp.xyz;
+    float3 right = uniforms.cameraRight;
+    float3 up = uniforms.cameraUp;
     float stretch = 1;
     float3 center = (uniforms.model * float4(p.position.xyz, 1)).xyz;
-    float3 toCamera = uniforms.cameraPosition.xyz - center;
-    switch (uniforms.orientationMode.x) {
+    float3 toCamera = uniforms.cameraPosition - center;
+    switch (uniforms.orientationMode) {
     case ParticleOrientationModeYAligned: {
         float3 side = cross(float3(0, 1, 0), toCamera);
         if (length_squared(side) > 1e-8) {
@@ -659,12 +651,12 @@ vertex VertexOut particleVertex(
         if (speed > 1e-4 && length_squared(side) > 1e-8) {
             up = velocity / speed;
             right = normalize(side);
-            stretch = 1 + uniforms.orientation.w * speed;
+            stretch = 1 + uniforms.velocityStretch * speed;
         }
         break;
     }
     case ParticleOrientationModeFixed: {
-        float3 normal = normalize(uniforms.orientation.xyz);
+        float3 normal = normalize(uniforms.fixedNormal);
         float3 helper = abs(normal.y) < 0.9 ? float3(0, 1, 0) : float3(1, 0, 0);
         right = normalize(cross(helper, normal));
         up = cross(normal, right);
@@ -683,9 +675,9 @@ vertex VertexOut particleVertex(
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = applyColorVariation(sampleCurve(colorCurve, t), p.color);
     out.uv = corner;
-    uint columns = max(uniforms.options.z, 1u);
-    uint rows = max(uniforms.options.w, 1u);
-    uint frame = sequenceFrame(p.rotation.z, p.rotation.w, age, uniforms.imageSequence.x, uniforms.imageSequence.y);
+    uint columns = max(uniforms.sheetColumns, 1u);
+    uint rows = max(uniforms.sheetRows, 1u);
+    uint frame = sequenceFrame(p.rotation.z, p.rotation.w, age, uniforms.frameCount, uniforms.sequenceMode);
     float2 cell = float2(frame % columns, frame / columns);
     // Texture v runs down, quad corner y runs up.
     float2 cellUV = float2(corner.x * 0.5 + 0.5, 0.5 - corner.y * 0.5);
@@ -719,7 +711,7 @@ fragment float4 particleFragment(
 ) {
     // Premultiplied coverage and color before tinting by the particle color.
     float4 base;
-    if (uniforms.options.y != 0) {
+    if (uniforms.hasTexture != 0) {
         base = sprite.sample(spriteSampler, in.texcoord);
     } else {
         float falloff = saturate(1.0 - length(in.uv));
@@ -727,7 +719,7 @@ fragment float4 particleFragment(
         base = float4(coverage, coverage, coverage, coverage);
     }
     float alpha = base.a * in.color.a;
-    if (uniforms.options.x == ParticleBlendModeOpaque) {
+    if (uniforms.blendMode == ParticleBlendModeOpaque) {
         if (alpha < 0.5) {
             discard_fragment();
         }

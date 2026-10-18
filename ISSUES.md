@@ -993,11 +993,13 @@ ParticleSystem.swift (~700 lines) plus ParticleSystem+Triggers, Spawner, and Par
 ## 52: Swift and Metal agree on uniform packing only by convention
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: effort:m, area:simulation, kind:refactor
 created: 2026-10-18T01:36:03Z
+updated: 2026-10-18T01:49:08Z
+closed: 2026-10-18T01:49:08Z
 +++
 
 ParticleTypes.h structs are filled by hand in Swift (the ~40-field SimulationUniforms setup in ParticleSystem) and by per-type packers (EmitterShape.parameters, ParticleOrientation.parameters, ForceFieldData, TriggerVolumeData). Several fields are packed uint4/float4 lanes with undocumented meanings (triggers.x = volume count, triggers.y = collider flag; imageSequence lanes; shape parameters per kind), and limits like PARTICLE_TRIGGER_MAX_* are shared constants. Nothing but golden images would catch a mismatch.\n\nDirection: give each packed type one Swift encoder next to its decoder contract, name the lanes (or use explicit structs instead of packed vectors), and add round-trip tests: encode in Swift, decode with a tiny test kernel calling the same Metal helper the simulation uses, compare. Dependency category: in-process plus GPU as local stand-in. Source: architecture review.
@@ -1012,6 +1014,8 @@ ParticleTypes.h structs are filled by hand in Swift (the ~40-field SimulationUni
 6. Shared types used by other Metal packages can be imported from them rather than redefined.
 
 Check: struct layout changes, so all goldens and determinism tests must still pass unchanged. Round-trip test kernels only for helpers with real logic (shape sampling).
+
+- `2026-10-18T01:49:08Z`: Reworked ParticleTypes.h in the MetalSprockets header style: MS_ENUM-typed fields (new ParticleColliderKind, ParticleForceFieldKind, ParticleTriggerVolumeKind replace float4 kinds), named scalar fields and sub-structs (ParticleShapeData, ParticleVariationData, ParticleSpawnData) instead of packed float4/uint4 lanes in SimulationUniforms, SubEmitterData, ColliderData, ForceFieldData, TriggerVolumeData, ParticleSortKeyParams, RenderUniforms. TriggerVolumeData::contains lives in the header. Swift fills fields by name; EmitterShape.parameters and ParticleOrientation.parameters are gone. Particle keeps its packed layout (per-particle memory). All 158 tests incl. goldens and determinism pass unchanged; bench unchanged. No round-trip kernels added: named fields removed the lane conventions they would have tested.
 
 ---
 

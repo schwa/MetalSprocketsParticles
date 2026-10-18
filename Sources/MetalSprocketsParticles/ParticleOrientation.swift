@@ -22,12 +22,18 @@ public enum ParticleOrientation: Sendable, Equatable {
         }
     }
 
-    /// xyz = fixed plane normal, w = stretch factor.
-    var parameters: SIMD4<Float> {
-        switch self {
-        case let .velocityAligned(stretch): [0, 0, 0, max(stretch, 0)]
-        case let .fixed(normal): SIMD4(simd_length(normal) > 0 ? simd_normalize(normal) : [0, 1, 0], 0)
-        default: [0, 1, 0, 0]
+    /// The plane normal for `fixed`, unit length; +Y otherwise.
+    var fixedNormal: SIMD3<Float> {
+        if case let .fixed(normal) = self, simd_length(normal) > 0 {
+            return simd_normalize(normal)
         }
+        return [0, 1, 0]
+    }
+
+    var velocityStretch: Float {
+        if case let .velocityAligned(stretch) = self {
+            return max(stretch, 0)
+        }
+        return 0
     }
 }

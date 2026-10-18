@@ -37,17 +37,35 @@ public enum EmitterShape: Sendable, Equatable {
         }
     }
 
-    /// Per-kind parameters; w is filled with the sweep angle by the caller.
-    var parameters: SIMD4<Float> {
-        switch self {
-        case .point, .mesh: .zero
-        case let .sphere(radius): [radius, 0, 0, 0]
-        case let .box(size): SIMD4(size, 0)
-        case let .plane(size): [size.x, size.y, 0, 0]
-        case let .disc(radius): [radius, 0, 0, 0]
-        case let .cylinder(radius, height): [radius, height, 0, 0]
-        case let .cone(radius, height): [radius, height, 0, 0]
-        case let .torus(radius, tubeRadius): [radius, tubeRadius, 0, 0]
+}
+
+extension ParticleShapeData {
+    /// The shader's view of an emitter's shape and birth settings. `mesh` supplies counts for `EmitterShape.mesh`.
+    init(_ settings: ParticleEmitter, mesh: EmitterMesh?) {
+        self.init()
+        kind = settings.shape.kind
+        birthLocation = settings.birthLocation
+        birthDirection = settings.birthDirection
+        sweep = max(settings.sweepAngle, 0)
+        center = settings.position
+        switch settings.shape {
+        case .point:
+            break
+        case .mesh:
+            meshTriangleCount = UInt32(mesh?.triangleCount ?? 0)
+            meshVertexCount = UInt32(mesh?.vertexCount ?? 0)
+        case let .sphere(radius), let .disc(radius):
+            self.radius = radius
+        case let .box(size):
+            self.size = size
+        case let .plane(size):
+            self.size = [size.x, 0, size.y]
+        case let .cylinder(radius, height), let .cone(radius, height):
+            self.radius = radius
+            self.height = height
+        case let .torus(radius, tubeRadius):
+            self.radius = radius
+            self.tubeRadius = tubeRadius
         }
     }
 }

@@ -34,17 +34,28 @@ extension Collider {
 
 extension ColliderData {
     init(_ collider: Collider, velocity: SIMD3<Float> = .zero) {
-        let velocity = SIMD4(velocity, 0)
-        let identity: SIMD4<Float> = [0, 0, 0, 1]
+        self.init()
+        self.velocity = velocity
+        rotation = [0, 0, 0, 1]
         switch collider {
         case let .plane(normal, distance):
-            self.init(kind: [1, 0, 0, 0], a: SIMD4(simd_normalize(normal), distance), b: .zero, velocity: velocity, rotation: identity)
+            kind = .plane
+            self.normal = simd_normalize(normal)
+            self.distance = distance
         case let .sphere(center, radius):
-            self.init(kind: [2, 0, 0, 0], a: SIMD4(center, radius), b: .zero, velocity: velocity, rotation: identity)
+            kind = .sphere
+            self.center = center
+            self.radius = radius
         case let .box(center, halfExtents, rotation):
-            self.init(kind: [3, 0, 0, 0], a: SIMD4(center, 0), b: SIMD4(halfExtents, 0), velocity: velocity, rotation: simd_normalize(rotation).vector)
+            kind = .box
+            self.center = center
+            self.halfExtents = halfExtents
+            self.rotation = simd_normalize(rotation).vector
         case let .capsule(start, end, radius):
-            self.init(kind: [4, 0, 0, 0], a: SIMD4(start, radius), b: SIMD4(end, 0), velocity: velocity, rotation: identity)
+            kind = .capsule
+            center = start
+            self.end = end
+            self.radius = radius
         }
     }
 }
