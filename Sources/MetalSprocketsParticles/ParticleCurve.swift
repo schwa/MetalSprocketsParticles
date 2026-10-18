@@ -38,6 +38,20 @@ public struct ParticleCurve<Value: ParticleCurveValue>: Sendable, Equatable, Cod
         }
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case keyframes
+    }
+
+    /// Files must have at least one keyframe; an empty list is a decoding error, not a crash on first use.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let keyframes = try container.decode([Keyframe].self, forKey: .keyframes)
+        guard !keyframes.isEmpty else {
+            throw DecodingError.dataCorruptedError(forKey: .keyframes, in: container, debugDescription: "A curve needs at least one keyframe.")
+        }
+        self.init(keyframes)
+    }
+
     public init(_ keyframes: [Keyframe]) {
         precondition(!keyframes.isEmpty, "A curve needs at least one keyframe.")
         self.keyframes = keyframes.sorted { $0.time < $1.time }

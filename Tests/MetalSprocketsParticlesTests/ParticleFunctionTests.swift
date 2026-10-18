@@ -191,6 +191,18 @@ struct ParticleFunctionTests {
         #expect(once.allSatisfy { $0.position.y > 9 && $0.position.y < 11 && $0.position.w >= $0.velocity.w })
     }
 
+    @Test func unsetParametersReadAsZero() throws {
+        // The file gives one parameter; the code reads entry 7, which must be a padded zero, not memory past the buffer.
+        let readsSeven = ParticleFunction(source: """
+        [[visible]] void readsSeven(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+            particle.velocity = parameters[7].xyz + float3(0, 1, 0);
+        }
+        """, name: "readsSeven", parameters: [[9, 9, 9, 9]])
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = readsSeven })
+        let result = try velocities(system, count: 16, frames: 2)
+        #expect(result[0].allSatisfy { simd_distance($0, [0, 1, 0]) < 1e-5 })
+    }
+
     @Test func compileErrorsThrowFromSimulate() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
         let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = broken })

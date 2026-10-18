@@ -11,11 +11,16 @@ import MetalSprockets
 ///
 /// The system compiles `source` after `ParticleFunction.prelude`, which includes `<metal_stdlib>` and declares
 /// `ParticleState`. Change `particle` to change the particle. `time` is the emitter's clock in seconds, and
-/// `parameters` holds `parameters` from Swift (at least one entry).
+/// `parameters` holds `parameters` from Swift. Entries 0 through `minimumParameterCount - 1` are always safe to read;
+/// ones you did not set are zero.
 public struct ParticleFunction: Sendable, Hashable, Codable {
     public var source: String
     public var name: String
     public var parameters: [SIMD4<Float>]
+
+    /// How many parameter entries the GPU always gets, padded with zeros, so code reading a few more than an effect file
+    /// supplies does not read past the end of the buffer.
+    public static let minimumParameterCount = 16
 
     public init(source: String, name: String, parameters: [SIMD4<Float>] = []) {
         self.source = source
@@ -162,7 +167,8 @@ extension ParticleSystemRuntime {
             }
         }
         let parameters = dispatch.functions.map { function in
-            function.map(\.parameters).flatMap { $0.isEmpty ? nil : $0 } ?? [SIMD4<Float>.zero]
+            let given = function?.parameters ?? []
+            return given + Array(repeating: SIMD4<Float>.zero, count: max(ParticleFunction.minimumParameterCount - given.count, 0))
         }
         return FunctionTables(functions: functions, linked: linked, parameters: parameters)
     }

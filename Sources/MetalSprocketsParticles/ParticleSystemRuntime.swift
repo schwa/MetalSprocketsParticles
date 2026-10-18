@@ -288,9 +288,21 @@ public final class ParticleSystemRuntime {
         try self.init(device: device, emitters: [emitter], capacity: capacity, seed: seed)
     }
 
+    /// `total + capacity`, or `tooManyParticles` when it overflows or no buffer could hold that many particles.
+    private static func checkedTotal(_ total: Int, adding capacity: Int) throws -> Int {
+        let (sum, overflow) = total.addingReportingOverflow(capacity)
+        guard !overflow, sum <= Int(UInt32.max), sum.multipliedReportingOverflow(by: MemoryLayout<Particle>.stride).overflow == false else {
+            throw ParticleSystemRuntimeError.tooManyParticles
+        }
+        return sum
+    }
+
     private static func makeBuffer(device: MTLDevice, count: Int) throws -> MTLBuffer {
         // All particles start dead (lifetime 0).
         let length = MemoryLayout<Particle>.stride * max(count, 1)
+        guard length <= device.maxBufferLength else {
+            throw ParticleSystemRuntimeError.tooManyParticles
+        }
         guard let buffer = device.makeBuffer(length: length, options: .storageModeShared) else {
             throw CocoaError(.featureUnsupported)
         }
@@ -312,7 +324,7 @@ public final class ParticleSystemRuntime {
         for (index, entry) in emitters.enumerated() {
             let capacity = max(entry.capacity, 1)
             created.append(Emitter(settings: entry.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(index)))
-            start += capacity
+            start = try Self.checkedTotal(start, adding: capacity)
         }
         // Sub-emitter instances follow all emitters, one level at a time, so each level dispatches after its parents.
         // Each parent slot owns countPerEvent child slots, so capacity multiplies with depth.
@@ -322,7 +334,11 @@ public final class ParticleSystemRuntime {
             var nextLevel: [Emitter] = []
             for parent in level {
                 for (subIndex, sub) in parent.settings.subEmitters.enumerated() {
-                    let capacity = parent.capacity * max(sub.countPerEvent, 1)
+                    // Effect files can ask for anything; overflow or an impossible buffer is an error, not a crash.
+                    let (capacity, overflow) = parent.capacity.multipliedReportingOverflow(by: max(sub.countPerEvent, 1))
+                    guard !overflow else {
+                        throw ParticleSystemRuntimeError.tooManyParticles
+                    }
                     let child = Emitter(settings: sub.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(created.count + children.count))
                     child.parent = parent
                     child.subEmitterIndex = subIndex
@@ -330,7 +346,7 @@ public final class ParticleSystemRuntime {
                     parent.children.append(child)
                     children.append(child)
                     nextLevel.append(child)
-                    start += capacity
+                    start = try Self.checkedTotal(start, adding: capacity)
                 }
             }
             level = nextLevel
