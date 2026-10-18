@@ -115,6 +115,7 @@ struct SceneSectionView: View {
                 Button("Open Effect", systemImage: "folder") { isImporting = true }
                 Button("Save Effect", systemImage: "square.and.arrow.down") { isExporting = true }
             }
+            VideoExportView()
             .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
                 do {
                     try model.openEffect(at: try result.get())
@@ -144,6 +145,55 @@ struct SceneSectionView: View {
             HStack {
                 Button("Restart", systemImage: "arrow.counterclockwise") { model.restart() }
                 Button("Revert", systemImage: "arrow.uturn.backward") { model.reloadPreset() }
+            }
+        }
+    }
+}
+
+/// Renders the current scene to a movie (5 s, 1080p, 30 fps) with progress, then asks where to keep it.
+struct VideoExportView: View {
+    @Environment(ParticlesDemoModel.self) private var model
+    @State private var errorMessage: String?
+
+    var body: some View {
+        @Bindable var model = model
+        Group {
+            if let progress = model.videoExportProgress {
+                ProgressView("Exporting video", value: progress)
+            } else {
+                Button("Export Video", systemImage: "film", action: export)
+            }
+        }
+        .fileMover(isPresented: $model.isMovingExportedVideo, file: model.exportedVideo) { result in
+            if case let .failure(error) = result {
+                errorMessage = error.localizedDescription
+            }
+        }
+        .alert("Video Export Failed", isPresented: $errorMessage.isPresent) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+
+    private func export() {
+        Task {
+            do {
+                try await model.exportVideo()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+extension Optional {
+    /// True when there is a value; setting false clears it. For alert and sheet bindings.
+    var isPresent: Bool {
+        get { self != nil }
+        set {
+            if !newValue {
+                self = nil
             }
         }
     }

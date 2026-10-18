@@ -156,6 +156,16 @@ struct OutlineTests {
         #expect(ParticlePreset.all.allSatisfy { !$0.comment.isEmpty })
     }
 
+    @Test func videoExportWritesAMovieAndOffersIt() async throws {
+        let model = ParticlesDemoModel(preset: .sparks)
+        try await model.exportVideo(duration: 0.3, size: CGSize(width: 160, height: 90))
+        let url = try #require(model.exportedVideo)
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(FileManager.default.fileExists(atPath: url.path))
+        #expect(model.isMovingExportedVideo)
+        #expect(model.videoExportProgress == nil)
+    }
+
     @Test func presetMeshReachesTheSystem() throws {
         let model = ParticlesDemoModel(preset: .teapot)
         let system = try #require(model.system)

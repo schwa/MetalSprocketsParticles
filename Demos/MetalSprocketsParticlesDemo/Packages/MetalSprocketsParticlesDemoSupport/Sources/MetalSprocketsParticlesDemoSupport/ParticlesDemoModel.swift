@@ -325,6 +325,34 @@ final class ParticlesDemoModel {
 
     // MARK: Per frame
 
+    // MARK: Video export
+
+    /// Fraction done while a video export runs; nil otherwise.
+    private(set) var videoExportProgress: Double?
+    /// The finished movie, in a temporary folder, waiting to be moved where the user chooses.
+    var exportedVideo: URL?
+    /// True while the finished movie waits for the user to pick a location.
+    var isMovingExportedVideo = false
+
+    /// Renders the current scene (with edits) from the start to a temporary movie, off the main actor, then offers it
+    /// to be moved. Uses the preset's camera, not the interactive one.
+    func exportVideo(duration: TimeInterval = 5, size: CGSize = CGSize(width: 1920, height: 1080), frameRate: Double = 30) async throws {
+        let effect = currentEffect
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(effect.name).mov")
+        videoExportProgress = 0
+        defer { videoExportProgress = nil }
+        try await Task.detached {
+            try await effect.exportVideo(to: url, size: size, frameRate: frameRate, duration: duration) { fraction in
+                Task { @MainActor in
+                    self.videoExportProgress = fraction
+                }
+                return true
+            }
+        }.value
+        exportedVideo = url
+        isMovingExportedVideo = true
+    }
+
     /// What the loaded preset shows, for the inspector.
     private(set) var presetComment = ""
 
