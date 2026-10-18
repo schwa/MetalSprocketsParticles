@@ -1799,7 +1799,7 @@ Do:
 status: new
 priority: medium
 kind: feature
-labels: area:collision,needs-design
+labels: area:collision, needs-design
 created: 2026-10-18T17:20:05Z
 +++
 
@@ -1815,5 +1815,18 @@ Options to decide:
 3. A user Metal function called on collision (#89) that can edit the particle state; needs color and size in ParticleState (see #85).
 
 1 and 2 work in presets and the demo without code; 3 is the general escape hatch. Related: #46 (rain splashes), #89, #85.
+
+---
+
+## 92: Docs should not refer to xcb
+
++++
+status: new
+priority: medium
+kind: none
+created: 2026-10-18T17:22:24Z
++++
+
+README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace with standard xcodebuild/swift commands.
 
 ---
