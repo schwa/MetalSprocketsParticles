@@ -105,13 +105,15 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     public func transforms(at time: Float) -> [simd_float4x4] {
         layers.map { $0.motion.transform(time: time) }
     }
+}
 
-    /// Finds a preset by name, ignoring case, spaces, and hyphens.
-    public static func named(_ name: String) -> Self? {
+public extension [ParticlePreset] {
+    /// The preset with this name, ignoring case, spaces, and hyphens.
+    func named(_ name: String) -> ParticlePreset? {
         func normalized(_ string: String) -> String {
             string.lowercased().filter { $0.isLetter || $0.isNumber }
         }
-        return all.first { normalized($0.name) == normalized(name) }
+        return first { normalized($0.name) == normalized(name) }
     }
 }
 

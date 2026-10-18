@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import simd
 import Testing
 

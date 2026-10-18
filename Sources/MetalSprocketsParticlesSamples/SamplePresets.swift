@@ -1,36 +1,44 @@
 import Foundation
+import MetalSprocketsParticles
 
-// Built-in presets are JSON effect files in Resources/Presets, the same format as saved effects. index.json lists them
-// in display order. Edit a preset by changing its file, or by building it in the demo and saving it over the file.
+// Sample presets: JSON effect files in Resources/Presets, the same format as saved effects. index.json lists them in
+// display order. A separate product from the library, so apps that do not want them do not ship them. Edit a preset by
+// changing its file, or by building it in the demo and saving it over the file.
 
 public extension ParticlePreset {
-    /// Every built-in preset, in display order, loaded once from the package's resources.
+    /// The Presets folder in this target's resources.
+    static let presetsFolder: URL = {
+        guard let url = Bundle.module.url(forResource: "Presets", withExtension: nil) else {
+            preconditionFailure("The Presets folder is missing from the MetalSprocketsParticlesSamples bundle.")
+        }
+        return url
+    }()
+
+    /// Every sample preset, in display order (index.json), loaded once.
     static let all: [ParticlePreset] = {
         do {
-            return try builtInSlugs.map { slug in
-                guard let url = Bundle.module.url(forResource: slug, withExtension: "json", subdirectory: "Presets") else {
-                    throw CocoaError(.fileNoSuchFile, userInfo: [NSFilePathErrorKey: "Presets/\(slug).json"])
-                }
-                return try ParticlePreset(contentsOf: url)
-            }
+            return try presets(in: presetsFolder)
         } catch {
-            preconditionFailure("Built-in presets failed to load: \(error)")
+            preconditionFailure("Sample presets failed to load: \(error)")
         }
     }()
 
-    /// The built-in presets' file names, in display order, from Presets/index.json.
-    internal static let builtInSlugs: [String] = {
-        guard let index = Bundle.module.url(forResource: "index", withExtension: "json", subdirectory: "Presets"),
-              let slugs = try? JSONDecoder().decode([String].self, from: Data(contentsOf: index)) else {
-            preconditionFailure("Presets/index.json is missing or unreadable in the MetalSprocketsParticles bundle.")
+    /// The sample presets' file names, in display order.
+    static let sampleSlugs: [String] = {
+        guard let slugs = try? JSONDecoder().decode([String].self, from: Data(contentsOf: presetsFolder.appending(path: "index.json"))) else {
+            preconditionFailure("Presets/index.json is missing or unreadable.")
         }
         return slugs
     }()
 
-    /// A built-in preset by name.
+    /// A sample preset by name, ignoring case, spaces, and hyphens.
+    static func named(_ name: String) -> ParticlePreset? {
+        all.named(name)
+    }
+
     private static func builtIn(_ name: String) -> ParticlePreset {
         guard let preset = named(name) else {
-            preconditionFailure("No built-in preset named \(name).")
+            preconditionFailure("No sample preset named \(name).")
         }
         return preset
     }

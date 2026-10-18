@@ -8,7 +8,7 @@ import SwiftUI
 /// matrices.
 ///
 /// ```swift
-/// ParticleView(.campfire)
+/// ParticleView(try ParticlePreset(contentsOf: campfireURL))
 /// ```
 ///
 /// The view uses the preset's camera, draws colliders as solids when the preset asks for it, and moves pointer-bound

@@ -1,5 +1,6 @@
 import Foundation
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import simd
 import SwiftMesh
 import Testing

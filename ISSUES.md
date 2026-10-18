@@ -2030,3 +2030,27 @@ created: 2026-10-18T19:51:12Z
 Sub-emitters can nest up to ParticleSystem.maxSubEmitterDepth levels (#94), but the demo's outline and inspector only show and edit first-level sub-emitters (OutlineItem.subEmitter(emitterID, index)). Nested transitions, such as Embers to Ash's ash-to-dust stage, cannot be seen or edited in the app. Make outline items and the selected-sub-emitter accessor take a path of indices, show nested sub-emitters as children in the outline, and allow adding and removing them at any level.
 
 ---
+
+## 101: Rename ParticlePreset to ParticleSystem, and ParticleSystem to ParticleSystemRuntime
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m
+created: 2026-10-18T20:17:34Z
+updated: 2026-10-18T20:28:29Z
++++
+
+ParticlePreset is the type for a whole effect (emitters, colliders, force fields, lights, camera), but 'preset' suggests a fixed built-in starting point. Most uses are not presets: effects built in code, loaded from effect files, edited in the demo, passed to ParticleView. The docs already call them effects ('effect files', 'Get an effect').
+
+Candidates:
+- ParticleEffect (recommended): matches 'effect file' and the README wording; ParticleView(effect).
+- ParticleScene: but it is not a full scene (no geometry beyond colliders).
+- ParticleSetup or ParticleConfiguration: accurate but bland.
+
+Scope: the type and its nested Layer alias, file names (ParticlePreset.swift, PresetBuilder.swift, PresetFolder.swift, SamplePresets.swift), APIs with 'preset' in them (presets(in:), ParticlePresetBuilder, PresetComponent, ParticleSystem.load(_:), ParticleView(_:)), the demo (presetName, preset picker labels), CLI flags (--preset, --list-presets, --presets), tests, README, and docs. The JSON format has no type name, so effect files keep working. 'Sample presets' can stay as the name of the samples library's contents.
+
+- `2026-10-18T20:19:46Z`: Decision (user): ParticleSystem is the public name for the effect description (today's ParticlePreset), as in SceneKit's SCNParticleSystem. The runtime (today's ParticleSystem: GPU buffers, simulate, render) becomes ParticleSystemRuntime. Rename the related APIs to match (e.g. ParticleSystemRuntime.load(_:), ParticleView(_ system:), presets(in:) -> systems(in:) or similar). 'Sample presets' can stay as the samples library's wording.
+
+---

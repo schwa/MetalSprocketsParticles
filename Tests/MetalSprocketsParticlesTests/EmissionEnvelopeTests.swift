@@ -1,5 +1,6 @@
 import Metal
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import Testing
 
 /// `ParticleEmitter.emissionOverTime` shapes births over time and lets effects finish.

@@ -2,6 +2,7 @@ import Foundation
 import Metal
 import MetalSprockets
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import MetalSprocketsParticlesShaders
 import simd
 import Testing

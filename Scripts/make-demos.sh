@@ -8,7 +8,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-presets="$root/Sources/MetalSprocketsParticles/Resources/Presets"
+presets="$root/Sources/MetalSprocketsParticlesSamples/Resources/Presets"
 demos="$root/Documentation/Demos"
 video_url="https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos"
 # Finite effects play until they finish, up to this many seconds; the rest get a fixed length.

@@ -1,5 +1,6 @@
 import Foundation
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import Testing
 
 /// Documentation/Demos has a clip, a poster, and a README section for every built-in preset, and nothing else.
@@ -15,7 +16,7 @@ struct DemoDocumentationTests {
     }
 
     @Test func everyPresetHasAClipAPosterAndASection() throws {
-        let slugs = Set(ParticlePreset.builtInSlugs)
+        let slugs = Set(ParticlePreset.sampleSlugs)
         #expect(try files(in: "videos", extension: "mp4") == slugs)
         #expect(try files(in: "posters", extension: "jpg") == slugs)
         let readme = try String(contentsOf: demos.appending(path: "README.md"), encoding: .utf8)

@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import Testing
 
 @Suite(.serialized)

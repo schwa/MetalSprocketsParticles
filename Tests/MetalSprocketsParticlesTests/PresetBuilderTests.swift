@@ -1,11 +1,12 @@
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import simd
 import Testing
 
 /// #76: built-in presets come from JSON resources.
 struct BuiltInPresetTests {
     @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() {
-        let slugs = ParticlePreset.builtInSlugs
+        let slugs = ParticlePreset.sampleSlugs
         #expect(slugs.count >= 25)
         #expect(ParticlePreset.all.count == slugs.count)
         #expect(Set(ParticlePreset.all.map(\.name)).count == slugs.count)

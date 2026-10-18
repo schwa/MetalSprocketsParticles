@@ -1,6 +1,7 @@
 import Foundation
 import Metal
 import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import MetalSprocketsParticlesShaders
 import Observation
 import simd

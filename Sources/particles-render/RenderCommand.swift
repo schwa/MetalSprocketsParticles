@@ -5,6 +5,7 @@ import Foundation
 import ImageIO
 import MetalSprockets
 import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import simd
 import UniformTypeIdentifiers
 
@@ -27,10 +28,13 @@ struct RenderCommand: AsyncParsableCommand {
     @Option(help: "Movie frames per second; each frame is one simulation step.")
     var fps: Double = 30
 
-    @Option(help: "Preset to render. See --list-presets.")
+    @Option(help: "Preset to render, from --presets. See --list-presets.")
     var preset = "Fountain"
 
-    @Option(help: "Render a saved effect (JSON) instead of a built-in preset.")
+    @Option(help: "Folder of effect files to choose --preset from, instead of the sample presets.")
+    var presets: String?
+
+    @Option(help: "Render a saved effect (JSON) instead of a preset.")
     var effect: String?
 
     @Option(help: "Write the effect as JSON to this path and exit.")
@@ -70,17 +74,18 @@ struct RenderCommand: AsyncParsableCommand {
     var target: String?
 
     func run() async throws {
+        let available = try presets.map { try ParticlePreset.presets(in: URL(fileURLWithPath: $0)) } ?? ParticlePreset.all
         if listPresets {
-            ParticlePreset.all.forEach { print($0.name) }
+            available.forEach { print($0.name) }
             return
         }
         var preset: ParticlePreset
         if let effect {
             preset = try ParticlePreset(contentsOf: URL(fileURLWithPath: effect))
-        } else if let builtIn = ParticlePreset.named(self.preset) {
-            preset = builtIn
+        } else if let found = available.named(self.preset) {
+            preset = found
         } else {
-            throw ValidationError("Unknown preset '\(self.preset)'. Presets: \(ParticlePreset.all.map(\.name).joined(separator: ", "))")
+            throw ValidationError("Unknown preset '\(self.preset)'. Presets: \(available.map(\.name).joined(separator: ", "))")
         }
         if noSort {
             for index in preset.layers.indices {

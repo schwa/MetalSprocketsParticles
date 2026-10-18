@@ -20,6 +20,7 @@ let package = Package(
             name: "MetalSprocketsParticlesDemoSupport",
             dependencies: [
                 .product(name: "MetalSprocketsParticles", package: "MetalSprocketsParticles"),
+                .product(name: "MetalSprocketsParticlesSamples", package: "MetalSprocketsParticles"),
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "MetalSprocketsUI", package: "MetalSprockets"),
                 .product(name: "Interaction3D", package: "Interaction3D"),

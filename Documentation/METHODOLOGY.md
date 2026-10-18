@@ -21,12 +21,7 @@ The first session began on 17 October 2026 with:
 >
 > stretch goal - particles that interact with geometry
 
-About 26 hours of wall-clock time later (with breaks), the project had:
-
-- 118 commits and 76 filed issues, 68 of them closed.
-- About 11,100 lines of Swift and 1,450 lines of Metal and shared C headers.
-- 206 library tests and 36 demo tests, including 44 golden images.
-- 26 presets, a macOS editor app, a render/video CLI, a benchmark CLI, and video export.
+The work took about two days, with breaks.
 
 ## The loop: issues first, then work
 
@@ -38,7 +33,7 @@ Almost all work went through an issue tracker (the `issues` CLI, which stores is
    fields etc".
 2. **Triage.** The `issues-triage` skill assigned kind, priority, and effort; the human adjusted ("15 should be high.
    it's going to impact testing", "bump priority up: 25, 32, 54", "defer 74").
-3. **Work the backlog autonomously.** The `auto-issue-fixer` skill ran seven times. Each run asked a few scope
+3. **Work the backlog autonomously.** The `auto-issue-fixer` skill ran ten times. Each run asked a few scope
    questions (how many issues, include low priority or untriaged), set a jj bookmark, printed the plan, and loaded one
    task per issue into pi's task queue. Each task: load the issue, write a failing test first for bugs, fix, build and
    test, then commit with the issue closed in the same commit. Hard or ambiguous issues were punted with a comment
@@ -67,6 +62,30 @@ After each burst of features the human asked, in effect, "is it all shown and so
   emitters, collider spin and tunneling, and emitters driven by deformed (morphing or skinned) mesh buffers, aimed at
   replacing the particle system in MetalSprocketsSceneGraph.
 
+## The second day
+
+The first day built the engine. The second day was mostly about finish, reach, and extension points:
+
+- **Cleanup.** A SwiftLint setup (generated, then curated by hand), a simple README with a feature list written for
+  library users, an MIT license, and this document.
+- **Upstream fixes.** Two gaps in MetalSprockets (no access to the frame's depth, and a confusing `enabled:` label)
+  were filed upstream from here. The human fixed them in MetalSprockets, and this project then moved to its `main`
+  branch.
+- **Demo audit.** The human asked "do we have good demos for everything?" The agent compared features with presets,
+  filed the gaps, then removed presets that only repeated others. The gaps became presets: Fog (soft particles against
+  solid colliders), Flag (a deforming mesh), Paddle Wheel (spinning colliders), Strange Attractor (a user Metal
+  function), Pointer Stir (mouse control), and Embers to Ash (chained transitions).
+- **Extension points.** A spike tested user-supplied Metal functions through a visible function table, compiled at
+  runtime against a small public struct. It measured no cost at one million particles, and then became update, spawn,
+  collision, and death hooks.
+- **Transitions.** The human asked for particles that turn into another kind on an event. The agent noticed that
+  sub-emitters already did most of this, and added only the missing parts: the parent dies, an age event, a sprite
+  per sub-emitter, keeping the parent's life, entering a volume, and nesting.
+- **Packaging.** A standalone `ParticleView` in its own UI library, built on MetalSprockets' `RenderView`. The sample
+  presets moved out of the core library into their own optional library, on the human's direction.
+- **Demo clips.** A script renders every preset's clip and poster and rewrites the demo index. A test fails if any
+  preset is missing one.
+
 ## Tools
 
 - **pi** (the harness): file read, edit, write, shell, a JavaScript "codemode" for batching tool calls, a task queue
@@ -89,8 +108,9 @@ After each burst of features the human asked, in effect, "is it all shown and so
 
 pi skills are instruction files the agent loads when a task matches. Used directly in this project:
 
-- `auto-issue-fixer` (seven runs), `issues`, `issues-triage`, `writing-issues`: the tracker workflow.
+- `auto-issue-fixer` (ten runs), `issues`, `issues-triage`, `writing-issues`: the tracker workflow.
 - `improve-codebase-architecture`, `swiftui-house-rules`, `swift-concurrency-pro`: reviews.
+- `swiftlint`: the lint setup. `simple-english`: the README and this document.
 - Build, `jujutsu`, `metalsprockets`, `swift-no-shadow-types`, `writing-comments`: house rules for builds, version
   control, the MetalSprockets API, Codable design, and comment style.
 
@@ -110,8 +130,15 @@ auto-issue-fixer runs had it), ask before skipping planned work, use `rg`/`fd`, 
   reran them back to back against the previous commit before concluding anything; several apparent regressions were
   load from other processes.
 - **Corrections in the open.** Mistakes were stated in summaries: wrong test expectations, a reversed sign in swept
-  collision, a wrong claim about a MetalSprockets API, a miscounted preset total, and a spike closed on our side's
-  measurements only.
+  collision, a wrong claim about a MetalSprockets API, a miscounted preset total, a spike closed on our side's
+  measurements only, a feature audit that missed a setting (its issue was closed as invalid), and one file edited with
+  `sed` against the house rules.
+- **Evidence before explanations.** When a test run hung for 36 minutes, the agent sampled the stuck process and found
+  it waiting on a lock in the toolchain's build system, not in the tests. It said it did not know the root cause, and
+  added timeouts to later runs.
+- **Lint autofix checked.** SwiftLint's autofix broke the build in four ways (for example, it rewrote `count > 0` as
+  `isEmpty` on structs that only have a `count` field). Each was found by building and testing, then fixed or turned
+  off with a reason.
 
 ## What the human contributed
 

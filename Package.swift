@@ -9,6 +9,8 @@ let package = Package(
         .library(name: "MetalSprocketsParticles", targets: ["MetalSprocketsParticles"]),
         // SwiftUI views, kept apart so the core library has no UI dependency.
         .library(name: "MetalSprocketsParticlesUI", targets: ["MetalSprocketsParticlesUI"]),
+        // Sample presets, for the demo, tools, and anyone who wants a starting point.
+        .library(name: "MetalSprocketsParticlesSamples", targets: ["MetalSprocketsParticlesSamples"]),
         .executable(name: "particles-render", targets: ["particles-render"]),
         .executable(name: "particles-bench", targets: ["particles-bench"]),
     ],
@@ -27,8 +29,7 @@ let package = Package(
                 "MetalSprocketsParticlesShaders",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "SwiftMesh", package: "SwiftMesh"),
-            ],
-            resources: [.copy("Resources/Presets")]
+            ]
         ),
         .target(
             name: "MetalSprocketsParticlesUI",
@@ -38,9 +39,14 @@ let package = Package(
                 .product(name: "MetalSprocketsUI", package: "MetalSprockets"),
             ]
         ),
+        .target(
+            name: "MetalSprocketsParticlesSamples",
+            dependencies: ["MetalSprocketsParticles"],
+            resources: [.copy("Resources/Presets")]
+        ),
         .testTarget(
             name: "MetalSprocketsParticlesUITests",
-            dependencies: ["MetalSprocketsParticlesUI", "MetalSprocketsParticles"]
+            dependencies: ["MetalSprocketsParticlesUI", "MetalSprocketsParticles", "MetalSprocketsParticlesSamples"]
         ),
         .target(
             name: "MetalSprocketsParticlesShaders",
@@ -53,6 +59,7 @@ let package = Package(
             name: "MetalSprocketsParticlesTests",
             dependencies: [
                 "MetalSprocketsParticles",
+                "MetalSprocketsParticlesSamples",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "GoldenImage", package: "GoldenImage"),
                 .product(name: "SwiftMesh", package: "SwiftMesh"),
@@ -71,6 +78,7 @@ let package = Package(
             name: "particles-render",
             dependencies: [
                 "MetalSprocketsParticles",
+                "MetalSprocketsParticlesSamples",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
