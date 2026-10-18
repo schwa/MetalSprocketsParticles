@@ -130,6 +130,8 @@ final class ParticlesDemoModel {
     var showColliders = false
     /// Draws colliders as solids and gives soft particles their depth.
     var drawColliders = false
+    /// The preset's spinning colliders, by index.
+    var colliderSpins: [ColliderSpin] = []
 
     @ObservationIgnored private var cachedSceneDepth: SceneDepth?
 
@@ -190,6 +192,7 @@ final class ParticlesDemoModel {
             cameraTarget: cameraTarget
         )
         preset.drawsColliders = drawColliders
+        preset.colliderSpins = colliderSpins
         preset.comment = presetComment
         return preset
     }
@@ -230,6 +233,7 @@ final class ParticlesDemoModel {
         forceFields = preset.forceFields.map { ForceFieldItem(field: $0) }
         animateColliders = preset.animatesColliders
         drawColliders = preset.drawsColliders
+        colliderSpins = preset.colliderSpins
         system?.lights = preset.lights
         system?.ambientLight = preset.ambientLight
         trackedObjects = preset.trackedObjects
@@ -387,10 +391,11 @@ final class ParticlesDemoModel {
     }
 
     func frameColliders(time: Float) -> [Collider] {
+        let spun = colliders.map(\.collider).spun(colliderSpins, at: time)
         guard animateColliders else {
-            return colliders.map(\.collider)
+            return spun
         }
-        return colliders.enumerated().map { index, item in item.collider.animated(time: time, index: index) }
+        return spun.enumerated().map { index, collider in collider.animated(time: time, index: index) }
     }
 
     func frameTransforms(time: Float) -> [simd_float4x4] {

@@ -17,6 +17,8 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     /// Draw the colliders as shaded solids and give their depth to the particles, so emitters with `softness` fade
     /// where they meet them. See `ParticleSystem.renderColliderSolids` and `renderSceneDepth`.
     public var drawsColliders = false
+    /// Colliders that turn at a steady rate; see `colliders(at:)`.
+    public var colliderSpins: [ColliderSpin] = []
     public var forceFields: [ForceField]
     /// Lights for emitters with `isLit`.
     public var lights: [ParticleLight]
@@ -61,6 +63,7 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         try container.update(&colliders, .colliders)
         try container.update(&animatesColliders, .animatesColliders)
         try container.update(&drawsColliders, .drawsColliders)
+        try container.update(&colliderSpins, .colliderSpins)
         try container.update(&forceFields, .forceFields)
         try container.update(&lights, .lights)
         try container.update(&ambientLight, .ambientLight)
@@ -82,12 +85,13 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         trackedObjects.mapValues { $0.transform(time: time).columns.3.xyz }
     }
 
-    /// Colliders for `time`, animated if the preset asks for it.
+    /// Colliders for `time`: spun by `colliderSpins`, and animated if the preset asks for it.
     public func colliders(at time: Float) -> [Collider] {
+        let spun = colliders.spun(colliderSpins, at: time)
         guard animatesColliders else {
-            return colliders
+            return spun
         }
-        return colliders.enumerated().map { index, collider in collider.animated(time: time, index: index) }
+        return spun.enumerated().map { index, collider in collider.animated(time: time, index: index) }
     }
 
     /// Emitter transforms for `time`, one per layer.

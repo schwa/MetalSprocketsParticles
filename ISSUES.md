@@ -1544,15 +1544,18 @@ Open questions: which interactions first, and whether the pointer is a ray or a 
 ## 78: Demo rotating colliders
 
 +++
-status: open
+status: closed
 priority: low
 kind: feature
 labels: area:presets, effort:m
 created: 2026-10-18T15:38:44Z
-updated: 2026-10-18T15:44:07Z
+updated: 2026-10-18T16:55:50Z
+closed: 2026-10-18T16:55:50Z
 +++
 
 Collider angular velocity and pivot (#72) are only shown in a golden test. Preset colliders can't rotate, and the demo's Animate Colliders toggle only moves them. Add a way for a preset to spin a collider (e.g. collider motion in JSON), and add a preset with a spinning paddle or box that flings particles.
+
+- `2026-10-18T16:55:50Z`: Added ColliderSpin (collider index, axis, rad/s) and ParticlePreset.colliderSpins, applied in colliders(at:) and the demo's frameColliders; boxes and capsules turn about the same pivot the GPU uses for angular velocity. New Paddle Wheel preset: two solid spinning blades fling a stream of sand. Tests: colliderSpinsTurnBoxesAndCapsulesAboutTheirPivot, paddleWheelPresetSpinsItsBlades; golden, clip, poster. Known gap: spins refer to colliders by index, so removing a collider in the demo can shift them.
 
 ---
 

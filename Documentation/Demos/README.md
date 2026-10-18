@@ -25,6 +25,7 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Swarms](#swarms)
 - [Geyser](#geyser)
 - [Bumper](#bumper)
+- [Paddle Wheel](#paddle-wheel)
 - [Teapot](#teapot)
 - [Flag](#flag)
 - [Awning](#awning)
@@ -156,6 +157,12 @@ A geyser erupts for 1.5 seconds every 4: water shoots from a cylinder, rocks tum
 Balls drop onto a bumper. Each hit bursts sparks, balls that bounce into the goal burst stars, a ring pulses every 2 seconds, and sending the event 'boom' fires confetti. Shows the emission triggers.
 
 [![bumper](posters/bumper.jpg)](videos/bumper.mp4)
+
+## Paddle Wheel
+
+Sand pours onto a spinning paddle wheel, which flings it across the ground. The two blades are box colliders that turn at a steady rate; their spin throws the sand that hits them.
+
+[![paddle-wheel](posters/paddle-wheel.jpg)](videos/paddle-wheel.mp4)
 
 ## Teapot
 

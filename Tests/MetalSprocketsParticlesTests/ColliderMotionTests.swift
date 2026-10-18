@@ -47,6 +47,38 @@ struct ColliderMotionTests {
         #expect(simd_length(result.velocity) > 2, "speed \(simd_length(result.velocity))")
     }
 
+    @Test func colliderSpinsTurnBoxesAndCapsulesAboutTheirPivot() {
+        let colliders: [Collider] = [
+            .plane(normal: [0, 1, 0], distance: 0),
+            .box(center: [1, 2, 3], halfExtents: [1, 0.1, 0.1]),
+            .capsule(start: [-1, 1, 0], end: [1, 1, 0], radius: 0.1),
+        ]
+        let spins = [
+            ColliderSpin(collider: 1, axis: [0, 0, 1], speed: .pi / 2),
+            ColliderSpin(collider: 2, axis: [0, 1, 0], speed: .pi / 2),
+            ColliderSpin(collider: 9, axis: [0, 1, 0], speed: 1),
+        ]
+        let spun = colliders.spun(spins, at: 1)
+        #expect(spun[0] == colliders[0])
+        guard case let .box(center, _, rotation) = spun[1].shape, case let .capsule(start, end, _) = spun[2].shape else {
+            Issue.record("Shapes changed kind")
+            return
+        }
+        #expect(center == [1, 2, 3])
+        #expect(simd_distance(rotation.act([1, 0, 0]), [0, 1, 0]) < 1e-5)
+        // A quarter turn about y swings the capsule from along x to along z, around its midpoint.
+        #expect(simd_distance(start, [0, 1, 1]) < 1e-5)
+        #expect(simd_distance(end, [0, 1, -1]) < 1e-5)
+    }
+
+    @Test func paddleWheelPresetSpinsItsBlades() throws {
+        let preset = ParticlePreset.paddleWheel
+        #expect(preset.colliderSpins.count == 2)
+        #expect(preset.colliders(at: 0.5) != preset.colliders(at: 0))
+        let decoded = try JSONDecoder().decode(ParticlePreset.self, from: try JSONEncoder().encode(preset))
+        #expect(decoded.colliderSpins == preset.colliderSpins)
+    }
+
     @Test func fastParticlesDoNotTunnelThroughThinBoxes() throws {
         // 20 units/s covers 0.33 per step; the box is 0.04 thick.
         let result = try run(start: [0, 1, 0], velocity: [0, -20, 0], frames: 10) { _ in
