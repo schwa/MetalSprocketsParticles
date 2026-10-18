@@ -1211,14 +1211,18 @@ ParticlesDemoModel is passed explicitly into OutlineView, EmitterOutlineRow, Emi
 ## 62: RemoveSectionView is a near zero-value wrapper
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:xs, area:demo
 created: 2026-10-18T12:36:57Z
+updated: 2026-10-18T13:17:00Z
+closed: 2026-10-18T13:17:00Z
 +++
 
 RemoveSectionView (EmitterInspectorView.swift) is one destructive button in a Section, no state, four call sites. House rule flags thin wrappers as removal candidates; four call sites may justify it. Decide whether to inline. Source: SwiftUI review.
+
+- `2026-10-18T13:17:01Z`: Kept as is. The house rule flags thin wrappers with 1-2 call sites; RemoveSectionView has 4 (sub-emitter, trigger, collider, force field), all the same destructive Section + button bound to model.removeSelection(). That is real reuse, and inlining would repeat the same three lines four times. No code change.
 
 ---
 
