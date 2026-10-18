@@ -1251,13 +1251,17 @@ EmitterOutlineRow uses 'private var emitterLabel: some View' (label + tag + cont
 ## 65: Saved effects drop emitter meshes
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:tooling
 created: 2026-10-18T12:47:29Z
+updated: 2026-10-18T13:11:38Z
+closed: 2026-10-18T13:11:38Z
 +++
 
 Effect files (#25) save EmitterDescription without its mesh, because SwiftMesh's Mesh is not Codable. The Teapot preset saved to JSON and reopened emits from nothing (a center point). Options: make Mesh Codable in SwiftMesh, store triangulated positions + indices in the file, or reference a mesh by name/resource (e.g. 'teapot') that the loader resolves.
+
+- `2026-10-18T13:11:38Z`: Meshes are saved as triangulated positions (meshPositions) and triangle indices (meshTriangles) inside EmitterDescription's Codable, and load back via Mesh(positions:faces:). Emission only uses triangles, so a saved Teapot renders byte-identical to the built-in preset. Out-of-range indices are a decoding error. Files are large for big meshes (Teapot effect: 1.4 MB pretty-printed JSON, mesh stored per layer).
 
 ---

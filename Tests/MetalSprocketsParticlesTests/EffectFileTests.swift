@@ -1,10 +1,11 @@
 import Foundation
 @testable import MetalSprocketsParticles
 import simd
+import SwiftMesh
 import Testing
 
 struct EffectFileTests {
-    /// Every built-in preset survives JSON, except meshes, which are not saved.
+    /// Every built-in preset survives JSON. Meshes come back triangulated, so they are compared by geometry.
     @Test(arguments: ParticlePreset.all.map(\.name))
     func presetRoundTrips(name: String) throws {
         let preset = try #require(ParticlePreset.named(name))
@@ -18,7 +19,24 @@ struct EffectFileTests {
         for (saved, original) in zip(decoded.layers, preset.layers) {
             var expected = original
             expected.mesh = nil
-            #expect(saved == expected)
+            var savedWithoutMesh = saved
+            savedWithoutMesh.mesh = nil
+            #expect(savedWithoutMesh == expected)
+            #expect(saved.mesh?.positions == original.mesh?.positions)
+            #expect(saved.mesh.map(triangles) == original.mesh.map(triangles))
+        }
+    }
+
+    func triangles(_ mesh: Mesh) -> [[Int]] {
+        mesh.triangulate().map { [Int($0.0.raw), Int($0.1.raw), Int($0.2.raw)] }
+    }
+
+    @Test func outOfRangeMeshIndicesAreAnError() throws {
+        var json = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(ParticlePreset.teapot.layers[0])) as! [String: Any]
+        json["meshTriangles"] = [[0, 1, 999_999]]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(EmitterDescription.self, from: data)
         }
     }
 

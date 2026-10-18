@@ -6,12 +6,7 @@ import SwiftMesh
 /// Everything needed to create one emitter: its settings plus the resources and runtime choices that live on
 /// `ParticleSystem.Emitter`. Presets, apps, and editors describe emitters with this; `ParticleSystem.apply(_:)` turns
 /// descriptions into running emitters.
-public struct EmitterDescription: Sendable, Identifiable, Equatable, Codable {
-    /// `mesh` is not saved: SwiftMesh meshes are not Codable.
-    enum CodingKeys: String, CodingKey {
-        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting
-    }
-
+public struct EmitterDescription: Sendable, Identifiable, Equatable {
     /// Identifies the emitter across edits. `apply(_:)` rebuilds the particle buffer when the ids change.
     public let id: UUID
     public var name: String
@@ -95,6 +90,52 @@ public extension ParticleSystem {
         let texture = sprite.makeTexture(device: device)
         spriteTextures[sprite] = texture
         return texture
+    }
+}
+
+/// SwiftMesh meshes are not Codable, so `mesh` is saved as its triangulated positions and triangle indices (all that
+/// emission uses) and loads back as a triangle mesh.
+extension EmitterDescription: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting, meshPositions, meshTriangles
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        settings = try container.decode(ParticleEmitter.self, forKey: .settings)
+        sprite = try container.decode(ParticleSprite.self, forKey: .sprite)
+        motion = try container.decode(EmitterMotion.self, forKey: .motion)
+        simulationSpace = try container.decode(SimulationSpace.self, forKey: .simulationSpace)
+        capacity = try container.decode(Int.self, forKey: .capacity)
+        isEmitting = try container.decodeIfPresent(Bool.self, forKey: .isEmitting) ?? true
+        if let positions = try container.decodeIfPresent([SIMD3<Float>].self, forKey: .meshPositions) {
+            let triangles = try container.decode([SIMD3<Int32>].self, forKey: .meshTriangles)
+            guard triangles.allSatisfy({ all($0 .>= 0) && all($0 .< Int32(positions.count)) }) else {
+                throw DecodingError.dataCorruptedError(forKey: .meshTriangles, in: container, debugDescription: "Mesh triangle index out of range")
+            }
+            mesh = Mesh(positions: positions, faces: triangles.map { [Int($0.x), Int($0.y), Int($0.z)] })
+        } else {
+            mesh = nil
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(settings, forKey: .settings)
+        try container.encode(sprite, forKey: .sprite)
+        try container.encode(motion, forKey: .motion)
+        try container.encode(simulationSpace, forKey: .simulationSpace)
+        try container.encode(capacity, forKey: .capacity)
+        try container.encode(isEmitting, forKey: .isEmitting)
+        if let mesh {
+            try container.encode(mesh.positions, forKey: .meshPositions)
+            let triangles = mesh.triangulate().map { SIMD3<Int32>(Int32($0.0.raw), Int32($0.1.raw), Int32($0.2.raw)) }
+            try container.encode(triangles, forKey: .meshTriangles)
+        }
     }
 }
 
