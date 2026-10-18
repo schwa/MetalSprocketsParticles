@@ -849,14 +849,18 @@ Mesh emission (#7) and SwiftMesh input (#38) are not shown anywhere. Add a prese
 ## 44: No preset uses flat or Y-aligned particle orientation
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T00:32:29Z
+updated: 2026-10-18T00:46:48Z
+closed: 2026-10-18T00:46:48Z
 +++
 
 The flat (fixed plane) and Y-aligned orientation modes (#18) are unused. Add demos that need them: ripples spreading flat on a water surface, and upright flames or grass that turn only around Y. Related: #18, #40.
+
+- `2026-10-18T00:46:48Z`: Added Pond (flat ring ripples, fixed orientation, plus velocity-aligned drops) and Ring of Fire (emoji flames, Y-aligned, seen from above) presets with goldens.
 
 ---
 

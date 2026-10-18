@@ -11,8 +11,85 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases, .colorSmoke,
+        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire,
     ]
+
+    /// Rain drops on a pond: each drop spreads a ripple that lies flat on the water (fixed orientation).
+    static let pond = ParticlePreset(
+        "Pond",
+        layers: [
+            Layer("Ripples", settings: emitter {
+                $0.orientation = .fixed(normal: [0, 1, 0])
+                $0.position = [0, 0.01, 0]
+                $0.shape = .plane(size: [6, 6])
+                $0.velocity = .zero
+                $0.velocitySpread = 0
+                $0.gravity = .zero
+                $0.lifetime = 1.5...2.5
+                $0.birthRate = 12
+                $0.warmupDuration = 3
+                $0.blendMode = .additive
+                $0.sizeOverLife = .linear(from: 0.02, to: 0.7)
+                $0.opacityOverLife = .linear(from: 0.9, to: 0)
+                $0.colorOverLife = .constant([0.6, 0.85, 1, 1])
+            }, sprite: .ring, capacity: 200),
+            Layer("Drops", settings: emitter {
+                $0.orientation = .velocityAligned(stretch: 0.3)
+                $0.position = [0, 4, 0]
+                $0.shape = .plane(size: [6, 6])
+                $0.velocity = [0, -6, 0]
+                $0.velocitySpread = 0
+                $0.gravity = [0, -9.8, 0]
+                $0.lifetime = 2...2
+                $0.birthRate = 40
+                $0.warmupDuration = 2
+                $0.diesOnCollision = true
+                $0.blendMode = .additive
+                $0.sizeOverLife = .constant(0.012)
+                $0.colorOverLife = .constant([0.6, 0.8, 1, 0.6])
+            }, capacity: 200),
+        ],
+        colliders: [ground],
+        cameraEye: [0, 3.5, 5],
+        cameraTarget: [0, 0, 0]
+    )
+
+    /// A ring of emoji flames seen from above. Y-aligned flames stay upright and only turn around Y, so they do not
+    /// tip over toward the camera like billboards would.
+    static let ringOfFire = ParticlePreset(
+        "Ring of Fire",
+        layers: [
+            Layer("Flames", settings: emitter {
+                $0.orientation = .yAligned
+                $0.sortMode = .backToFront
+                $0.shape = .torus(radius: 2, tubeRadius: 0.05)
+                $0.velocity = [0, 0.6, 0]
+                $0.velocitySpread = 0.1
+                $0.gravity = .zero
+                $0.lifetime = 0.8...1.2
+                $0.birthRate = 150
+                $0.warmupDuration = 2
+                $0.sizeOverLife = ParticleCurve([.init(0, 0.1), .init(0.3, 0.3), .init(1, 0.05)])
+                $0.opacityOverLife = ParticleCurve([.init(0, 0), .init(0.15, 1), .init(0.7, 1), .init(1, 0)])
+                $0.colorOverLife = .constant([1, 1, 1, 1])
+            }, sprite: .fire, capacity: 1_000),
+            Layer("Embers", settings: emitter {
+                $0.shape = .torus(radius: 2, tubeRadius: 0.1)
+                $0.velocity = [0, 1.5, 0]
+                $0.velocitySpread = 0.6
+                $0.gravity = [0, 0.3, 0]
+                $0.lifetime = 1...2
+                $0.birthRate = 80
+                $0.warmupDuration = 2
+                $0.blendMode = .additive
+                $0.sizeOverLife = .linear(from: 0.02, to: 0)
+                $0.colorOverLife = .linear(from: [1, 0.7, 0.2, 1], to: [1, 0.2, 0, 0])
+            }, capacity: 500),
+        ],
+        forceFields: [.turbulence(strength: 1, scale: 1, speed: 0.6)],
+        cameraEye: [0, 4.5, 5],
+        cameraTarget: [0, 0.3, 0]
+    )
 
     /// Thick, nearly opaque puffs of colored smoke billowing up and out. Every puff overlaps others, so drawing them
     /// back to front matters: switch Sort to None to see far puffs paint over near ones.
