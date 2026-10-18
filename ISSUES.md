@@ -1577,17 +1577,19 @@ EmitterMesh.setDeformedPositions (#73) is Swift API only, with no demo. Add a pr
 ## 80: Demo one-shot emitters
 
 +++
-status: open
+status: closed
 priority: low
 kind: feature
 labels: area:presets, effort:s
 created: 2026-10-18T15:38:44Z
-updated: 2026-10-18T15:44:07Z
+updated: 2026-10-18T16:13:32Z
+closed: 2026-10-18T16:13:32Z
 +++
 
 No preset sets loops = false. Add a preset or a demo button for a one-shot effect, e.g. an explosion or a puff that plays once and finishes, and show the HUD 'Finished' state.
 
 - `2026-10-18T15:44:08Z`: Related: #82 makes Confetti finite. Do #80 alongside #82: add loops=false support to a preset there or here.
+- `2026-10-18T16:13:32Z`: Confetti now uses a one-shot emitter (emissionDuration 0.35, loops false) instead of an emission curve, so Flare shows the curve and Confetti shows the one-shot setting. Still finishes at about 8.4 s (confettiPresetFinishes passes). Golden, clip, poster, and comments updated.
 
 ---
 
