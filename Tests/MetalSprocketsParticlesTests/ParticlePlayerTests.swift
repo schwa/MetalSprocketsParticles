@@ -42,6 +42,18 @@ struct ParticlePlayerTests {
         #expect(player.time == 0)
     }
 
+    @Test func stoppingResetsTheClock() throws {
+        // Stop then play restarts the emitters; the player's clock (animated colliders, scripted pointer, tracked
+        // objects) must start over with them.
+        let renderer = try OffscreenRenderer(size: size)
+        let player = try ParticlePlayer(system: .fountain, device: renderer.device)
+        _ = try render(player, renderer: renderer, frames: 30)
+        player.runtime.state = .stopped
+        _ = try render(player, renderer: renderer, frames: 1)
+        player.runtime.state = .playing
+        #expect(player.time == 0)
+    }
+
     @Test func matchesTheHandWrittenLoop() throws {
         // The loop the CLI, video export, and goldens used to write out by hand.
         let system = ParticleSystem.paddleWheel

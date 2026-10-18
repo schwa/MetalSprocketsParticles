@@ -32,6 +32,9 @@ public final class ParticleSystemRuntime {
         public var simulationSpace: SimulationSpace = .world
         /// Turns emission off without affecting existing particles.
         public var isEmitting = true
+        // The description's `isEmitting` when last applied; nil until the first apply, so that one always sets it.
+        // swiftlint:disable:next discouraged_optional_boolean
+        var appliedIsEmitting: Bool?
         /// Triangles for `EmitterShape.mesh`.
         public var mesh: EmitterMesh?
         /// The mesh `mesh` was made from by `ParticleSystemRuntime.apply(_:)`, to skip remaking it.
@@ -369,6 +372,7 @@ public final class ParticleSystemRuntime {
             new.transform = old.transform
             new.simulationSpace = old.simulationSpace
             new.isEmitting = old.isEmitting
+            new.appliedIsEmitting = old.appliedIsEmitting
             new.mesh = old.mesh
             new.meshSource = old.meshSource
             new.meshDeformation = old.meshDeformation

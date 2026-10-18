@@ -56,6 +56,26 @@ struct ApplySystemTests {
         #expect(runtime.colliders.isEmpty && runtime.forceFields == [.turbulence(strength: 1)])
     }
 
+    @Test func reapplyingKeepsRuntimeStartAndStop() throws {
+        // Triggers start and stop emitters while running. Applying the same description again (as ParticlePlayer does
+        // every frame) must not undo that.
+        var system = ParticleSystem.fountain
+        system.layers[0].settings.triggers = [EmissionTrigger(.event("halt"), .stop)]
+        let runtime = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        try runtime.load(system)
+        runtime.send(event: "halt")
+        try run(runtime, frames: 3)
+        #expect(!runtime.emitters[0].isEmitting)
+        try runtime.apply(system)
+        #expect(!runtime.emitters[0].isEmitting)
+        // A change to isEmitting in the description still applies.
+        system.layers[0].isEmitting = false
+        try runtime.apply(system)
+        system.layers[0].isEmitting = true
+        try runtime.apply(system)
+        #expect(runtime.emitters[0].isEmitting)
+    }
+
     @Test func layoutChangesAndLoadStartOver() throws {
         var system = ParticleSystem.fountain
         let runtime = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)

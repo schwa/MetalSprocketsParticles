@@ -107,6 +107,19 @@ struct ParticleFunctionTests {
         #expect((0..<16).allSatisfy { pointer[$0].position.y > 1.5 && abs(simd_length(SIMD2(pointer[$0].position.x, pointer[$0].position.z)) - 2) < 1e-3 })
     }
 
+    @Test func oneFunctionWithDifferentParametersInTwoSlots() throws {
+        // Same source and name, different parameters: still one compiled function, which must be linked once.
+        var spawnVersion = setVelocity
+        spawnVersion.parameters = [[0, 1, 0, 0]]
+        let emitter = fallingEmitter {
+            $0.spawnFunction = spawnVersion
+            $0.updateFunction = setVelocity
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
+        let result = try velocities(system, count: 16, frames: 3)
+        #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
+    }
+
     @Test func oneFunctionCanBeBothSpawnAndUpdate() throws {
         // Linking the same function twice would fail pipeline creation.
         let emitter = fallingEmitter {

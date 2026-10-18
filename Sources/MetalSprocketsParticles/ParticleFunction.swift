@@ -146,13 +146,13 @@ extension ParticleSystemRuntime {
     func functionTables(for dispatch: FramePlan.Dispatch) throws -> FunctionTables {
         var functions: [VisibleFunction] = []
         var linked: [VisibleFunction] = []
-        var linkedSources: [ParticleFunction] = []
+        // By compiled function (source and name), not by value: parameters do not change what is linked.
+        var linkedKeys: Set<FunctionKey> = []
         for (slot, function) in zip(ParticleFunctionSlot.allCases, dispatch.functions) {
             if let function {
                 let compiled = try visibleFunction(for: function)
                 functions.append(compiled)
-                if !linkedSources.contains(function) {
-                    linkedSources.append(function)
+                if linkedKeys.insert(FunctionKey(source: function.source, name: function.name)).inserted {
                     linked.append(compiled)
                 }
             } else {

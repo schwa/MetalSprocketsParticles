@@ -76,7 +76,12 @@ public extension ParticleSystemRuntime {
         for (emitter, description) in zip(emitters, descriptions) {
             emitter.settings = description.settings
             emitter.simulationSpace = description.simulationSpace
-            emitter.isEmitting = description.isEmitting
+            // Only a change in the description turns emission on or off, so start and stop triggers survive re-applying
+            // the same description (as ParticlePlayer does every frame).
+            if emitter.appliedIsEmitting != description.isEmitting {
+                emitter.isEmitting = description.isEmitting
+                emitter.appliedIsEmitting = description.isEmitting
+            }
             emitter.texture = texture(for: description.sprite)
             // Array equality is fast when the storage is shared, so an unchanged mesh costs almost nothing here.
             if emitter.meshSource != description.mesh {
