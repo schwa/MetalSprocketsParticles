@@ -11,8 +11,36 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases,
+        .portal, .hearts, .moonPhases, .colorSmoke,
     ]
+
+    /// Thick, nearly opaque puffs of colored smoke billowing up and out. Every puff overlaps others, so drawing them
+    /// back to front matters: switch Sort to None to see far puffs paint over near ones.
+    static let colorSmoke = ParticlePreset(
+        "Color Smoke",
+        layers: [
+            Layer("Puffs", settings: emitter {
+                $0.sortMode = .backToFront
+                $0.position = [0, 0.3, 0]
+                $0.shape = .sphere(radius: 0.3)
+                $0.velocity = [0, 1.2, 0]
+                $0.velocitySpread = 1.2
+                $0.gravity = .zero
+                $0.drag = 0.8
+                $0.lifetime = 3...4
+                $0.birthRate = 60
+                $0.warmupDuration = 4
+                $0.sizeOverLife = ParticleCurve([.init(0, 0.15), .init(1, 0.6)])
+                $0.sizeVariation = 0.3
+                $0.opacityOverLife = ParticleCurve([.init(0, 0), .init(0.08, 0.95), .init(0.7, 0.9), .init(1, 0)])
+                $0.colorOverLife = .constant([1, 0.3, 0.5, 1])
+                $0.colorVariation = [0.5, 0.1, 0.1, 0]
+                $0.angleVariation = .pi
+                $0.angularSpeedVariation = 0.6
+            }, sprite: .smoke, capacity: 1_000),
+        ],
+        forceFields: [.turbulence(strength: 0.6, scale: 0.7, speed: 0.3)]
+    )
 
     /// Emoji hearts drift up and wobble, with a few sparkles. Emoji sprites keep their own colors (white tint).
     static let hearts = ParticlePreset(

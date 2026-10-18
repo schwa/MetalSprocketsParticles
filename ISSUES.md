@@ -817,14 +817,18 @@ Triggers (#34) are not used by any preset, so they are invisible in the demo. Ad
 ## 42: No preset shows back-to-front sorting
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T00:32:29Z
+updated: 2026-10-18T00:45:41Z
+closed: 2026-10-18T00:45:41Z
 +++
 
 Sorting (#4) is enabled for Smoke and Snow, but their alpha is so low that the difference cannot be seen. Add a preset with dense, fairly opaque, overlapping alpha particles (for example thick colored smoke or bubbles) where sorting clearly matters, and make it easy to compare sorted and unsorted in the demo. Related: #4, #40.
+
+- `2026-10-18T00:45:41Z`: Added the Color Smoke preset: dense, nearly opaque, multicolored smoke puffs sorted back to front. Compare with Sort: None in the inspector, or particles-render --preset 'Color Smoke' --no-sort (new flag).
 
 ---
 

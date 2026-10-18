@@ -23,6 +23,9 @@ struct RenderCommand: ParsableCommand {
     @Flag(help: "Draw collider wireframes.")
     var wireframes = false
 
+    @Flag(help: "Turn off back-to-front sorting, to compare against the sorted render.")
+    var noSort = false
+
     @Option(name: .shortAndLong, help: "Output PNG path.")
     var output = "particles.png"
 
@@ -58,6 +61,11 @@ struct RenderCommand: ParsableCommand {
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
         let system = try ParticleSystem(device: renderer.device, emitters: [], capacity: 1, seed: seed)
         try system.load(preset)
+        if noSort {
+            for index in system.emitters.indices {
+                system.emitters[index].settings.sortMode = .none
+            }
+        }
         let eye = try self.eye.map(parseVector) ?? preset.cameraEye
         let target = try self.target.map(parseVector) ?? preset.cameraTarget
         let camera = simd_float4x4(lookingFrom: eye, at: target)
