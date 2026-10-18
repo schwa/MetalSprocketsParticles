@@ -8,6 +8,7 @@ import SwiftUI
 public struct ParticlesView: View {
     @State private var model = ParticlesDemoModel()
     @State private var isInspectorPresented = true
+    @Environment(\.openWindow) private var openWindow
 
     public init() {}
 
@@ -23,6 +24,12 @@ public struct ParticlesView: View {
                 }
                 .toolbar {
                     SceneToolbarContent()
+                    ToolbarItem {
+                        Button("2D Overlay", systemImage: "square.on.square") {
+                            openWindow(id: OverlayDemoView.windowID)
+                        }
+                        .help("Open the 2D overlay demo")
+                    }
                     ToolbarItem {
                         Button("Inspector", systemImage: "sidebar.trailing") {
                             isInspectorPresented.toggle()

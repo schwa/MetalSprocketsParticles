@@ -94,7 +94,7 @@ public final class ParticleSystemRuntime {
         /// its single emission period is over, its birth rate is zero, or `isEmitting` is off), it has no pending burst
         /// or triggers, and every particle it and its sub-emitters made has died. Use it to remove finite effects.
         public var isFinished: Bool {
-            guard !needsWarmup, settings.triggers.isEmpty, spawner.pendingBurst == 0 else {
+            guard !needsWarmup, settings.triggers.isEmpty, spawner.pendingBurst == 0, pendingPositionedBursts.isEmpty else {
                 return false
             }
             guard !isEmitting || Spawner.isEmissionOver(time: spawner.time, emitter: settings) else {
@@ -108,6 +108,18 @@ public final class ParticleSystemRuntime {
         public func burst(_ count: Int) {
             spawner.pendingBurst += max(count, 0)
         }
+
+        /// Emits `count` particles as if the emitter's origin were at `position`, on the next playing step; the shape
+        /// keeps its usual offset (`settings.position`) from that origin. The emitter does not move. `position` is in world space (emitter space
+        /// for local-space emitters); with the overlay camera that is a point in the view, such as a tap location.
+        public func burst(_ count: Int, at position: SIMD3<Float>) {
+            if count > 0 {
+                pendingPositionedBursts.append((count, position))
+            }
+        }
+
+        /// Bursts from `burst(_:at:)`, spawned as their own steps by the next playing frame.
+        var pendingPositionedBursts: [(count: Int, position: SIMD3<Float>)] = []
 
         /// Removes this emitter's particles, resets its emission clock, and runs its warmup again.
         public func restart() {
@@ -409,6 +421,11 @@ public final class ParticleSystemRuntime {
 
     public func burst(_ count: Int) {
         emitters.first?.burst(count)
+    }
+
+    /// Emits `count` particles from the first emitter at `position`. See `Emitter.burst(_:at:)`.
+    public func burst(_ count: Int, at position: SIMD3<Float>) {
+        emitters.first?.burst(count, at: position)
     }
 
     // MARK: Simulation

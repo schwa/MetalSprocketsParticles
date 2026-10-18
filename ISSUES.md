@@ -2007,12 +2007,13 @@ Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 
 ## 99: 2D overlays with ParticleView
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:api, effort:l
 created: 2026-10-18T19:51:12Z
-updated: 2026-10-18T21:38:49Z
+updated: 2026-10-18T22:12:20Z
+closed: 2026-10-18T22:12:20Z
 +++
 
 Particles over an app's normal UI: confetti over a window, sparkles on a button, a burst where the user taps. No special view: a ParticleView placed with SwiftUI's own tools.
@@ -2038,6 +2039,8 @@ Steps:
 5. 2D samples (confetti cannon, sparkles, tap bursts) and a demo screen.
 
 Related: #97, #107.
+
+- `2026-10-18T22:12:20Z`: Steps 3-5 done. Emitter.burst(_:at:) and ParticleSystemRuntime.burst(_:at:): each positioned burst is its own zero-length spawn step at the point, so per-frame transforms (as ParticleView passes) cannot overwrite it; the shape keeps its offset from the moved origin; bursts wait while paused and keep the emitter unfinished. Collider.box(frame:depth:), Collider.edges(of:), Collider.floor(of:) in overlay coordinates. Demo: a '2D Overlay' window (toolbar button) with SwiftUI content under a transparent ParticleView using the overlay camera; the button fires confetti that bounces off it and lands on the window's bottom edge, clicking anywhere bursts sparkles. The 2D effects are built in code in the demo, not sample presets, because a ParticleSystem stores a camera position but not a camera kind, so particles-render and the goldens would show them wrong; a camera kind on ParticleSystem would fix that if wanted. Tests: positioned bursts, transforms passed each frame, paused bursts, edges, frame box, demo effects. Not checked on screen.
 
 ---
 

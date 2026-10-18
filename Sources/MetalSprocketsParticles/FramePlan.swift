@@ -306,6 +306,18 @@ extension ParticleSystemRuntime {
                 remaining -= warmupStep
             }
         }
+        // Positioned bursts: one zero-length step each, spawning only that burst, with the shape moved to the point.
+        if state == .playing, !emitter.pendingPositionedBursts.isEmpty {
+            let heldBurst = emitter.spawner.pendingBurst
+            for burst in emitter.pendingPositionedBursts {
+                var transform = spawnTransform
+                transform.columns.3 = SIMD4(burst.position, 1)
+                emitter.spawner.pendingBurst = burst.count
+                steps.append(makeStep(emitter, deltaTime: 0, motion: SpawnMotion(transform: transform, previousOrigin: burst.position)))
+            }
+            emitter.spawner.pendingBurst = heldBurst
+            emitter.pendingPositionedBursts = []
+        }
         var motion = SpawnMotion(
             transform: spawnTransform,
             previousOrigin: previousOrigin,
