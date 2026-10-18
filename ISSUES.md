@@ -1750,16 +1750,19 @@ Part of #24; needs the design from #85. A user-supplied Metal function sets up e
 ## 88: Effect files with user Metal functions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:simulation
 depends: 85
 created: 2026-10-18T17:06:38Z
-updated: 2026-10-18T17:06:46Z
+updated: 2026-10-18T17:35:06Z
+closed: 2026-10-18T17:35:06Z
 +++
 
 Part of #24; needs the design from #85. Decide whether effect JSON can carry the Metal source or only a reference to a function the app supplies, and what happens when the function is missing (a clear error, or fall back to the built-in behavior).
+
+- `2026-10-18T17:35:06Z`: Effect files carry the Metal source (ParticleFunction is part of the emitter settings since #86). Errors: ParticleFunctionError (name, compiler message; missing or non-[[visible]] names report 'no [[visible]] function'). ParticlePreset.validateFunctions(device:) and ParticleFunction.validate(device:) check without a system; ParticleSystem.load compiles every function up front (compileFunctions), so particles-render --effect fails on load; the demo validates before opening an effect, so a bad file shows the existing error alert and the current scene keeps running. Missing functions are an error, not a silent fallback. Tests: compile error by name, missing and non-visible names, sub-emitter functions, effect file round trip with Strange Attractor.
 
 ---
 

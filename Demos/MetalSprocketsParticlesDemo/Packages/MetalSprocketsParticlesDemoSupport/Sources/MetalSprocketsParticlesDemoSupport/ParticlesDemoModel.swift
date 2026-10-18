@@ -215,7 +215,12 @@ final class ParticlesDemoModel {
                 url.stopAccessingSecurityScopedResource()
             }
         }
-        open(try ParticlePreset(contentsOf: url), named: url.deletingPathExtension().lastPathComponent)
+        let effect = try ParticlePreset(contentsOf: url)
+        // Check user Metal functions before loading, so a bad file is reported and the current scene keeps running.
+        if let device = system?.device {
+            try effect.validateFunctions(device: device)
+        }
+        open(effect, named: url.deletingPathExtension().lastPathComponent)
     }
 
     /// Adds an opened effect under `name` (made unique against built-in presets) and loads it.

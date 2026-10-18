@@ -116,5 +116,6 @@ public extension ParticleSystem {
         forceFields = preset.forceFields
         lights = preset.lights
         ambientLight = preset.ambientLight
+        try compileFunctions()
     }
 }

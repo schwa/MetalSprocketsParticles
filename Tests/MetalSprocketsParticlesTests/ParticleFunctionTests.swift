@@ -125,6 +125,61 @@ struct ParticleFunctionTests {
         }
     }
 
+    func preset(_ function: ParticleFunction, inSubEmitter: Bool = false) -> ParticlePreset {
+        var settings = fallingEmitter()
+        if inSubEmitter {
+            var childSettings = ParticleEmitter()
+            childSettings.updateFunction = function
+            settings.subEmitters = [SubEmitter(occasion: .onDeath, countPerEvent: 1, settings: childSettings)]
+        } else {
+            settings.updateFunction = function
+        }
+        return ParticlePreset("Test", layers: [ParticlePreset.Layer("Layer", settings: settings, capacity: 16)])
+    }
+
+    func functionError(_ body: () throws -> Void) -> ParticleFunctionError? {
+        do {
+            try body()
+            return nil
+        } catch {
+            return error as? ParticleFunctionError
+        }
+    }
+
+    @Test func loadReportsCompileErrorsByName() throws {
+        let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
+        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        let error = functionError { try system.load(preset(broken)) }
+        #expect(error?.name == "broken")
+        #expect(error?.localizedDescription.contains("oops") == true)
+    }
+
+    @Test func missingAndNonVisibleFunctionsAreReported() throws {
+        var missing = setVelocity
+        missing.name = "setVelocty"
+        #expect(functionError { try missing.validate(device: runner.device) }?.message.contains("no [[visible]] function") == true)
+        let plain = ParticleFunction(source: "void plain(thread ParticleState &particle, float a, float b, constant float4 *c) {}", name: "plain")
+        #expect(functionError { try plain.validate(device: runner.device) }?.message.contains("[[visible]]") == true)
+        try setVelocity.validate(device: runner.device)
+    }
+
+    @Test func validationCoversSubEmitterFunctions() {
+        let broken = ParticleFunction(source: "nonsense", name: "broken")
+        #expect(functionError { try preset(broken, inSubEmitter: true).validateFunctions(device: runner.device) }?.name == "broken")
+        #expect(functionError { try preset(setVelocity, inSubEmitter: true).validateFunctions(device: runner.device) } == nil)
+    }
+
+    @Test func effectFilesKeepFunctions() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("function-effect-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try ParticlePreset.strangeAttractor.write(to: url)
+        let loaded = try ParticlePreset(contentsOf: url)
+        #expect(loaded.layers[0].settings.updateFunction == ParticlePreset.strangeAttractor.layers[0].settings.updateFunction)
+        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        try system.load(loaded)
+        try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
+    }
+
     @Test func updateFunctionRoundTripsThroughJSON() throws {
         let emitter = fallingEmitter { $0.updateFunction = setVelocity }
         let decoded = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(emitter))
