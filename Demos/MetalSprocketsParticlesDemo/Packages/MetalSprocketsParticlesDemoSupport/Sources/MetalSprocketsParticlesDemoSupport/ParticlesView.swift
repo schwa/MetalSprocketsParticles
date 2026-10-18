@@ -7,12 +7,7 @@ import SwiftUI
 
 public struct ParticlesView: View {
     @State private var model = ParticlesDemoModel()
-    @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
-    @State private var frameTiming: FrameTimingStatistics?
     @State private var isInspectorPresented = true
-
-    /// Matches OffscreenRenderer, so golden images and particles-render show what the app shows.
-    static let colorPixelFormat = ParticleSystem.colorPixelFormat
 
     public init() {}
 
@@ -21,7 +16,7 @@ public struct ParticlesView: View {
             OutlineView(model: model)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
-            viewport
+            ParticleViewportView(model: model)
                 .inspector(isPresented: $isInspectorPresented) {
                     EmitterInspectorView(model: model)
                         .inspectorColumnWidth(min: 300, ideal: 340)
@@ -33,9 +28,18 @@ public struct ParticlesView: View {
                 }
         }
     }
+}
 
-    @ViewBuilder
-    private var viewport: some View {
+/// The 3D view: simulates and draws the model's particle system each frame, with an orbit camera and frame timing.
+struct ParticleViewportView: View {
+    let model: ParticlesDemoModel
+    @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
+    @State private var frameTiming: FrameTimingStatistics?
+
+    /// Matches OffscreenRenderer, so golden images and particles-render show what the app shows.
+    static let colorPixelFormat = ParticleSystem.colorPixelFormat
+
+    var body: some View {
         if let system = model.system {
             RenderView(colorPixelFormat: Self.colorPixelFormat) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))

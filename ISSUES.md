@@ -1168,14 +1168,18 @@ House rule: SwiftUI view types end in View. KindPicker -> KindPickerView (Inspec
 ## 59: Extract ParticlesView.viewport into its own view
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:s, area:demo
 created: 2026-10-18T12:36:57Z
+updated: 2026-10-18T13:19:39Z
+closed: 2026-10-18T13:19:39Z
 +++
 
 ParticlesView has a large computed 'private var viewport: some View' (render closure, camera, overlay, onChange, ContentUnavailableView branch). House rule: extract into a struct (e.g. ParticleViewportView) taking the model, a camera binding, and the frame timing binding. Source: SwiftUI review.
+
+- `2026-10-18T13:19:39Z`: Extracted ParticleViewportView (render closure, orbit camera, frame timing overlay, preset camera reset, unavailable state). It owns cameraMatrix and frameTiming as @State, since only it uses them; ParticlesView keeps the split view, inspector, and toolbar. Pure refactor; demo tests and app build pass. Not checked in the running app.
 
 ---
 

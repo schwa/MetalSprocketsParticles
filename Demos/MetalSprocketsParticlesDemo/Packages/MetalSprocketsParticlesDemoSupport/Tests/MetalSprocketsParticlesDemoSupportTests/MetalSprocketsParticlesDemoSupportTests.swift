@@ -11,7 +11,7 @@ struct ColorPipelineTests {
     /// check different colors than users see (#15).
     @Test func appRendersToSameFormatAsOffscreenRenderer() throws {
         let renderer = try OffscreenRenderer(size: CGSize(width: 4, height: 4))
-        #expect(ParticlesView.colorPixelFormat == renderer.colorTexture.pixelFormat)
+        #expect(ParticleViewportView.colorPixelFormat == renderer.colorTexture.pixelFormat)
     }
 }
 
