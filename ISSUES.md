@@ -1921,14 +1921,18 @@ A transition child (SubEmitter.transition / replacesParent) always starts at age
 ## 96: Transition when a particle enters a trigger volume
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:s
 created: 2026-10-18T19:16:57Z
+updated: 2026-10-18T19:40:08Z
+closed: 2026-10-18T19:40:08Z
 +++
 
 Sub-emitter occasions cover birth, death, collision, while alive, and age, but not entering a trigger volume. Add an occasion that fires when a particle enters a given TriggerVolume (the kernel already detects entries for trigger counters), so a particle can change type when it crosses a region. Related: #91, #34.
+
+- `2026-10-18T19:40:08Z`: New SubEmitter.Occasion.onEntering(TriggerVolume): fires when the parent moves from outside to inside the volume during a step (same test the trigger counters use). The volume is carried in the occasion (world space) rather than referring to a trigger, since trigger volumes are derived from triggers and have no stable index. Works with transition(...). Demo: On Entering Volume with the volume editor. Tests: crossing particles transition, a missed volume does not, Codable.
 
 ---
 

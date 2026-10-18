@@ -86,6 +86,33 @@ struct SubEmitterTests {
         #expect(continuing.allSatisfy { abs($0.position.w - 0.75) < 0.05 && $0.velocity.w == 2 })
     }
 
+    @Test func enteringAVolumeTransitionsOnlyParticlesThatCrossIt() throws {
+        // Particles move along +x at 1 unit/s from (0, 1, 0). The box spans x 0.4...0.6 around y = 1, so they enter it
+        // at about 0.4 s and have all turned into children by 0.75 s.
+        let box = TriggerVolume.box(center: [0.5, 1, 0], halfExtents: [0.1, 0.5, 0.5])
+        let transition = SubEmitter.transition(on: .onEntering(box), into: stillChild())
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 5...5 })
+        system.burst(4)
+        try step(system, seconds: 0.25)
+        #expect(alive(system, system.subEmitterInstances[0]).isEmpty)
+        try step(system, seconds: 0.5)
+        #expect(alive(system, system.emitters[0]).isEmpty)
+        let children = alive(system, system.subEmitterInstances[0])
+        #expect(children.count == 4)
+        #expect(children.allSatisfy { $0.position.x > 0.4 })
+        let decoded = try JSONDecoder().decode(SubEmitter.self, from: try JSONEncoder().encode(transition))
+        #expect(decoded == transition)
+    }
+
+    @Test func missingTheVolumeDoesNotTransition() throws {
+        let away = TriggerVolume.sphere(center: [0, -5, 0], radius: 0.5)
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(.transition(on: .onEntering(away), into: stillChild())) { $0.lifetime = 5...5 })
+        system.burst(4)
+        try step(system, seconds: 1)
+        #expect(alive(system, system.emitters[0]).count == 4)
+        #expect(alive(system, system.subEmitterInstances[0]).isEmpty)
+    }
+
     @Test func collisionTransitionReplacesOnlyParticlesThatHit() throws {
         let transition = SubEmitter.transition(on: .onCollision, into: stillChild(), sprite: .spark)
         let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) {

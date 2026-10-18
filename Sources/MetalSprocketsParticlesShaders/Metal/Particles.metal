@@ -734,6 +734,9 @@ kernel void updateParticles(
         case ParticleSpawnOccasionCollision:
             count = hit ? childrenPerEvent : 0;
             break;
+        case ParticleSpawnOccasionEnterVolume:
+            count = sub.volume.contains(position) && !sub.volume.contains(startPosition) ? childrenPerEvent : 0;
+            break;
         case ParticleSpawnOccasionAge:
             count = (born ? interval <= age : previousAge < interval && interval <= age) ? childrenPerEvent : 0;
             break;

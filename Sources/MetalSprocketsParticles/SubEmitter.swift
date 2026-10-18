@@ -16,6 +16,8 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         case whileAlive(interval: Float)
         /// Once, when the parent is `seconds` old.
         case atAge(seconds: Float)
+        /// When the parent moves into `volume` (world space) during a step.
+        case onEntering(TriggerVolume)
     }
 
     public var occasion: Occasion
@@ -72,6 +74,14 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         try container.update(&sprite, .sprite)
         try container.update(&replacesParent, .replacesParent)
         try container.update(&continuesParentLife, .continuesParentLife)
+    }
+
+    /// The volume for `.onEntering`; an empty sphere otherwise.
+    var volume: TriggerVolumeData {
+        if case let .onEntering(volume) = occasion {
+            return volume.data
+        }
+        return TriggerVolume.sphere(center: .zero, radius: 0).data
     }
 
     var interval: Float {

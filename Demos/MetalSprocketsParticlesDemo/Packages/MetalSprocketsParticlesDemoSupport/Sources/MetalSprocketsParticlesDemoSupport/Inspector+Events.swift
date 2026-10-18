@@ -16,6 +16,17 @@ extension SubEmitter {
         set { occasion = .whileAlive(interval: newValue) }
     }
 
+    /// The `onEntering` volume, or a half-meter sphere for other occasions. Setting it switches to `onEntering`.
+    var enteredVolume: TriggerVolume {
+        get {
+            if case let .onEntering(volume) = occasion {
+                return volume
+            }
+            return .sphere(center: [0, 1, 0], radius: 0.5)
+        }
+        set { occasion = .onEntering(newValue) }
+    }
+
     /// The `atAge` seconds, or 1 for other occasions. Setting it switches to `atAge`.
     var transitionAge: Float {
         get {

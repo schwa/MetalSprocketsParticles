@@ -54,20 +54,9 @@ typedef MS_ENUM(uint32_t, ParticleSpawnOccasion) {
     ParticleSpawnOccasionWhileAlive = 3,
     /// Once, when the parent's age reaches `interval` seconds.
     ParticleSpawnOccasionAge = 4,
+    /// When the parent moves into `volume` during a step.
+    ParticleSpawnOccasionEnterVolume = 5,
 };
-
-/// A sub-emitter as the parent's kernel sees it. Each parent slot owns `countPerEvent` child slots in the child's
-/// slice. Mirrored by the Swift SubEmitter.
-typedef struct {
-    ParticleSpawnOccasion occasion;
-    uint32_t countPerEvent;
-    uint32_t childSliceStart; // In the shared particle buffer.
-    uint32_t childCapacity;
-    float velocityFactor;     // Fraction of the parent's velocity children inherit.
-    float interval;           // Seconds between children for ParticleSpawnOccasionWhileAlive; the age for Age.
-    uint32_t replacesParent;  // Nonzero: the parent dies when it spawns children, so it turns into them.
-    uint32_t continuesParentLife; // Nonzero: children take the parent's age and lifetime instead of starting at 0.
-} SubEmitterData;
 
 /// Trigger counters: one per collider, then one per trigger volume. Monotonic; the CPU diffs them between frames.
 #define PARTICLE_TRIGGER_MAX_COLLIDERS 64
@@ -96,6 +85,20 @@ struct TriggerVolumeData {
 #endif
 };
 typedef struct TriggerVolumeData TriggerVolumeData;
+
+/// A sub-emitter as the parent's kernel sees it. Each parent slot owns `countPerEvent` child slots in the child's
+/// slice. Mirrored by the Swift SubEmitter.
+typedef struct {
+    ParticleSpawnOccasion occasion;
+    uint32_t countPerEvent;
+    uint32_t childSliceStart; // In the shared particle buffer.
+    uint32_t childCapacity;
+    float velocityFactor;     // Fraction of the parent's velocity children inherit.
+    float interval;           // Seconds between children for ParticleSpawnOccasionWhileAlive; the age for Age.
+    uint32_t replacesParent;  // Nonzero: the parent dies when it spawns children, so it turns into them.
+    uint32_t continuesParentLife; // Nonzero: children take the parent's age and lifetime instead of starting at 0.
+    TriggerVolumeData volume; // For ParticleSpawnOccasionEnterVolume.
+} SubEmitterData;
 
 /// Builds back-to-front sort records for one emitter's live window. Records are uint2(key, particle index).
 typedef struct {

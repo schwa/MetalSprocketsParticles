@@ -463,6 +463,9 @@ struct SubEmitterEditorView: View {
             if subEmitter.occasion.kind == .age {
                 ParameterSliderView("Age", value: $subEmitter.transitionAge, in: 0...10)
             }
+            if subEmitter.occasion.kind == .enterVolume {
+                TriggerVolumeEditorView(volume: $subEmitter.enteredVolume)
+            }
             Toggle("Replaces Parent", isOn: $subEmitter.replacesParent)
                 .help("The parent dies when it spawns children, so it turns into them.")
             Toggle("Continues Parent's Life", isOn: $subEmitter.continuesParentLife)
