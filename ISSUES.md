@@ -27,9 +27,9 @@ Planes, spheres and boxes affect particles but are invisible. Particles are also
 status: open
 priority: medium
 kind: feature
-labels: effort:xl, area:collision
+labels: effort:xl, area:collision, deferred
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:19:41Z
+updated: 2026-10-18T13:33:59Z
 +++
 
 Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes need collision with mesh geometry, e.g. via a baked SDF volume or the scene depth buffer.
@@ -40,6 +40,7 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 - `2026-10-17T19:34:40Z`: Main consumer: MetalSprocketsSceneGraph integration, where colliders come from scene-node geometry at runtime. Mesh/SDF colliders need to accept that geometry (and its transforms) per frame.
 - `2026-10-17T21:05:19Z`: Mesh input should come from SwiftMesh (github.com/schwa/SwiftMesh), the mesh type used across the MetalSprockets ecosystem (MetalSprocketsAddOns depends on it). Mesh/SDF colliders should accept a SwiftMesh mesh plus transform, not raw arrays.
 - `2026-10-17T21:05:19Z`: Related: #38 (SwiftMesh input for EmitterMesh); share the conversion.
+- `2026-10-18T13:33:59Z`: Decision (user): skip for now.
 
 ---
 
@@ -456,6 +457,8 @@ updated: 2026-10-17T14:13:05Z
 
 SceneKit lets callers attach event handlers (birth, death, collision) and per-frame modifier blocks at several simulation stages. A GPU system needs an equivalent, e.g. user-supplied Metal functions for spawn, update, or render, so effects can go beyond the built-in parameters.
 
+- `2026-10-18T13:33:59Z`: Decision (user): functions. Custom per-particle behavior is user-supplied Metal functions called from the simulation kernel (e.g. visible functions or function constants/stitching via MetalSprockets), not Swift closures or a fixed set of built-in modifier stages. Next: split into a design spike for the function signature and linking, then implementation.
+
 ---
 
 ## 25: No presets or saved effect files
@@ -516,12 +519,13 @@ The demo's sphere and boxes never move, so it does not show particles reacting t
 ## 28: Spike: evaluate the AddOns point cloud renderer for very high particle counts
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:m, area:rendering
 created: 2026-10-17T15:00:32Z
-updated: 2026-10-17T17:10:11Z
+updated: 2026-10-18T13:24:08Z
+closed: 2026-10-18T13:24:08Z
 +++
 
 MetalSprocketsAddOns has `PointCloudRasterizePass` / `PointCloudResolvePipeline`, a compute point rasterizer (Schütz et al. 2021). Find out if it is useful as an optional render mode for many small opaque particles (sparks, dust, rain).
@@ -546,6 +550,7 @@ Spike tasks:
 Outcome: a keep/drop decision with numbers.
 
 - `2026-10-17T17:10:11Z`: Triage note: depends on #29's measurements (step 1 of the spike is the same profiling). Opaque points would pair with blend mode .opaque (#19).
+- `2026-10-18T13:24:08Z`: Spike answered: drop. particles-bench at 1080p (render GPU; machine load 3-4, so absolute numbers noisy, ratios hold): 100K 0.2 ms; 1M few-pixel (default 0.01) 2.3-3.6 ms; 1M sub-pixel 0.94 ms; 1M 4x size 15.1 ms; 1M sorted 2.9 ms render + 1.2 ms simulate. Render cost scales with on-screen area (fill/blend bound); ~0.9 ms is the quad-setup floor at 1M. The point rasterizer would only help the small-opaque-point range (0.9 to ~2.3 ms), which is already ~15-20% of a 60 fps frame, and is weakest for large points, the only slow case (15 ms). It also drops alpha, soft falloff, fade-out, and additive glow that nearly every preset uses, and needs Apple GPU family 8+, a depth attachment, an extra pass, per-pixel buffers, and an AddOns dependency. Prototype (step 2) skipped because step 1 showed no slow case it would fix. If sub-pixel counts ever matter, Metal's point primitive (keeps blending) is the cheaper option.
 
 ---
 
@@ -637,14 +642,15 @@ The demo inspector (#26) covers only part of ParticleEmitter and ParticleSystem.
 status: open
 priority: medium
 kind: feature
-labels: effort:l, area:tooling, needs-decision
+labels: effort:l, area:tooling
 created: 2026-10-17T17:10:23Z
-updated: 2026-10-18T12:48:08Z
+updated: 2026-10-18T13:33:59Z
 +++
 
 Defining an effect means creating a ParticleEmitter and setting many properties one by one, then wiring texture, transform, and colliders on ParticleSystem separately. There is no concise, composable way to describe an effect or reuse parts of one. Stretch goal: a small Swift DSL, possibly result-builder or SwiftUI-modifier style (e.g. Emitter { ... }.birthRate(5_000).colorOverLife(...).force(.turbulence(...))), so effects compose like SwiftUI views and presets (#30, #25) become short declarations. Related: #30 (preset scenes), #25 (presets/effect files).
 
 - `2026-10-18T12:48:08Z`: Reviewed against the current API. The wiring half is solved: EmitterDescription + ParticlePreset + ParticleSystem.apply (#50) describe an effect in one value, and effects are JSON files (#25). Punting the rest: the DSL shape is an API decision. Options: (A) public configure init, ParticleEmitter { $0.birthRate = 5_000 }, i.e. publish the private emitter {} helper Presets.swift already uses; tiny. (B) SwiftUI-style modifiers, ParticleEmitter().birthRate(5_000).colorOverLife(...): ~40 near-duplicate methods, or one generic .set(\.birthRate, 5_000) that is barely shorter than A. (C) result builder for presets, ParticlePreset("Sparks") { EmitterDescription(...); Collider.plane(...); ForceField.turbulence(...) }: composes like SwiftUI, bigger commitment. Recommend A now, C if presets should read like SwiftUI; skip B. Which do you want?
+- `2026-10-18T13:33:59Z`: Decision (user): option C, a result builder for presets, e.g. ParticlePreset("Sparks") { EmitterDescription(...); Collider.plane(...); ForceField.turbulence(...) }.
 
 ---
 
@@ -1086,9 +1092,9 @@ Defaults keep today's behavior. Add tests for masked vs unmasked particles and e
 status: open
 priority: low
 kind: task
-labels: effort:m, area:rendering
+labels: effort:m, area:rendering, needs-info
 created: 2026-10-18T01:45:02Z
-updated: 2026-10-18T12:40:25Z
+updated: 2026-10-18T13:22:12Z
 +++
 
 Debug wireframes (DebugWireframes.swift, ColliderWireframe.swift) use a hand-rolled WireframeBuilder and a custom line-list RenderPipeline (wireframeVertex/wireframeFragment), one flat color per kind.
@@ -1098,6 +1104,7 @@ Evaluate replacing this with Canvas3D. Possible wins: less custom shader/pipelin
 Check first: dependency weight for the library target (maybe keep wireframes in an optional target), and that it fits inside a RenderPass the same way renderWireframes does now. Keep the particles-render --wireframes flag and the demo toggle working.
 
 - `2026-10-18T12:40:25Z`: Triaged: Low, task, effort:m, area:rendering.
+- `2026-10-18T13:22:11Z`: Looked for Canvas3D to evaluate it: no Swift source mentions it under ~/Shared/Projects or ~/Projects (MetalSprockets, AddOns, all .build checkouts), in DerivedData, or in a GitHub code search of schwa's repos. Punting: can't judge dependency weight or RenderPass fit without its API. Where does Canvas3D live (package/repo/branch)? Meanwhile the current wireframes are small (WireframeBuilder + one flat-color line pipeline, ~300 lines) and work in particles-render --wireframes and the demo.
 
 ---
 
@@ -1285,5 +1292,132 @@ closed: 2026-10-18T13:11:38Z
 Effect files (#25) save EmitterDescription without its mesh, because SwiftMesh's Mesh is not Codable. The Teapot preset saved to JSON and reopened emits from nothing (a center point). Options: make Mesh Codable in SwiftMesh, store triangulated positions + indices in the file, or reference a mesh by name/resource (e.g. 'teapot') that the loader resolves.
 
 - `2026-10-18T13:11:38Z`: Meshes are saved as triangulated positions (meshPositions) and triangle indices (meshTriangles) inside EmitterDescription's Codable, and load back via Mesh(positions:faces:). Emission only uses triangles, so a saved Teapot renders byte-identical to the built-in preset. Out-of-range indices are a decoding error. Files are large for big meshes (Teapot effect: 1.4 MB pretty-printed JSON, mesh stored per layer).
+
+---
+
+## 66: No preset shows category masks
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T13:34:41Z
++++
+
+Category masks (#54) are unused by every preset. Add a demo where they matter, e.g. rain that falls through an awning while sparks bounce off it, or smoke that feels wind while embers ignore it. Related: #54.
+
+---
+
+## 67: No preset shows particle lighting
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T13:34:41Z
++++
+
+Lighting (#10: ParticleSystem.lights, ambientLight, ParticleEmitter.isLit) is unused by every preset. Add lit smoke or dust beside a moving point light (lantern, campfire glow), ideally with a directional light too. Related: #10.
+
+---
+
+## 68: Soft particles cannot be demoed: no scene depth
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:demo
+created: 2026-10-18T13:34:41Z
++++
+
+Soft particles (#10) need a scene depth texture, but the demo and particles-render draw no scene geometry or depth. Add one: e.g. render a ground plane/box into a depth texture (or a pre-filled depth like LightingTests) and pass it as render(..., sceneDepth:), then a preset or demo toggle with softness on smoke meeting the ground. Related: #10.
+
+---
+
+## 69: Demo has no tracked object for objectEnters triggers
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:demo
+created: 2026-10-18T13:34:41Z
++++
+
+The objectEnters trigger (#34) needs app-supplied positions in ParticleSystem.trackedObjects, so no preset can show it. Add a tracked object to the demo (animated or draggable sphere drawn as a wireframe) and a preset trigger that fires when it enters a volume. Related: #34.
+
+---
+
+## 70: Some emoji sprites are unused
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:xs, area:demo
+created: 2026-10-18T13:34:41Z
++++
+
+The clock-faces flipbook and the droplet and glowing-star emoji sprites (#40) are not used by any preset. Work them into presets (e.g. droplets in Pond or Geyser, glowing stars in Magic Trail, clock faces in a 'time warp' effect). Related: #40.
+
+---
+
+## 71: Fast-spinning emitters emit in per-frame bursts
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:simulation
+created: 2026-10-18T13:39:41Z
++++
+
+Births within a step are spread along the emitter's path by interpolating only its position (previousEmitterOrigin). Rotation is not interpolated, so a fast-spinning emitter (e.g. a Catherine wheel, a spinning sword in the scene graph) emits each step's particles at that frame's angle, giving visible spokes/clumps. The emitter's angular velocity also never adds to particle velocity (inheritVelocity is linear only). Fix: pass the previous emitter transform and slerp rotation by birthAge in spawnParticle; add the tangential velocity (omega × r) to inherited velocity. Needed for MetalSprocketsSceneGraph animation.
+
+---
+
+## 72: Colliders ignore rotation speed and can be tunneled through
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:collision
+created: 2026-10-18T13:39:41Z
++++
+
+Collider velocity comes only from frame-to-frame translation (Collider.velocity(from:deltaTime:)), so a rotating box or capsule (paddle, fan blade) does not fling particles, and spinning boxes are explicitly zero. Collision is also discrete: a fast or thin collider can jump past a particle within one step and the particle passes through. Fix: derive angular velocity from rotation change and use point velocity (v + omega × r) at the contact; add a swept test (or substeps for colliders moving more than their thickness per step). Needed for animated scene-graph colliders.
+
+---
+
+## 73: Mesh emitters can't follow morphing or skinned meshes
+
++++
+status: open
+priority: high
+kind: feature
+labels: effort:m, area:simulation
+created: 2026-10-18T13:39:42Z
++++
+
+EmitterMesh is built once from a SwiftMesh mesh (CPU triangulation, area-weighted CDF, buffer upload). MetalSprocketsSceneGraph animates meshes with morph targets and skinning, producing a deformed MetalMesh vertex buffer each revision (skinned meshes already in world space). Re-creating EmitterMesh per frame costs CPU triangulation and new buffers. Fix: let EmitterMesh bind an external positions MTLBuffer (offset/stride/format from the deformed mesh's vertex descriptor) with fixed triangle indices, keeping the rest-pose area CDF (or recompute it on the GPU if stretching matters). Then a deforming mesh costs only a buffer binding per frame and later works with GPU deformation. Particles that stick to a moving surface are out of scope here.
+
+---
+
+## 74: Integrate with MetalSprocketsSceneGraph
+
++++
+status: open
+priority: high
+kind: task
+labels: effort:m, area:tooling, deferred
+created: 2026-10-18T13:39:42Z
+updated: 2026-10-18T13:40:42Z
++++
+
+This project is meant to replace MetalSprocketsSceneGraph's particle system (Sources/MetalSprocketsParticles there; scene integration in Particles.swift: node.particleSystems advanced per node with system.advance(by:emitterTransform:) and drawn by ParticleRenderer as depth-tested soft sprites). Check the API fit: per-node emitters vs one ParticleSystem with many emitters (apply/simulate(transforms:)), hidden nodes stopping emission, scene colliders and lights from nodes, depth for soft particles (render(sceneDepth:)), deformed meshes (see the deformed-mesh emitter issue), and draw order with transparent scene geometry. Output: an integration plan or a thin adapter in the scene graph, plus any API gaps filed here.
 
 ---
