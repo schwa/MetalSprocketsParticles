@@ -1347,6 +1347,7 @@ updated: 2026-10-18T14:00:06Z
 Soft particles (#10) need a scene depth texture, but the demo and particles-render draw no scene geometry or depth. Add one: e.g. render a ground plane/box into a depth texture (or a pre-filled depth like LightingTests) and pass it as render(..., sceneDepth:), then a preset or demo toggle with softness on smoke meeting the ground. Related: #10.
 
 - `2026-10-18T14:00:06Z`: Investigated. Punting: bigger than m and partly blocked on MetalSprockets API. Soft particles only show against opaque, depth-tested geometry, and the demo/CLI draw none (wireframes only); particles are not depth-tested, so nothing clips hard and fading near invisible surfaces would barely show. Needed: (1) draw colliders as shaded solids (SwiftMesh quad/box/sphere/capsule), (2) depth-test particles against them (test, no write), (3) a readable copy of the depth for the fragment shader (a pass can't read its own depth attachment). Blockers: MetalSprockets DepthState is package-internal (only a raw depthStencilDescriptor environment value is public; I haven't verified what depth state particles draw with now), and RenderView does not expose its depth texture to content, so the demo needs its own view-sized depth texture and a collider depth pre-pass per frame. Question: OK to (a) add a public depth-state modifier and depth-texture access to MetalSprockets, or (b) do it all inside this project with its own depth texture and pre-pass?
+- `2026-10-18T14:27:44Z`: Correction: MetalSprockets does have a public depth-test modifier, Element.depthCompare(function:enabled:) (where 'enabled' means depth writes; filed MetalSprockets #531 on the naming). Only its full DepthState modifier is package-internal. So depth-testing particles needs no upstream change. The real upstream gap is reading the frame's depth: RenderViewContext does not expose the depth attachment and the MTKView depth texture is memoryless; filed MetalSprockets #530. Updated options: (A) wait for/implement MetalSprockets #530, or (B) in this project, keep our own view-sized depth texture with a collider depth pre-pass.
 
 ---
 
@@ -1453,5 +1454,55 @@ updated: 2026-10-18T13:40:42Z
 +++
 
 This project is meant to replace MetalSprocketsSceneGraph's particle system (Sources/MetalSprocketsParticles there; scene integration in Particles.swift: node.particleSystems advanced per node with system.advance(by:emitterTransform:) and drawn by ParticleRenderer as depth-tested soft sprites). Check the API fit: per-node emitters vs one ParticleSystem with many emitters (apply/simulate(transforms:)), hidden nodes stopping emission, scene colliders and lights from nodes, depth for soft particles (render(sceneDepth:)), deformed meshes (see the deformed-mesh emitter issue), and draw order with transparent scene geometry. Output: an integration plan or a thin adapter in the scene graph, plus any API gaps filed here.
+
+---
+
+## 75: Emitters can't ramp emission over time or finish
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:simulation
+created: 2026-10-18T14:44:28Z
++++
+
+Emission is either infinite or an on/off square wave (emissionDuration, idleDuration, loops). There is no way to shape the number of particles an emitter generates over time (fade in, run, fade out), and no finite effect ever reports that it is done.
+
+Proposal: ParticleEmitter.emissionOverTime: ParticleCurve<Float>, a multiplier on birthRate keyed in seconds since the emitter started (existing over-life curves are keyed 0...1 of a particle's life; this one uses seconds).
+- .constant(1) (default) = today's infinite emitter.
+- Example: keys (0 s, 1), (10 s, 1), (12 s, 0) runs full for 10 s, ramps to nothing by 12 s, and the effect lasts 12 s plus particle lifetimes.
+- After the last key the last value holds; if it is 0 the emitter is done for good. Fade-ins too, e.g. (0 s, 0) -> (2 s, 1).
+- The spawner integrates birthRate x envelope over each step (exact for piecewise-linear), so ramps are smooth and deterministic at any frame rate.
+- Emitter.isFinished and ParticleSystem.isFinished: the envelope has ended at 0 and every particle has died. Lets the scene graph (#74) remove finite effects, and video export could optionally run until finished.
+- Multiplies with emissionDuration/idleDuration/loops; an optional repeats on the envelope could later replace loops.
+- Demo: an envelope editor in the Emission section (curve editor with time in seconds), and a preset that fades in and out.
+- Saved effects include it (tolerant decoding keeps the default).
+
+---
+
+## 76: Built-in presets are Swift code instead of JSON resources
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: effort:m, area:tooling
+created: 2026-10-18T14:48:39Z
+updated: 2026-10-18T14:48:39Z
++++
+
+All 26 presets live in Presets.swift as Swift code. Effects already round-trip through JSON (#25, meshes since #65), so the built-ins could be JSON files bundled as package resources and loaded at runtime, the same format users save and open.
+
+Wins: presets editable without recompiling, one format for built-ins and user effects, the demo's Save Effect output can become a built-in directly, and Presets.swift (~1,300 lines) goes away.
+
+Plan:
+- Export every preset with particles-render --save-effect into Sources/MetalSprocketsParticles/Resources/Presets/<slug>.json (Bundle.module resources).
+- ParticlePreset.all loads them (sorted by a stored order, or an index file); keep static accessors like .fireworks if useful, backed by the resources.
+- Meshes: the Teapot stores triangulated positions inline (~1.4 MB pretty-printed). Consider compact JSON, or referencing a named mesh (e.g. 'teapot' resolved to SwiftMesh's bundled teapot) instead of embedding it.
+- Some presets compute values in code (Galaxy arms by loop, Fireworks colors, shared ground collider); the JSON is the expanded result.
+- Goldens must stay identical. Layer ids are stored in JSON; loading must keep them stable or fresh consistently.
+- Decide: keep a Swift path for tests (fixtures) or load everything from resources.
+- Related: #25, #32 (result builder), #65.
 
 ---
