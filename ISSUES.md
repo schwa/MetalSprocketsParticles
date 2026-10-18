@@ -1889,14 +1889,18 @@ Done when a fresh clone builds on macOS with no project edits.
 ## 94: Chained transitions: sub-emitter children with their own sub-emitters
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:l
 created: 2026-10-18T19:16:57Z
+updated: 2026-10-18T19:45:20Z
+closed: 2026-10-18T19:45:20Z
 +++
 
 Sub-emitter children ignore their own subEmitters, so a particle can transition only once (ember -> ash, but not ember -> ash -> dust). Support nested sub-emitters, at least a few levels deep. Each level needs its own child slices (capacity multiplies per level, so cap the depth or the count), and the dispatch order must run each level after its parent. Related: #91.
+
+- `2026-10-18T19:45:21Z`: Sub-emitter children now get their own sub-emitter instances, built level by level (so each level dispatches after its parents and first-level seeds are unchanged; goldens unchanged), up to ParticleSystem.maxSubEmitterDepth = 3 levels; deeper ones are ignored. Capacity multiplies per level (documented). The layout fingerprint is now recursive, so nested edits rebuild. Embers to Ash gains a third stage: landed ash turns into a dust puff. Gap: the demo outline/inspector only edits first-level sub-emitters. Tests: two-step chain keeps velocity, depth cap, nested edit rebuilds.
 
 ---
 

@@ -24,8 +24,9 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     public var countPerEvent: Int
     /// Fraction of the parent's velocity added to each child.
     public var velocityFactor: Float
-    /// The children's settings. Their shape is centered on the parent particle; birth rate, timing, warmup, and nested
-    /// sub-emitters are ignored.
+    /// The children's settings. Their shape is centered on the parent particle; birth rate, timing, and warmup are
+    /// ignored. Their own sub-emitters work, down to `ParticleSystem.maxSubEmitterDepth` levels, so a particle can change
+    /// type several times. Capacity multiplies at each level (parent capacity × countPerEvent).
     public var settings: ParticleEmitter
     /// How the children are drawn. Soft dots by default.
     public var sprite: ParticleSprite = .softDot

@@ -299,19 +299,26 @@ public final class ParticleSystem {
             created.append(Emitter(settings: entry.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(index)))
             start += capacity
         }
-        // Sub-emitter instances follow all emitters. Each parent slot owns countPerEvent child slots.
+        // Sub-emitter instances follow all emitters, one level at a time, so each level dispatches after its parents.
+        // Each parent slot owns countPerEvent child slots, so capacity multiplies with depth.
         var children: [Emitter] = []
-        for parent in created {
-            for (subIndex, sub) in parent.settings.subEmitters.enumerated() {
-                let capacity = parent.capacity * max(sub.countPerEvent, 1)
-                let child = Emitter(settings: sub.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(created.count + children.count))
-                child.parent = parent
-                child.subEmitterIndex = subIndex
-                child.needsWarmup = false
-                parent.children.append(child)
-                children.append(child)
-                start += capacity
+        var level = created
+        for _ in 0..<Self.maxSubEmitterDepth {
+            var nextLevel: [Emitter] = []
+            for parent in level {
+                for (subIndex, sub) in parent.settings.subEmitters.enumerated() {
+                    let capacity = parent.capacity * max(sub.countPerEvent, 1)
+                    let child = Emitter(settings: sub.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(created.count + children.count))
+                    child.parent = parent
+                    child.subEmitterIndex = subIndex
+                    child.needsWarmup = false
+                    parent.children.append(child)
+                    children.append(child)
+                    nextLevel.append(child)
+                    start += capacity
+                }
             }
+            level = nextLevel
         }
         buffer = try Self.makeBuffer(device: device, count: start)
         appliedLayout = []
@@ -321,8 +328,19 @@ public final class ParticleSystem {
         return created
     }
 
+    /// How deep sub-emitters nest: children, grandchildren, and great-grandchildren. Deeper ones are ignored.
+    public static let maxSubEmitterDepth = 3
+
+    /// The shape of every emitter's sub-emitter tree, so a change in nesting or counts triggers a rebuild.
     static func subEmitterLayout(of emitters: [Emitter]) -> [[Int]] {
-        emitters.map { $0.settings.subEmitters.map { max($0.countPerEvent, 1) } }
+        func layout(_ settings: ParticleEmitter, depth: Int) -> [Int] {
+            guard depth < maxSubEmitterDepth else {
+                return []
+            }
+            // Each sub-emitter: its count, its own subtree, then a -1 marker closing it.
+            return settings.subEmitters.flatMap { [max($0.countPerEvent, 1)] + layout($0.settings, depth: depth + 1) + [-1] }
+        }
+        return emitters.map { layout($0.settings, depth: 0) }
     }
 
     /// Rebuilds the buffer for the current emitters, keeping runtime state that is not part of the settings.

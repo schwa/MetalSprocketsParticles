@@ -104,6 +104,50 @@ struct SubEmitterTests {
         #expect(decoded == transition)
     }
 
+    /// Parent -> child -> grandchild, each turning into the next 0.25 s after it was born.
+    func chain(depth: Int) -> SubEmitter {
+        var settings = stillChild()
+        settings.lifetime = 5...5
+        var sub = SubEmitter.transition(on: .atAge(seconds: 0.25), into: settings)
+        for _ in 1..<depth {
+            var outer = settings
+            outer.subEmitters = [sub]
+            sub = .transition(on: .atAge(seconds: 0.25), into: outer)
+        }
+        return sub
+    }
+
+    @Test func transitionsChain() throws {
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(chain(depth: 2)) { $0.lifetime = 5...5 })
+        #expect(system.subEmitterInstances.count == 2)
+        #expect(system.subEmitterInstances[1].parent === system.subEmitterInstances[0])
+        system.burst(4)
+        try step(system, seconds: 0.4)
+        // The parent turned into the child at 0.25 s; the child has not turned yet.
+        #expect(alive(system, system.emitters[0]).isEmpty)
+        #expect(alive(system, system.subEmitterInstances[0]).count == 4)
+        #expect(alive(system, system.subEmitterInstances[1]).isEmpty)
+        try step(system, seconds: 0.25)
+        #expect(alive(system, system.subEmitterInstances[0]).isEmpty)
+        let grandchildren = alive(system, system.subEmitterInstances[1])
+        #expect(grandchildren.count == 4)
+        // Still moving with the original parent's velocity, about 0.65 s along x.
+        #expect(grandchildren.allSatisfy { abs($0.velocity.x - 1) < 1e-4 && abs($0.position.x - 0.65) < 0.05 })
+    }
+
+    @Test func nestingStopsAtTheMaximumDepth() throws {
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(chain(depth: ParticleSystem.maxSubEmitterDepth + 2)))
+        #expect(system.subEmitterInstances.count == ParticleSystem.maxSubEmitterDepth)
+    }
+
+    @Test func addingANestedSubEmitterRebuilds() throws {
+        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(chain(depth: 1)))
+        #expect(system.subEmitterInstances.count == 1)
+        system.emitters[0].settings.subEmitters = [chain(depth: 2)]
+        try runner.run(try system.simulate(deltaTime: deltaTime))
+        #expect(system.subEmitterInstances.count == 2)
+    }
+
     @Test func missingTheVolumeDoesNotTransition() throws {
         let away = TriggerVolume.sphere(center: [0, -5, 0], radius: 0.5)
         let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(.transition(on: .onEntering(away), into: stillChild())) { $0.lifetime = 5...5 })

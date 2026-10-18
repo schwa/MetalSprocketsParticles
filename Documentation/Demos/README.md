@@ -196,7 +196,7 @@ Glowing dust hangs in the air. Move the mouse over the view: a vortex and a ball
 
 ## Embers to Ash
 
-Glowing embers rise from a fire, and after 1.4 seconds each one turns into a gray flake of ash that drifts down and settles. Shows a transition: a sub-emitter that replaces its parent (SubEmitter.transition) at an age, keeping its position and velocity, with its own sprite and settings.
+Glowing embers rise from a fire. After 1.4 seconds each one turns into a gray flake of ash that drifts down, and when the ash lands it turns into a small puff of dust. Shows chained transitions: sub-emitters that replace their parent (SubEmitter.transition), at an age and then on a collision, each with its own sprite and settings.
 
 [![embers-to-ash](posters/embers-to-ash.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/embers-to-ash.mp4)
 
