@@ -2102,3 +2102,84 @@ updated: 2026-10-18T20:50:08Z
 A full library test run hung for 10 minutes (killed by the timeout) and passed in 18 seconds when re-run. A sample of the stuck test process showed nothing working: the main thread idle in its run loop, and AVFoundation's video compression and QuickTime writer threads waiting on semaphores. My guess is that a video export test (VideoExportTests, which uses MetalSprockets' OffscreenVideoRenderer) awaits a completion that never arrives, such as the writer's finish callback or a GPU completion handler. Not confirmed; seen once so far. Next time, sample the process and look for the awaiting task. Consider a timeout inside the video tests so a hang fails instead of stalling the run.
 
 ---
+
+## 103: Architecture: a player that owns the per-frame loop for a particle system
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m, needs-design
+created: 2026-10-18T21:33:49Z
++++
+
+Five callers repeat the same per-frame sequence by hand: particles-render, ParticleSystem.exportVideo, the preset golden test, ParticleView (ParticleViewState), and the demo (ParticlesDemoModel+Pointer, ParticlesView). The sequence: work out the pointer, colliders(at:pointer:), forceFields(at:pointer:) and assign them to the runtime (simulate does not take fields), transforms(at:pointer:), trackedObjectPositions(at:), make or resize a SceneDepth when drawsColliders, simulate, then renderScene. The copies differ in small ways (tracked objects set before simulate vs passed in; the demo has its own colliders function with animate-colliders), and two bugs have come from this seam (per-frame force fields missed; colliders without the pointer).
+
+Deepen into one module that owns a runtime, a ParticleSystem, the clock, the scene depth texture, and the pointer, and produces a frame's elements from a small input (delta time, drawable size, camera, optional pointer). The CLI, video export, golden test, ParticleView, and demo become thin callers.
+
+Dependencies: in-process, plus the GPU through OffscreenRenderer/Runner, which already work in tests.
+Tests: boundary tests on the player (deterministic frames, pointer bindings, finite effects, scene depth sizing) replace the scattered per-caller checks in PresetTests, ParticleViewTests, and the demo's frame tests.
+Source: improve-codebase-architecture review. Related: #100, #99.
+
+---
+
+## 104: Architecture: apply a ParticleSystem to the runtime as a whole
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m, needs-design
+created: 2026-10-18T21:33:49Z
++++
+
+The runtime keeps its own copy of the description: public colliders, forceFields, lights, ambientLight, trackedObjects, and emitters[i].settings, set piecemeal or through load(_:) and apply(_ layers:). The demo keeps a third copy (ColliderItem, ForceFieldItem, emitters) and pushes changes with didSet. Ownership is unclear: per-frame overrides replace stored values, and toggling an item resets them. This is the main thing a document-based editor (#100) would trip over.
+
+Deepen into one entry point, e.g. runtime.apply(system), that diffs the new description against the last one: keeps particles when only settings change, rebuilds when emitter layout changes, and makes the description the single source of truth. Per-frame inputs (pointer, animated colliders) stay separate from the description.
+
+Dependencies: in-process.
+Tests: 'apply a changed description, check what is kept and what is rebuilt' tests replace parts of EmitterDescriptionTests, MultipleEmitterTests, and the demo model's sync tests.
+Source: improve-codebase-architecture review. Related: #100, and the player issue.
+
+---
+
+## 105: Architecture: move editor-support API out of the core library
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:s, needs-design
+created: 2026-10-18T21:33:49Z
++++
+
+ParticleKind.swift (about 430 lines) adds writable kind properties, display names, and case lists to library enums so SwiftUI pickers can switch cases. The demo adds more of the same (Inspector+Events.swift, ParticleEmitter+Inspector.swift). The library ships UI-shaped API that apps never call, and editor helpers are split between the library and the demo.
+
+Move this into one place owned by the editor: the demo package now, or an editor-support library alongside the document-based editor (#100). Keep in the library only what non-editor callers need.
+
+Dependencies: in-process.
+Tests: ParticleKindTests and the demo's adapter tests merge where the code lands.
+Source: improve-codebase-architecture review. Related: #100.
+
+---
+
+## 106: Architecture: adding an emitter setting touches six places
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:m, needs-design
+created: 2026-10-18T21:33:49Z
+updated: 2026-10-18T21:33:49Z
++++
+
+Each new per-emitter setting goes through: ParticleEmitter (property and Codable line), ParticleTypes.h (SimulationUniforms or RenderUniforms), FramePlan.uniforms(for:) (or the render draw), Particles.metal, the demo inspector, and sometimes ParticleKind. The Swift and Metal structs are mirrored by hand. Softness, user functions, and transitions all went through every step.
+
+Look for ways to cut this: generate the Codable tolerant decoding from the property list, group related settings into nested structs that map 1:1 to C structs, or keep the Swift settings and the uniform packing in one file so a setting is added in two places at most. Weakest of the architecture candidates; worth a look when the settings next change a lot.
+
+Dependencies: in-process, across the Swift/Metal boundary.
+Tests: little change; behavior tests already cover settings.
+Source: improve-codebase-architecture review.
+
+---
