@@ -1052,9 +1052,9 @@ ParticleEmitter+Inspector.swift (~500 lines) and Inspector+Events.swift (~260 li
 status: open
 priority: high
 kind: feature
-labels: effort:m, area:simulation
+labels: effort:m, area:simulation, needs-decision
 created: 2026-10-18T01:43:22Z
-updated: 2026-10-18T12:40:25Z
+updated: 2026-10-18T12:42:01Z
 +++
 
 Every force field and collider affects every emitter's particles. Often only some should interact, e.g. smoke should feel wind but not a vortex, or sparks should bounce off the floor but rain should pass through a roof.
@@ -1068,6 +1068,7 @@ Proposal: bitmask categories, like SpriteKit/SceneKit physics:
 Defaults keep today's behavior. Add tests for masked vs unmasked particles and expose the masks in the demo inspector.
 
 - `2026-10-18T12:40:25Z`: Triaged: High (raised by user), feature, effort:m, area:simulation.
+- `2026-10-18T12:42:01Z`: Looked at implementing the proposed category masks. Punting: it needs an API decision, because Collider and ForceField are enums with associated values and have nowhere to store a per-instance categoryBitMask. Options: (A) make each a struct (shape enum + categoryBitMask) with static .sphere(...)-style constructors so creation code still compiles, but ~75 pattern-match sites change, including #53's writable kind and the demo adapters; closest to the proposal, effort ~l. (B) Parallel category arrays on ParticleSystem and ParticlePreset matched by index: little churn, but clunky and easy to desync. (C) Emitter-side masks by collider/field index (bit i = item i): no type changes, but breaks on reorder and is not real categories. Recommend A. Which do you want?
 
 ---
 
