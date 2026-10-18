@@ -12,8 +12,60 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot,
+        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot, .timeWarp,
     ]
+
+    /// Clocks spiral into a glowing core, each ticking through the clock-face flipbook from its own hour.
+    static let timeWarp: ParticlePreset = {
+        let center: SIMD3<Float> = [0, 1.5, 0]
+        return ParticlePreset(
+            "Time Warp",
+            layers: [
+                Layer("Clocks", settings: emitter {
+                    $0.sortMode = .backToFront
+                    $0.position = center
+                    $0.shape = .torus(radius: 2.4, tubeRadius: 0.3)
+                    $0.birthLocation = .surface
+                    $0.birthDirection = .tangent
+                    $0.velocity = [0, 0, 1.5]
+                    $0.velocitySpread = 0.1
+                    $0.gravity = .zero
+                    $0.drag = 0.4
+                    $0.lifetime = 3...3.5
+                    $0.birthRate = 16
+                    $0.warmupDuration = 5
+                    $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.1, 0.2), .init(0.8, 0.14), .init(1, 0)])
+                    $0.colorOverLife = .constant([1, 1, 1, 1])
+                    $0.angleVariation = .pi
+                    $0.angularSpeedVariation = 2
+                    var hours = ParticleSprite.clockFaces.defaultImageSequence!
+                    hours.frameRate = 6
+                    hours.initialFrameVariation = 12
+                    $0.imageSequence = hours
+                }, sprite: .clockFaces, capacity: 200),
+                Layer("Core", settings: emitter {
+                    $0.position = center
+                    $0.shape = .sphere(radius: 0.25)
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0.3
+                    $0.gravity = .zero
+                    $0.drag = 1
+                    $0.lifetime = 0.8...1.4
+                    $0.birthRate = 40
+                    $0.warmupDuration = 2
+                    $0.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.3, 0.22), .init(1, 0)])
+                    $0.colorOverLife = .constant([1, 1, 1, 1])
+                    $0.angularSpeedVariation = 3
+                }, sprite: .glowingStar, capacity: 200),
+            ],
+            forceFields: [
+                .vortex(center: center, strength: 2.5, radius: 4),
+                .attractor(center: center, strength: 2.2, radius: 4),
+            ],
+            cameraEye: [0, 4, 6],
+            cameraTarget: center
+        )
+    }()
 
     /// The Utah teapot (from SwiftMesh) outlined in glowing particles and slowly dissolving into sand that pours onto
     /// the ground. Both layers emit from the mesh surface.
@@ -259,7 +311,7 @@ public extension ParticlePreset {
                 $0.colorOverLife = .constant([0.6, 0.85, 1, 1])
             }, sprite: .ring, capacity: 200),
             Layer("Drops", settings: emitter {
-                $0.orientation = .velocityAligned(stretch: 0.3)
+                // Emoji droplets, billboarded so their point stays up.
                 $0.position = [0, 4, 0]
                 $0.shape = .plane(size: [6, 6])
                 $0.velocity = [0, -6, 0]
@@ -269,10 +321,9 @@ public extension ParticlePreset {
                 $0.birthRate = 40
                 $0.warmupDuration = 2
                 $0.diesOnCollision = true
-                $0.blendMode = .additive
-                $0.sizeOverLife = .constant(0.012)
-                $0.colorOverLife = .constant([0.6, 0.8, 1, 0.6])
-            }, capacity: 200),
+                $0.sizeOverLife = .constant(0.12)
+                $0.colorOverLife = .constant([1, 1, 1, 1])
+            }, sprite: .droplet, capacity: 200),
         ],
         colliders: [ground],
         cameraEye: [0, 3.5, 5],

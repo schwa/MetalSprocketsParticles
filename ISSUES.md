@@ -1354,14 +1354,18 @@ The objectEnters trigger (#34) needs app-supplied positions in ParticleSystem.tr
 ## 70: Some emoji sprites are unused
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:xs, area:demo
 created: 2026-10-18T13:34:41Z
+updated: 2026-10-18T13:49:39Z
+closed: 2026-10-18T13:49:39Z
 +++
 
 The clock-faces flipbook and the droplet and glowing-star emoji sprites (#40) are not used by any preset. Work them into presets (e.g. droplets in Pond or Geyser, glowing stars in Magic Trail, clock faces in a 'time warp' effect). Related: #40.
+
+- `2026-10-18T13:49:39Z`: Droplet sprite: Pond's falling drops (billboarded so the point stays up; they were near-invisible dots). Clock-face flipbook and glowing star: new Time Warp preset (clocks ticking through the flipbook from random hours, orbiting a glowing-star core in a vortex). Goldens: Pond updated, Time Warp added; both reviewed.
 
 ---
 
