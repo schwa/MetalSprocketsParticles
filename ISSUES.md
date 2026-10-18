@@ -2226,11 +2226,13 @@ Source: improve-codebase-architecture review. Related: #100.
 ## 106: Architecture: adding an emitter setting touches six places
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
-labels: area:simulation, effort:m, needs-design
+labels: area:simulation, effort:m
 created: 2026-10-18T21:33:49Z
+updated: 2026-10-18T22:43:49Z
+closed: 2026-10-18T22:43:49Z
 +++
 
 Each new per-emitter setting goes through: ParticleEmitter (property and Codable line), ParticleTypes.h (SimulationUniforms or RenderUniforms), FramePlan.uniforms(for:) (or the render draw), Particles.metal, the demo inspector, and sometimes ParticleKind. The Swift and Metal structs are mirrored by hand. Softness, user functions, and transitions all went through every step.
@@ -2240,6 +2242,8 @@ Look for ways to cut this: generate the Codable tolerant decoding from the prope
 Dependencies: in-process, across the Swift/Metal boundary.
 Tests: little change; behavior tests already cover settings.
 Source: improve-codebase-architecture review.
+
+- `2026-10-18T22:43:49Z`: Looked for ways to cut the six places. The GPU struct, the packing in FramePlan, the shader, and the inspector are inherent; code-generating one from another (Swift settings -> C uniforms) is heavy for this project. The real trap was silent: forgetting the tolerant-decoding line drops a setting from effect files with no error. Added DecodingCoverageTests: for every key ParticleEmitter, ParticleSystem, and SubEmitter encode, a wrong-typed value must make decoding fail, so an ignored key is caught without a hand-kept list (verified: removing the softness line fails the test). Added an 'Adding a setting' checklist at the top of ParticleEmitter.swift. Deeper unification left for if settings churn a lot.
 
 ---
 

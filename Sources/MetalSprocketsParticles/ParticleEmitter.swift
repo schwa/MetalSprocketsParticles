@@ -1,6 +1,13 @@
 import MetalSprocketsParticlesShaders
 import simd
 
+// Adding a setting:
+// 1. The property here, with its default.
+// 2. A `container.update` line in `init(from:)` (DecodingCoverageTests fails if it is missing).
+// 3. If the GPU needs it: a field in SimulationUniforms or RenderUniforms (ParticleTypes.h), set in
+//    FramePlan.uniforms(for:) or the render draw, and used in Particles.metal.
+// 4. A control in the demo inspector, and in ParticleKind.swift if it is a new enum kind.
+
 /// Settings for one emitter. Colliders and force fields are shared by all emitters and live on `ParticleSystemRuntime`.
 public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Center of `shape` in emitter space.
