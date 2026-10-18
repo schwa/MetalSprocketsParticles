@@ -262,7 +262,7 @@ extension ParticleSystemRuntime {
             }
             let sub = emitter.settings.subEmitters[child.subEmitterIndex]
             data.append(SubEmitterData(
-                occasion: sub.occasion.kind,
+                occasion: sub.occasion.gpuKind,
                 countPerEvent: UInt32(max(sub.countPerEvent, 1)),
                 childSliceStart: UInt32(child.range.lowerBound),
                 childCapacity: UInt32(child.capacity),

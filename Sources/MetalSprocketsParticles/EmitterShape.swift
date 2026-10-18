@@ -28,7 +28,7 @@ extension ParticleShapeData {
     /// The shader's view of an emitter's shape and birth settings. `mesh` supplies counts for `EmitterShape.mesh`.
     init(_ settings: ParticleEmitter, mesh: EmitterMesh?) {
         self.init()
-        kind = settings.shape.kind
+        kind = settings.shape.gpuKind
         birthLocation = settings.birthLocation
         birthDirection = settings.birthDirection
         sweep = max(settings.sweepAngle, 0)

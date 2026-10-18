@@ -1,5 +1,5 @@
-@testable import MetalSprocketsParticles
-import MetalSprocketsParticlesShaders
+import MetalSprocketsParticles
+@testable import MetalSprocketsParticlesDemoSupport
 import simd
 import Testing
 

@@ -2199,11 +2199,13 @@ Source: improve-codebase-architecture review. Related: #100, and the player issu
 ## 105: Architecture: move editor-support API out of the core library
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
-labels: area:api, effort:s, needs-design
+labels: area:api, effort:s
 created: 2026-10-18T21:33:49Z
+updated: 2026-10-18T22:36:02Z
+closed: 2026-10-18T22:36:02Z
 +++
 
 ParticleKind.swift (about 430 lines) adds writable kind properties, display names, and case lists to library enums so SwiftUI pickers can switch cases. The demo adds more of the same (Inspector+Events.swift, ParticleEmitter+Inspector.swift). The library ships UI-shaped API that apps never call, and editor helpers are split between the library and the demo.
@@ -2213,6 +2215,8 @@ Move this into one place owned by the editor: the demo package now, or an editor
 Dependencies: in-process.
 Tests: ParticleKindTests and the demo's adapter tests merge where the code lands.
 Source: improve-codebase-architecture review. Related: #100.
+
+- `2026-10-18T22:36:02Z`: Moved ParticleKind.swift (the ParticleKind protocol, display names, case lists, writable kind setters) and ParticleKindTests into the demo package, which is the editor. The core keeps only internal gpuKind getters for the two mappings it needs (EmitterShape, SubEmitter.Occasion). The core now @_exported-imports MetalSprocketsParticlesShaders, so library users and the demo can name the shared types (ParticleBlendMode etc.) that already appear in its API. Design choice made here: the demo package, not a new editor-support library, since the editor (#100) is deferred; move it with the editor later.
 
 ---
 

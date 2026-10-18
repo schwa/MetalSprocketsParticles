@@ -1,5 +1,11 @@
-import MetalSprocketsParticlesShaders
+import MetalSprocketsParticles
 import simd
+
+// Editor support: display names, case lists, and writable kinds for pickers. It lives with the editor, not the library,
+// which only needs the GPU mapping.
+
+// The switches here are case-to-value tables; one line per case reads best.
+// swiftlint:disable switch_case_on_newline
 
 /// The case of an enum with associated values, or a plain option enum, with a display name. Editors list `allCases`
 /// and bind to a value's writable `kind`; setting `kind` converts the value to a sensible one of the new kind,
@@ -63,7 +69,7 @@ extension ParticleImageSequenceMode: @retroactive CaseIterable, @retroactive Ide
     }
 }
 
-extension SimulationSpace: Identifiable, ParticleKind {
+extension SimulationSpace: @retroactive Identifiable, ParticleKind {
     public var name: String {
         switch self {
         case .world: "World"
@@ -161,7 +167,14 @@ extension ParticleOrientationMode: @retroactive CaseIterable, @retroactive Ident
 public extension ParticleOrientation {
     /// Setting it to `.fixed` lies flat facing +Y; `.velocityAligned` starts with no stretch.
     var kind: ParticleOrientationMode {
-        get { mode }
+        get {
+            switch self {
+            case .billboard: .billboard
+            case .yAligned: .yAligned
+            case .velocityAligned: .velocityAligned
+            case .fixed: .fixed
+            }
+        }
         set {
             guard newValue != kind else {
                 return
