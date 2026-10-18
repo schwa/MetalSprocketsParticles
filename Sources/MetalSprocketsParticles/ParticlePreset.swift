@@ -2,7 +2,7 @@ import Metal
 import simd
 
 /// A complete effect: emitters with their sprites and motion, plus the colliders and force fields they play against.
-public struct ParticlePreset: Sendable, Identifiable {
+public struct ParticlePreset: Sendable, Identifiable, Codable {
     /// One emitter in a preset.
     public typealias Layer = EmitterDescription
 

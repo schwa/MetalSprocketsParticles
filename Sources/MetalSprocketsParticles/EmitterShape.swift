@@ -6,7 +6,7 @@ import SwiftMesh
 
 /// The region particles are born in, in emitter space and centered on `ParticleEmitter.position`. Shapes with an axis
 /// use +Y.
-public enum EmitterShape: Sendable, Equatable {
+public enum EmitterShape: Sendable, Equatable, Codable {
     case point
     case sphere(radius: Float)
     case box(size: SIMD3<Float>)

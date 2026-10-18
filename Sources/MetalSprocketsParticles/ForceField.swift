@@ -2,7 +2,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// A force applied to every particle each step, in addition to gravity and drag.
-public enum ForceField: Sendable, Equatable {
+public enum ForceField: Sendable, Equatable, Codable {
     /// Pulls particle velocity toward `velocity`. `strength` is per second: higher catches up faster.
     case wind(velocity: SIMD3<Float>, strength: Float)
     /// Constant acceleration toward `center`; negative `strength` repels. `radius` 0 means unlimited range.

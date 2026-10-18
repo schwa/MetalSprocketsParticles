@@ -1,6 +1,7 @@
 import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The trailing inspector: details for whatever the outline has selected. The most-used controls stay visible; the
 /// rest are in disclosure groups. Controls are small so more fit without scrolling.
@@ -89,13 +90,40 @@ struct SendEventSectionView: View {
 
 struct SceneSectionView: View {
     @Bindable var model: ParticlesDemoModel
+    @State private var isImporting = false
+    @State private var isExporting = false
+    @State private var isShowingError = false
+    @State private var errorMessage = ""
 
     var body: some View {
         Section("Scene") {
             Picker("Preset", selection: $model.presetName) {
-                ForEach(ParticlePreset.all) { preset in
+                ForEach(model.presets) { preset in
                     Text(preset.name).tag(preset.name)
                 }
+            }
+            HStack {
+                Button("Open Effect", systemImage: "folder") { isImporting = true }
+                Button("Save Effect", systemImage: "square.and.arrow.down") { isExporting = true }
+            }
+            .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
+                do {
+                    try model.openEffect(at: try result.get())
+                } catch {
+                    errorMessage = error.localizedDescription
+                    isShowingError = true
+                }
+            }
+            .fileExporter(isPresented: $isExporting, item: model.currentEffect, contentTypes: [.json], defaultFilename: model.presetName) { result in
+                if case let .failure(error) = result {
+                    errorMessage = error.localizedDescription
+                    isShowingError = true
+                }
+            }
+            .alert("Effect File", isPresented: $isShowingError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage)
             }
             Picker("Playback", selection: $model.playback) {
                 Label("Play", systemImage: "play.fill").tag(SimulationState.playing)

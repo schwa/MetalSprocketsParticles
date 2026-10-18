@@ -1,7 +1,7 @@
 import Foundation
 import MetalSprocketsParticlesShaders
 
-public protocol ParticleCurveValue: Sendable, Equatable {
+public protocol ParticleCurveValue: Sendable, Equatable, Codable {
     static func interpolate(_ from: Self, _ to: Self, _ fraction: Float) -> Self
 }
 
@@ -18,8 +18,8 @@ extension SIMD4: ParticleCurveValue where Scalar == Float {
 }
 
 /// A value over a particle's normalized life (0 = birth, 1 = death), linear between keyframes.
-public struct ParticleCurve<Value: ParticleCurveValue>: Sendable, Equatable {
-    public struct Keyframe: Sendable, Equatable {
+public struct ParticleCurve<Value: ParticleCurveValue>: Sendable, Equatable, Codable {
+    public struct Keyframe: Sendable, Equatable, Codable {
         public var time: Float
         public var value: Value
 

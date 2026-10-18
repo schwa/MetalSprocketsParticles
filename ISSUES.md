@@ -459,17 +459,19 @@ SceneKit lets callers attach event handlers (birth, death, collision) and per-fr
 ## 25: No presets or saved effect files
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:tooling
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-18T12:39:44Z
+updated: 2026-10-18T12:47:29Z
+closed: 2026-10-18T12:47:29Z
 +++
 
 RealityKit ships ParticleEmitterComponent.Presets (fireworks, impact, magic, rain, snow, sparks). SceneKit loads .scnp files authored in Xcode's particle editor. We have one hard-coded fountain and no serializable effect format.
 
 - `2026-10-17T17:18:07Z`: Related: #30 now loads presets through a picker; saved effect files from this issue should appear in the same picker.
+- `2026-10-18T12:47:29Z`: Built-in presets already exist (23). Added a saved effect format: ParticlePreset and everything it contains are Codable (JSON); ParticleEmitter decoding keeps defaults for missing keys so old files still load. ParticlePreset(contentsOf:), write(to:), jsonData(), and Transferable (.json). particles-render --effect file.json / --save-effect file.json. Demo: Open Effect / Save Effect (fileImporter/fileExporter); opened effects appear in the preset picker (#30's note). Meshes are not saved: filed #65. Demo sandbox now allows read-write user-selected files.
 
 ---
 
@@ -1239,5 +1241,19 @@ created: 2026-10-18T12:36:57Z
 +++
 
 EmitterOutlineRow uses 'private var emitterLabel: some View' (label + tag + context menu), used twice. House rule allows tiny tightly-bound fragments; consider whether it should be a struct. Low value. Source: SwiftUI review.
+
+---
+
+## 65: Saved effects drop emitter meshes
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:tooling
+created: 2026-10-18T12:47:29Z
++++
+
+Effect files (#25) save EmitterDescription without its mesh, because SwiftMesh's Mesh is not Codable. The Teapot preset saved to JSON and reopened emits from nothing (a center point). Options: make Mesh Codable in SwiftMesh, store triangulated positions + indices in the file, or reference a mesh by name/resource (e.g. 'teapot') that the loader resolves.
 
 ---

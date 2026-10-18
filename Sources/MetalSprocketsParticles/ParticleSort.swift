@@ -5,7 +5,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// Draw order of one emitter's particles.
-public enum ParticleSortMode: String, CaseIterable, Identifiable, Sendable {
+public enum ParticleSortMode: String, CaseIterable, Identifiable, Sendable, Codable {
     /// Buffer order. Right for additive blending, which does not depend on order, and the cheapest.
     case none = "None"
     /// Farthest first, so alpha blending composites correctly. Needs the camera: pass `view` to

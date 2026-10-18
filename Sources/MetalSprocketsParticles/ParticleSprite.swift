@@ -4,7 +4,7 @@ import Foundation
 import Metal
 
 /// Built-in sprites drawn with Core Graphics, so effects need no image assets.
-public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable {
+public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codable {
     case softDot = "Soft Dot"
     case star = "Star"
     case spark = "Spark"

@@ -2,7 +2,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// How each particle's quad is oriented in the world.
-public enum ParticleOrientation: Sendable, Equatable {
+public enum ParticleOrientation: Sendable, Equatable, Codable {
     /// Always faces the camera.
     case billboard
     /// Stands upright and turns around world Y to face the camera. Good for trees, flames, and smoke columns.

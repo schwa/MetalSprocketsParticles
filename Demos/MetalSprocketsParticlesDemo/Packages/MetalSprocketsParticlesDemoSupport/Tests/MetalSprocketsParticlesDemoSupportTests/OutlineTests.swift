@@ -1,3 +1,4 @@
+import Foundation
 import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
 import Testing
@@ -99,6 +100,26 @@ struct OutlineTests {
         curve[stop: 2].time = 0.9
         curve[stop: 2].value = 9
         #expect(curve == before)
+    }
+
+    /// #25: the current scene saves to a file and opens again as a picker entry.
+    @Test func saveAndOpenEffect() throws {
+        let model = ParticlesDemoModel(preset: .fireworks)
+        model.emitters[0].settings.birthRate = 7
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("My Fireworks-\(UUID()).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try model.currentEffect.write(to: url)
+
+        model.presetName = ParticlePreset.rain.name
+        try model.openEffect(at: url)
+        #expect(model.presetName.hasPrefix("My Fireworks"))
+        #expect(model.presets.contains { $0.name == model.presetName })
+        #expect(model.emitters[0].settings.birthRate == 7)
+        #expect(model.emitters.count == ParticlePreset.fireworks.layers.count)
+
+        // A file named like a built-in preset does not shadow it.
+        model.open(ParticlePreset.rain, named: "Fireworks")
+        #expect(model.presetName == "Fireworks (File)")
     }
 
     @Test func presetMeshReachesTheSystem() throws {

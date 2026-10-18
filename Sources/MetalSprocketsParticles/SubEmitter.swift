@@ -5,8 +5,8 @@ import MetalSprocketsParticlesShaders
 ///
 /// Each parent particle owns `countPerEvent` child slots. A new event overwrites that parent's earlier children, so a
 /// parent never has more than `countPerEvent` children alive at once. Children live in world space.
-public struct SubEmitter: Sendable, Equatable {
-    public enum Occasion: Sendable, Equatable {
+public struct SubEmitter: Sendable, Equatable, Codable {
+    public enum Occasion: Sendable, Equatable, Codable {
         case onBirth
         /// When the parent's lifetime ends, or it dies on collision.
         case onDeath

@@ -2,7 +2,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// Settings for one emitter. Colliders and force fields are shared by all emitters and live on `ParticleSystem`.
-public struct ParticleEmitter: Sendable, Equatable {
+public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Center of `shape` in emitter space.
     public var position: SIMD3<Float> = .zero
     public var shape: EmitterShape = .sphere(radius: 0.05)
@@ -112,4 +112,59 @@ public struct ParticleEmitter: Sendable, Equatable {
     public var triggers: [EmissionTrigger] = []
 
     public init() {}
+}
+
+extension ParticleEmitter {
+    /// Missing keys keep their defaults, so effects saved before a setting existed still load.
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        try container.update(&position, .position)
+        try container.update(&shape, .shape)
+        try container.update(&birthLocation, .birthLocation)
+        try container.update(&birthDirection, .birthDirection)
+        try container.update(&sweepAngle, .sweepAngle)
+        try container.update(&velocity, .velocity)
+        try container.update(&velocitySpread, .velocitySpread)
+        try container.update(&lifetime, .lifetime)
+        try container.update(&colorOverLife, .colorOverLife)
+        try container.update(&sizeOverLife, .sizeOverLife)
+        try container.update(&opacityOverLife, .opacityOverLife)
+        try container.update(&gravity, .gravity)
+        try container.update(&drag, .drag)
+        try container.update(&restitution, .restitution)
+        try container.update(&restitutionVariation, .restitutionVariation)
+        try container.update(&friction, .friction)
+        try container.update(&frictionVariation, .frictionVariation)
+        try container.update(&diesOnCollision, .diesOnCollision)
+        try container.update(&speedVariation, .speedVariation)
+        try container.update(&sizeVariation, .sizeVariation)
+        try container.update(&colorVariation, .colorVariation)
+        try container.update(&angle, .angle)
+        try container.update(&angleVariation, .angleVariation)
+        try container.update(&angularSpeed, .angularSpeed)
+        try container.update(&angularSpeedVariation, .angularSpeedVariation)
+        try container.update(&blendMode, .blendMode)
+        try container.update(&sortMode, .sortMode)
+        try container.update(&imageSequence, .imageSequence)
+        try container.update(&orientation, .orientation)
+        try container.update(&birthRate, .birthRate)
+        try container.update(&birthRateVariation, .birthRateVariation)
+        try container.update(&inheritVelocity, .inheritVelocity)
+        try container.update(&emissionDuration, .emissionDuration)
+        try container.update(&idleDuration, .idleDuration)
+        try container.update(&loops, .loops)
+        try container.update(&warmupDuration, .warmupDuration)
+        try container.update(&subEmitters, .subEmitters)
+        try container.update(&triggers, .triggers)
+    }
+}
+
+extension KeyedDecodingContainer {
+    /// Replaces `value` when `key` is present; otherwise leaves it alone.
+    func update<T: Decodable>(_ value: inout T, _ key: Key) throws {
+        if contains(key) {
+            value = try decode(T.self, forKey: key)
+        }
+    }
 }

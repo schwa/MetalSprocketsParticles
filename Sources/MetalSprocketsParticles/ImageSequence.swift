@@ -1,7 +1,7 @@
 import MetalSprocketsParticlesShaders
 
 /// A sprite sheet laid out left to right, top to bottom.
-public struct ImageSequence: Sendable, Equatable {
+public struct ImageSequence: Sendable, Equatable, Codable {
     public var rows = 1
     public var columns = 1
     /// Frames used, counted from the top-left cell. Defaults to every cell.

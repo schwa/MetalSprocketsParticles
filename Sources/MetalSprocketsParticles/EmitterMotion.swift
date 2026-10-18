@@ -2,8 +2,8 @@ import simd
 
 /// Moves an emitter over time, for trails and moving sources. Produces the transform to pass to
 /// `ParticleSystem.simulate(deltaTime:colliders:transforms:)`.
-public struct EmitterMotion: Sendable, Equatable {
-    public enum Kind: String, CaseIterable, Identifiable, Sendable {
+public struct EmitterMotion: Sendable, Equatable, Codable {
+    public enum Kind: String, CaseIterable, Identifiable, Sendable, Codable {
         case still = "Still"
         case circle = "Circle"
         case bounce = "Bounce"

@@ -3,8 +3,8 @@ import simd
 
 /// Makes an emitter react to something happening: an app event, a timer, an object or particles entering a volume, or
 /// a collider being hit. Triggers are checked at the start of each `ParticleSystem.simulate`.
-public struct EmissionTrigger: Sendable, Equatable {
-    public enum Condition: Sendable, Equatable {
+public struct EmissionTrigger: Sendable, Equatable, Codable {
+    public enum Condition: Sendable, Equatable, Codable {
         /// `ParticleSystem.send(event:)` with this name.
         case event(String)
         /// Once, this many seconds of simulation time after the system starts or restarts.
@@ -21,7 +21,7 @@ public struct EmissionTrigger: Sendable, Equatable {
         case colliderHit(index: Int, count: Int = 1)
     }
 
-    public enum Action: Sendable, Equatable {
+    public enum Action: Sendable, Equatable, Codable {
         case burst(Int)
         /// Turns emission on.
         case start
@@ -41,7 +41,7 @@ public struct EmissionTrigger: Sendable, Equatable {
 }
 
 /// A world-space region for triggers.
-public enum TriggerVolume: Sendable, Equatable {
+public enum TriggerVolume: Sendable, Equatable, Codable {
     case sphere(center: SIMD3<Float>, radius: Float)
     case box(center: SIMD3<Float>, halfExtents: SIMD3<Float>)
 

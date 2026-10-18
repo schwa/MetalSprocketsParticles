@@ -6,7 +6,12 @@ import SwiftMesh
 /// Everything needed to create one emitter: its settings plus the resources and runtime choices that live on
 /// `ParticleSystem.Emitter`. Presets, apps, and editors describe emitters with this; `ParticleSystem.apply(_:)` turns
 /// descriptions into running emitters.
-public struct EmitterDescription: Sendable, Identifiable, Equatable {
+public struct EmitterDescription: Sendable, Identifiable, Equatable, Codable {
+    /// `mesh` is not saved: SwiftMesh meshes are not Codable.
+    enum CodingKeys: String, CodingKey {
+        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting
+    }
+
     /// Identifies the emitter across edits. `apply(_:)` rebuilds the particle buffer when the ids change.
     public let id: UUID
     public var name: String

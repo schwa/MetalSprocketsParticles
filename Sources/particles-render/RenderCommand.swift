@@ -17,6 +17,12 @@ struct RenderCommand: ParsableCommand {
     @Option(help: "Preset to render. See --list-presets.")
     var preset = "Fountain"
 
+    @Option(help: "Render a saved effect (JSON) instead of a built-in preset.")
+    var effect: String?
+
+    @Option(help: "Write the effect as JSON to this path and exit.")
+    var saveEffect: String?
+
     @Flag(help: "List the preset names and exit.")
     var listPresets = false
 
@@ -55,8 +61,18 @@ struct RenderCommand: ParsableCommand {
             ParticlePreset.all.forEach { print($0.name) }
             return
         }
-        guard let preset = ParticlePreset.named(self.preset) else {
+        let preset: ParticlePreset
+        if let effect {
+            preset = try ParticlePreset(contentsOf: URL(fileURLWithPath: effect))
+        } else if let builtIn = ParticlePreset.named(self.preset) {
+            preset = builtIn
+        } else {
             throw ValidationError("Unknown preset '\(self.preset)'. Presets: \(ParticlePreset.all.map(\.name).joined(separator: ", "))")
+        }
+        if let saveEffect {
+            try preset.write(to: URL(fileURLWithPath: saveEffect))
+            print("Wrote \(saveEffect): \(preset.name)")
+            return
         }
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
         let system = try ParticleSystem(device: renderer.device, emitters: [], capacity: 1, seed: seed)

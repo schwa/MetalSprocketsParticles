@@ -1,3 +1,4 @@
+import Foundation
 import Metal
 import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
@@ -13,7 +14,7 @@ final class ParticlesDemoModel {
     /// The preset last loaded. Choosing another loads it, replacing emitters, colliders, and force fields.
     var presetName: String {
         didSet {
-            if presetName != oldValue, let preset = ParticlePreset.named(presetName) {
+            if presetName != oldValue, let preset = preset(named: presetName) {
                 load(preset)
             }
         }
@@ -142,6 +143,56 @@ final class ParticlesDemoModel {
         load(preset)
     }
 
+    // MARK: Effect files
+
+    /// Effects opened from files this session, listed after the built-in presets.
+    private(set) var openedEffects: [ParticlePreset] = []
+
+    var presets: [ParticlePreset] {
+        ParticlePreset.all + openedEffects
+    }
+
+    func preset(named name: String) -> ParticlePreset? {
+        presets.first { $0.name == name }
+    }
+
+    /// The scene as it is now, for saving.
+    var currentEffect: ParticlePreset {
+        ParticlePreset(
+            presetName,
+            layers: emitters,
+            colliders: colliders.map(\.collider),
+            animatesColliders: animateColliders,
+            forceFields: forceFields.map(\.field),
+            cameraEye: cameraEye,
+            cameraTarget: cameraTarget
+        )
+    }
+
+    /// Reads a saved effect and loads it, named after the file.
+    func openEffect(at url: URL) throws {
+        let isScoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if isScoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        open(try ParticlePreset(contentsOf: url), named: url.deletingPathExtension().lastPathComponent)
+    }
+
+    /// Adds an opened effect under `name` (made unique against built-in presets) and loads it.
+    func open(_ effect: ParticlePreset, named name: String) {
+        var effect = effect
+        effect.name = ParticlePreset.all.contains { $0.name == name } ? "\(name) (File)" : name
+        openedEffects.removeAll { $0.name == effect.name }
+        openedEffects.append(effect)
+        if presetName == effect.name {
+            load(effect)
+        } else {
+            presetName = effect.name
+        }
+    }
+
     func load(_ preset: ParticlePreset) {
         // Fresh ids, so loading the same preset again rebuilds and clears the particles.
         let emitters = preset.layers.map { $0.copy() }
@@ -159,7 +210,7 @@ final class ParticlesDemoModel {
 
     /// Reloads the current preset, discarding edits.
     func reloadPreset() {
-        if let preset = ParticlePreset.named(presetName) {
+        if let preset = preset(named: presetName) {
             load(preset)
         }
     }
