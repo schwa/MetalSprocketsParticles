@@ -1123,14 +1123,18 @@ Fix: drop Binding(optional). Use a custom Binding whose get falls back to a cach
 ## 57: Curve stop rows can crash when a stop is removed
 
 +++
-status: open
+status: closed
 priority: high
 kind: bug
 labels: effort:s, area:demo
 created: 2026-10-18T12:36:56Z
+updated: 2026-10-18T12:41:17Z
+closed: 2026-10-18T12:41:17Z
 +++
 
 ColorCurveEditorView and FloatCurveEditorView (InspectorControls.swift) use ForEach(curve.keyframes.indices, id: \.self) and bind .keyframes[index] in rows that also contain their own Remove button. After removing a stop (especially the last), SwiftUI can read a stale row binding one past the end of the array and trap: the same class of bug as #56. Fix with stable ids for stops, or route reads/writes through an accessor that returns a placeholder and drops writes for missing indices. Source: SwiftUI review.
+
+- `2026-10-18T12:41:17Z`: Curve rows now bind through ParticleCurve[stop:] (demo extension): reads past the end return the last keyframe, writes past the end are dropped. No red-first test: the old array subscript traps, which kills the test process. OutlineTests.curveStopAccessSurvivesRemoval covers the accessor contract. Not checked in the running app.
 
 ---
 

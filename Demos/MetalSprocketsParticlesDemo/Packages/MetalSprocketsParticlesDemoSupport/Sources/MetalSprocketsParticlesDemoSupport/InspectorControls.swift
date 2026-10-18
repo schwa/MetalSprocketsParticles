@@ -57,6 +57,19 @@ struct VectorEditorView: View {
     }
 }
 
+extension ParticleCurve {
+    /// The keyframe at `index`, for row bindings. Rows are identified by position, so after a removal SwiftUI can read or
+    /// write a row binding past the end once more: those reads return the last keyframe and those writes are dropped.
+    subscript(stop index: Int) -> Keyframe {
+        get { keyframes.indices.contains(index) ? keyframes[index] : keyframes.last ?? Keyframe(0, end) }
+        set {
+            if keyframes.indices.contains(index) {
+                keyframes[index] = newValue
+            }
+        }
+    }
+}
+
 /// Edits color stops over a particle's life. Stops are identified by position: the library keyframes have no ids.
 struct ColorCurveEditorView: View {
     let title: LocalizedStringKey
@@ -66,8 +79,8 @@ struct ColorCurveEditorView: View {
         DisclosureGroup(title) {
             ForEach(curve.keyframes.indices, id: \.self) { index in
                 HStack {
-                    ColorPicker("Stop \(index + 1)", selection: $curve.keyframes[index].color)
-                    Slider(value: $curve.keyframes[index].time, in: 0...1)
+                    ColorPicker("Stop \(index + 1)", selection: $curve[stop: index].color)
+                    Slider(value: $curve[stop: index].time, in: 0...1)
                     Button("Remove Stop", systemImage: "minus.circle") {
                         curve.keyframes.remove(at: index)
                     }
@@ -93,8 +106,8 @@ struct FloatCurveEditorView: View {
             ForEach(curve.keyframes.indices, id: \.self) { index in
                 HStack {
                     VStack {
-                        ParameterSliderView("Time", value: $curve.keyframes[index].time, in: 0...1)
-                        ParameterSliderView("Value", value: $curve.keyframes[index].value, in: range, format: .number.precision(.fractionLength(3)))
+                        ParameterSliderView("Time", value: $curve[stop: index].time, in: 0...1)
+                        ParameterSliderView("Value", value: $curve[stop: index].value, in: range, format: .number.precision(.fractionLength(3)))
                     }
                     Button("Remove Stop", systemImage: "minus.circle") {
                         curve.keyframes.remove(at: index)

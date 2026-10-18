@@ -88,6 +88,19 @@ struct OutlineTests {
         #expect(model.selectedEmitter.settings.triggers.isEmpty)
     }
 
+    /// #57: curve rows bind by position; after removing a stop, stale row bindings must not trap or write.
+    @Test func curveStopAccessSurvivesRemoval() {
+        var curve = ParticleCurve<Float>([.init(0, 1), .init(0.5, 2), .init(1, 3)])
+        curve[stop: 1].value = 5
+        #expect(curve.keyframes[1].value == 5)
+        curve.keyframes.remove(at: 2)
+        #expect(curve[stop: 2] == curve.keyframes[1])
+        let before = curve
+        curve[stop: 2].time = 0.9
+        curve[stop: 2].value = 9
+        #expect(curve == before)
+    }
+
     @Test func presetMeshReachesTheSystem() throws {
         let model = ParticlesDemoModel(preset: .teapot)
         let system = try #require(model.system)
