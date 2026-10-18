@@ -447,18 +447,20 @@ Colliding particles always bounce. SceneKit has particleDiesOnCollision and coll
 ## 24: No way to inject custom per-particle behavior
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:xl, area:simulation, tracking
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-18T17:06:39Z
+updated: 2026-10-18T18:46:51Z
+closed: 2026-10-18T18:46:51Z
 +++
 
 SceneKit lets callers attach event handlers (birth, death, collision) and per-frame modifier blocks at several simulation stages. A GPU system needs an equivalent, e.g. user-supplied Metal functions for spawn, update, or render, so effects can go beyond the built-in parameters.
 
 - `2026-10-18T13:33:59Z`: Decision (user): functions. Custom per-particle behavior is user-supplied Metal functions called from the simulation kernel (e.g. visible functions or function constants/stitching via MetalSprockets), not Swift closures or a fixed set of built-in modifier stages. Next: split into a design spike for the function signature and linking, then implementation.
 - `2026-10-18T17:06:39Z`: Split into #85 (spike, do first), #86 (update hook), #87 (spawn hook), #88 (effect files), and #89 (event hooks). A render-stage hook is left out until needed.
+- `2026-10-18T18:46:51Z`: Done via #85 (spike), #86 (update), #87 (spawn), #88 (effect files), #89 (collision and death). Open follow-up: color/size in ParticleState (#91).
 
 ---
 
@@ -1095,9 +1097,9 @@ Defaults keep today's behavior. Add tests for masked vs unmasked particles and e
 status: open
 priority: low
 kind: task
-labels: effort:m, area:rendering, needs-info
+labels: effort:m, area:rendering, deferred
 created: 2026-10-18T01:45:02Z
-updated: 2026-10-18T13:22:12Z
+updated: 2026-10-18T18:50:43Z
 +++
 
 Debug wireframes (DebugWireframes.swift, ColliderWireframe.swift) use a hand-rolled WireframeBuilder and a custom line-list RenderPipeline (wireframeVertex/wireframeFragment), one flat color per kind.
@@ -1108,6 +1110,7 @@ Check first: dependency weight for the library target (maybe keep wireframes in 
 
 - `2026-10-18T12:40:25Z`: Triaged: Low, task, effort:m, area:rendering.
 - `2026-10-18T13:22:11Z`: Looked for Canvas3D to evaluate it: no Swift source mentions it under ~/Shared/Projects or ~/Projects (MetalSprockets, AddOns, all .build checkouts), in DerivedData, or in a GitHub code search of schwa's repos. Punting: can't judge dependency weight or RenderPass fit without its API. Where does Canvas3D live (package/repo/branch)? Meanwhile the current wireframes are small (WireframeBuilder + one flat-color line pipeline, ~300 lines) and work in particles-render --wireframes and the demo.
+- `2026-10-18T18:50:43Z`: Decision (user): defer. Canvas3D lives in MetalSprocketsAddOns.
 
 ---
 
@@ -1449,15 +1452,18 @@ EmitterMesh is built once from a SwiftMesh mesh (CPU triangulation, area-weighte
 ## 74: Integrate with MetalSprocketsSceneGraph
 
 +++
-status: open
+status: closed
 priority: high
 kind: task
 labels: effort:m, area:tooling, deferred
 created: 2026-10-18T13:39:42Z
-updated: 2026-10-18T13:40:42Z
+updated: 2026-10-18T18:50:43Z
+closed: 2026-10-18T18:50:43Z
 +++
 
 This project is meant to replace MetalSprocketsSceneGraph's particle system (Sources/MetalSprocketsParticles there; scene integration in Particles.swift: node.particleSystems advanced per node with system.advance(by:emitterTransform:) and drawn by ParticleRenderer as depth-tested soft sprites). Check the API fit: per-node emitters vs one ParticleSystem with many emitters (apply/simulate(transforms:)), hidden nodes stopping emission, scene colliders and lights from nodes, depth for soft particles (render(sceneDepth:)), deformed meshes (see the deformed-mesh emitter issue), and draw order with transparent scene geometry. Output: an integration plan or a thin adapter in the scene graph, plus any API gaps filed here.
+
+- `2026-10-18T18:50:43Z`: Decision (user): not this project's job; MetalSprocketsSceneGraph will integrate this library. Here we only keep the API easy to integrate (per-node emitters, scene colliders and lights, depth for soft particles, deformed meshes).
 
 ---
 
@@ -1525,9 +1531,9 @@ Plan:
 status: open
 priority: medium
 kind: feature
-labels: area:demo, needs-design, effort:l
+labels: area:demo, effort:l
 created: 2026-10-18T15:36:26Z
-updated: 2026-10-18T15:44:07Z
+updated: 2026-10-18T18:50:43Z
 +++
 
 Particles can't react to the user. Let them respond to the camera and the pointer.
@@ -1539,6 +1545,8 @@ Ideas:
 Probably a library API (pointer ray or position in, as a tracked object or force field) plus demo wiring and a preset that shows it off. particles-render has no input, so test with scripted pointer paths.
 
 Open questions: which interactions first, and whether the pointer is a ray or a point on a plane.
+
+- `2026-10-18T18:50:43Z`: Decision (user): bind force fields, colliders, or emitters to the mouse; that is enough for now. Camera reactions later.
 
 ---
 
@@ -1805,38 +1813,36 @@ Do:
 
 ---
 
-## 91: Change particles on collision: new color, or turn into another particle type
+## 91: Particle transitions: turn into another particle type on an event
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
-labels: area:collision, needs-design
+labels: area:collision, effort:l
 created: 2026-10-18T17:20:05Z
+updated: 2026-10-18T18:50:43Z
 +++
 
-Let a collision change a particle instead of only bouncing or dying. Examples: sparks turn red when they hit the ground, snow turns to slush, rain becomes a splash droplet, an ember becomes ash.
+Let a particle become a different particle type (move to another emitter) when something happens, keeping its position and velocity (and optionally age). The new emitter's sprite, curves, color, size, and settings then apply. A color change is just a transition to an emitter with a different color.
 
-Today:
-- diesOnCollision plus an onCollision sub-emitter can fake 'turn into another type': the particle dies and children spawn where it hit. But the child is a new particle with its own spawn settings; it does not keep the parent's velocity, age, or size, and there is a frame of lag.
-- Nothing can change a living particle's color, size, or curves on collision.
+Events: on collision, after a time (age), on death, on entering a trigger volume, and possibly on a user function's request.
 
-Options to decide:
-1. Built-in collision response settings on the emitter: e.g. a color tint or color-over-life switch after the first hit, a size factor, a lifetime change.
-2. 'Transfer' to another emitter: on collision the particle moves into another emitter's slice (or is respawned there in the same step) keeping position, velocity, and optionally age. That emitter's sprite, curves, and settings then apply.
-3. A user Metal function called on collision (#89) that can edit the particle state; needs color and size in ParticleState (see #85).
+Today the closest is diesOnCollision plus an onCollision sub-emitter, which spawns new particles a frame late and loses the parent's motion.
 
-1 and 2 work in presets and the demo without code; 3 is the general escape hatch. Related: #46 (rain splashes), #89, #85.
+Design notes: transitions are set on the source emitter (event, target emitter, what to keep). The target needs free slots, like sub-emitter children. Should work in presets and the demo without code. Related: #46, #89.
 
 ---
 
 ## 92: Docs should not refer to xcb
 
 +++
-status: new
+status: open
 priority: medium
-kind: none
+kind: documentation
+labels: area:docs,effort:xs
 created: 2026-10-18T17:22:24Z
+updated: 2026-10-18T18:50:51Z
 +++
 
 README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace with standard xcodebuild/swift commands.
