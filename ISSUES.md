@@ -983,14 +983,18 @@ An emitter's full description (settings, sprite, motion, simulation space, mesh,
 ## 51: ParticleSystem mixes frame planning with GPU encoding
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: effort:l, area:simulation, kind:refactor
 created: 2026-10-18T01:36:03Z
+updated: 2026-10-18T02:08:26Z
+closed: 2026-10-18T02:08:26Z
 +++
 
 ParticleSystem.swift (~700 lines) plus ParticleSystem+Triggers, Spawner, and ParticleSort own: shared-buffer layout and rebuild, sub-emitter slot layout, emission timing, trigger evaluation, uniform building, the simulate encoder, sorting, and rendering. Every feature in #4, #9, and #34 required reading most of the file. Nearly all behavior can only be tested by running a GPU frame and reading particles back.\n\nDirection: split a pure CPU 'frame planner' (given emitters, time, events, counters -> which emitters spawn how many from which slots with which uniforms) from the GPU executor that encodes it. Dependency category: in-process for the planner; Metal stays a local stand-in for the executor. Tests: timing, trigger, and slot-layout tests move to the planner without the GPU; GPU tests shrink to integration and goldens. Source: architecture review.
+
+- `2026-10-18T02:08:26Z`: Split simulate into planFrame (CPU: colliders/transforms, sub-emitter rebuild, triggers, spawn timing, warmup steps, live windows, uniforms, sub-emitter slot data, collider velocities -> FramePlan) and encode (GPU only). FramePlan.swift holds the planner; ParticleSystem.swift shrank by ~200 lines. New FramePlanTests check timing, warmup, clamping/pause, live windows, kill, sub-emitter slots, collider velocity, and the CPU triggers without dispatching; event/timer/object/restart trigger tests moved out of the GPU suite. Goldens unchanged; bench unchanged. Sorting still plans inside encode's caller (needs buffers).
 
 ---
 

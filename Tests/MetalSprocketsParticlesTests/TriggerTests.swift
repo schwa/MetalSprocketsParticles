@@ -39,47 +39,16 @@ struct TriggerTests {
         return emitter.range.filter { pointer[$0].velocity.w > 0 && pointer[$0].position.w < pointer[$0].velocity.w }.count
     }
 
-    @Test func namedEventBursts() throws {
+    // Event, timer, object, start/stop, and restart triggers are CPU only; FramePlanTests covers them. These need the
+    // GPU's counters, or check that a trigger's burst becomes live particles.
+
+    @Test func eventBurstBecomesLiveParticles() throws {
         let system = try ParticleSystem(device: runner.device, capacity: 100, emitter: quiet([EmissionTrigger(.event("boom"), .burst(7))]))
         try step(system, frames: 3)
         #expect(aliveCount(system, system.emitters[0]) == 0)
         system.send(event: "boom")
-        system.send(event: "other")
         try step(system)
         #expect(aliveCount(system, system.emitters[0]) == 7)
-        system.send(event: "boom")
-        system.send(event: "boom")
-        try step(system)
-        #expect(aliveCount(system, system.emitters[0]) == 21)
-    }
-
-    @Test func afterFiresOnceAndEveryRepeats() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [
-            quiet([EmissionTrigger(.after(seconds: 0.5), .burst(1))]),
-            quiet([EmissionTrigger(.every(seconds: 0.25), .burst(1))]),
-        ], capacity: 100)
-        try step(system, frames: 29)
-        #expect(aliveCount(system, system.emitters[0]) == 0)
-        try step(system, frames: 37)
-        // 1.1 s in: after(0.5) fired once; every(0.25) fired at 0.25, 0.5, 0.75, and 1.0. (Not checked exactly at 1.0 s:
-        // summed frame times land a hair either side of it.)
-        #expect(aliveCount(system, system.emitters[0]) == 1)
-        #expect(aliveCount(system, system.emitters[1]) == 4)
-    }
-
-    @Test func objectEnteringAVolumeFiresOncePerEntry() throws {
-        let volume = TriggerVolume.sphere(center: .zero, radius: 1)
-        let system = try ParticleSystem(device: runner.device, capacity: 100, emitter: quiet([EmissionTrigger(.objectEnters(name: "ball", volume: volume), .burst(2))]))
-        system.trackedObjects["ball"] = [3, 0, 0]
-        try step(system)
-        system.trackedObjects["ball"] = [0.5, 0, 0]
-        try step(system, frames: 5)
-        #expect(aliveCount(system, system.emitters[0]) == 2)
-        system.trackedObjects["ball"] = [3, 0, 0]
-        try step(system)
-        system.trackedObjects["ball"] = [0, 0, 0]
-        try step(system)
-        #expect(aliveCount(system, system.emitters[0]) == 4)
     }
 
     @Test func particlesEnteringAVolumeTriggerAnotherEmitter() throws {
@@ -142,15 +111,5 @@ struct TriggerTests {
         system.send(event: "off")
         try step(system, frames: 30)
         #expect(aliveCount(system, system.emitters[0]) == running + 1 || aliveCount(system, system.emitters[0]) == running)
-    }
-
-    @Test func restartResetsTimers() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 10, emitter: quiet([EmissionTrigger(.after(seconds: 0.1), .burst(1))]))
-        try step(system, frames: 10)
-        #expect(aliveCount(system, system.emitters[0]) == 1)
-        system.restart()
-        try step(system, frames: 10)
-        #expect(aliveCount(system, system.emitters[0]) == 1)
-        #expect(system.simulationTime < 0.2)
     }
 }
