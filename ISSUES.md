@@ -1519,11 +1519,12 @@ Plan:
 ## 77: Interactive particles: react to the camera and the mouse
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
-labels: area:demo, needs-design
+labels: area:demo, needs-design, effort:l
 created: 2026-10-18T15:36:26Z
+updated: 2026-10-18T15:44:07Z
 +++
 
 Particles can't react to the user. Let them respond to the camera and the pointer.
@@ -1541,11 +1542,12 @@ Open questions: which interactions first, and whether the pointer is a ray or a 
 ## 78: Demo rotating colliders
 
 +++
-status: new
+status: open
 priority: low
 kind: feature
-labels: area:presets, effort:s
+labels: area:presets, effort:m
 created: 2026-10-18T15:38:44Z
+updated: 2026-10-18T15:44:07Z
 +++
 
 Collider angular velocity and pivot (#72) are only shown in a golden test. Preset colliders can't rotate, and the demo's Animate Colliders toggle only moves them. Add a way for a preset to spin a collider (e.g. collider motion in JSON), and add a preset with a spinning paddle or box that flings particles.
@@ -1555,11 +1557,12 @@ Collider angular velocity and pivot (#72) are only shown in a golden test. Prese
 ## 79: Demo a deforming mesh emitter
 
 +++
-status: new
+status: open
 priority: low
 kind: feature
 labels: area:presets, effort:s
 created: 2026-10-18T15:38:44Z
+updated: 2026-10-18T15:44:07Z
 +++
 
 EmitterMesh.setDeformedPositions (#73) is Swift API only, with no demo. Add a preset or demo mode where a mesh deforms over time (e.g. a waving flag or a breathing sphere) and particles emit from its surface.
@@ -1569,14 +1572,17 @@ EmitterMesh.setDeformedPositions (#73) is Swift API only, with no demo. Add a pr
 ## 80: Demo one-shot emitters
 
 +++
-status: new
+status: open
 priority: low
 kind: feature
 labels: area:presets, effort:s
 created: 2026-10-18T15:38:44Z
+updated: 2026-10-18T15:44:07Z
 +++
 
 No preset sets loops = false. Add a preset or a demo button for a one-shot effect, e.g. an explosion or a puff that plays once and finishes, and show the HUD 'Finished' state.
+
+- `2026-10-18T15:44:08Z`: Related: #82 makes Confetti finite. Do #80 alongside #82: add loops=false support to a preset there or here.
 
 ---
 
@@ -1601,11 +1607,12 @@ Only Magic Trail uses angularSpeed, and only subtly. Add a preset where spinning
 ## 82: Make Confetti a finite effect with a Restart button in the viewport
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
 labels: area:presets, area:demo, effort:s
 created: 2026-10-18T15:43:07Z
+updated: 2026-10-18T15:44:08Z
 +++
 
 Add a built-in preset that runs for a set time and then finishes. Confetti is a good fit: a party-popper burst that falls, settles on the ground, and fades. The system then reports isFinished.
@@ -1621,11 +1628,12 @@ Related: #75 (Flare is finite too, but long and subtle), #80.
 ## 83: Move scene controls to the toolbar
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
-labels: area:demo,effort:s
+labels: area:demo, effort:s
 created: 2026-10-18T15:43:24Z
+updated: 2026-10-18T15:44:08Z
 +++
 
 The per-scene controls are in the inspector: the scene picker and play, pause, stop, restart and time. Move them to the window toolbar, in the .principal placement, so they stay visible and the inspector holds only emitter settings.
