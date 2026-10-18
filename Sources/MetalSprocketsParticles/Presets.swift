@@ -13,7 +13,68 @@ public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
         .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot, .timeWarp,
+        .awning,
     ]
+
+    /// Category masks: rain (category 1) falls through a tilted awning (category 2) and slants in the wind (category 1),
+    /// while sparks from a grinder above collide with both and ignore the wind.
+    static let awning: ParticlePreset = {
+        let rainCategory: UInt32 = 0b01
+        let awningCategory: UInt32 = 0b10
+        return ParticlePreset(
+            "Awning",
+            layers: [
+                Layer("Rain", settings: emitter {
+                    $0.collisionMask = rainCategory
+                    $0.fieldMask = rainCategory
+                    $0.position = [0, 5, 0]
+                    $0.shape = .plane(size: [6, 4])
+                    $0.velocity = [0, -7, 0]
+                    $0.velocitySpread = 0.2
+                    $0.lifetime = 1.5...1.5
+                    $0.birthRate = 1_500
+                    $0.warmupDuration = 1.5
+                    $0.diesOnCollision = true
+                    $0.orientation = .velocityAligned(stretch: 1)
+                    $0.sizeOverLife = .constant(0.008)
+                    $0.colorOverLife = .constant([0.6, 0.7, 0.9, 0.5])
+                    $0.subEmitters = [SubEmitter(occasion: .onCollision, countPerEvent: 2, settings: emitter {
+                        $0.shape = .point
+                        $0.velocity = [0, 1, 0]
+                        $0.velocitySpread = 0.5
+                        $0.lifetime = 0.2...0.35
+                        $0.sizeOverLife = .linear(from: 0.01, to: 0.003)
+                        $0.colorOverLife = .linear(from: [0.7, 0.8, 1, 0.7], to: [0.7, 0.8, 1, 0])
+                    })]
+                }, capacity: 6_000),
+                Layer("Sparks", settings: emitter {
+                    $0.collisionMask = rainCategory | awningCategory
+                    $0.fieldMask = awningCategory
+                    $0.position = [0.3, 3.2, 0]
+                    $0.shape = .point
+                    $0.velocity = [0, -2, 0]
+                    $0.velocitySpread = 1.5
+                    $0.lifetime = 1.2...1.8
+                    $0.birthRate = 900
+                    $0.warmupDuration = 1
+                    $0.restitution = 0.6
+                    $0.friction = 0.1
+                    $0.blendMode = .additive
+                    $0.orientation = .velocityAligned(stretch: 0.6)
+                    $0.sizeOverLife = .linear(from: 0.03, to: 0.008)
+                    $0.colorOverLife = .linear(from: [1, 0.85, 0.4, 1], to: [1, 0.3, 0.05, 0])
+                }, sprite: .spark, capacity: 2_000),
+            ],
+            colliders: [
+                ground,
+                // Thick enough that falling sparks cannot step over it in one frame (no continuous collision yet, #72).
+                .box(center: [0, 2, 0], halfExtents: [1.6, 0.15, 1.2], rotation: simd_quatf(angle: -0.2, axis: [0, 0, 1]), categoryBitMask: awningCategory),
+            ],
+            forceFields: [.wind(velocity: [5, 0, 0], strength: 3, categoryBitMask: rainCategory)],
+            cameraEye: [0, 2.6, 6.5],
+            cameraTarget: [0, 1.6, 0]
+        )
+    }()
 
     /// Clocks spiral into a glowing core, each ticking through the clock-face flipbook from its own hour.
     static let timeWarp: ParticlePreset = {

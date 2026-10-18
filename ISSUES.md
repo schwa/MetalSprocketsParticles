@@ -1298,14 +1298,18 @@ Effect files (#25) save EmitterDescription without its mesh, because SwiftMesh's
 ## 66: No preset shows category masks
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T13:34:41Z
+updated: 2026-10-18T13:52:13Z
+closed: 2026-10-18T13:52:13Z
 +++
 
 Category masks (#54) are unused by every preset. Add a demo where they matter, e.g. rain that falls through an awning while sparks bounce off it, or smoke that feels wind while embers ignore it. Related: #54.
+
+- `2026-10-18T13:52:13Z`: New Awning preset: rain (category 1) falls through a tilted awning (category 2) and slants in a category-1 wind; sparks from a grinder collide with both and ignore the wind, so they land on the awning and slide off its low edge. The awning is 30 cm thick: at 8 cm sparks tunneled through it between steps (#72). Golden added.
 
 ---
 
@@ -1394,6 +1398,8 @@ created: 2026-10-18T13:39:41Z
 +++
 
 Collider velocity comes only from frame-to-frame translation (Collider.velocity(from:deltaTime:)), so a rotating box or capsule (paddle, fan blade) does not fling particles, and spinning boxes are explicitly zero. Collision is also discrete: a fast or thin collider can jump past a particle within one step and the particle passes through. Fix: derive angular velocity from rotation change and use point velocity (v + omega × r) at the contact; add a swept test (or substeps for colliders moving more than their thickness per step). Needed for animated scene-graph colliders.
+
+- `2026-10-18T13:52:13Z`: Seen in practice while building the Awning preset (#66): an 8 cm thick box let falling sparks (~8 cm per step at 60 fps) pass through; the preset uses 30 cm as a workaround.
 
 ---
 
