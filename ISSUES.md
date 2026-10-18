@@ -2225,17 +2225,19 @@ Source: improve-codebase-architecture review.
 ## 107: Constrain particles to a plane
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:s
 created: 2026-10-18T21:38:49Z
-updated: 2026-10-18T21:57:36Z
+updated: 2026-10-18T22:01:53Z
+closed: 2026-10-18T22:01:53Z
 +++
 
 An emitter setting that keeps particles on a plane (z = 0 in emitter or world space): zero the plane-normal component of spawn positions, velocities, spread, turbulence, and force-field accelerations, every step. Without it, spread cones, sphere shapes, and turbulence add depth motion; under an orthographic 2D camera that is invisible but changes collisions and sorting. Useful in 3D too: flat sheets, effects on a wall, side-scrolling scenes. Split out of #99.
 
 - `2026-10-18T21:57:36Z`: Related: #99 (2D overlays use it to keep particles at z = 0).
+- `2026-10-18T22:01:53Z`: ParticleEmitter.constrainsToPlane: each step the kernel projects world position and velocity onto the emitter's XY plane (through its position, facing its local Z), after integration (spread, fields, turbulence, user update) and again after collisions. No transform means the world z = 0 plane (2D); a transformed emitter carries its plane. Sub-emitter children with the setting use the world z = 0 plane. Codable, demo toggle. Tests: z stays 0 with spread, turbulence, and z gravity; rotated and moved plane; sphere collisions stay on the plane; round trip.
 
 ---
 

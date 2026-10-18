@@ -194,6 +194,12 @@ extension ParticleSystemRuntime {
         let model = emitter.modelTransform
         var uniforms = SimulationUniforms()
         uniforms.emitterTransform = motion.transform
+        if settings.constrainsToPlane {
+            uniforms.constrainsToPlane = 1
+            uniforms.planePoint = motion.transform.columns.3.xyz
+            let normal = motion.transform.columns.2.xyz
+            uniforms.planeNormal = simd_length(normal) > 0 ? simd_normalize(normal) : [0, 0, 1]
+        }
         uniforms.simulationToWorld = model
         uniforms.worldToSimulation = model.inverse
         uniforms.previousEmitterOrigin = motion.previousOrigin

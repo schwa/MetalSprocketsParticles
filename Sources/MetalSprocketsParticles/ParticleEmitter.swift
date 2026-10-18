@@ -126,6 +126,10 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var softness: Float = 0
     /// Runs for every live particle each step, after gravity, force fields, and drag, before collisions.
     public var updateFunction: ParticleFunction?
+    /// Keeps particles on the emitter's XY plane (through its position, facing its local Z axis): spread, shapes,
+    /// turbulence, fields, and collisions cannot move them off it. With no emitter transform that is the world's
+    /// z = 0 plane, for 2D effects; in 3D it follows the emitter, for flat sheets or effects on a wall.
+    public var constrainsToPlane = false
     /// Runs once for each new particle, after the built-in spawn. It may change position, velocity, and lifetime.
     /// Sub-emitter children are not passed through it.
     public var spawnFunction: ParticleFunction?
@@ -188,6 +192,7 @@ extension ParticleEmitter {
         try container.update(&isLit, .isLit)
         try container.update(&softness, .softness)
         updateFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .updateFunction)
+        try container.update(&constrainsToPlane, .constrainsToPlane)
         spawnFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .spawnFunction)
         collisionFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .collisionFunction)
         deathFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .deathFunction)

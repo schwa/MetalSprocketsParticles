@@ -251,6 +251,10 @@ typedef struct {
     // Nonzero to call collisionFunction[0] when a particle hits a collider, and deathFunction[0] when it dies.
     uint32_t hasCollisionFunction;
     uint32_t hasDeathFunction;
+    // Nonzero: keep particles on the plane through planePoint with planeNormal (world space, unit length).
+    uint32_t constrainsToPlane;
+    simd_float3 planePoint;
+    simd_float3 planeNormal;
 } SimulationUniforms;
 
 /// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.

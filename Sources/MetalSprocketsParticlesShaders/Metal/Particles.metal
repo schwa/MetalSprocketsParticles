@@ -533,6 +533,16 @@ using ParticleUpdateFunction = void(thread ParticleState &, float deltaTime, flo
 [[visible]] void particleNoCollision(thread ParticleState &, float, float, constant float4 *) {}
 [[visible]] void particleNoDeath(thread ParticleState &, float, float, constant float4 *) {}
 
+// Removes the parts of a world-space position and velocity that leave the emitter's plane.
+static void constrainToPlane(thread float3 &position, thread float3 &velocity, constant SimulationUniforms &uniforms) {
+    if (uniforms.constrainsToPlane == 0) {
+        return;
+    }
+    float3 normal = uniforms.planeNormal;
+    position -= normal * dot(position - uniforms.planePoint, normal);
+    velocity -= normal * dot(velocity, normal);
+}
+
 kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
     constant SimulationUniforms &uniforms [[buffer(1)]],
@@ -621,6 +631,8 @@ kernel void updateParticles(
         position = state.position;
         velocity = state.velocity;
     }
+    // After spawn spread, fields, turbulence, and user code, before collisions.
+    constrainToPlane(position, velocity, uniforms);
     p.rotation.x += p.rotation.y * dt;
 
     float restitution = max(0.0, uniforms.restitution + p.properties.y);
@@ -684,6 +696,8 @@ kernel void updateParticles(
         }
         hit = hit || hitBefore;
     }
+    // Again after collisions: a curved collider can push a particle off the plane.
+    constrainToPlane(position, velocity, uniforms);
 
     // Trigger volumes count particles that were outside at the start of the step and inside at the end.
     uint volumeCount = min(uniforms.triggerVolumeCount, uint(PARTICLE_TRIGGER_MAX_VOLUMES));

@@ -350,6 +350,8 @@ struct MotionSectionView: View {
             ParameterSliderView("Spread", value: $emitter.settings.velocitySpread, in: 0...10)
             VectorEditorView("Gravity", value: $emitter.settings.gravity, in: -20...20)
             ParameterSliderView("Drag", value: $emitter.settings.drag, in: 0...5)
+            Toggle("Constrain to Plane", isOn: $emitter.settings.constrainsToPlane)
+                .help("Keep particles on the emitter's XY plane, for 2D effects or flat sheets.")
             DisclosureGroup("Emitter Motion") {
                 Toggle("Follow Pointer", isOn: $model.selectedEmitterFollowsPointer)
                 KindPicker("Path", selection: $emitter.motion.kind)
