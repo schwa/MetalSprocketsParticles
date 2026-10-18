@@ -1026,14 +1026,18 @@ Check: struct layout changes, so all goldens and determinism tests must still pa
 ## 53: Demo mirrors every library enum with hand-written Kind adapters
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: effort:m, area:demo, kind:refactor
 created: 2026-10-18T01:36:03Z
+updated: 2026-10-18T01:59:47Z
+closed: 2026-10-18T01:59:47Z
 +++
 
 ParticleEmitter+Inspector.swift (~500 lines) and Inspector+Events.swift (~260 lines) mirror each library enum with associated values (EmitterShape, SubEmitter.Occasion, EmissionTrigger.Condition/Action, TriggerVolume, Collider, ForceField, orientation) as a separate Kind enum plus one writable computed property per associated value, with defaults chosen ad hoc when switching kinds. Each new library case needs 3-5 edits in the demo, and the adapters need their own round-trip tests.\n\nDirection: let the library expose a case kind (CaseIterable) and a default value per kind for these enums, so the demo needs only a generic kind binding plus per-field properties; or a small generic adapter. Dependency category: in-process. Tests: one generic kind round-trip test per enum replaces the per-adapter tests. Source: architecture review.
+
+- `2026-10-18T01:59:47Z`: The library now owns case switching: ParticleKind protocol (CaseIterable, Identifiable, name) adopted by the header MS_ENUM kinds (shape, orientation, collider, force field, spawn occasion, trigger volume, blend, birth location/direction, sequence mode) and Swift kinds (EmissionTrigger.Condition.Kind/Action.Kind, sort mode, motion, simulation space, sprite). EmitterShape, ParticleOrientation, Collider, ForceField, SubEmitter.Occasion, TriggerVolume, and the trigger condition/action each get a writable kind whose setter converts to a sensible value. The demo's seven mirror Kind enums and their adapters are gone; one generic KindPicker replaces every picker. ParticleKindTests round-trips every kind generically.
 
 ---
 

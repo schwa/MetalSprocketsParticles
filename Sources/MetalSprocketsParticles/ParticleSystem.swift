@@ -466,7 +466,7 @@ public final class ParticleSystem {
             }
             let sub = emitter.settings.subEmitters[child.subEmitterIndex]
             data.append(SubEmitterData(
-                occasion: sub.occasionCode,
+                occasion: sub.occasion.kind,
                 countPerEvent: UInt32(max(sub.countPerEvent, 1)),
                 childSliceStart: UInt32(child.range.lowerBound),
                 childCapacity: UInt32(child.capacity),

@@ -31,15 +31,6 @@ public struct SubEmitter: Sendable, Equatable {
         self.settings = settings
     }
 
-    var occasionCode: ParticleSpawnOccasion {
-        switch occasion {
-        case .onBirth: .birth
-        case .onDeath: .death
-        case .onCollision: .collision
-        case .whileAlive: .whileAlive
-        }
-    }
-
     var interval: Float {
         if case let .whileAlive(interval) = occasion {
             return interval

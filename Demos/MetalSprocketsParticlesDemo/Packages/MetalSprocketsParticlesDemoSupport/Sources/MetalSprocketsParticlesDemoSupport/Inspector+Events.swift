@@ -2,37 +2,9 @@ import MetalSprocketsParticles
 import simd
 
 // Writable computed properties for editing sub-emitters and triggers with key-path bindings. Setters on properties that
-// do not apply to the current case are ignored.
-
-enum OccasionKind: String, CaseIterable, Identifiable {
-    case onBirth = "On Birth"
-    case onDeath = "On Death"
-    case onCollision = "On Collision"
-    case whileAlive = "While Alive"
-
-    var id: Self { self }
-}
+// do not apply to the current case are ignored. Switching between cases uses the library's writable `kind` properties.
 
 extension SubEmitter {
-    var occasionKind: OccasionKind {
-        get {
-            switch occasion {
-            case .onBirth: .onBirth
-            case .onDeath: .onDeath
-            case .onCollision: .onCollision
-            case .whileAlive: .whileAlive
-            }
-        }
-        set {
-            occasion = switch newValue {
-            case .onBirth: .onBirth
-            case .onDeath: .onDeath
-            case .onCollision: .onCollision
-            case .whileAlive: .whileAlive(interval: trailInterval)
-            }
-        }
-    }
-
     /// The `whileAlive` interval, or 0.05 for other occasions. Setting it switches to `whileAlive`.
     var trailInterval: Float {
         get {
@@ -58,54 +30,7 @@ extension SubEmitter {
     }
 }
 
-enum TriggerConditionKind: String, CaseIterable, Identifiable {
-    case event = "Event"
-    case after = "After"
-    case every = "Every"
-    case objectEnters = "Object Enters"
-    case particlesEnter = "Particles Enter"
-    case colliderHit = "Collider Hit"
-
-    var id: Self { self }
-}
-
-enum TriggerActionKind: String, CaseIterable, Identifiable {
-    case burst = "Burst"
-    case start = "Start"
-    case stop = "Stop"
-    case restart = "Restart"
-
-    var id: Self { self }
-}
-
 extension EmissionTrigger {
-    var conditionKind: TriggerConditionKind {
-        get {
-            switch condition {
-            case .event: .event
-            case .after: .after
-            case .every: .every
-            case .objectEnters: .objectEnters
-            case .particlesEnter: .particlesEnter
-            case .colliderHit: .colliderHit
-            }
-        }
-        set {
-            guard newValue != conditionKind else {
-                return
-            }
-            let volume = TriggerVolume.sphere(center: [0, 1, 0], radius: 0.5)
-            condition = switch newValue {
-            case .event: .event("boom")
-            case .after: .after(seconds: 1)
-            case .every: .every(seconds: 1)
-            case .objectEnters: .objectEnters(name: "object", volume: volume)
-            case .particlesEnter: .particlesEnter(volume: volume, count: 1)
-            case .colliderHit: .colliderHit(index: 0, count: 1)
-            }
-        }
-    }
-
     var eventName: String {
         get {
             switch condition {
@@ -185,25 +110,6 @@ extension EmissionTrigger {
         }
     }
 
-    var actionKind: TriggerActionKind {
-        get {
-            switch action {
-            case .burst: .burst
-            case .start: .start
-            case .stop: .stop
-            case .restart: .restart
-            }
-        }
-        set {
-            action = switch newValue {
-            case .burst: .burst(burstCount)
-            case .start: .start
-            case .stop: .stop
-            case .restart: .restart
-            }
-        }
-    }
-
     /// The burst size, or 100 for other actions. Setting it switches to `burst`.
     var burstCount: Int {
         get {
@@ -244,18 +150,6 @@ extension TriggerVolume {
             case let .sphere(center, _): self = .sphere(center: center, radius: newValue)
             case let .box(center, _): self = .box(center: center, halfExtents: SIMD3(repeating: newValue))
             }
-        }
-    }
-
-    var isBox: Bool {
-        get {
-            if case .box = self {
-                return true
-            }
-            return false
-        }
-        set {
-            self = newValue ? .box(center: center, halfExtents: SIMD3(repeating: radius)) : .sphere(center: center, radius: radius)
         }
     }
 }

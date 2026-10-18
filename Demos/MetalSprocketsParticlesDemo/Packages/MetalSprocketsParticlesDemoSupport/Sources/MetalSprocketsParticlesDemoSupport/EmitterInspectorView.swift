@@ -167,12 +167,8 @@ struct ShapeSectionView: View {
 
     var body: some View {
         Section("Shape") {
-            Picker("Shape", selection: $settings.shapeKind) {
-                ForEach(ShapeKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
-            switch settings.shapeKind {
+            KindPicker("Shape", selection: $settings.shape.kind)
+            switch settings.shape.kind {
             case .sphere, .disc:
                 ParameterSliderView("Radius", value: $settings.shapeRadius, in: 0...3)
             case .cylinder, .cone:
@@ -183,23 +179,15 @@ struct ShapeSectionView: View {
                 ParameterSliderView("Tube Radius", value: $settings.shapeSecondary, in: 0...1)
             case .box, .plane:
                 VectorEditorView("Size", value: $settings.shapeSize, in: 0...5)
-            case .point:
+            default:
                 EmptyView()
             }
             DisclosureGroup("Placement") {
-                if settings.shapeKind != .point {
-                    Picker("Birth Location", selection: $settings.birthLocation) {
-                        ForEach(ParticleBirthLocation.allCases) { location in
-                            Text(location.name).tag(location)
-                        }
-                    }
+                if settings.shape.kind != .point {
+                    KindPicker("Birth Location", selection: $settings.birthLocation)
                     ParameterSliderView("Sweep", value: $settings.sweepAngle, in: 0...(2 * .pi))
                 }
-                Picker("Birth Direction", selection: $settings.birthDirection) {
-                    ForEach(ParticleBirthDirection.allCases) { direction in
-                        Text(direction.name).tag(direction)
-                    }
-                }
+                KindPicker("Birth Direction", selection: $settings.birthDirection)
                 VectorEditorView("Position", value: $settings.position, in: -5...5)
             }
         }
@@ -216,11 +204,7 @@ struct MotionSectionView: View {
             VectorEditorView("Gravity", value: $emitter.settings.gravity, in: -20...20)
             ParameterSliderView("Drag", value: $emitter.settings.drag, in: 0...5)
             DisclosureGroup("Emitter Motion") {
-                Picker("Path", selection: $emitter.motion.kind) {
-                    ForEach(EmitterMotion.Kind.allCases) { kind in
-                        Text(kind.rawValue).tag(kind)
-                    }
-                }
+                KindPicker("Path", selection: $emitter.motion.kind)
                 if emitter.motion.kind != .still {
                     ParameterSliderView("Path Radius", value: $emitter.motion.radius, in: 0...4)
                     ParameterSliderView("Path Speed", value: $emitter.motion.speed, in: 0...5)
@@ -229,11 +213,7 @@ struct MotionSectionView: View {
                 ParameterSliderView("Yaw", value: $emitter.motion.yaw, in: -.pi ... .pi)
                 ParameterSliderView("Pitch", value: $emitter.motion.pitch, in: -.pi ... .pi)
                 ParameterSliderView("Spin", value: $emitter.motion.spin, in: -10...10)
-                Picker("Simulation Space", selection: $emitter.simulationSpace) {
-                    ForEach(SimulationSpace.allCases) { space in
-                        Text(space.name).tag(space)
-                    }
-                }
+                KindPicker("Simulation Space", selection: $emitter.simulationSpace)
                 ParameterSliderView("Inherit Velocity", value: $emitter.settings.inheritVelocity, in: 0...1)
             }
         }
@@ -245,27 +225,11 @@ struct AppearanceSectionView: View {
 
     var body: some View {
         Section("Appearance") {
-            Picker("Sprite", selection: $emitter.sprite) {
-                ForEach(ParticleSprite.allCases) { sprite in
-                    Text(sprite.rawValue).tag(sprite)
-                }
-            }
-            Picker("Blend", selection: $emitter.settings.blendMode) {
-                ForEach(ParticleBlendMode.allCases) { mode in
-                    Text(mode.name).tag(mode)
-                }
-            }
-            Picker("Sort", selection: $emitter.settings.sortMode) {
-                ForEach(ParticleSortMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-            Picker("Orientation", selection: $emitter.settings.orientationKind) {
-                ForEach(OrientationKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
-            if emitter.settings.orientationKind == .velocityAligned {
+            KindPicker("Sprite", selection: $emitter.sprite)
+            KindPicker("Blend", selection: $emitter.settings.blendMode)
+            KindPicker("Sort", selection: $emitter.settings.sortMode)
+            KindPicker("Orientation", selection: $emitter.settings.orientation.kind)
+            if emitter.settings.orientation.kind == .velocityAligned {
                 ParameterSliderView("Stretch", value: $emitter.settings.velocityStretch, in: 0...2)
             }
             DisclosureGroup("Curves") {
@@ -301,11 +265,7 @@ struct ImageSequenceEditorView: View {
         ParameterSliderView("Frame Rate", value: $sequence.frameRate, in: 0...60)
         ParameterSliderView("Rate Variation", value: $sequence.frameRateVariation, in: 0...30)
         ParameterSliderView("Start Frame Variation", value: $sequence.initialFrameVariation, in: 0...16)
-        Picker("Playback", selection: $sequence.mode) {
-            ForEach(ParticleImageSequenceMode.allCases) { mode in
-                Text(mode.name).tag(mode)
-            }
-        }
+        KindPicker("Playback", selection: $sequence.mode)
     }
 }
 
@@ -345,12 +305,8 @@ struct SubEmitterEditorView: View {
 
     var body: some View {
         Group {
-            Picker("Occasion", selection: $subEmitter.occasionKind) {
-                ForEach(OccasionKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
-            if subEmitter.occasionKind == .whileAlive {
+            KindPicker("Occasion", selection: $subEmitter.occasion.kind)
+            if subEmitter.occasion.kind == .whileAlive {
                 ParameterSliderView("Interval", value: $subEmitter.trailInterval, in: 0.005...0.5, format: .number.precision(.fractionLength(3)))
             }
             Stepper("Per Event: \(subEmitter.countPerEvent)", value: $subEmitter.countPerEvent, in: 1...1_000, step: 10)
@@ -360,11 +316,7 @@ struct SubEmitterEditorView: View {
             VectorEditorView("Velocity", value: $subEmitter.settings.velocity, in: -10...10)
             ParameterSliderView("Spread", value: $subEmitter.settings.velocitySpread, in: 0...10)
             VectorEditorView("Gravity", value: $subEmitter.settings.gravity, in: -20...20)
-            Picker("Blend", selection: $subEmitter.settings.blendMode) {
-                ForEach(ParticleBlendMode.allCases) { mode in
-                    Text(mode.name).tag(mode)
-                }
-            }
+            KindPicker("Blend", selection: $subEmitter.settings.blendMode)
             ColorCurveEditorView(title: "Color", curve: $subEmitter.settings.colorOverLife)
             FloatCurveEditorView(title: "Size", curve: $subEmitter.settings.sizeOverLife, range: 0...0.5)
         }
@@ -376,12 +328,8 @@ struct TriggerEditorView: View {
 
     var body: some View {
         Group {
-            Picker("When", selection: $trigger.conditionKind) {
-                ForEach(TriggerConditionKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
-            switch trigger.conditionKind {
+            KindPicker("When", selection: $trigger.condition.kind)
+            switch trigger.condition.kind {
             case .event:
                 TextField("Event Name", text: $trigger.eventName)
             case .after, .every:
@@ -396,12 +344,8 @@ struct TriggerEditorView: View {
                 Stepper("Collider: \(trigger.colliderIndex)", value: $trigger.colliderIndex, in: 0...63)
                 Stepper("Count: \(trigger.threshold)", value: $trigger.threshold, in: 1...10_000)
             }
-            Picker("Do", selection: $trigger.actionKind) {
-                ForEach(TriggerActionKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
-            if trigger.actionKind == .burst {
+            KindPicker("Do", selection: $trigger.action.kind)
+            if trigger.action.kind == .burst {
                 Stepper("Burst: \(trigger.burstCount)", value: $trigger.burstCount, in: 1...100_000, step: 50)
             }
         }
@@ -412,9 +356,10 @@ struct TriggerVolumeEditorView: View {
     @Binding var volume: TriggerVolume
 
     var body: some View {
-        Toggle("Box", isOn: $volume.isBox)
+        KindPicker("Volume", selection: $volume.kind)
+            .pickerStyle(.segmented)
         VectorEditorView("Center", value: $volume.center, in: -5...5)
-        ParameterSliderView(volume.isBox ? "Half Size" : "Radius", value: $volume.radius, in: 0.05...5)
+        ParameterSliderView(volume.kind == .box ? "Half Size" : "Radius", value: $volume.radius, in: 0.05...5)
     }
 }
 
@@ -438,11 +383,7 @@ struct ColliderEditorView: View {
 
     var body: some View {
         Group {
-            Picker("Kind", selection: $collider.kind) {
-                ForEach(ColliderKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
+            KindPicker("Kind", selection: $collider.kind)
             switch collider.kind {
             case .plane:
                 ParameterSliderView("Height", value: $collider.center.y, in: -2...4)
@@ -457,6 +398,8 @@ struct ColliderEditorView: View {
                 VectorEditorView("Center", value: $collider.center, in: -5...5)
                 ParameterSliderView("Length", value: $collider.length, in: 0...5)
                 ParameterSliderView("Radius", value: $collider.radius, in: 0.05...2)
+            default:
+                EmptyView()
             }
         }
     }
@@ -467,11 +410,7 @@ struct ForceFieldEditorView: View {
 
     var body: some View {
         Group {
-            Picker("Kind", selection: $field.kind) {
-                ForEach(ForceFieldKind.allCases) { kind in
-                    Text(kind.rawValue).tag(kind)
-                }
-            }
+            KindPicker("Kind", selection: $field.kind)
             ParameterSliderView("Strength", value: $field.strength, in: -20...20)
             switch field.kind {
             case .wind:
@@ -482,6 +421,8 @@ struct ForceFieldEditorView: View {
             case .turbulence:
                 ParameterSliderView("Scale", value: $field.turbulenceScale, in: 0.1...5)
                 ParameterSliderView("Speed", value: $field.turbulenceSpeed, in: 0...3)
+            default:
+                EmptyView()
             }
         }
     }

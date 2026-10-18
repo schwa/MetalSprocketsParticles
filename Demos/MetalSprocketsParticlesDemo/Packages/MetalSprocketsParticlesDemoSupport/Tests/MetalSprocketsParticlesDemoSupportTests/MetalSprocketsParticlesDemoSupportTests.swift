@@ -37,26 +37,21 @@ struct EmitterAdapterTests {
         #expect(emitter.emissionDuration == nil)
     }
 
-    @Test func orientationKindKeepsStretch() {
+    @Test func velocityStretch() {
         var emitter = ParticleEmitter()
         emitter.velocityStretch = 0.7
-        #expect(emitter.orientationKind == .velocityAligned)
-        emitter.orientationKind = .yAligned
-        #expect(emitter.orientation == .yAligned)
+        #expect(emitter.orientation == .velocityAligned(stretch: 0.7))
+        emitter.orientation.kind = .yAligned
         #expect(emitter.velocityStretch == 0)
-        emitter.orientationKind = .flat
-        #expect(emitter.orientation == .fixed(normal: [0, 1, 0]))
     }
 
-    @Test func shapeKindAndParameters() {
+    @Test func shapeParameters() {
         var emitter = ParticleEmitter()
-        emitter.shapeKind = .cone
+        emitter.shape.kind = .cone
         emitter.shapeRadius = 0.7
         emitter.shapeSecondary = 2
         #expect(emitter.shape == .cone(radius: 0.7, height: 2))
-        emitter.shapeKind = .torus
-        #expect(emitter.shape == .torus(radius: 0.7, tubeRadius: 0.7 * 0.2))
-        emitter.shapeKind = .plane
+        emitter.shape.kind = .plane
         emitter.shapeSize = [2, 9, 3]
         #expect(emitter.shape == .plane(size: [2, 3]))
         // Parameters that do not apply are ignored.

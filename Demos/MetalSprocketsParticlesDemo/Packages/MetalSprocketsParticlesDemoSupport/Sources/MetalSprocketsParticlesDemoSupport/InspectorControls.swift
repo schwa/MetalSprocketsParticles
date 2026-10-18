@@ -110,6 +110,25 @@ struct FloatCurveEditorView: View {
     }
 }
 
+/// Picks any library kind: shape, collider, blend mode, trigger condition, and so on.
+struct KindPicker<Kind: ParticleKind>: View {
+    let title: String
+    @Binding var selection: Kind
+
+    init(_ title: String, selection: Binding<Kind>) {
+        self.title = title
+        _selection = selection
+    }
+
+    var body: some View {
+        Picker(title, selection: $selection) {
+            ForEach(Kind.allCases) { kind in
+                Text(kind.name).tag(kind)
+            }
+        }
+    }
+}
+
 #Preview("Slider") {
     @Previewable @State var value: Float = 0.5
     ParameterSliderView("Value", value: $value, in: 0...1)

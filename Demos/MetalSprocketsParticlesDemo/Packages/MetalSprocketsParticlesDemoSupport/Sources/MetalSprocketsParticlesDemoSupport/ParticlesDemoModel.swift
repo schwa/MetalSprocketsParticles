@@ -1,5 +1,6 @@
 import Metal
 import MetalSprocketsParticles
+import MetalSprocketsParticlesShaders
 import Observation
 import simd
 
@@ -146,7 +147,7 @@ final class ParticlesDemoModel {
         selection = .trigger(emitterID, emitters[index].settings.triggers.count - 1)
     }
 
-    func addCollider(_ kind: ColliderKind) {
+    func addCollider(_ kind: ParticleColliderKind) {
         var collider = Collider.sphere(center: [0, 1, 0], radius: 0.5)
         collider.kind = kind
         let item = ColliderItem(collider: collider)
@@ -154,7 +155,7 @@ final class ParticlesDemoModel {
         selection = .collider(item.id)
     }
 
-    func addForceField(_ kind: ForceFieldKind) {
+    func addForceField(_ kind: ParticleForceFieldKind) {
         var field = ForceField.wind(velocity: [2, 0, 0], strength: 1)
         field.kind = kind
         let item = ForceFieldItem(field: field)

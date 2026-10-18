@@ -4,7 +4,8 @@ import simd
 import SwiftUI
 
 // Writable computed properties that let the inspector bind with key-path projections ($emitter.foo) instead of
-// closure-based Binding adapters. Setters on properties that do not apply to the current case are ignored.
+// closure-based Binding adapters. Setters on properties that do not apply to the current case are ignored. Switching
+// between cases uses the library's writable `kind` properties (see ParticleKind).
 
 // MARK: - ParticleEmitter
 
@@ -30,11 +31,6 @@ extension ParticleEmitter {
         set { emissionDuration = newValue }
     }
 
-    var orientationKind: OrientationKind {
-        get { OrientationKind(orientation) }
-        set { orientation = newValue.orientation(stretch: velocityStretch) }
-    }
-
     /// Stretch for `.velocityAligned`; 0 for other orientations. Setting it switches to `.velocityAligned`.
     var velocityStretch: Float {
         get {
@@ -55,11 +51,6 @@ extension ParticleEmitter {
     var editableImageSequence: ImageSequence {
         get { imageSequence ?? ImageSequence() }
         set { imageSequence = newValue }
-    }
-
-    var shapeKind: ShapeKind {
-        get { ShapeKind(shape) }
-        set { shape = newValue.defaultShape(keeping: self) }
     }
 
     /// Radius of sphere, disc, cylinder, cone, and torus shapes.
@@ -120,109 +111,9 @@ extension ParticleEmitter {
     }
 }
 
-enum ShapeKind: String, CaseIterable, Identifiable {
-    case point = "Point"
-    case sphere = "Sphere"
-    case box = "Box"
-    case plane = "Plane"
-    case disc = "Disc"
-    case cylinder = "Cylinder"
-    case cone = "Cone"
-    case torus = "Torus"
-
-    var id: Self { self }
-
-    init(_ shape: EmitterShape) {
-        switch shape {
-        case .point, .mesh: self = .point
-        case .sphere: self = .sphere
-        case .box: self = .box
-        case .plane: self = .plane
-        case .disc: self = .disc
-        case .cylinder: self = .cylinder
-        case .cone: self = .cone
-        case .torus: self = .torus
-        }
-    }
-
-    /// A reasonable shape of this kind, reusing the emitter's current radius where it has one.
-    func defaultShape(keeping emitter: ParticleEmitter) -> EmitterShape {
-        let radius = emitter.shapeRadius > 0 ? emitter.shapeRadius : 0.5
-        return switch self {
-        case .point: .point
-        case .sphere: .sphere(radius: radius)
-        case .box: .box(size: [1, 1, 1])
-        case .plane: .plane(size: [1, 1])
-        case .disc: .disc(radius: radius)
-        case .cylinder: .cylinder(radius: radius, height: 1)
-        case .cone: .cone(radius: radius, height: 1)
-        case .torus: .torus(radius: radius, tubeRadius: radius * 0.2)
-        }
-    }
-}
-
-enum OrientationKind: String, CaseIterable, Identifiable {
-    case billboard = "Billboard"
-    case yAligned = "Y-Aligned"
-    case velocityAligned = "Velocity"
-    case flat = "Flat"
-
-    var id: Self { self }
-
-    init(_ orientation: ParticleOrientation) {
-        switch orientation {
-        case .billboard: self = .billboard
-        case .yAligned: self = .yAligned
-        case .velocityAligned: self = .velocityAligned
-        case .fixed: self = .flat
-        }
-    }
-
-    func orientation(stretch: Float) -> ParticleOrientation {
-        switch self {
-        case .billboard: .billboard
-        case .yAligned: .yAligned
-        case .velocityAligned: .velocityAligned(stretch: stretch)
-        case .flat: .fixed(normal: [0, 1, 0])
-        }
-    }
-}
-
 // MARK: - Colliders
 
-enum ColliderKind: String, CaseIterable, Identifiable {
-    case plane = "Plane"
-    case sphere = "Sphere"
-    case box = "Box"
-    case capsule = "Capsule"
-
-    var id: Self { self }
-}
-
 extension Collider {
-    var kind: ColliderKind {
-        get {
-            switch self {
-            case .plane: .plane
-            case .sphere: .sphere
-            case .box: .box
-            case .capsule: .capsule
-            }
-        }
-        set {
-            guard newValue != kind else {
-                return
-            }
-            let center = self.center
-            self = switch newValue {
-            case .plane: .plane(normal: [0, 1, 0], distance: center.y)
-            case .sphere: .sphere(center: center, radius: 0.5)
-            case .box: .box(center: center, halfExtents: [0.4, 0.4, 0.4])
-            case .capsule: .capsule(start: center - [0.6, 0, 0], end: center + [0.6, 0, 0], radius: 0.25)
-            }
-        }
-    }
-
     /// Plane: the point on the plane closest to the origin. Capsule: the segment midpoint.
     var center: SIMD3<Float> {
         get {
@@ -310,38 +201,7 @@ extension Collider {
 
 // MARK: - Force fields
 
-enum ForceFieldKind: String, CaseIterable, Identifiable {
-    case wind = "Wind"
-    case attractor = "Attractor"
-    case vortex = "Vortex"
-    case turbulence = "Turbulence"
-
-    var id: Self { self }
-}
-
 extension ForceField {
-    var kind: ForceFieldKind {
-        get {
-            switch self {
-            case .wind: .wind
-            case .attractor: .attractor
-            case .vortex: .vortex
-            case .turbulence: .turbulence
-            }
-        }
-        set {
-            guard newValue != kind else {
-                return
-            }
-            self = switch newValue {
-            case .wind: .wind(velocity: [2, 0, 0], strength: 1)
-            case .attractor: .attractor(center: [0, 1.5, 0], strength: 5, radius: 0)
-            case .vortex: .vortex(center: .zero, strength: 5, radius: 2.5)
-            case .turbulence: .turbulence(strength: 3, scale: 1.2, speed: 0.5)
-            }
-        }
-    }
-
     var strength: Float {
         get {
             switch self {
@@ -453,64 +313,5 @@ extension Color {
     var simd: SIMD4<Float> {
         let resolved = resolve(in: EnvironmentValues())
         return [resolved.linearRed, resolved.linearGreen, resolved.linearBlue, resolved.opacity]
-    }
-}
-
-// MARK: - Shader enums
-
-extension ParticleBlendMode: @retroactive CaseIterable, @retroactive Identifiable {
-    public static var allCases: [ParticleBlendMode] { [.alpha, .additive, .screen, .opaque] }
-    public var id: UInt32 { rawValue }
-
-    var name: String {
-        switch self {
-        case .additive: "Additive"
-        case .screen: "Screen"
-        case .opaque: "Opaque"
-        default: "Alpha"
-        }
-    }
-}
-
-extension ParticleBirthLocation: @retroactive CaseIterable, @retroactive Identifiable {
-    public static var allCases: [ParticleBirthLocation] { [.volume, .surface] }
-    public var id: UInt32 { rawValue }
-
-    var name: String {
-        self == .surface ? "Surface" : "Volume"
-    }
-}
-
-extension ParticleBirthDirection: @retroactive CaseIterable, @retroactive Identifiable {
-    public static var allCases: [ParticleBirthDirection] { [.velocity, .normal, .tangent] }
-    public var id: UInt32 { rawValue }
-
-    var name: String {
-        switch self {
-        case .normal: "Shape Normal"
-        case .tangent: "Around Axis"
-        default: "Velocity"
-        }
-    }
-}
-
-extension ParticleImageSequenceMode: @retroactive CaseIterable, @retroactive Identifiable {
-    public static var allCases: [ParticleImageSequenceMode] { [.repeat, .clamp, .autoReverse] }
-    public var id: UInt32 { rawValue }
-
-    var name: String {
-        switch self {
-        case .clamp: "Clamp"
-        case .autoReverse: "Auto Reverse"
-        default: "Repeat"
-        }
-    }
-}
-
-extension SimulationSpace: @retroactive Identifiable {
-    public var id: Self { self }
-
-    var name: String {
-        self == .local ? "Local" : "World"
     }
 }

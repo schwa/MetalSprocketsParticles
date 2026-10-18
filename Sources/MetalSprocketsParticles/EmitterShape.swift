@@ -22,21 +22,6 @@ public enum EmitterShape: Sendable, Equatable {
     case torus(radius: Float, tubeRadius: Float)
     /// The emitter's `ParticleSystem.Emitter.mesh`. Volume emission falls back to the surface.
     case mesh
-
-    var kind: ParticleEmitterShapeKind {
-        switch self {
-        case .point: .point
-        case .sphere: .sphere
-        case .box: .box
-        case .plane: .plane
-        case .disc: .disc
-        case .cylinder: .cylinder
-        case .cone: .cone
-        case .torus: .torus
-        case .mesh: .mesh
-        }
-    }
-
 }
 
 extension ParticleShapeData {

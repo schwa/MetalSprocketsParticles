@@ -1,4 +1,5 @@
 import MetalSprocketsParticles
+import MetalSprocketsParticlesShaders
 import SwiftUI
 
 /// An item in the outline sidebar. Sub-emitters and triggers have no ids in the library, so they are identified by
@@ -47,13 +48,13 @@ struct OutlineView: View {
             }
             Section("Colliders") {
                 ForEach(model.colliders) { item in
-                    Label(item.collider.kind.rawValue, systemImage: "square.on.circle")
+                    Label(item.collider.kind.name, systemImage: "square.on.circle")
                         .tag(OutlineItem.collider(item.id))
                 }
             }
             Section("Force Fields") {
                 ForEach(model.forceFields) { item in
-                    Label(item.field.kind.rawValue, systemImage: "wind")
+                    Label(item.field.kind.name, systemImage: "wind")
                         .tag(OutlineItem.forceField(item.id))
                 }
             }
@@ -69,13 +70,13 @@ struct OutlineView: View {
                         Button("Trigger") { model.addTrigger(to: emitterID) }
                     }
                     Menu("Collider") {
-                        ForEach(ColliderKind.allCases) { kind in
-                            Button(kind.rawValue) { model.addCollider(kind) }
+                        ForEach(ParticleColliderKind.allCases) { kind in
+                            Button(kind.name) { model.addCollider(kind) }
                         }
                     }
                     Menu("Force Field") {
-                        ForEach(ForceFieldKind.allCases) { kind in
-                            Button(kind.rawValue) { model.addForceField(kind) }
+                        ForEach(ParticleForceFieldKind.allCases) { kind in
+                            Button(kind.name) { model.addForceField(kind) }
                         }
                     }
                 }
@@ -96,12 +97,12 @@ struct EmitterOutlineRow: View {
         } else {
             DisclosureGroup(isExpanded: $isExpanded) {
                 ForEach(emitter.settings.subEmitters.indices, id: \.self) { index in
-                    Label(emitter.settings.subEmitters[index].occasionKind.rawValue, systemImage: "sparkles")
+                    Label(emitter.settings.subEmitters[index].occasion.kind.name, systemImage: "sparkles")
                         .tag(OutlineItem.subEmitter(emitter.id, index))
                 }
                 ForEach(emitter.settings.triggers.indices, id: \.self) { index in
                     let trigger = emitter.settings.triggers[index]
-                    Label("\(trigger.conditionKind.rawValue) → \(trigger.actionKind.rawValue)", systemImage: "bolt")
+                    Label("\(trigger.condition.kind.name) → \(trigger.action.kind.name)", systemImage: "bolt")
                         .tag(OutlineItem.trigger(emitter.id, index))
                 }
             } label: {
