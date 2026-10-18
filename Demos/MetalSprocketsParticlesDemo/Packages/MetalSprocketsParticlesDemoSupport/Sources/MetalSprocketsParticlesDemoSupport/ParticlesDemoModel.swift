@@ -169,6 +169,7 @@ final class ParticlesDemoModel {
             forceFields: forceFields.map(\.field),
             lights: system?.lights ?? [],
             ambientLight: system?.ambientLight ?? [0.25, 0.25, 0.25],
+            trackedObjects: trackedObjects,
             cameraEye: cameraEye,
             cameraTarget: cameraTarget
         )
@@ -211,6 +212,7 @@ final class ParticlesDemoModel {
         animateColliders = preset.animatesColliders
         system?.lights = preset.lights
         system?.ambientLight = preset.ambientLight
+        trackedObjects = preset.trackedObjects
         cameraEye = preset.cameraEye
         cameraTarget = preset.cameraTarget
     }
@@ -320,6 +322,17 @@ final class ParticlesDemoModel {
     }
 
     // MARK: Per frame
+
+    /// The preset's stand-ins for app objects, for objectEnters triggers.
+    var trackedObjects: [String: EmitterMotion] = [:]
+
+    /// Tracked object positions at `time`, for `ParticleSystem.trackedObjects`.
+    func frameTrackedObjects(time: Float) -> [String: SIMD3<Float>] {
+        trackedObjects.mapValues { motion in
+            let column = motion.transform(time: time).columns.3
+            return SIMD3(column.x, column.y, column.z)
+        }
+    }
 
     func frameColliders(time: Float) -> [Collider] {
         guard animateColliders else {

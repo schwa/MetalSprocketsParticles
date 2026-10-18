@@ -169,12 +169,13 @@ public struct WireframeOptions: OptionSet, Sendable {
     public static let forceFields = Self(rawValue: 1 << 1)
     public static let triggerVolumes = Self(rawValue: 1 << 2)
     public static let emitters = Self(rawValue: 1 << 3)
-    public static let all: Self = [.colliders, .forceFields, .triggerVolumes, .emitters]
+    public static let trackedObjects = Self(rawValue: 1 << 4)
+    public static let all: Self = [.colliders, .forceFields, .triggerVolumes, .emitters, .trackedObjects]
 }
 
 public extension ParticleSystem {
-    /// Draws debug wireframes: colliders (blue), force fields (magenta), trigger volumes (green), and emitter shapes at
-    /// their current transforms (yellow). Place inside a `RenderPass`.
+    /// Draws debug wireframes: colliders (blue), force fields (magenta), trigger volumes and tracked objects (green), and
+    /// emitter shapes at their current transforms (yellow). Place inside a `RenderPass`.
     func renderWireframes(projection: simd_float4x4, view: simd_float4x4, options: WireframeOptions = .all) throws -> some Element {
         var forceFieldLines = WireframeBuilder()
         var triggerLines = WireframeBuilder()
@@ -187,6 +188,12 @@ public extension ParticleSystem {
         if options.contains(.triggerVolumes) {
             for volume in triggerVolumes {
                 volume.addWireframe(to: &triggerLines)
+            }
+        }
+        if options.contains(.trackedObjects) {
+            for position in trackedObjects.values {
+                triggerLines.sphere(position, radius: 0.1)
+                triggerLines.cross(position, size: 0.15)
             }
         }
         if options.contains(.emitters) {

@@ -37,7 +37,15 @@ struct FramePlan {
 extension ParticleSystem {
     /// The CPU half of `simulate`: applies `colliders` and `transforms`, rebuilds after sub-emitter layout changes,
     /// evaluates triggers, and plans every dispatch. Advances emitter state, so plan each frame exactly once.
-    func planFrame(deltaTime: Float, colliders: [Collider]? = nil, transforms: [simd_float4x4]? = nil) throws -> FramePlan {
+    func planFrame(
+        deltaTime: Float,
+        colliders: [Collider]? = nil,
+        transforms: [simd_float4x4]? = nil,
+        trackedObjects: [String: SIMD3<Float>]? = nil
+    ) throws -> FramePlan {
+        if let trackedObjects {
+            self.trackedObjects = trackedObjects
+        }
         if let colliders {
             self.colliders = colliders
         }

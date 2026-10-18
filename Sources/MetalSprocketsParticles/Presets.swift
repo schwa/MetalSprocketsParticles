@@ -13,8 +13,62 @@ public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
         .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot, .timeWarp,
-        .awning, .lantern,
+        .awning, .lantern, .dunk,
     ]
+
+    /// Tracked objects: a ball (the tracked object "ball") bounces through a pool; each time it enters the water, an
+    /// objectEnters trigger bursts a splash. An emitter following the same motion draws the ball.
+    static let dunk: ParticlePreset = {
+        let ballMotion = EmitterMotion(kind: .bounce, radius: 2.4, speed: 2, offset: [0, -0.3, 0])
+        let water = TriggerVolume.box(center: [0, -0.1, 0], halfExtents: [1.5, 0.25, 1.5])
+        return ParticlePreset(
+            "Dunk",
+            layers: [
+                Layer("Ball", settings: emitter {
+                    $0.shape = .point
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0
+                    $0.gravity = .zero
+                    $0.lifetime = 0.05...0.05
+                    $0.birthRate = 120
+                    $0.sizeOverLife = .constant(0.2)
+                    $0.colorOverLife = .constant([1, 0.45, 0.3, 1])
+                }, motion: ballMotion, simulationSpace: .local, capacity: 20),
+                Layer("Splash", settings: emitter {
+                    $0.position = [0, 0.05, 0]
+                    $0.shape = .disc(radius: 0.3)
+                    $0.birthLocation = .surface
+                    $0.birthDirection = .normal
+                    $0.velocity = [0, 3.2, 0]
+                    $0.velocitySpread = 1.2
+                    $0.gravity = [0, -9.8, 0]
+                    $0.lifetime = 0.7...1.1
+                    $0.birthRate = 0
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .linear(from: 0.03, to: 0.01)
+                    $0.colorOverLife = .linear(from: [0.6, 0.85, 1, 1], to: [0.4, 0.6, 1, 0])
+                    $0.triggers = [EmissionTrigger(.objectEnters(name: "ball", volume: water), .burst(400))]
+                }, capacity: 2_000),
+                Layer("Surface", settings: emitter {
+                    $0.orientation = .fixed(normal: [0, 1, 0])
+                    $0.shape = .plane(size: [3, 3])
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0
+                    $0.gravity = .zero
+                    $0.lifetime = 1.5...2.5
+                    $0.birthRate = 6
+                    $0.warmupDuration = 2
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .linear(from: 0.05, to: 0.5)
+                    $0.opacityOverLife = .linear(from: 0.6, to: 0)
+                    $0.colorOverLife = .constant([0.4, 0.6, 1, 1])
+                }, sprite: .ring, capacity: 40),
+            ],
+            trackedObjects: ["ball": ballMotion],
+            cameraEye: [0, 2.5, 5.5],
+            cameraTarget: [0, 0.8, 0]
+        )
+    }()
 
     /// Lighting: smoke and dust motes lit by a warm lantern (point light) near their base and cool moonlight from the
     /// side, over low ambient light. The lantern's glow is a small unlit emitter.

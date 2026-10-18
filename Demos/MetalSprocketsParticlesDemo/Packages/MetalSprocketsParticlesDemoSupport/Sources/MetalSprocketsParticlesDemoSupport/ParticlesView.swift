@@ -49,6 +49,7 @@ struct ParticleViewportView: View {
                     deltaTime: context.frameUniforms.deltaTime,
                     colliders: model.frameColliders(time: context.frameUniforms.time),
                     transforms: model.frameTransforms(time: context.frameUniforms.time),
+                    trackedObjects: model.frameTrackedObjects(time: context.frameUniforms.time),
                     view: cameraMatrix.inverse
                 )
                 try RenderPass {

@@ -1348,14 +1348,18 @@ Soft particles (#10) need a scene depth texture, but the demo and particles-rend
 ## 69: Demo has no tracked object for objectEnters triggers
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T13:34:41Z
+updated: 2026-10-18T13:59:01Z
+closed: 2026-10-18T13:59:01Z
 +++
 
 The objectEnters trigger (#34) needs app-supplied positions in ParticleSystem.trackedObjects, so no preset can show it. Add a tracked object to the demo (animated or draggable sphere drawn as a wireframe) and a preset trigger that fires when it enters a volume. Related: #34.
+
+- `2026-10-18T13:59:01Z`: Presets can now describe tracked objects: ParticlePreset.trackedObjects ([name: EmitterMotion]) and trackedObjectPositions(at:). simulate gains trackedObjects: (like colliders:/transforms:). The demo, particles-render, and the preset golden test feed them each frame; debug wireframes draw tracked objects (green). New Dunk preset: tracked object 'ball' bounces through a pool; an objectEnters trigger bursts a splash each entry, and a local-space emitter on the same motion draws the ball. Saved effects include tracked objects. Golden added; demo test covers motion, saving, and preset switching.
 
 ---
 

@@ -90,6 +90,7 @@ struct RenderCommand: ParsableCommand {
         var rendering: OffscreenRenderer.Rendering?
         for frame in 0..<max(frames, 1) {
             let time = Float(frame) * deltaTime
+            system.trackedObjects = preset.trackedObjectPositions(at: time)
             rendering = try renderer.render(Group {
                 try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: camera.inverse)
                 try RenderPass {

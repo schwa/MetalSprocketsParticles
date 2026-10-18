@@ -348,10 +348,17 @@ public final class ParticleSystem {
     /// Advances every emitter one frame in a single compute pass. Put this before the render pass that draws the
     /// particles. The result depends only on `seed`, settings, playback calls, and the sequence of `deltaTime` values.
     /// Pass `colliders` to replace `self.colliders` this frame, and `transforms` to move emitters (matched by index;
-    /// extra entries are ignored, missing ones leave the emitter where it is). Pass the camera's `view` matrix to sort
-    /// emitters whose `sortMode` is `.backToFront`; without it they draw unsorted.
-    public func simulate(deltaTime: Float, colliders: [Collider]? = nil, transforms: [simd_float4x4]? = nil, view: simd_float4x4? = nil) throws -> some Element {
-        let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms)
+    /// extra entries are ignored, missing ones leave the emitter where it is), and `trackedObjects` to replace
+    /// `self.trackedObjects`. Pass the camera's `view` matrix to sort emitters whose `sortMode` is `.backToFront`;
+    /// without it they draw unsorted.
+    public func simulate(
+        deltaTime: Float,
+        colliders: [Collider]? = nil,
+        transforms: [simd_float4x4]? = nil,
+        trackedObjects: [String: SIMD3<Float>]? = nil,
+        view: simd_float4x4? = nil
+    ) throws -> some Element {
+        let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
         return try encode(plan, sorts: try sorts(view: view))
     }
 

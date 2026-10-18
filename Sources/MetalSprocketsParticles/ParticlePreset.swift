@@ -16,6 +16,9 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     /// Lights for emitters with `isLit`.
     public var lights: [ParticleLight]
     public var ambientLight: SIMD3<Float>
+    /// Stand-ins for app objects, by name, for `EmissionTrigger.Condition.objectEnters`: each moves along its motion's
+    /// path. Apps feed `trackedObjectPositions(at:)` into `ParticleSystem.trackedObjects` each frame.
+    public var trackedObjects: [String: EmitterMotion]
     /// Suggested camera.
     public var cameraEye: SIMD3<Float>
     public var cameraTarget: SIMD3<Float>
@@ -30,6 +33,7 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         forceFields: [ForceField] = [],
         lights: [ParticleLight] = [],
         ambientLight: SIMD3<Float> = [0.25, 0.25, 0.25],
+        trackedObjects: [String: EmitterMotion] = [:],
         cameraEye: SIMD3<Float> = [0, 3, 6],
         cameraTarget: SIMD3<Float> = [0, 1.5, 0]
     ) {
@@ -40,6 +44,7 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         self.forceFields = forceFields
         self.lights = lights
         self.ambientLight = ambientLight
+        self.trackedObjects = trackedObjects
         self.cameraEye = cameraEye
         self.cameraTarget = cameraTarget
     }
@@ -53,8 +58,14 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         try container.update(&forceFields, .forceFields)
         try container.update(&lights, .lights)
         try container.update(&ambientLight, .ambientLight)
+        try container.update(&trackedObjects, .trackedObjects)
         try container.update(&cameraEye, .cameraEye)
         try container.update(&cameraTarget, .cameraTarget)
+    }
+
+    /// Where each tracked object is at `time`.
+    public func trackedObjectPositions(at time: Float) -> [String: SIMD3<Float>] {
+        trackedObjects.mapValues { $0.transform(time: time).columns.3.xyz }
     }
 
     /// Colliders for `time`, animated if the preset asks for it.
