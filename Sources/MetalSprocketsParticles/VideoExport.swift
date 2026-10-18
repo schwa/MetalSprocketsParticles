@@ -8,7 +8,10 @@ import simd
 public extension ParticlePreset {
     /// Simulates the effect from the start and writes it to a movie file, frame by frame, at `frameRate`. The camera
     /// defaults to the preset's. Results are deterministic for a given `seed`. `progress` is called after each frame
-    /// with the fraction done; return false from it to stop early and keep what was written.
+    /// with the fraction done; return false from it to stop early and keep what was written. With `stopWhenFinished`,
+    /// a finite effect (see `ParticleSystem.isFinished`) ends the movie early; `duration` is then the longest it runs.
+    /// Returns the length written, in seconds.
+    @discardableResult
     func exportVideo(
         to url: URL,
         size: CGSize = CGSize(width: 1920, height: 1080),
@@ -19,8 +22,9 @@ public extension ParticlePreset {
         target: SIMD3<Float>? = nil,
         wireframes: Bool = false,
         codec: AVVideoCodecType = .h264,
+        stopWhenFinished: Bool = false,
         progress: (Double) -> Bool = { _ in true }
-    ) async throws {
+    ) async throws -> TimeInterval {
         try? FileManager.default.removeItem(at: url)
         let renderer = try OffscreenVideoRenderer(
             size: size,
@@ -40,6 +44,7 @@ public extension ParticlePreset {
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / max(size.height, 1)), near: 0.1, far: 100)
         let deltaTime = Float(1 / frameRate)
         let frameCount = max(Int((duration * frameRate).rounded()), 1)
+        var framesWritten = 0
         for frame in 0..<frameCount {
             let time = Float(frame) * deltaTime
             try await renderer.render(Group {
@@ -57,10 +62,12 @@ public extension ParticlePreset {
                     try system.render(projection: projection, view: view)
                 }
             })
-            if !progress(Double(frame + 1) / Double(frameCount)) {
+            framesWritten += 1
+            if !progress(Double(frame + 1) / Double(frameCount)) || stopWhenFinished && system.isFinished {
                 break
             }
         }
         try await renderer.finalize()
+        return Double(framesWritten) / frameRate
     }
 }

@@ -88,6 +88,20 @@ public final class ParticleSystem {
             spawner = Spawner(seed: seed)
         }
 
+        /// True when the emitter is done: it will not spawn on its own again (its `emissionOverTime` has ended at zero,
+        /// its single emission period is over, its birth rate is zero, or `isEmitting` is off), it has no pending burst
+        /// or triggers, and every particle it and its sub-emitters made has died. Use it to remove finite effects.
+        public var isFinished: Bool {
+            guard !needsWarmup, settings.triggers.isEmpty, spawner.pendingBurst == 0 else {
+                return false
+            }
+            guard !isEmitting || Spawner.isEmissionOver(time: spawner.time, emitter: settings) else {
+                return false
+            }
+            let childLifetime = settings.subEmitters.map(\.settings.lifetime.upperBound).max() ?? 0
+            return spawner.time >= spawner.lastBirthTime + spawner.maxLifetime + childLifetime
+        }
+
         /// Emits `count` particles on the next playing step, on top of the birth rate.
         public func burst(_ count: Int) {
             spawner.pendingBurst += max(count, 0)
@@ -181,6 +195,11 @@ public final class ParticleSystem {
     private let placeholderSortRecords: MTLBuffer
     /// Colliders from the previous frame, used to derive collider velocity.
     var previousColliders: [Collider]?
+
+    /// True when every emitter is finished (see `Emitter.isFinished`): nothing will spawn and nothing is alive.
+    public var isFinished: Bool {
+        emitters.allSatisfy(\.isFinished)
+    }
 
     /// Total particles across all emitters.
     public var capacity: Int {

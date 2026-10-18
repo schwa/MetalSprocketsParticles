@@ -341,7 +341,7 @@ final class ParticlesDemoModel {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(effect.name).mov")
         videoExportProgress = 0
         defer { videoExportProgress = nil }
-        try await Task.detached {
+        _ = try await Task.detached {
             try await effect.exportVideo(to: url, size: size, frameRate: frameRate, duration: duration) { fraction in
                 Task { @MainActor in
                     self.videoExportProgress = fraction

@@ -18,8 +18,11 @@ struct RenderCommand: AsyncParsableCommand {
     @Option(help: "Write a movie (.mov or .mp4) of the effect from the start instead of a PNG. Uses --duration and --fps.")
     var video: String?
 
-    @Option(help: "Movie length in seconds.")
+    @Option(help: "Movie length in seconds (the longest, with --until-finished).")
     var duration: Double = 5
+
+    @Flag(help: "End the movie when a finite effect has finished (emission over, every particle dead).")
+    var untilFinished = false
 
     @Option(help: "Movie frames per second; each frame is one simulation step.")
     var fps: Double = 30
@@ -95,7 +98,7 @@ struct RenderCommand: AsyncParsableCommand {
             let url = URL(fileURLWithPath: video)
             let codec: AVVideoCodecType = .h264
             var lastReported = -1
-            try await preset.exportVideo(
+            let written = try await preset.exportVideo(
                 to: url,
                 size: CGSize(width: width, height: height),
                 frameRate: fps,
@@ -104,7 +107,8 @@ struct RenderCommand: AsyncParsableCommand {
                 eye: eye,
                 target: target,
                 wireframes: wireframes,
-                codec: codec
+                codec: codec,
+                stopWhenFinished: untilFinished
             ) { fraction in
                 let percent = Int(fraction * 100)
                 if percent / 10 != lastReported / 10 {
@@ -113,7 +117,7 @@ struct RenderCommand: AsyncParsableCommand {
                 }
                 return true
             }
-            print("Wrote \(video): \(preset.name), \(duration) s at \(fps) fps, \(width)×\(height)")
+            print("Wrote \(video): \(preset.name), \(String(format: "%.2f", written)) s at \(fps) fps, \(width)×\(height)")
             return
         }
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))

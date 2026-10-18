@@ -1,3 +1,30 @@
+extension ParticleCurve where Value == Float {
+    /// The area under the curve from `start` to `end`, exact for its straight segments; the first and last values hold
+    /// outside the keyframes.
+    func integral(from start: Float, to end: Float) -> Float {
+        guard end > start else {
+            return 0
+        }
+        let breaks = keyframes.map(\.time).filter { $0 > start && $0 < end }.sorted()
+        let points = [start] + breaks + [end]
+        var total: Float = 0
+        for index in 0..<(points.count - 1) {
+            let from = points[index]
+            let to = points[index + 1]
+            total += (value(at: from) + value(at: to)) / 2 * (to - from)
+        }
+        return total
+    }
+
+    /// True when the curve has reached its last keyframe by `time` and holds a value of zero or less from then on.
+    func hasEnded(at time: Float) -> Bool {
+        guard let last = keyframes.max(by: { $0.time < $1.time }) else {
+            return false
+        }
+        return last.value <= 0 && time >= last.time
+    }
+}
+
 /// CPU-side emission bookkeeping. Decides how many particles to spawn each step and where in the ring they go.
 struct Spawner: Equatable {
     struct Step: Equatable {
@@ -13,6 +40,8 @@ struct Spawner: Equatable {
     var cursor: UInt32 = 0
     var serial: UInt32 = 0
     var pendingBurst = 0
+    /// Emitter time at the end of the last step that spawned anything; -infinity before the first.
+    var lastBirthTime = -Float.infinity
     /// Drives birth rate variation.
     var seed: UInt32 = 0
 
@@ -53,6 +82,18 @@ struct Spawner: Equatable {
         return max(emitter.birthRate + offset, 0)
     }
 
+    /// True once the emitter will never spawn on its own again: its envelope has ended at zero, or its single
+    /// (non-looping) emission period is over, or its birth rate is zero. Bursts and triggers can still add particles.
+    static func isEmissionOver(time: Float, emitter: ParticleEmitter) -> Bool {
+        if emitter.emissionOverTime.hasEnded(at: time) || emitter.birthRate <= 0 && emitter.birthRateVariation <= 0 {
+            return true
+        }
+        if let duration = emitter.emissionDuration, !emitter.loops {
+            return time >= duration
+        }
+        return false
+    }
+
     static func isInEmissionWindow(time: Float, emitter: ParticleEmitter) -> Bool {
         guard let duration = emitter.emissionDuration else {
             return true
@@ -70,7 +111,13 @@ struct Spawner: Equatable {
     mutating func advance(deltaTime: Float, emitter: ParticleEmitter, capacity: Int, isEmitting: Bool) -> Step {
         var count = 0
         if isEmitting && Self.isInEmissionWindow(time: time, emitter: emitter) {
-            accumulator += birthRate(emitter: emitter) * deltaTime
+            // Rate times the envelope's area over the step. A constant envelope keeps the plain product, so default
+            // emitters spawn exactly as before.
+            let envelope = emitter.emissionOverTime
+            let shapedTime = envelope.keyframes.count == 1
+                ? envelope.keyframes[0].value * deltaTime
+                : envelope.integral(from: time, to: time + deltaTime)
+            accumulator += birthRate(emitter: emitter) * max(shapedTime, 0)
             let whole = Int(accumulator)
             accumulator -= Float(whole)
             count += whole
@@ -79,6 +126,9 @@ struct Spawner: Equatable {
         pendingBurst = 0
         count = min(count, capacity)
 
+        if count > 0 {
+            lastBirthTime = time + deltaTime
+        }
         let step = Step(cursor: cursor, count: UInt32(count), serial: serial)
         cursor = UInt32((Int(cursor) + count) % max(capacity, 1))
         serial &+= UInt32(count)

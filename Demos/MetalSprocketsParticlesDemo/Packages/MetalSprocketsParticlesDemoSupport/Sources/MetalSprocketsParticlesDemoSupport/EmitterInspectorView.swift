@@ -245,6 +245,8 @@ struct EmissionSectionView: View {
                     ParameterSliderView("Idle", value: $settings.idleDuration, in: 0...10)
                     Toggle("Loops", isOn: $settings.loops)
                 }
+                // Birth-rate multiplier over seconds since the emitter started; ending at 0 makes a finite effect.
+                FloatCurveEditorView(title: "Emission Over Time", curve: $settings.emissionOverTime, range: 0...1, timeRange: 0...30)
             }
         }
     }

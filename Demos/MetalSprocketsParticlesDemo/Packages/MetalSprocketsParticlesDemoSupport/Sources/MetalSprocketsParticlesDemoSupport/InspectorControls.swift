@@ -100,13 +100,15 @@ struct FloatCurveEditorView: View {
     let title: LocalizedStringKey
     @Binding var curve: ParticleCurve<Float>
     let range: ClosedRange<Float>
+    /// 0...1 for over-life curves; seconds for curves over emitter time.
+    var timeRange: ClosedRange<Float> = 0...1
 
     var body: some View {
         DisclosureGroup(title) {
             ForEach(curve.keyframes.indices, id: \.self) { index in
                 HStack {
                     VStack {
-                        ParameterSliderView("Time", value: $curve[stop: index].time, in: 0...1)
+                        ParameterSliderView("Time", value: $curve[stop: index].time, in: timeRange)
                         ParameterSliderView("Value", value: $curve[stop: index].value, in: range, format: .number.precision(.fractionLength(3)))
                     }
                     Button("Remove Stop", systemImage: "minus.circle") {
@@ -117,7 +119,10 @@ struct FloatCurveEditorView: View {
                 }
             }
             Button("Add Stop", systemImage: "plus") {
-                curve.keyframes.append(.init(1, curve.end))
+                // A tenth of the range after the last stop, so new stops do not pile up on existing ones.
+                let last = curve.keyframes.map(\.time).max() ?? timeRange.lowerBound
+                let time = min(timeRange.upperBound, last + (timeRange.upperBound - timeRange.lowerBound) / 10)
+                curve.keyframes.append(.init(time, curve.end))
             }
         }
     }

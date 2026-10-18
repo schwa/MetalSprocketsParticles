@@ -1460,11 +1460,13 @@ This project is meant to replace MetalSprocketsSceneGraph's particle system (Sou
 ## 75: Emitters can't ramp emission over time or finish
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:simulation
 created: 2026-10-18T14:44:28Z
+updated: 2026-10-18T15:00:11Z
+closed: 2026-10-18T15:00:11Z
 +++
 
 Emission is either infinite or an on/off square wave (emissionDuration, idleDuration, loops). There is no way to shape the number of particles an emitter generates over time (fade in, run, fade out), and no finite effect ever reports that it is done.
@@ -1479,6 +1481,8 @@ Proposal: ParticleEmitter.emissionOverTime: ParticleCurve<Float>, a multiplier o
 - Demo: an envelope editor in the Emission section (curve editor with time in seconds), and a preset that fades in and out.
 - Saved effects include it (tolerant decoding keeps the default).
 
+- `2026-10-18T15:00:11Z`: ParticleEmitter.emissionOverTime (ParticleCurve<Float> in seconds since start, default .constant(1)) multiplies birthRate; the spawner integrates it over each step (exact for straight segments; constant curves keep the old arithmetic, so goldens/determinism unchanged). Emitter.isFinished / ParticleSystem.isFinished: emission over (envelope ended at 0, single period over, zero rate, or not emitting), no pending burst or triggers, and every particle including sub-emitter children dead. exportVideo(stopWhenFinished:) returns the length written; particles-render --until-finished. Demo: Emission Over Time curve editor (seconds), HUD shows Finished. New Flare preset (ramps in 0.5 s, burns 3 s, out by 5 s; movie ends at ~8 s). repeats/loops replacement not done.
+
 ---
 
 ## 76: Built-in presets are Swift code instead of JSON resources
@@ -1489,7 +1493,6 @@ priority: medium
 kind: enhancement
 labels: effort:m, area:tooling
 created: 2026-10-18T14:48:39Z
-updated: 2026-10-18T14:48:39Z
 +++
 
 All 26 presets live in Presets.swift as Swift code. Effects already round-trip through JSON (#25, meshes since #65), so the built-ins could be JSON files bundled as package resources and loaded at runtime, the same format users save and open.

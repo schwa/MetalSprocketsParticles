@@ -26,6 +26,16 @@ struct VideoExportTests {
         #expect(reported.count == 30 && reported.last == 1)
     }
 
+    @Test func finiteEffectsCanEndTheMovie() async throws {
+        let url = temporaryURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        // Flare's emission ends at 5 s and its longest-lived particles (smoke) last 3 s more.
+        let written = try await ParticlePreset.flare.exportVideo(to: url, size: CGSize(width: 160, height: 90), duration: 20, stopWhenFinished: true)
+        #expect(written > 7.5 && written < 8.5)
+        let duration = try await AVURLAsset(url: url).load(.duration).seconds
+        #expect(abs(duration - written) < 0.05)
+    }
+
     @Test func stoppingEarlyKeepsWhatWasWritten() async throws {
         let url = temporaryURL()
         defer { try? FileManager.default.removeItem(at: url) }

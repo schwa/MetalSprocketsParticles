@@ -35,6 +35,8 @@ public struct ParticlesView: View {
 struct ParticleCountView: View {
     let alive: Int
     let capacity: Int
+    /// A finite effect has ended (see `ParticleSystem.isFinished`); Restart plays it again.
+    var isFinished = false
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -43,6 +45,11 @@ struct ParticleCountView: View {
             Text("/ \(capacity, format: .number) particles")
                 .font(.title3)
                 .foregroundStyle(.secondary)
+            if isFinished {
+                Text("Finished")
+                    .font(.title3.bold())
+                    .foregroundStyle(.orange)
+            }
         }
         .monospacedDigit()
         .padding(.horizontal)
@@ -66,6 +73,7 @@ struct ParticleViewportView: View {
     @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
     @State private var frameTiming: FrameTimingStatistics?
     @State private var aliveParticles = 0
+    @State private var isFinished = false
 
     /// Matches OffscreenRenderer, so golden images and particles-render show what the app shows.
     static let colorPixelFormat = ParticleSystem.colorPixelFormat
@@ -94,6 +102,7 @@ struct ParticleViewportView: View {
             .onFrameTimingChange { statistics in
                 frameTiming = statistics
                 aliveParticles = system.aliveParticleCount
+                isFinished = system.isFinished
             }
             .interactiveCamera(cameraMatrix: $cameraMatrix, target: model.cameraTarget)
             .onChange(of: model.presetName) {
@@ -109,7 +118,7 @@ struct ParticleViewportView: View {
                 }
             }
             .overlay(alignment: .top) {
-                ParticleCountView(alive: aliveParticles, capacity: system.capacity)
+                ParticleCountView(alive: aliveParticles, capacity: system.capacity, isFinished: isFinished)
                     .padding()
             }
         } else {

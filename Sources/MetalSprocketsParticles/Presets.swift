@@ -13,8 +13,47 @@ public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
         .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper, .teapot, .timeWarp,
-        .awning, .lantern, .dunk,
+        .awning, .lantern, .dunk, .flare,
     ]
+
+    /// A finite effect: emission over time ramps up, burns, and dies away, then the system finishes.
+    static let flare = ParticlePreset("Flare", cameraEye: [0, 2, 5], cameraTarget: [0, 1.2, 0]) {
+        // Ignites over half a second, burns for three, fades out by five; nothing emits after that.
+        let burn = ParticleCurve<Float>([.init(0, 0), .init(0.5, 1), .init(3.5, 1), .init(5, 0)])
+        Layer("Sparks", settings: emitter {
+            $0.position = [0, 0.4, 0]
+            $0.shape = .point
+            $0.velocity = [0, 3.5, 0]
+            $0.velocitySpread = 1.6
+            $0.speedVariation = 1
+            $0.lifetime = 0.6...1.4
+            $0.birthRate = 1_500
+            $0.emissionOverTime = burn
+            $0.restitution = 0.3
+            $0.blendMode = .additive
+            $0.orientation = .velocityAligned(stretch: 0.5)
+            $0.sizeOverLife = .linear(from: 0.014, to: 0.004)
+            $0.colorOverLife = ParticleCurve([.init(0, [1, 1, 0.9, 1]), .init(0.3, [1, 0.4, 0.5, 1]), .init(1, [0.8, 0.1, 0.2, 0])])
+        }, sprite: .spark, capacity: 5_000)
+        Layer("Smoke", settings: emitter {
+            $0.sortMode = .backToFront
+            $0.position = [0, 0.5, 0]
+            $0.shape = .sphere(radius: 0.1)
+            $0.velocity = [0, 0.8, 0]
+            $0.velocitySpread = 0.3
+            $0.gravity = .zero
+            $0.lifetime = 2...3
+            $0.birthRate = 25
+            $0.emissionOverTime = burn
+            $0.sizeOverLife = .linear(from: 0.15, to: 0.7)
+            $0.opacityOverLife = ParticleCurve([.init(0, 0), .init(0.2, 0.35), .init(1, 0)])
+            $0.colorOverLife = .constant([0.9, 0.5, 0.55, 1])
+            $0.angleVariation = .pi
+        }, sprite: .smoke, capacity: 200)
+        ground
+        ForceField.wind(velocity: [0.6, 0, 0], strength: 0.3)
+    }
+    .commented("A road flare that ignites, burns, and dies out: sparks and pink smoke whose emission ramps up over half a second, burns for three, and fades out by five seconds. Shows emission over time and a finite effect: once every particle has died the system reports it is finished (the HUD says Finished; Restart plays it again).")
 
     /// Tracked objects: a ball (the tracked object "ball") bounces through a pool; each time it enters the water, an
     /// objectEnters trigger bursts a splash. An emitter following the same motion draws the ball.

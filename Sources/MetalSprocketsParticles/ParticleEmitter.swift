@@ -103,6 +103,11 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var loops = true
     /// Seconds simulated before the first rendered frame, and again after `restart()`.
     public var warmupDuration: Float = 0
+    /// Shapes emission over time: a multiplier on `birthRate`, keyed in seconds since the emitter started (warmup
+    /// included). After the last keyframe the last value holds, so a curve ending at 0 makes a finite effect: for
+    /// example (0 s, 1), (10 s, 1), (12 s, 0) runs fully for 10 seconds and fades out by 12. The default, constant 1,
+    /// emits forever. Multiplies with `emissionDuration` cycles; bursts are not affected.
+    public var emissionOverTime = ParticleCurve<Float>.constant(1)
 
     /// Emitters driven by this emitter's particles. Adding or removing sub-emitters, or changing `countPerEvent`,
     /// rebuilds the system's buffer on the next `simulate`, which removes all particles.
@@ -168,6 +173,7 @@ extension ParticleEmitter {
         try container.update(&triggers, .triggers)
         try container.update(&collisionMask, .collisionMask)
         try container.update(&fieldMask, .fieldMask)
+        try container.update(&emissionOverTime, .emissionOverTime)
         try container.update(&isLit, .isLit)
         try container.update(&softness, .softness)
     }
