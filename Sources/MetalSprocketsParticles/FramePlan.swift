@@ -108,6 +108,33 @@ extension ParticleSystem {
         var transform = matrix_identity_float4x4
         var previousOrigin: SIMD3<Float> = .zero
         var inheritedVelocity: SIMD3<Float> = .zero
+        /// The rotation over the step, as unit axis and angle; angle 0 for none.
+        var spinAxis: SIMD3<Float> = [0, 1, 0]
+        var spinAngle: Float = 0
+        var inheritedAngularVelocity: SIMD3<Float> = .zero
+    }
+
+    /// The shortest rotation taking `previous`'s orientation to `current`'s, or nil if either is not a rotation (scaled
+    /// or sheared) or they barely differ. Over half a turn per step reads as the shorter way round.
+    static func spin(from previous: simd_float4x4, to current: simd_float4x4) -> (axis: SIMD3<Float>, angle: Float)? {
+        func rotation(_ matrix: simd_float4x4) -> simd_quatf? {
+            let basis = simd_float3x3(matrix.columns.0.xyz, matrix.columns.1.xyz, matrix.columns.2.xyz)
+            let isRigid = [basis.columns.0, basis.columns.1, basis.columns.2].allSatisfy { abs(simd_length($0) - 1) < 1e-3 }
+                && abs(simd_determinant(basis) - 1) < 1e-3
+            return isRigid ? simd_quatf(basis) : nil
+        }
+        guard let from = rotation(previous), let to = rotation(current) else {
+            return nil
+        }
+        var delta = simd_normalize(to * from.inverse)
+        if delta.real < 0 {
+            delta = simd_quatf(vector: -delta.vector)
+        }
+        let angle = delta.angle
+        guard angle > 1e-5 else {
+            return nil
+        }
+        return (simd_normalize(delta.axis), angle)
     }
 
     private func makeStep(_ emitter: Emitter, deltaTime: Float, motion: SpawnMotion) -> (uniforms: SimulationUniforms, threadCount: Int) {
@@ -147,6 +174,9 @@ extension ParticleSystem {
         uniforms.worldToSimulation = model.inverse
         uniforms.previousEmitterOrigin = motion.previousOrigin
         uniforms.inheritedVelocity = motion.inheritedVelocity
+        uniforms.spinAxis = motion.spinAxis
+        uniforms.spinAngle = motion.spinAngle
+        uniforms.inheritedAngularVelocity = motion.inheritedAngularVelocity
         uniforms.shape = ParticleShapeData(settings, mesh: emitter.mesh)
         uniforms.velocity = settings.velocity
         uniforms.velocitySpread = settings.velocitySpread
@@ -228,6 +258,7 @@ extension ParticleSystem {
         let spawnTransform = emitter.simulationSpace == .world ? emitter.transform : matrix_identity_float4x4
         let origin = spawnTransform.columns.3.xyz
         let previousOrigin = emitter.simulationSpace == .world ? (emitter.previousTransform?.columns.3.xyz ?? origin) : origin
+        let spin = emitter.simulationSpace == .world ? emitter.previousTransform.flatMap { Self.spin(from: $0, to: emitter.transform) } : nil
         emitter.previousTransform = emitter.transform
         let emitterVelocity = frameDeltaTime > 0 ? (origin - previousOrigin) / frameDeltaTime : .zero
 
@@ -242,11 +273,17 @@ extension ParticleSystem {
                 remaining -= warmupStep
             }
         }
-        steps.append(makeStep(emitter, deltaTime: frameDeltaTime, motion: SpawnMotion(
+        var motion = SpawnMotion(
             transform: spawnTransform,
             previousOrigin: previousOrigin,
             inheritedVelocity: emitterVelocity * emitter.settings.inheritVelocity
-        )))
+        )
+        if let spin, frameDeltaTime > 0 {
+            motion.spinAxis = spin.axis
+            motion.spinAngle = spin.angle
+            motion.inheritedAngularVelocity = spin.axis * spin.angle / frameDeltaTime * emitter.settings.inheritVelocity
+        }
+        steps.append(makeStep(emitter, deltaTime: frameDeltaTime, motion: motion))
         let subEmitters = subEmitterData(for: emitter)
         return steps.enumerated().map { index, step in
             var uniforms = step.uniforms

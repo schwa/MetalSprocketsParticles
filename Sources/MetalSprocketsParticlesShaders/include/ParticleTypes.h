@@ -202,6 +202,13 @@ typedef struct {
     simd_float3 previousEmitterOrigin;
     // Added to every newborn particle (inherited emitter velocity), in simulation space.
     simd_float3 inheritedVelocity;
+    // The emitter's rotation over this step, from the previous transform to the current one: unit axis and angle. Births
+    // earlier in the step are rotated back along it. Angle 0 means no rotation.
+    simd_float3 spinAxis;
+    float spinAngle;
+    // Angular velocity (axis times radians per second) times inheritVelocity: newborns get its cross product with their
+    // offset from the emitter origin.
+    simd_float3 inheritedAngularVelocity;
     ParticleShapeData shape;
     simd_float3 velocity; // Base birth velocity, emitter space.
     float velocitySpread;

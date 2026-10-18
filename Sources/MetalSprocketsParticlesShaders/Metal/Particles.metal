@@ -382,9 +382,22 @@ static Particle spawnParticle(
         float4 colorOffset = rng.next4() * 2 - 1;
         // Emitter-local to simulation space. Particles born earlier in the step start further back along the
         // emitter's path, so fast-moving emitters leave continuous trails instead of clumps.
-        position = (uniforms.emitterTransform * float4(position, 1)).xyz;
-        position += (uniforms.previousEmitterOrigin - uniforms.emitterTransform[3].xyz) * birthAge;
-        velocity = (uniforms.emitterTransform * float4(velocity, 0)).xyz + uniforms.inheritedVelocity;
+        if (uniforms.spinAngle != 0) {
+            // A rotating emitter: sweep this birth's offset and velocity back along the step's rotation too, so fast
+            // spins leave a continuous arc instead of one clump per frame.
+            float3 origin = uniforms.emitterTransform[3].xyz;
+            float halfAngle = -birthAge * uniforms.spinAngle * 0.5;
+            float4 back = float4(uniforms.spinAxis * sin(halfAngle), cos(halfAngle));
+            float3 offset = rotate(back, (uniforms.emitterTransform * float4(position, 0)).xyz);
+            position = origin + offset + (uniforms.previousEmitterOrigin - origin) * birthAge;
+            velocity = rotate(back, (uniforms.emitterTransform * float4(velocity, 0)).xyz) + uniforms.inheritedVelocity
+                + cross(uniforms.inheritedAngularVelocity, offset);
+        } else {
+            // Unchanged expressions for emitters that do not rotate, so their results stay bit-identical.
+            position = (uniforms.emitterTransform * float4(position, 1)).xyz;
+            position += (uniforms.previousEmitterOrigin - uniforms.emitterTransform[3].xyz) * birthAge;
+            velocity = (uniforms.emitterTransform * float4(velocity, 0)).xyz + uniforms.inheritedVelocity;
+        }
         p.position = float4(position + origin, 0);
         p.velocity = float4(velocity + extraVelocity, lifetime);
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);

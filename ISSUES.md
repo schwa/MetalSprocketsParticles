@@ -1387,14 +1387,18 @@ The clock-faces flipbook and the droplet and glowing-star emoji sprites (#40) ar
 ## 71: Fast-spinning emitters emit in per-frame bursts
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:simulation
 created: 2026-10-18T13:39:41Z
+updated: 2026-10-18T14:03:49Z
+closed: 2026-10-18T14:03:49Z
 +++
 
 Births within a step are spread along the emitter's path by interpolating only its position (previousEmitterOrigin). Rotation is not interpolated, so a fast-spinning emitter (e.g. a Catherine wheel, a spinning sword in the scene graph) emits each step's particles at that frame's angle, giving visible spokes/clumps. The emitter's angular velocity also never adds to particle velocity (inheritVelocity is linear only). Fix: pass the previous emitter transform and slerp rotation by birthAge in spawnParticle; add the tangential velocity (omega × r) to inherited velocity. Needed for MetalSprocketsSceneGraph animation.
+
+- `2026-10-18T14:03:49Z`: Births now sweep back along the emitter's rotation over the step (axis-angle from the previous to current transform, shortest way, rigid transforms only), like position already did; velocity is rotated the same way, and inheritVelocity adds omega x offset. Non-rotating emitters keep the exact old expressions (bit-identical). Test fails before the fix: one frame's births spanned 0.0 rad of a 0.6 rad sweep; after, > 0.4 rad, and spin is inherited as ~36 units/s tangential at radius 1. Portal golden updated (its slow spin shifts spark births slightly; reviewed). Limits: over half a turn per step reads as the shorter way round; scaled/sheared transforms skip rotation interpolation.
 
 ---
 
