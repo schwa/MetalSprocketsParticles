@@ -28,6 +28,16 @@ final class ParticlesDemoModel {
 
     var selectedEmitterID: DemoEmitter.ID?
 
+    /// What the outline has selected and the inspector shows. Selecting an emitter or one of its children also
+    /// selects that emitter.
+    var selection: OutlineItem? = .scene {
+        didSet {
+            if let emitterID = selection?.emitterID {
+                selectedEmitterID = emitterID
+            }
+        }
+    }
+
     /// The emitter the inspector edits. Falls back to the first emitter.
     var selectedEmitter: DemoEmitter {
         get { emitters.first { $0.id == selectedEmitterID } ?? emitters[0] }
@@ -80,6 +90,9 @@ final class ParticlesDemoModel {
         capacities = Dictionary(uniqueKeysWithValues: zip(emitters.map(\.id), preset.layers.map(\.capacity)))
         self.emitters = emitters
         selectedEmitterID = emitters.first?.id
+        if selection != .scene {
+            selection = emitters.first.map { .emitter($0.id) }
+        }
         colliders = preset.colliders.map { ColliderItem(collider: $0) }
         forceFields = preset.forceFields.map { ForceFieldItem(field: $0) }
         animateColliders = preset.animatesColliders
@@ -101,7 +114,7 @@ final class ParticlesDemoModel {
         settings.birthRate = 2_000
         let emitter = DemoEmitter(name: "Emitter \(emitters.count + 1)", settings: settings)
         emitters.append(emitter)
-        selectedEmitterID = emitter.id
+        selection = .emitter(emitter.id)
     }
 
     func duplicateSelectedEmitter() {
@@ -113,7 +126,7 @@ final class ParticlesDemoModel {
         copy.isEmitting = source.isEmitting
         capacities[copy.id] = capacities[source.id]
         emitters.append(copy)
-        selectedEmitterID = copy.id
+        selection = .emitter(copy.id)
     }
 
     /// Keeps at least one emitter.
@@ -122,7 +135,67 @@ final class ParticlesDemoModel {
             return
         }
         emitters.remove(at: index)
-        selectedEmitterID = emitters[min(index, emitters.count - 1)].id
+        selection = .emitter(emitters[min(index, emitters.count - 1)].id)
+    }
+
+    // MARK: Outline
+
+    func addSubEmitter(to emitterID: DemoEmitter.ID) {
+        guard let index = emitters.firstIndex(where: { $0.id == emitterID }) else {
+            return
+        }
+        emitters[index].settings.subEmitters.append(.sparks)
+        selection = .subEmitter(emitterID, emitters[index].settings.subEmitters.count - 1)
+    }
+
+    func addTrigger(to emitterID: DemoEmitter.ID) {
+        guard let index = emitters.firstIndex(where: { $0.id == emitterID }) else {
+            return
+        }
+        emitters[index].settings.triggers.append(EmissionTrigger(.event(eventToSend), .burst(100)))
+        selection = .trigger(emitterID, emitters[index].settings.triggers.count - 1)
+    }
+
+    func addCollider(_ kind: ColliderKind) {
+        var collider = Collider.sphere(center: [0, 1, 0], radius: 0.5)
+        collider.kind = kind
+        let item = ColliderItem(collider: collider)
+        colliders.append(item)
+        selection = .collider(item.id)
+    }
+
+    func addForceField(_ kind: ForceFieldKind) {
+        var field = ForceField.wind(velocity: [2, 0, 0], strength: 1)
+        field.kind = kind
+        let item = ForceFieldItem(field: field)
+        forceFields.append(item)
+        selection = .forceField(item.id)
+    }
+
+    /// Removes the selected item and selects its parent (or the scene). Emitters keep at least one.
+    func removeSelection() {
+        switch selection {
+        case .emitter:
+            removeSelectedEmitter()
+        case let .subEmitter(emitterID, index):
+            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }), index < emitters[emitter].settings.subEmitters.count {
+                emitters[emitter].settings.subEmitters.remove(at: index)
+            }
+            selection = .emitter(emitterID)
+        case let .trigger(emitterID, index):
+            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }), index < emitters[emitter].settings.triggers.count {
+                emitters[emitter].settings.triggers.remove(at: index)
+            }
+            selection = .emitter(emitterID)
+        case let .collider(id):
+            colliders.removeAll { $0.id == id }
+            selection = .scene
+        case let .forceField(id):
+            forceFields.removeAll { $0.id == id }
+            selection = .scene
+        case .scene, nil:
+            break
+        }
     }
 
     func burstSelectedEmitter(_ count: Int = 2_000) {

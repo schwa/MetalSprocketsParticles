@@ -2,26 +2,86 @@ import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
 import SwiftUI
 
-/// The demo's sidebar. The most-used controls stay visible at the top of each section; the rest are in disclosure
-/// groups. Controls are small so more fit without scrolling.
+/// The trailing inspector: details for whatever the outline has selected. The most-used controls stay visible; the
+/// rest are in disclosure groups. Controls are small so more fit without scrolling.
 struct EmitterInspectorView: View {
     @Bindable var model: ParticlesDemoModel
 
     var body: some View {
         Form {
-            SceneSectionView(model: model)
-            EmitterSectionView(model: model)
-            EmissionSectionView(settings: $model.selectedEmitter.settings)
-            ShapeSectionView(settings: $model.selectedEmitter.settings)
-            MotionSectionView(emitter: $model.selectedEmitter)
-            AppearanceSectionView(emitter: $model.selectedEmitter)
-            CollisionSectionView(settings: $model.selectedEmitter.settings)
-            SubEmittersSectionView(settings: $model.selectedEmitter.settings)
-            TriggersSectionView(model: model)
-            WorldSectionView(model: model)
+            switch model.selection {
+            case .scene, nil:
+                SceneSectionView(model: model)
+                WorldSectionView(model: model)
+                SendEventSectionView(model: model)
+            case .emitter:
+                EmitterSectionView(model: model)
+                EmissionSectionView(settings: $model.selectedEmitter.settings)
+                ShapeSectionView(settings: $model.selectedEmitter.settings)
+                MotionSectionView(emitter: $model.selectedEmitter)
+                AppearanceSectionView(emitter: $model.selectedEmitter)
+                CollisionSectionView(settings: $model.selectedEmitter.settings)
+            case let .subEmitter(_, index):
+                if index < model.selectedEmitter.settings.subEmitters.count {
+                    Section {
+                        SubEmitterEditorView(subEmitter: $model.selectedEmitter.settings.subEmitters[index])
+                    } header: {
+                        Text("Sub-Emitter of \(model.selectedEmitter.name)")
+                    } footer: {
+                        Text("Adding, removing, or resizing a sub-emitter clears the particles.")
+                    }
+                    RemoveSectionView(title: "Remove Sub-Emitter", model: model)
+                }
+            case let .trigger(_, index):
+                if index < model.selectedEmitter.settings.triggers.count {
+                    Section("Trigger on \(model.selectedEmitter.name)") {
+                        TriggerEditorView(trigger: $model.selectedEmitter.settings.triggers[index])
+                    }
+                    SendEventSectionView(model: model)
+                    RemoveSectionView(title: "Remove Trigger", model: model)
+                }
+            case let .collider(id):
+                if let collider = Binding($model.colliders[id: id]) {
+                    Section("Collider") {
+                        ColliderEditorView(collider: collider.collider)
+                    }
+                    RemoveSectionView(title: "Remove Collider", model: model)
+                }
+            case let .forceField(id):
+                if let field = Binding($model.forceFields[id: id]) {
+                    Section("Force Field") {
+                        ForceFieldEditorView(field: field.field)
+                    }
+                    RemoveSectionView(title: "Remove Force Field", model: model)
+                }
+            }
         }
         .formStyle(.grouped)
         .controlSize(.small)
+    }
+}
+
+struct RemoveSectionView: View {
+    let title: String
+    let model: ParticlesDemoModel
+
+    var body: some View {
+        Section {
+            Button(title, systemImage: "trash", role: .destructive) { model.removeSelection() }
+        }
+    }
+}
+
+struct SendEventSectionView: View {
+    @Bindable var model: ParticlesDemoModel
+
+    var body: some View {
+        Section("Events") {
+            HStack {
+                TextField("Event", text: $model.eventToSend)
+                Button("Send", systemImage: "paperplane") { model.sendEvent() }
+            }
+        }
     }
 }
 
@@ -58,21 +118,17 @@ struct EmitterSectionView: View {
     var body: some View {
         Section("Emitter") {
             HStack {
-                Picker("Emitter", selection: $model.selectedEmitterID) {
-                    ForEach(model.emitters) { emitter in
-                        Text(emitter.name).tag(Optional(emitter.id))
-                    }
-                }
+                TextField("Name", text: $model.selectedEmitter.name)
                 Menu("Emitter Actions", systemImage: "ellipsis.circle") {
-                    Button("Add", systemImage: "plus") { model.addEmitter() }
                     Button("Duplicate", systemImage: "plus.square.on.square") { model.duplicateSelectedEmitter() }
+                    Button("Add Sub-Emitter", systemImage: "sparkles") { model.addSubEmitter(to: model.selectedEmitter.id) }
+                    Button("Add Trigger", systemImage: "bolt") { model.addTrigger(to: model.selectedEmitter.id) }
                     Button("Remove", systemImage: "trash", role: .destructive) { model.removeSelectedEmitter() }
                         .disabled(model.emitters.count == 1)
                 }
                 .labelStyle(.iconOnly)
                 .fixedSize()
             }
-            TextField("Name", text: $model.selectedEmitter.name)
             HStack {
                 Toggle("Emitting", isOn: $model.selectedEmitter.isEmitting)
                 Spacer()
@@ -284,34 +340,11 @@ struct CollisionSectionView: View {
 
 // MARK: - Sub-emitters and triggers
 
-/// Sub-emitters and trigger lists are library value types without ids, so rows are identified by position.
-struct SubEmittersSectionView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        Section {
-            ForEach(settings.subEmitters.indices, id: \.self) { index in
-                SubEmitterEditorView(subEmitter: $settings.subEmitters[index]) {
-                    settings.subEmitters.remove(at: index)
-                }
-            }
-            Button("Add Sub-Emitter", systemImage: "plus") {
-                settings.subEmitters.append(.sparks)
-            }
-        } header: {
-            Text("Sub-Emitters")
-        } footer: {
-            Text("Adding, removing, or resizing a sub-emitter clears the particles.")
-        }
-    }
-}
-
 struct SubEmitterEditorView: View {
     @Binding var subEmitter: SubEmitter
-    let remove: () -> Void
 
     var body: some View {
-        DisclosureGroup(subEmitter.occasionKind.rawValue) {
+        Group {
             Picker("Occasion", selection: $subEmitter.occasionKind) {
                 ForEach(OccasionKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
@@ -334,38 +367,15 @@ struct SubEmitterEditorView: View {
             }
             ColorCurveEditorView(title: "Color", curve: $subEmitter.settings.colorOverLife)
             FloatCurveEditorView(title: "Size", curve: $subEmitter.settings.sizeOverLife, range: 0...0.5)
-            Button("Remove Sub-Emitter", systemImage: "trash", role: .destructive, action: remove)
-        }
-    }
-}
-
-struct TriggersSectionView: View {
-    @Bindable var model: ParticlesDemoModel
-
-    var body: some View {
-        Section("Triggers") {
-            ForEach(model.selectedEmitter.settings.triggers.indices, id: \.self) { index in
-                TriggerEditorView(trigger: $model.selectedEmitter.settings.triggers[index]) {
-                    model.selectedEmitter.settings.triggers.remove(at: index)
-                }
-            }
-            Button("Add Trigger", systemImage: "plus") {
-                model.selectedEmitter.settings.triggers.append(EmissionTrigger(.event(model.eventToSend), .burst(100)))
-            }
-            HStack {
-                TextField("Event", text: $model.eventToSend)
-                Button("Send", systemImage: "paperplane") { model.sendEvent() }
-            }
         }
     }
 }
 
 struct TriggerEditorView: View {
     @Binding var trigger: EmissionTrigger
-    let remove: () -> Void
 
     var body: some View {
-        DisclosureGroup("\(trigger.conditionKind.rawValue) → \(trigger.actionKind.rawValue)") {
+        Group {
             Picker("When", selection: $trigger.conditionKind) {
                 ForEach(TriggerConditionKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
@@ -394,7 +404,6 @@ struct TriggerEditorView: View {
             if trigger.actionKind == .burst {
                 Stepper("Burst: \(trigger.burstCount)", value: $trigger.burstCount, in: 1...100_000, step: 50)
             }
-            Button("Remove Trigger", systemImage: "trash", role: .destructive, action: remove)
         }
     }
 }
@@ -420,48 +429,15 @@ struct WorldSectionView: View {
                 Toggle("Animate Colliders", isOn: $model.animateColliders)
                 Toggle("Wireframes", isOn: $model.showColliders)
             }
-            DisclosureGroup("Colliders (\(model.colliders.count))") {
-                ForEach($model.colliders) { $item in
-                    ColliderEditorView(collider: $item.collider) {
-                        model.colliders.removeAll { $0.id == item.id }
-                    }
-                }
-                Menu("Add Collider", systemImage: "plus") {
-                    ForEach(ColliderKind.allCases) { kind in
-                        Button(kind.rawValue) {
-                            var collider = Collider.sphere(center: [0, 1, 0], radius: 0.5)
-                            collider.kind = kind
-                            model.colliders.append(ColliderItem(collider: collider))
-                        }
-                    }
-                }
-            }
-            DisclosureGroup("Force Fields (\(model.forceFields.count))") {
-                ForEach($model.forceFields) { $item in
-                    ForceFieldEditorView(field: $item.field) {
-                        model.forceFields.removeAll { $0.id == item.id }
-                    }
-                }
-                Menu("Add Force Field", systemImage: "plus") {
-                    ForEach(ForceFieldKind.allCases) { kind in
-                        Button(kind.rawValue) {
-                            var field = ForceField.wind(velocity: [2, 0, 0], strength: 1)
-                            field.kind = kind
-                            model.forceFields.append(ForceFieldItem(field: field))
-                        }
-                    }
-                }
-            }
         }
     }
 }
 
 struct ColliderEditorView: View {
     @Binding var collider: Collider
-    let remove: () -> Void
 
     var body: some View {
-        DisclosureGroup(collider.kind.rawValue) {
+        Group {
             Picker("Kind", selection: $collider.kind) {
                 ForEach(ColliderKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
@@ -482,17 +458,15 @@ struct ColliderEditorView: View {
                 ParameterSliderView("Length", value: $collider.length, in: 0...5)
                 ParameterSliderView("Radius", value: $collider.radius, in: 0.05...2)
             }
-            Button("Remove Collider", systemImage: "trash", role: .destructive, action: remove)
         }
     }
 }
 
 struct ForceFieldEditorView: View {
     @Binding var field: ForceField
-    let remove: () -> Void
 
     var body: some View {
-        DisclosureGroup(field.kind.rawValue) {
+        Group {
             Picker("Kind", selection: $field.kind) {
                 ForEach(ForceFieldKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
@@ -509,7 +483,6 @@ struct ForceFieldEditorView: View {
                 ParameterSliderView("Scale", value: $field.turbulenceScale, in: 0.1...5)
                 ParameterSliderView("Speed", value: $field.turbulenceSpeed, in: 0...3)
             }
-            Button("Remove Field", systemImage: "trash", role: .destructive, action: remove)
         }
     }
 }

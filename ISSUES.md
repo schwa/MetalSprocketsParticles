@@ -915,13 +915,17 @@ renderColliders draws collider wireframes, but nothing else in the world is visi
 ## 49: Demo editor needs an outline sidebar and a detail inspector
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:m, area:tooling
 created: 2026-10-18T00:36:16Z
+updated: 2026-10-18T00:44:00Z
+closed: 2026-10-18T00:44:00Z
 +++
 
 All editing lives in one long right-hand inspector (#39), even after reorganizing it. A real effect editor needs two sidebars: an outline on the left listing the scene's objects (presets/effect, emitters with their sub-emitters and triggers nested underneath, colliders, force fields, trigger volumes), and the inspector on the right showing details for whatever is selected in the outline. Selecting an item could also highlight it in the viewport (see #48 for wireframes). Use NavigationSplitView or an equivalent leading sidebar plus the existing trailing inspector. Related: #39, #48.
+
+- `2026-10-18T00:44:00Z`: NavigationSplitView: outline sidebar (Scene, Emitters with nested sub-emitters and triggers, Colliders, Force Fields; Add menu, context menus, Delete key) and a trailing inspector that shows details for the selection. Not visually checked (no app launch). Viewport highlighting of the selection is left to #48.
 
 ---

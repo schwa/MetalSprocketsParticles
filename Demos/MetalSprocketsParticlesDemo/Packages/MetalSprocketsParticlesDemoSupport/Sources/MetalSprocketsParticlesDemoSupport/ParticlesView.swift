@@ -17,6 +17,25 @@ public struct ParticlesView: View {
     public init() {}
 
     public var body: some View {
+        NavigationSplitView {
+            OutlineView(model: model)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220)
+        } detail: {
+            viewport
+                .inspector(isPresented: $isInspectorPresented) {
+                    EmitterInspectorView(model: model)
+                        .inspectorColumnWidth(min: 300, ideal: 340)
+                }
+                .toolbar {
+                    Button("Inspector", systemImage: "sidebar.trailing") {
+                        isInspectorPresented.toggle()
+                    }
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var viewport: some View {
         if let system = model.system {
             RenderView(colorPixelFormat: Self.colorPixelFormat) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
@@ -45,15 +64,6 @@ public struct ParticlesView: View {
                 if let frameTiming {
                     FrameTimingView(statistics: frameTiming, options: .all)
                         .padding()
-                }
-            }
-            .inspector(isPresented: $isInspectorPresented) {
-                EmitterInspectorView(model: model)
-                    .inspectorColumnWidth(min: 300, ideal: 340)
-            }
-            .toolbar {
-                Button("Inspector", systemImage: "sidebar.trailing") {
-                    isInspectorPresented.toggle()
                 }
             }
         } else {
