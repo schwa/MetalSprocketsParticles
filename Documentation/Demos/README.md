@@ -1,6 +1,8 @@
 # MetalSprocketsParticles Demos
 
-Six-second clips of every built-in preset, rendered offscreen with `particles-render --video` (1280×720, re-encoded to H.264 MP4, 30 fps, seed 0, the preset's camera).
+Clips of every built-in preset, rendered offscreen with `particles-render --video` (1280×720, re-encoded to
+H.264 MP4, 30 fps, seed 0, the preset's camera). Finite effects play until they finish. Regenerate them with
+`Scripts/make-demos.sh`.
 
 ## Contents
 
@@ -32,6 +34,7 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Awning](#awning)
 - [Lantern](#lantern)
 - [Dunk](#dunk)
+- [Flare](#flare)
 
 ## Fountain
 
@@ -95,7 +98,7 @@ A sheet of water pours over a ledge, hits rocks, and throws up mist. Shows a box
 
 ## Confetti
 
-A party popper fires one burst of confetti, which flutters down, settles on the ground, and fades. Shows a one-shot emitter (an emission duration that does not loop), textured sprites with random spin, turbulence, and friction. The clip ends when the effect finishes.
+A party popper fires one burst of confetti, which flutters down, settles on the ground, and fades. Shows a one-shot emitter (an emission duration that does not loop), which makes the effect finite: when every piece is gone the HUD says Finished, and Restart in the toolbar plays it again. Also shows textured sprites with random spin, turbulence, and friction.
 
 [![confetti](posters/confetti.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/confetti.mp4)
 
@@ -125,7 +128,7 @@ Thick, nearly opaque colored smoke billows up and out. Every puff overlaps other
 
 ## Fog
 
-Low fog drifts across the ground and around a box, a ball, and a log. The colliders are drawn as solids, and the fog is soft: each puff fades where it meets a surface instead of cutting a hard line through it.
+Low fog drifts across the ground and around a box, a ball, and a log. The colliders are drawn as solids, and the fog is soft: each puff fades where it meets a surface instead of cutting a hard line through it. Set Softness to 0 to see the hard edges.
 
 [![fog](posters/fog.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/fog.mp4)
 
@@ -161,7 +164,7 @@ Balls drop onto a bumper. Each hit bursts sparks, balls that bounce into the goa
 
 ## Paddle Wheel
 
-Sand pours onto a spinning paddle wheel, which flings it across the ground. The two blades are box colliders that turn at a steady rate; their spin throws the sand that hits them.
+Sand pours onto a spinning paddle wheel, which flings it across the ground. The two blades are box colliders that turn at a steady rate (colliderSpins); their spin throws the sand that hits them, and fast blades do not tunnel through it.
 
 [![paddle-wheel](posters/paddle-wheel.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/paddle-wheel.mp4)
 
@@ -173,13 +176,13 @@ The Utah teapot outlined in glowing particles, slowly dissolving into sand that 
 
 ## Flag
 
-A flag of glowing sparks waves from a pole. The flag is a mesh that the system deforms every frame, and the sparks are born on its moving surface. Shows a deforming mesh emitter.
+A flag of glowing sparks waves from a pole. The flag is a mesh that the system deforms every frame, and the sparks are born on its moving surface. Shows a deforming mesh emitter (meshDeformation).
 
 [![flag](posters/flag.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/flag.mp4)
 
 ## Strange Attractor
 
-Glowing particles trace the Lorenz attractor. A user Metal function sets each particle's velocity from the Lorenz equations every step; nothing in the built-in settings moves them.
+Glowing particles trace the Lorenz attractor. A user Metal function (updateFunction) sets each particle's velocity from the Lorenz equations every step; nothing in the built-in settings moves them.
 
 [![strange-attractor](posters/strange-attractor.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/strange-attractor.mp4)
 
@@ -200,3 +203,9 @@ Smoke and dust lit by a warm lantern and cool moonlight. Shows particle lighting
 A ball bounces through a pool, and every time it enters the water a splash bursts up. Shows a tracked object and an object-enters trigger.
 
 [![dunk](posters/dunk.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/dunk.mp4)
+
+## Flare
+
+A road flare that ignites, burns, and dies out: sparks and pink smoke whose emission ramps up over half a second, burns for three, and fades out by five seconds. Shows emission over time and a finite effect: once every particle has died the system reports it is finished (the HUD says Finished; Restart plays it again).
+
+[![flare](posters/flare.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/flare.mp4)

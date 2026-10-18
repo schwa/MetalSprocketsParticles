@@ -1796,12 +1796,13 @@ Part of #24; needs the design from #85. Call user functions when particles are b
 ## 90: Keep demo videos and posters in sync with the presets
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:docs, effort:s
 created: 2026-10-18T17:07:32Z
-updated: 2026-10-18T17:07:41Z
+updated: 2026-10-18T18:54:42Z
+closed: 2026-10-18T18:54:42Z
 +++
 
 Documentation/Demos should have a video, a poster, and a README section for every built-in preset. Right now Flare has none: it was added after the clips were made, and new presets get their clips by hand.
@@ -1810,6 +1811,8 @@ Do:
 - Add Flare's clip and poster (use --until-finished).
 - Add a way to regenerate them all, e.g. a script or a particles-render option that writes the mp4, the poster, and the README section for every preset in index.json.
 - Add a test that every preset in index.json has a video, a poster, and a README section, and that there are no extras (removed presets).
+
+- `2026-10-18T18:54:43Z`: Added Flare's clip and poster. New Scripts/make-demos.sh [slug...]: renders clips (6 s, or until finished for confetti and flare, max 15 s) and middle-frame posters, and rewrites Documentation/Demos/README.md from index.json and the preset comments (now the single source for those descriptions). Uses PARTICLES_RENDER if set, else swift build. New test DemoDocumentationTests: clips and posters match index.json exactly and each preset has a README section; fails when Flare's poster is removed.
 
 ---
 
