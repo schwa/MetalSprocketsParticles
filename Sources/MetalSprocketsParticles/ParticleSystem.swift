@@ -36,6 +36,8 @@ public final class ParticleSystem {
         public var mesh: EmitterMesh?
         /// The mesh `mesh` was made from by `ParticleSystem.apply(_:)`, to skip remaking it.
         var meshSource: Mesh?
+        /// Animates `mesh` each frame, by the emitter's own clock.
+        public var meshDeformation: MeshDeformation = .none
         /// Particles this emitter can have alive at once.
         public let capacity: Int
         /// This emitter's slice of the shared particle buffer.
@@ -337,6 +339,7 @@ public final class ParticleSystem {
             new.isEmitting = old.isEmitting
             new.mesh = old.mesh
             new.meshSource = old.meshSource
+            new.meshDeformation = old.meshDeformation
         }
     }
 

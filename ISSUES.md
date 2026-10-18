@@ -1559,15 +1559,18 @@ Collider angular velocity and pivot (#72) are only shown in a golden test. Prese
 ## 79: Demo a deforming mesh emitter
 
 +++
-status: open
+status: closed
 priority: low
 kind: feature
 labels: area:presets, effort:s
 created: 2026-10-18T15:38:44Z
-updated: 2026-10-18T15:44:07Z
+updated: 2026-10-18T16:11:13Z
+closed: 2026-10-18T16:11:13Z
 +++
 
 EmitterMesh.setDeformedPositions (#73) is Swift API only, with no demo. Add a preset or demo mode where a mesh deforms over time (e.g. a waving flag or a breathing sphere) and particles emit from its surface.
+
+- `2026-10-18T16:11:13Z`: Added MeshDeformation (none, wave(amplitude:wavelength:speed:)) on EmitterDescription and ParticleSystem.Emitter, saved in effect JSON. planFrame deforms the rest pose by the emitter's clock and feeds it through setDeformedPositions, cycling 4 buffers so in-flight frames keep theirs. New Flag preset: a 24x14 grid mesh waving next to a solid pole, sparks born on the moving surface. Tests: waveKeepsTheFixedEndAndBendsTheFreeEnd, systemAnimatesAMeshDeformationEachFrame; Flag golden, clip, poster.
 
 ---
 

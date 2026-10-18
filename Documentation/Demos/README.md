@@ -26,6 +26,7 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Geyser](#geyser)
 - [Bumper](#bumper)
 - [Teapot](#teapot)
+- [Flag](#flag)
 - [Awning](#awning)
 - [Lantern](#lantern)
 - [Dunk](#dunk)
@@ -161,6 +162,12 @@ Balls drop onto a bumper. Each hit bursts sparks, balls that bounce into the goa
 The Utah teapot outlined in glowing particles, slowly dissolving into sand that pours onto the ground. Shows emission from the surface of a mesh.
 
 [![teapot](posters/teapot.jpg)](videos/teapot.mp4)
+
+## Flag
+
+A flag of glowing sparks waves from a pole. The flag is a mesh that the system deforms every frame, and the sparks are born on its moving surface. Shows a deforming mesh emitter.
+
+[![flag](posters/flag.jpg)](videos/flag.mp4)
 
 ## Awning
 

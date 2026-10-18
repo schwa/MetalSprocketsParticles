@@ -68,6 +68,12 @@ public final class EmitterMesh {
     let indices: MTLBuffer
     public let triangleCount: Int
     public let vertexCount: Int
+    /// Rest positions, for `MeshDeformation`.
+    let restPositions: [SIMD3<Float>]
+    /// Buffers `applyDeformation` cycles through; more than the frames in flight.
+    static let deformationBufferCount = 4
+    var deformationBuffers: [MTLBuffer] = []
+    var nextDeformationBuffer = 0
 
     /// Current positions, replacing the rest positions; nil uses the rest pose.
     public private(set) var deformedPositions: MTLBuffer?
@@ -108,6 +114,7 @@ public final class EmitterMesh {
         }
         self.triangleCount = triangleCount
         vertexCount = positions.count
+        restPositions = positions
         self.triangles = try Self.makeBuffer(device: device, triangles.isEmpty ? [EmitterMeshTriangle()] : triangles, label: "Emitter mesh triangles")
         self.indices = try Self.makeBuffer(device: device, indices.isEmpty ? [UInt32(0)] : Array(indices.prefix(triangleCount * 3)), label: "Emitter mesh indices")
         vertices = try Self.makeBuffer(device: device, positions.isEmpty ? [SIMD4<Float>.zero] : positions.map { SIMD4($0, 1) }, label: "Emitter mesh vertices")

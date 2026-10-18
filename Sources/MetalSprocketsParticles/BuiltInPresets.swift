@@ -57,6 +57,7 @@ public extension ParticlePreset {
     static var geyser: ParticlePreset { builtIn("Geyser") }
     static var bumper: ParticlePreset { builtIn("Bumper") }
     static var teapot: ParticlePreset { builtIn("Teapot") }
+    static var flag: ParticlePreset { builtIn("Flag") }
     static var awning: ParticlePreset { builtIn("Awning") }
     static var lantern: ParticlePreset { builtIn("Lantern") }
     static var dunk: ParticlePreset { builtIn("Dunk") }

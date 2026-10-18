@@ -78,6 +78,9 @@ extension ParticleSystem {
                 child.settings = parent.settings.subEmitters[child.subEmitterIndex].settings
             }
         }
+        for emitter in emitters where emitter.meshDeformation != .none {
+            try emitter.mesh?.applyDeformation(emitter.meshDeformation, time: emitter.spawner.time)
+        }
         let colliderData = colliderData(deltaTime: state == .playing ? frameDeltaTime : 0)
         let forceFieldData = forceFields.map(ForceFieldData.init)
         let world = WorldData(
