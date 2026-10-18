@@ -530,6 +530,8 @@ using ParticleUpdateFunction = void(thread ParticleState &, float deltaTime, flo
 // Stand-ins for missing user functions, one per table: linking one function twice into a pipeline is an error.
 [[visible]] void particleNoUpdate(thread ParticleState &, float, float, constant float4 *) {}
 [[visible]] void particleNoSpawn(thread ParticleState &, float, float, constant float4 *) {}
+[[visible]] void particleNoCollision(thread ParticleState &, float, float, constant float4 *) {}
+[[visible]] void particleNoDeath(thread ParticleState &, float, float, constant float4 *) {}
 
 kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
@@ -549,6 +551,10 @@ kernel void updateParticles(
     constant float4 *updateParameters [[buffer(14)]],
     visible_function_table<ParticleUpdateFunction> spawnFunction [[buffer(15)]],
     constant float4 *spawnParameters [[buffer(16)]],
+    visible_function_table<ParticleUpdateFunction> collisionFunction [[buffer(17)]],
+    constant float4 *collisionParameters [[buffer(18)]],
+    visible_function_table<ParticleUpdateFunction> deathFunction [[buffer(19)]],
+    constant float4 *deathParameters [[buffer(20)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -690,6 +696,24 @@ kernel void updateParticles(
 
     if (hit && uniforms.diesOnCollision != 0) {
         age = lifetime;
+    }
+    // Event functions may also change age and lifetime: setting age to lifetime kills the particle, and a death
+    // function that raises lifetime keeps it alive. Collision runs first, so it can kill.
+    if (hit && uniforms.hasCollisionFunction != 0) {
+        ParticleState state { position, velocity, age, lifetime, id };
+        collisionFunction[0](state, dt, uniforms.time, collisionParameters);
+        position = state.position;
+        velocity = state.velocity;
+        age = state.age;
+        lifetime = state.lifetime;
+    }
+    if (age >= lifetime && uniforms.hasDeathFunction != 0) {
+        ParticleState state { position, velocity, age, lifetime, id };
+        deathFunction[0](state, dt, uniforms.time, deathParameters);
+        position = state.position;
+        velocity = state.velocity;
+        age = state.age;
+        lifetime = state.lifetime;
     }
 
     // Sub-emitters: on an event, write children into the slots this particle owns in each child slice. Children live in

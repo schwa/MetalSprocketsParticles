@@ -425,20 +425,7 @@ public final class ParticleSystem {
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
-        // The table is always bound, with a built-in no-op standing in, so every pipeline has the same shape.
-        let noUpdate = try library.function(type: VisibleFunction.self, named: "particleNoUpdate")
-        let updateFunctions = try dispatches.map { try $0.updateFunction.map(visibleFunction(for:)) ?? noUpdate }
-        let noSpawn = try library.function(type: VisibleFunction.self, named: "particleNoSpawn")
-        let spawnFunctions = try dispatches.map { try $0.spawnFunction.map(visibleFunction(for:)) ?? noSpawn }
-        // Linking one function twice is an error, so an emitter using the same function for both links it once.
-        let linked = dispatches.indices.map { index in
-            dispatches[index].updateFunction != nil && dispatches[index].updateFunction == dispatches[index].spawnFunction
-                ? [updateFunctions[index]] : [updateFunctions[index], spawnFunctions[index]]
-        }
-        // Never bind an empty array.
-        func parameters(_ function: ParticleFunction?) -> [SIMD4<Float>] {
-            function.map(\.parameters).flatMap { $0.isEmpty ? nil : $0 } ?? [.zero]
-        }
+        let functionTables = try dispatches.map(functionTables)
         let sortKernels = sortKernels
         return try ComputePass {
             // Previous frame's vertex stage reads the buffer we are about to write.
@@ -448,14 +435,19 @@ public final class ParticleSystem {
                 if dispatches[index].followsSameEmitter {
                     EncoderBarrier(after: .dispatch, before: .dispatch)
                 }
+                let tables = functionTables[index]
                 try ComputePipeline(computeKernel: kernel) {
                     try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
-                        .visibleFunctionTable("updateFunction", function: updateFunctions[index])
-                        .visibleFunctionTable("spawnFunction", function: spawnFunctions[index])
+                        .visibleFunctionTable(ParticleFunctionSlot.update.tableName, function: tables.functions[0])
+                        .visibleFunctionTable(ParticleFunctionSlot.spawn.tableName, function: tables.functions[1])
+                        .visibleFunctionTable(ParticleFunctionSlot.collision.tableName, function: tables.functions[2])
+                        .visibleFunctionTable(ParticleFunctionSlot.death.tableName, function: tables.functions[3])
                 }
-                .linkedFunctions(linked[index])
-                .parameter("updateParameters", values: parameters(dispatches[index].updateFunction))
-                .parameter("spawnParameters", values: parameters(dispatches[index].spawnFunction))
+                .linkedFunctions(tables.linked)
+                .parameter(ParticleFunctionSlot.update.parametersName, values: tables.parameters[0])
+                .parameter(ParticleFunctionSlot.spawn.parametersName, values: tables.parameters[1])
+                .parameter(ParticleFunctionSlot.collision.parametersName, values: tables.parameters[2])
+                .parameter(ParticleFunctionSlot.death.parametersName, values: tables.parameters[3])
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: dispatches[index].uniforms)
                 // Never bind an empty array; the counts in uniforms keep the padding unused.

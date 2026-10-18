@@ -129,6 +129,12 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Runs once for each new particle, after the built-in spawn. It may change position, velocity, and lifetime.
     /// Sub-emitter children are not passed through it.
     public var spawnFunction: ParticleFunction?
+    /// Runs when a particle hits a collider this step, after the bounce. It may change position, velocity, age, and
+    /// lifetime; setting age to lifetime kills the particle.
+    public var collisionFunction: ParticleFunction?
+    /// Runs on the step a particle dies (age reaches lifetime), before on-death sub-emitters. Raising lifetime above
+    /// age keeps it alive.
+    public var deathFunction: ParticleFunction?
 
     public init() {}
 }
@@ -183,6 +189,8 @@ extension ParticleEmitter {
         try container.update(&softness, .softness)
         updateFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .updateFunction)
         spawnFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .spawnFunction)
+        collisionFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .collisionFunction)
+        deathFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .deathFunction)
     }
 }
 

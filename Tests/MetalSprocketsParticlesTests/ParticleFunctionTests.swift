@@ -117,6 +117,66 @@ struct ParticleFunctionTests {
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
     }
 
+    /// Particles dropped 0.5 above a floor, `frames` steps; returns them all.
+    func dropOntoFloor(frames: Int, _ configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
+        var emitter = fallingEmitter(configure)
+        emitter.position = [0, 0.5, 0]
+        emitter.restitution = 1
+        emitter.friction = 0
+        let system = try ParticleSystem(device: runner.device, capacity: 8, emitter: emitter)
+        system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
+        system.burst(8)
+        for _ in 0..<frames {
+            try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
+        }
+        let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 8)
+        return (0..<8).map { pointer[$0] }
+    }
+
+    @Test func collisionFunctionCanStopTheBounce() throws {
+        let stick = ParticleFunction(source: """
+        [[visible]] void stick(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+            particle.velocity = float3(0);
+        }
+        """, name: "stick")
+        // Hits the floor after about 0.32 s; with restitution 1 it would be back up near 0.5 by 0.64 s.
+        let bouncing = try dropOntoFloor(frames: 40) { _ in }
+        let sticking = try dropOntoFloor(frames: 40) { $0.collisionFunction = stick }
+        #expect(bouncing.allSatisfy { $0.position.y > 0.1 })
+        #expect(sticking.allSatisfy { $0.position.y < 0.05 && $0.velocity.w > $0.position.w })
+    }
+
+    @Test func collisionFunctionCanKill() throws {
+        let kill = ParticleFunction(source: """
+        [[visible]] void kill(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+            particle.age = particle.lifetime;
+        }
+        """, name: "kill")
+        let particles = try dropOntoFloor(frames: 40) { $0.collisionFunction = kill }
+        #expect(particles.allSatisfy { $0.position.w >= $0.velocity.w })
+    }
+
+    @Test func deathFunctionCanRespawnAndRunsOncePerDeath() throws {
+        // Moves the particle up by 10 at death. With parameters[0].x > 0 it also lives another second.
+        let source = """
+        [[visible]] void onDeath(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+            particle.position.y += 10;
+            particle.lifetime += parameters[0].x;
+        }
+        """
+        let respawn = try dropOntoFloor(frames: 30) {
+            $0.lifetime = 0.2...0.2
+            $0.deathFunction = ParticleFunction(source: source, name: "onDeath", parameters: [[1, 0, 0, 0]])
+        }
+        #expect(respawn.allSatisfy { $0.position.y > 9 && $0.position.w < $0.velocity.w })
+        // Without the extension the particle dies once; dead particles are not updated, so it moved up exactly once.
+        let once = try dropOntoFloor(frames: 30) {
+            $0.lifetime = 0.2...0.2
+            $0.deathFunction = ParticleFunction(source: source, name: "onDeath", parameters: [[0, 0, 0, 0]])
+        }
+        #expect(once.allSatisfy { $0.position.y > 9 && $0.position.y < 11 && $0.position.w >= $0.velocity.w })
+    }
+
     @Test func compileErrorsThrowFromSimulate() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
         let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = broken })
@@ -186,7 +246,10 @@ struct ParticleFunctionTests {
         #expect(decoded.updateFunction == setVelocity)
         var spawning = fallingEmitter()
         spawning.spawnFunction = ring
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(spawning)).spawnFunction == ring)
+        spawning.collisionFunction = setVelocity
+        spawning.deathFunction = ring
+        let events = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(spawning))
+        #expect(events.spawnFunction == ring && events.collisionFunction == setVelocity && events.deathFunction == ring)
         let plain = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(fallingEmitter()))
         #expect(plain.updateFunction == nil)
     }

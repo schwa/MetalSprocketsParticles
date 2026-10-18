@@ -1769,16 +1769,19 @@ Part of #24; needs the design from #85. Decide whether effect JSON can carry the
 ## 89: User Metal functions for birth, death, and collision events
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:simulation
 depends: 85
 created: 2026-10-18T17:06:39Z
-updated: 2026-10-18T17:06:46Z
+updated: 2026-10-18T17:40:24Z
+closed: 2026-10-18T17:40:24Z
 +++
 
 Part of #24; needs the design from #85. Call user functions when particles are born, die, or collide, built on the existing event counters. Lower priority than the update and spawn hooks.
+
+- `2026-10-18T17:40:24Z`: Birth is covered by spawnFunction (#87). Added collisionFunction (runs when a particle hits a collider this step, after the bounce) and deathFunction (runs on the step age reaches lifetime, before on-death sub-emitters). Both may change position, velocity, age, and lifetime: setting age to lifetime kills; raising lifetime in a death function keeps the particle alive. Collision runs first, so it can kill and trigger the death function. Refactored the four hooks into ParticleFunctionSlot (table, parameters, built-in no-op per slot) and FunctionTables (each distinct function linked once). 1M simulate still 0.242-0.244 ms. Tests: stick instead of bounce, kill on contact, respawn via death, death runs once, JSON round trip.
 
 ---
 

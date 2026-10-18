@@ -76,10 +76,39 @@ public extension ParticleFunction {
     }
 }
 
+/// Where a `ParticleFunction` plugs into the simulation kernel. Each slot has its own function table and a built-in
+/// no-op that fills it when the emitter has no function there.
+enum ParticleFunctionSlot: CaseIterable {
+    case update, spawn, collision, death
+
+    var keyPath: KeyPath<ParticleEmitter, ParticleFunction?> {
+        switch self {
+        case .update: \.updateFunction
+        case .spawn: \.spawnFunction
+        case .collision: \.collisionFunction
+        case .death: \.deathFunction
+        }
+    }
+
+    /// The kernel's function table and parameter buffer names, and the built-in no-op.
+    var tableName: String { "\(self)Function" }
+    var parametersName: String { "\(self)Parameters" }
+    var noOpName: String {
+        switch self {
+        case .update: "particleNoUpdate"
+        case .spawn: "particleNoSpawn"
+        case .collision: "particleNoCollision"
+        case .death: "particleNoDeath"
+        }
+    }
+}
+
 extension ParticleEmitter {
     /// This emitter's and its sub-emitters' functions.
     var allFunctions: [ParticleFunction] {
-        ([self] + subEmitters.map(\.settings)).flatMap { [$0.updateFunction, $0.spawnFunction] }.compactMap(\.self)
+        ([self] + subEmitters.map(\.settings)).flatMap { settings in
+            ParticleFunctionSlot.allCases.compactMap { settings[keyPath: $0.keyPath] }
+        }
     }
 }
 
@@ -102,7 +131,42 @@ public extension ParticleSystem {
     }
 }
 
+/// What one dispatch binds for its user functions, in `ParticleFunctionSlot` order.
+struct FunctionTables {
+    /// The function for each slot: the emitter's, or the slot's built-in no-op. Every table is always bound, so all
+    /// pipelines have the same shape.
+    var functions: [VisibleFunction]
+    /// Each distinct function once: linking one function twice into a pipeline fails with a duplicated symbol.
+    var linked: [VisibleFunction]
+    /// Never empty, since Metal cannot bind an empty array.
+    var parameters: [[SIMD4<Float>]]
+}
+
 extension ParticleSystem {
+    func functionTables(for dispatch: FramePlan.Dispatch) throws -> FunctionTables {
+        var functions: [VisibleFunction] = []
+        var linked: [VisibleFunction] = []
+        var linkedSources: [ParticleFunction] = []
+        for (slot, function) in zip(ParticleFunctionSlot.allCases, dispatch.functions) {
+            if let function {
+                let compiled = try visibleFunction(for: function)
+                functions.append(compiled)
+                if !linkedSources.contains(function) {
+                    linkedSources.append(function)
+                    linked.append(compiled)
+                }
+            } else {
+                let noOp = try library.function(type: VisibleFunction.self, named: slot.noOpName)
+                functions.append(noOp)
+                linked.append(noOp)
+            }
+        }
+        let parameters = dispatch.functions.map { function in
+            function.map(\.parameters).flatMap { $0.isEmpty ? nil : $0 } ?? [SIMD4<Float>.zero]
+        }
+        return FunctionTables(functions: functions, linked: linked, parameters: parameters)
+    }
+
     /// The linked function for `function`, compiled once per source and name. Throws `ParticleFunctionError`.
     func visibleFunction(for function: ParticleFunction) throws -> VisibleFunction {
         let key = FunctionKey(source: function.source, name: function.name)
