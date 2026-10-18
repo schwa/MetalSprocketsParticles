@@ -1628,12 +1628,13 @@ Related: #75 (Flare is finite too, but long and subtle), #80.
 ## 83: Move scene controls to the toolbar
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:demo, effort:s
 created: 2026-10-18T15:43:24Z
-updated: 2026-10-18T15:44:08Z
+updated: 2026-10-18T15:45:32Z
+closed: 2026-10-18T15:45:32Z
 +++
 
 The per-scene controls are in the inspector: the scene picker and play, pause, stop, restart and time. Move them to the window toolbar, in the .principal placement, so they stay visible and the inspector holds only emitter settings.
@@ -1641,5 +1642,7 @@ The per-scene controls are in the inspector: the scene picker and play, pause, s
 The viewport Restart button from #82 may then be unnecessary; decide when doing this.
 
 Related: #82.
+
+- `2026-10-18T15:45:33Z`: Preset picker, Play/Pause/Stop, Restart, Revert, and Speed moved to SceneToolbarView in the .principal toolbar item. The inspector's scene section (titled with the preset name) keeps the comment, Open/Save Effect, and Export Video. Not visually checked (demo app not launched); build and demo tests pass.
 
 ---

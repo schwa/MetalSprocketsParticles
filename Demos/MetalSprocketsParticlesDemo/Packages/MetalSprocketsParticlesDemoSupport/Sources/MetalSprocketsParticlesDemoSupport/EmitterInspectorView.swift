@@ -99,12 +99,7 @@ struct SceneSectionView: View {
 
     var body: some View {
         @Bindable var model = model
-        Section("Scene") {
-            Picker("Preset", selection: $model.presetName) {
-                ForEach(model.presets) { preset in
-                    Text(preset.name).tag(preset.name)
-                }
-            }
+        Section(model.presetName) {
             if !model.presetComment.isEmpty {
                 Text(model.presetComment)
                     .font(.callout)
@@ -135,17 +130,43 @@ struct SceneSectionView: View {
             } message: {
                 Text(errorMessage)
             }
+        }
+    }
+}
+
+/// Scene picker and playback controls, in the window toolbar so they stay visible.
+struct SceneToolbarView: View {
+    @Environment(ParticlesDemoModel.self) private var model
+
+    var body: some View {
+        @Bindable var model = model
+        HStack {
+            Picker("Preset", selection: $model.presetName) {
+                ForEach(model.presets) { preset in
+                    Text(preset.name).tag(preset.name)
+                }
+            }
+            .labelsHidden()
+            .fixedSize()
             Picker("Playback", selection: $model.playback) {
                 Label("Play", systemImage: "play.fill").tag(SimulationState.playing)
                 Label("Pause", systemImage: "pause.fill").tag(SimulationState.paused)
                 Label("Stop", systemImage: "stop.fill").tag(SimulationState.stopped)
             }
             .pickerStyle(.segmented)
-            ParameterSliderView("Speed", value: $model.speedFactor, in: 0...3)
-            HStack {
-                Button("Restart", systemImage: "arrow.counterclockwise") { model.restart() }
-                Button("Revert", systemImage: "arrow.uturn.backward") { model.reloadPreset() }
+            .labelsHidden()
+            .fixedSize()
+            Button("Restart", systemImage: "arrow.counterclockwise") { model.restart() }
+            Button("Revert", systemImage: "arrow.uturn.backward") { model.reloadPreset() }
+            Slider(value: $model.speedFactor, in: 0...3) {
+                Text("Speed")
             }
+            .frame(width: 100)
+            .help("Speed")
+            Text(model.speedFactor, format: .number.precision(.fractionLength(1)))
+                .monospacedDigit()
+                .frame(width: 28, alignment: .leading)
+                .accessibilityHidden(true)
         }
     }
 }
