@@ -1943,11 +1943,13 @@ Sub-emitter occasions cover birth, death, collision, while alive, and age, but n
 ## 97: ParticleView: a standalone SwiftUI view for particle effects
 
 +++
-status: new
+status: closed
 priority: medium
 kind: feature
-labels: area:api, needs-design
+labels: area:api, effort:m
 created: 2026-10-18T19:25:35Z
+updated: 2026-10-18T19:55:54Z
+closed: 2026-10-18T19:55:54Z
 +++
 
 Add a SwiftUI ParticleView that shows an effect with no MetalSprockets setup: no RenderView, render passes, simulate/render calls, or camera matrices.
@@ -1965,6 +1967,8 @@ Questions:
 - iOS too? The iOS build is currently blocked inside MetalSprockets (Metal 4).
 
 The demo app could then use ParticleView for simple cases, which also tests it.
+
+- `2026-10-18T19:55:54Z`: ParticleView in a new MetalSprocketsParticlesUI library product (core stays UI-free), built on MetalSprockets RenderView. ParticleView(_ preset:seed:) owns its system and reloads when the preset name changes; ParticleView(system:preset:) shows a caller-owned system (playback, restart, events stay with the caller). Uses the preset's camera (.camera(eye:target:) overrides), solid colliders and soft particles when drawsColliders, animated and spun colliders, tracked objects, and pointer bindings driven by mouse hover. Decisions (user): UI product, RenderView-based, 3D only (2D overlay is #99). Tests cover the per-frame state (loading and reloading, caller system, scene depth, pointer); the view itself was not checked on screen. README usage shows ParticleView first.
 
 ---
 
@@ -1994,5 +1998,35 @@ What this project needs:
 Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 4); visionOS may have the same problem. Needs a device or a fix upstream.
 
 - `2026-10-18T19:32:51Z`: Deferred (user): no Vision Pro hardware this week.
+
+---
+
+## 99: 2D overlay mode for particle effects
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:api, needs-design
+created: 2026-10-18T19:51:12Z
++++
+
+Particles in view space over other UI, for app effects such as confetti over a window, sparkles on a button, or a burst at a tap. Today everything is a 3D scene with a perspective camera.
+
+Needs: units in points (or a fixed orthographic camera that maps world units to points), emitters and colliders positioned in view coordinates (for example a view's frame as a collider, or the window edges), a transparent background over SwiftUI content, and hit-testing that passes through. Probably a ParticleView variant or modifier (.particleOverlay(effect)). Related: #97.
+
+---
+
+## 100: Demo: edit nested sub-emitters
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:demo, effort:m
+created: 2026-10-18T19:51:12Z
++++
+
+Sub-emitters can nest up to ParticleSystem.maxSubEmitterDepth levels (#94), but the demo's outline and inspector only show and edit first-level sub-emitters (OutlineItem.subEmitter(emitterID, index)). Nested transitions, such as Embers to Ash's ash-to-dust stage, cannot be seen or edited in the app. Make outline items and the selected-sub-emitter accessor take a path of indices, show nested sub-emitters as children in the outline, and allow adding and removing them at any level.
 
 ---

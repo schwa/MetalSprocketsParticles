@@ -27,7 +27,17 @@ The package has 31 built-in presets. To see each preset, look at the [demo video
 
 ## Usage
 
-Add the package to your `Package.swift`. Then make a particle system from a preset:
+Add the package to your `Package.swift`. The simplest way to show an effect is `ParticleView`, from the
+`MetalSprocketsParticlesUI` library. It needs no other setup:
+
+```swift
+import MetalSprocketsParticles
+import MetalSprocketsParticlesUI
+
+ParticleView(.campfire)
+```
+
+To draw particles in your own MetalSprockets scene, make a particle system from a preset:
 
 ```swift
 import MetalSprocketsParticles

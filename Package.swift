@@ -7,6 +7,8 @@ let package = Package(
     platforms: [.macOS(.v26), .iOS(.v26), .visionOS(.v26)],
     products: [
         .library(name: "MetalSprocketsParticles", targets: ["MetalSprocketsParticles"]),
+        // SwiftUI views, kept apart so the core library has no UI dependency.
+        .library(name: "MetalSprocketsParticlesUI", targets: ["MetalSprocketsParticlesUI"]),
         .executable(name: "particles-render", targets: ["particles-render"]),
         .executable(name: "particles-bench", targets: ["particles-bench"]),
     ],
@@ -27,6 +29,18 @@ let package = Package(
                 .product(name: "SwiftMesh", package: "SwiftMesh"),
             ],
             resources: [.copy("Resources/Presets")]
+        ),
+        .target(
+            name: "MetalSprocketsParticlesUI",
+            dependencies: [
+                "MetalSprocketsParticles",
+                .product(name: "MetalSprockets", package: "MetalSprockets"),
+                .product(name: "MetalSprocketsUI", package: "MetalSprockets"),
+            ]
+        ),
+        .testTarget(
+            name: "MetalSprocketsParticlesUITests",
+            dependencies: ["MetalSprocketsParticlesUI", "MetalSprocketsParticles"]
         ),
         .target(
             name: "MetalSprocketsParticlesShaders",
