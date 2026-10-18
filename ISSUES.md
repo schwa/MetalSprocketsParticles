@@ -1396,14 +1396,18 @@ Collider velocity comes only from frame-to-frame translation (Collider.velocity(
 ## 73: Mesh emitters can't follow morphing or skinned meshes
 
 +++
-status: open
+status: closed
 priority: high
 kind: feature
 labels: effort:m, area:simulation
 created: 2026-10-18T13:39:42Z
+updated: 2026-10-18T13:46:45Z
+closed: 2026-10-18T13:46:45Z
 +++
 
 EmitterMesh is built once from a SwiftMesh mesh (CPU triangulation, area-weighted CDF, buffer upload). MetalSprocketsSceneGraph animates meshes with morph targets and skinning, producing a deformed MetalMesh vertex buffer each revision (skinned meshes already in world space). Re-creating EmitterMesh per frame costs CPU triangulation and new buffers. Fix: let EmitterMesh bind an external positions MTLBuffer (offset/stride/format from the deformed mesh's vertex descriptor) with fixed triangle indices, keeping the rest-pose area CDF (or recompute it on the GPU if stretching matters). Then a deforming mesh costs only a buffer binding per frame and later works with GPU deformation. Particles that stick to a moving surface are out of scope here.
+
+- `2026-10-18T13:46:45Z`: EmitterMesh.setDeformedPositions(buffer, offset:, stride:) takes the deformed vertex buffer as is (packed float3 at offset + stride * vertex, e.g. the position attribute of the scene graph's deformed MetalMesh). Triangles are still chosen by rest-pose area, then placed on the deformed triangle via stored indices; vertex birth reads deformed positions too. Per frame it is just buffer bindings; rest path unchanged (goldens identical; interleaved bench shows no change). Caller must not overwrite a buffer while frames using it are in flight. Not done: recomputing areas for heavy stretching, particles sticking to a moving surface.
 
 ---
 

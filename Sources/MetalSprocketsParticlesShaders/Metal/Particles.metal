@@ -157,12 +157,26 @@ static float3 sweptDirection(thread Random &rng, float sweep) {
     return float3(r * cos(azimuth), y, r * sin(azimuth));
 }
 
+// An emitter mesh: rest-pose triangles with cumulative areas, rest vertices, triangle indices, and optional deformed
+// positions that replace the rest ones.
+struct EmitterMeshInput {
+    constant EmitterMeshTriangle *triangles;
+    constant float4 *vertices;
+    constant uint *indices;
+    const device uchar *deformedPositions;
+};
+
+static float3 deformedPosition(EmitterMeshInput mesh, ParticleShapeData shape, uint vertexIndex) {
+    return float3(*(const device packed_float3 *)(mesh.deformedPositions + shape.deformedPositionOffset + shape.deformedPositionStride * vertexIndex));
+}
+
 static ShapeSample sampleShape(
     thread Random &rng,
     constant SimulationUniforms &uniforms,
-    constant EmitterMeshTriangle *triangles,
-    constant float4 *vertices
+    EmitterMeshInput mesh
 ) {
+    constant EmitterMeshTriangle *triangles = mesh.triangles;
+    constant float4 *vertices = mesh.vertices;
     ParticleShapeData shape = uniforms.shape;
     float sweep = shape.sweep;
     bool surface = shape.birthLocation != ParticleBirthLocationVolume;
@@ -247,7 +261,8 @@ static ShapeSample sampleShape(
         uint vertexCount = shape.meshVertexCount;
         if (shape.birthLocation == ParticleBirthLocationVertices && vertexCount > 0) {
             uint index = min(uint(rng.next() * vertexCount), vertexCount - 1);
-            return { vertices[index].xyz, sweptDirection(rng, twoPi) };
+            float3 position = shape.deformedPositionStride != 0 ? deformedPosition(mesh, shape, index) : vertices[index].xyz;
+            return { position, sweptDirection(rng, twoPi) };
         }
         uint count = shape.meshTriangleCount;
         if (count == 0) {
@@ -271,6 +286,12 @@ static ShapeSample sampleShape(
         float3 a = triangle.a.xyz;
         float3 b = triangle.b.xyz;
         float3 c = triangle.c.xyz;
+        if (shape.deformedPositionStride != 0) {
+            // Chosen by rest-pose area, placed on the deformed triangle.
+            a = deformedPosition(mesh, shape, mesh.indices[low * 3]);
+            b = deformedPosition(mesh, shape, mesh.indices[low * 3 + 1]);
+            c = deformedPosition(mesh, shape, mesh.indices[low * 3 + 2]);
+        }
         float3 point = a * (1 - u) + b * (u * (1 - v)) + c * (u * v);
         float3 normal = cross(b - a, c - a);
         float length = metal::length(normal);
@@ -307,8 +328,7 @@ static void collide(thread float3 &position, thread float3 &velocity, ColliderDa
 static Particle spawnParticle(
     thread Random &rng,
     constant SimulationUniforms &uniforms,
-    constant EmitterMeshTriangle *meshTriangles,
-    constant float4 *meshVertices,
+    EmitterMeshInput mesh,
     float3 origin,
     float3 extraVelocity,
     thread float &birthAge
@@ -328,7 +348,7 @@ static Particle spawnParticle(
             float offsetLength = length(offset);
             sample.normal = offsetLength > 1e-6 ? offset / offsetLength : float3(0, 1, 0);
         } else {
-            sample = sampleShape(rng, uniforms, meshTriangles, meshVertices);
+            sample = sampleShape(rng, uniforms, mesh);
             position = uniforms.shape.center + sample.position;
         }
         float baseSpeed = length(uniforms.velocity);
@@ -381,12 +401,15 @@ kernel void updateParticles(
     constant ForceFieldData *forceFields [[buffer(3)]],
     constant EmitterMeshTriangle *meshTriangles [[buffer(4)]],
     constant float4 *meshVertices [[buffer(5)]],
+    constant uint *meshIndices [[buffer(10)]],
+    const device uchar *meshDeformedPositions [[buffer(11)]],
     constant SubEmitterData *subEmitters [[buffer(6)]],
     constant SimulationUniforms *subEmitterUniforms [[buffer(7)]],
     device atomic_uint *triggerCounters [[buffer(8)]],
     constant TriggerVolumeData *triggerVolumes [[buffer(9)]],
     uint localID [[thread_position_in_grid]]
 ) {
+    EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
     // Each dispatch covers a window of one emitter's ring, starting at spawn.firstSlot and wrapping at its capacity.
     ParticleSpawnData spawn = uniforms.spawn;
     uint capacity = spawn.capacity;
@@ -407,7 +430,7 @@ kernel void updateParticles(
     if (born) {
         Random rng { hash(hash(spawn.serial + offset) ^ spawn.seed) };
         float birthAge;
-        p = spawnParticle(rng, uniforms, meshTriangles, meshVertices, float3(0), float3(0), birthAge);
+        p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge);
         dt *= birthAge;
     }
 
@@ -531,7 +554,7 @@ kernel void updateParticles(
             Random childRandom { hash(hash(childSlot ^ subEmitterUniforms[i].spawn.seed) ^ as_type<uint>(age)) };
             float childBirthAge;
             particles[sub.childSliceStart + childSlot] = spawnParticle(
-                childRandom, subEmitterUniforms[i], meshTriangles, meshVertices, position, velocity * sub.velocityFactor, childBirthAge);
+                childRandom, subEmitterUniforms[i], mesh, position, velocity * sub.velocityFactor, childBirthAge);
         }
     }
 

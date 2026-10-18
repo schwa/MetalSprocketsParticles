@@ -39,6 +39,8 @@ extension ParticleShapeData {
         case .mesh:
             meshTriangleCount = UInt32(mesh?.triangleCount ?? 0)
             meshVertexCount = UInt32(mesh?.vertexCount ?? 0)
+            deformedPositionOffset = UInt32(mesh?.deformedPositionOffset ?? 0)
+            deformedPositionStride = UInt32(mesh?.deformedPositionStride ?? 0)
         case let .sphere(radius), let .disc(radius):
             self.radius = radius
         case let .box(size):
@@ -56,11 +58,33 @@ extension ParticleShapeData {
 }
 
 /// Triangles to emit from, uploaded once. Assign to `ParticleSystem.Emitter.mesh` and use `EmitterShape.mesh`.
+///
+/// For morphing or skinned meshes, keep the rest-pose mesh and call `setDeformedPositions` with each frame's deformed
+/// vertex buffer. Particles are then placed on the deformed triangles, chosen by rest-pose area.
 public final class EmitterMesh {
     let triangles: MTLBuffer
     let vertices: MTLBuffer
+    /// Triangle-list indices, three per triangle, for reading deformed positions.
+    let indices: MTLBuffer
     public let triangleCount: Int
-    let vertexCount: Int
+    public let vertexCount: Int
+
+    /// Current positions, replacing the rest positions; nil uses the rest pose.
+    public private(set) var deformedPositions: MTLBuffer?
+    private(set) var deformedPositionOffset = 0
+    private(set) var deformedPositionStride = 0
+
+    /// Emits from deformed positions: packed float3s at `offset + stride * vertex` in `buffer`, one per rest vertex, in
+    /// the same space as the rest positions (world space for meshes skinned into world space; use an identity emitter
+    /// transform). The buffer is read when the simulation runs, so do not overwrite it while frames using it are in
+    /// flight; give each frame its own buffer or wait for completion. Pass nil to return to the rest pose.
+    public func setDeformedPositions(_ buffer: MTLBuffer?, offset: Int = 0, stride: Int = MemoryLayout<Float>.stride * 3) {
+        precondition(buffer == nil || (stride >= 12 && offset >= 0), "Deformed positions need a stride of at least 12 bytes")
+        precondition(buffer.map { $0.length >= offset + stride * max(vertexCount - 1, 0) + 12 } ?? true, "Deformed position buffer too short for \(vertexCount) vertices")
+        deformedPositions = buffer
+        deformedPositionOffset = buffer == nil ? 0 : offset
+        deformedPositionStride = buffer == nil ? 0 : stride
+    }
 
     /// `indices` are triangle-list indices into `positions`, in emitter space.
     public init(device: MTLDevice, positions: [SIMD3<Float>], indices: [UInt32]) throws {
@@ -85,6 +109,7 @@ public final class EmitterMesh {
         self.triangleCount = triangleCount
         vertexCount = positions.count
         self.triangles = try Self.makeBuffer(device: device, triangles.isEmpty ? [EmitterMeshTriangle()] : triangles, label: "Emitter mesh triangles")
+        self.indices = try Self.makeBuffer(device: device, indices.isEmpty ? [UInt32(0)] : Array(indices.prefix(triangleCount * 3)), label: "Emitter mesh indices")
         vertices = try Self.makeBuffer(device: device, positions.isEmpty ? [SIMD4<Float>.zero] : positions.map { SIMD4($0, 1) }, label: "Emitter mesh vertices")
     }
 

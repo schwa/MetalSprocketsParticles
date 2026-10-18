@@ -382,6 +382,9 @@ public final class ParticleSystem {
                 .parameter("forceFields", values: dispatches[index].forceFields.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : dispatches[index].forceFields)
                 .parameter("meshTriangles", buffer: (dispatches[index].mesh ?? placeholderMesh).triangles)
                 .parameter("meshVertices", buffer: (dispatches[index].mesh ?? placeholderMesh).vertices)
+                .parameter("meshIndices", buffer: (dispatches[index].mesh ?? placeholderMesh).indices)
+                // The rest vertices stand in when there are no deformed positions; the zero stride keeps them unread.
+                .parameter("meshDeformedPositions", buffer: dispatches[index].mesh?.deformedPositions ?? (dispatches[index].mesh ?? placeholderMesh).vertices)
                 .parameter("subEmitters", values: dispatches[index].subEmitters)
                 .parameter("subEmitterUniforms", values: dispatches[index].subEmitterUniforms)
                 .parameter("triggerCounters", buffer: triggerCounters)

@@ -158,6 +158,10 @@ typedef struct {
     float tubeRadius;           // Torus.
     uint32_t meshTriangleCount; // Mesh.
     uint32_t meshVertexCount;   // Mesh.
+    // Mesh with deformed positions (morphing, skinning): packed float3 at offset + stride * vertex in the deformed
+    // buffer, read through the triangle indices. Stride 0 uses the rest positions.
+    uint32_t deformedPositionOffset;
+    uint32_t deformedPositionStride;
 } ParticleShapeData;
 
 /// Per-particle random offsets at birth: each value is drawn from -range...+range.
