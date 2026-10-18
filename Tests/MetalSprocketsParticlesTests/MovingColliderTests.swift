@@ -21,7 +21,7 @@ struct MovingColliderTests {
         emitter.friction = 0
         let deltaTime: Float = 1.0 / 60.0
         var center: SIMD3<Float> = [-1, 0, 0]
-        let system = try ParticleSystem(device: runner.device, capacity: 64, emitter: emitter, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter, seed: 1)
         system.colliders = [.sphere(center: center, radius: 0.5)]
         system.burst(64)
         for _ in 0..<30 {

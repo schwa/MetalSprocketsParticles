@@ -10,7 +10,7 @@ import simd
 @Observable
 @MainActor
 final class ParticlesDemoModel {
-    @ObservationIgnored let system: ParticleSystem?
+    @ObservationIgnored let system: ParticleSystemRuntime?
 
     /// The preset last loaded. Choosing another loads it, replacing emitters, colliders, and force fields.
     var presetName: String {
@@ -168,8 +168,8 @@ final class ParticlesDemoModel {
     private(set) var cameraEye: SIMD3<Float> = [0, 3, 6]
     private(set) var cameraTarget: SIMD3<Float> = [0, 1.5, 0]
 
-    init(preset: ParticlePreset = .fountain) {
-        system = try? ParticleSystem(emitters: [], capacity: 1)
+    init(preset: ParticleSystem = .fountain) {
+        system = try? ParticleSystemRuntime(emitters: [], capacity: 1)
         presetName = preset.name
         load(preset)
     }
@@ -177,10 +177,10 @@ final class ParticlesDemoModel {
     // MARK: Effect files
 
     /// Effects opened from files this session, listed after the built-in presets.
-    private(set) var openedEffects: [ParticlePreset] = []
+    private(set) var openedEffects: [ParticleSystem] = []
 
-    var presets: [ParticlePreset] {
-        ParticlePreset.all + openedEffects
+    var presets: [ParticleSystem] {
+        ParticleSystem.all + openedEffects
     }
 
     /// Switches to the preset `offset` places away in `presets`, wrapping around at either end.
@@ -193,13 +193,13 @@ final class ParticlesDemoModel {
         presetName = names[((index + offset) % names.count + names.count) % names.count]
     }
 
-    func preset(named name: String) -> ParticlePreset? {
+    func preset(named name: String) -> ParticleSystem? {
         presets.first { $0.name == name }
     }
 
     /// The scene as it is now, for saving.
-    var currentEffect: ParticlePreset {
-        var preset = ParticlePreset(
+    var currentEffect: ParticleSystem {
+        var preset = ParticleSystem(
             presetName,
             layers: emitters,
             colliders: colliders.map(\.collider),
@@ -227,7 +227,7 @@ final class ParticlesDemoModel {
                 url.stopAccessingSecurityScopedResource()
             }
         }
-        let effect = try ParticlePreset(contentsOf: url)
+        let effect = try ParticleSystem(contentsOf: url)
         // Check user Metal functions before loading, so a bad file is reported and the current scene keeps running.
         if let device = system?.device {
             try effect.validateFunctions(device: device)
@@ -236,9 +236,9 @@ final class ParticlesDemoModel {
     }
 
     /// Adds an opened effect under `name` (made unique against built-in presets) and loads it.
-    func open(_ effect: ParticlePreset, named name: String) {
+    func open(_ effect: ParticleSystem, named name: String) {
         var effect = effect
-        effect.name = ParticlePreset.all.contains { $0.name == name } ? "\(name) (File)" : name
+        effect.name = ParticleSystem.all.contains { $0.name == name } ? "\(name) (File)" : name
         openedEffects.removeAll { $0.name == effect.name }
         openedEffects.append(effect)
         if presetName == effect.name {
@@ -248,7 +248,7 @@ final class ParticlesDemoModel {
         }
     }
 
-    func load(_ preset: ParticlePreset) {
+    func load(_ preset: ParticleSystem) {
         // Fresh ids, so loading the same preset again rebuilds and clears the particles.
         let emitters = preset.layers.map { $0.copy() }
         self.emitters = emitters
@@ -415,7 +415,7 @@ final class ParticlesDemoModel {
     /// The preset's stand-ins for app objects, for objectEnters triggers.
     var trackedObjects: [String: EmitterMotion] = [:]
 
-    /// Tracked object positions at `time`, for `ParticleSystem.trackedObjects`.
+    /// Tracked object positions at `time`, for `ParticleSystemRuntime.trackedObjects`.
     func frameTrackedObjects(time: Float) -> [String: SIMD3<Float>] {
         trackedObjects.mapValues { motion in
             let column = motion.transform(time: time).columns.3

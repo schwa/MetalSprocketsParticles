@@ -111,22 +111,22 @@ struct OutlineTests {
         defer { try? FileManager.default.removeItem(at: url) }
         try model.currentEffect.write(to: url)
 
-        model.presetName = ParticlePreset.rain.name
+        model.presetName = ParticleSystem.rain.name
         try model.openEffect(at: url)
         #expect(model.presetName.hasPrefix("My Fireworks"))
         #expect(model.presets.contains { $0.name == model.presetName })
         #expect(model.emitters[0].settings.birthRate == 7)
-        #expect(model.emitters.count == ParticlePreset.fireworks.layers.count)
+        #expect(model.emitters.count == ParticleSystem.fireworks.layers.count)
 
         // A file named like a built-in preset does not shadow it.
-        model.open(ParticlePreset.rain, named: "Fireworks")
+        model.open(ParticleSystem.rain, named: "Fireworks")
         #expect(model.presetName == "Fireworks (File)")
     }
 
     /// #63: an effect with no emitters must not trap the inspector, and edits to the placeholder go nowhere.
     @Test func effectWithNoEmittersIsSafe() {
         let model = ParticlesDemoModel()
-        model.open(ParticlePreset("Empty", layers: []), named: "Empty")
+        model.open(ParticleSystem("Empty", layers: []), named: "Empty")
         #expect(model.emitters.isEmpty)
         _ = model.selectedEmitter
         model.selectedEmitter.settings.birthRate = 99
@@ -142,19 +142,19 @@ struct OutlineTests {
         let start = model.frameTrackedObjects(time: 0)["ball"]
         let later = model.frameTrackedObjects(time: 0.5)["ball"]
         #expect(start != nil && later != nil && start != later)
-        #expect(model.currentEffect.trackedObjects == ParticlePreset.dunk.trackedObjects)
-        model.presetName = ParticlePreset.rain.name
+        #expect(model.currentEffect.trackedObjects == ParticleSystem.dunk.trackedObjects)
+        model.presetName = ParticleSystem.rain.name
         #expect(model.frameTrackedObjects(time: 0).isEmpty)
     }
 
     @Test func presetCommentIsShownAndSaved() {
         let model = ParticlesDemoModel(preset: .fireworks)
-        #expect(model.presetComment == ParticlePreset.fireworks.comment)
+        #expect(model.presetComment == ParticleSystem.fireworks.comment)
         #expect(!model.presetComment.isEmpty)
-        #expect(model.currentEffect.comment == ParticlePreset.fireworks.comment)
-        model.presetName = ParticlePreset.rain.name
-        #expect(model.presetComment == ParticlePreset.rain.comment)
-        #expect(ParticlePreset.all.allSatisfy { !$0.comment.isEmpty })
+        #expect(model.currentEffect.comment == ParticleSystem.fireworks.comment)
+        model.presetName = ParticleSystem.rain.name
+        #expect(model.presetComment == ParticleSystem.rain.comment)
+        #expect(ParticleSystem.all.allSatisfy { !$0.comment.isEmpty })
     }
 
     @Test func videoExportWritesAMovieAndOffersIt() async throws {
@@ -177,10 +177,10 @@ struct OutlineTests {
 
     @Test func changingPresetKeepsSceneSelectedOrSelectsFirstEmitter() {
         let model = ParticlesDemoModel()
-        model.presetName = ParticlePreset.campfire.name
+        model.presetName = ParticleSystem.campfire.name
         #expect(model.selection == .scene)
         model.selection = .emitter(model.emitters[1].id)
-        model.presetName = ParticlePreset.rain.name
+        model.presetName = ParticleSystem.rain.name
         #expect(model.selection == .emitter(model.emitters[0].id))
     }
 }

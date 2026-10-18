@@ -16,11 +16,11 @@ struct DemoDocumentationTests {
     }
 
     @Test func everyPresetHasAClipAPosterAndASection() throws {
-        let slugs = Set(ParticlePreset.sampleSlugs)
+        let slugs = Set(ParticleSystem.sampleSlugs)
         #expect(try files(in: "videos", extension: "mp4") == slugs)
         #expect(try files(in: "posters", extension: "jpg") == slugs)
         let readme = try String(contentsOf: demos.appending(path: "README.md"), encoding: .utf8)
-        for preset in ParticlePreset.all {
+        for preset in ParticleSystem.all {
             #expect(readme.contains("\n## \(preset.name)\n"), "No README section for \(preset.name)")
         }
         let sections = readme.components(separatedBy: "\n## ").count - 1

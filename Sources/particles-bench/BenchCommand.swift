@@ -87,7 +87,7 @@ struct BenchCommand: ParsableCommand {
 
     private func measure(_ scenario: Scenario) throws -> (simulate: Double, render: Double, cpu: Double) {
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
-        let system = try ParticleSystem(device: renderer.device, capacity: scenario.capacity, emitter: emitter(scenario), seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: scenario.capacity, emitter: emitter(scenario), seed: 0)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: [0, 0.5, 0], radius: 0.6)]
         system.forceFields = scenario.turbulence ? [.turbulence(strength: 1, scale: 1, speed: 0.3)] : []
         if updateFunction == "noop" || updateFunction == "work" {

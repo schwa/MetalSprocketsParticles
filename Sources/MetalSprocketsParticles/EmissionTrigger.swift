@@ -2,21 +2,21 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// Makes an emitter react to something happening: an app event, a timer, an object or particles entering a volume, or
-/// a collider being hit. Triggers are checked at the start of each `ParticleSystem.simulate`.
+/// a collider being hit. Triggers are checked at the start of each `ParticleSystemRuntime.simulate`.
 public struct EmissionTrigger: Sendable, Equatable, Codable {
     public enum Condition: Sendable, Equatable, Codable {
-        /// `ParticleSystem.send(event:)` with this name.
+        /// `ParticleSystemRuntime.send(event:)` with this name.
         case event(String)
         /// Once, this many seconds of simulation time after the system starts or restarts.
         case after(seconds: Float)
         /// Every this many seconds of simulation time.
         case every(seconds: Float)
-        /// A tracked object (`ParticleSystem.trackedObjects`) moves from outside to inside the volume.
+        /// A tracked object (`ParticleSystemRuntime.trackedObjects`) moves from outside to inside the volume.
         case objectEnters(name: String, volume: TriggerVolume)
         /// At least `count` particles, from any emitter, entered the volume since the last check. Counted on the GPU
         /// and read back, so it can lag the event by a frame or two while frames are in flight.
         case particlesEnter(volume: TriggerVolume, count: Int = 1)
-        /// At least `count` particle hits on `ParticleSystem.colliders[index]` since the last check. Read back from the
+        /// At least `count` particle hits on `ParticleSystemRuntime.colliders[index]` since the last check. Read back from the
         /// GPU like `particlesEnter`.
         case colliderHit(index: Int, count: Int = 1)
     }

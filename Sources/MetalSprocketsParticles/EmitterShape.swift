@@ -20,7 +20,7 @@ public enum EmitterShape: Sendable, Equatable, Codable {
     case cone(radius: Float, height: Float)
     /// A ring in the XZ plane with tube radius `tubeRadius`.
     case torus(radius: Float, tubeRadius: Float)
-    /// The emitter's `ParticleSystem.Emitter.mesh`. Volume emission falls back to the surface.
+    /// The emitter's `ParticleSystemRuntime.Emitter.mesh`. Volume emission falls back to the surface.
     case mesh
 }
 
@@ -57,7 +57,7 @@ extension ParticleShapeData {
     }
 }
 
-/// Triangles to emit from, uploaded once. Assign to `ParticleSystem.Emitter.mesh` and use `EmitterShape.mesh`.
+/// Triangles to emit from, uploaded once. Assign to `ParticleSystemRuntime.Emitter.mesh` and use `EmitterShape.mesh`.
 ///
 /// For morphing or skinned meshes, keep the rest-pose mesh and call `setDeformedPositions` with each frame's deformed
 /// vertex buffer. Particles are then placed on the deformed triangles, chosen by rest-pose area.

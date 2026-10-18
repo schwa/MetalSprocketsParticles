@@ -14,7 +14,7 @@ struct VideoExportTests {
         let url = temporaryURL()
         defer { try? FileManager.default.removeItem(at: url) }
         var reported: [Double] = []
-        try await ParticlePreset.fireworks.exportVideo(to: url, size: CGSize(width: 160, height: 90), frameRate: 30, duration: 1) { fraction in
+        try await ParticleSystem.fireworks.exportVideo(to: url, size: CGSize(width: 160, height: 90), frameRate: 30, duration: 1) { fraction in
             reported.append(fraction)
             return true
         }
@@ -31,7 +31,7 @@ struct VideoExportTests {
         let url = temporaryURL()
         defer { try? FileManager.default.removeItem(at: url) }
         // Flare's emission ends at 5 s and its longest-lived particles (smoke) last 3 s more.
-        let written = try await ParticlePreset.flare.exportVideo(to: url, size: CGSize(width: 160, height: 90), duration: 20, stopWhenFinished: true)
+        let written = try await ParticleSystem.flare.exportVideo(to: url, size: CGSize(width: 160, height: 90), duration: 20, stopWhenFinished: true)
         #expect(written > 7.5 && written < 8.5)
         let duration = try await AVURLAsset(url: url).load(.duration).seconds
         #expect(abs(duration - written) < 0.05)
@@ -40,7 +40,7 @@ struct VideoExportTests {
     @Test func stoppingEarlyKeepsWhatWasWritten() async throws {
         let url = temporaryURL()
         defer { try? FileManager.default.removeItem(at: url) }
-        try await ParticlePreset.rain.exportVideo(to: url, size: CGSize(width: 160, height: 90), frameRate: 30, duration: 2) { fraction in
+        try await ParticleSystem.rain.exportVideo(to: url, size: CGSize(width: 160, height: 90), frameRate: 30, duration: 2) { fraction in
             fraction < 0.25
         }
         let duration = try await AVURLAsset(url: url).load(.duration).seconds

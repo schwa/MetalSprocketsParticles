@@ -1,9 +1,9 @@
 import simd
 
-/// Spins one of a preset's colliders at a steady rate about its own pivot (a sphere's or box's center, a capsule's
+/// Spins one of a particle system's colliders at a steady rate about its own pivot (a sphere's or box's center, a capsule's
 /// midpoint). The system derives the angular velocity from frame to frame, so spinning colliders fling particles.
 public struct ColliderSpin: Sendable, Equatable, Codable {
-    /// Index into `ParticlePreset.colliders`.
+    /// Index into `ParticleSystem.colliders`.
     public var collider: Int
     public var axis: SIMD3<Float>
     /// Radians per second.

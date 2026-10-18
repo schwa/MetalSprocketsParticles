@@ -17,7 +17,7 @@ struct VariationTests {
         emitter.lifetime = 10...10
         emitter.birthRate = 0
         configure(&emitter)
-        let system = try ParticleSystem(device: runner.device, capacity: count, emitter: emitter, seed: 21)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 21)
         system.burst(count)
         try runner.run(try system.simulate(deltaTime: 0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
@@ -74,7 +74,7 @@ struct VariationTests {
             emitter.colorOverLife = .constant([1, 0, 0, 1])
             emitter.sizeOverLife = .constant(0.08)
             emitter.colorVariation = [hueVariation, 0, 0, 0]
-            let system = try ParticleSystem(device: renderer.device, capacity: 200, emitter: emitter, seed: 2)
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 200, emitter: emitter, seed: 2)
             system.burst(200)
             let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
             let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 10)

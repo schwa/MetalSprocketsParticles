@@ -12,7 +12,7 @@ struct RotationTests {
         emitter.lifetime = 10...10
         emitter.birthRate = 0
         configure(&emitter)
-        let system = try ParticleSystem(device: runner.device, capacity: 256, emitter: emitter, seed: 11)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 256, emitter: emitter, seed: 11)
         system.burst(256)
         for _ in 0..<steps {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

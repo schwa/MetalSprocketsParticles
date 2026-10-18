@@ -18,27 +18,27 @@ struct FramePlanTests {
     }
 
     /// Particles `emitter` spawns in `plan`, over all its dispatches.
-    func spawned(_ plan: FramePlan, _ emitter: ParticleSystem.Emitter) -> Int {
+    func spawned(_ plan: FramePlan, _ emitter: ParticleSystemRuntime.Emitter) -> Int {
         plan.dispatches
             .filter { Int($0.uniforms.spawn.sliceStart) == emitter.range.lowerBound }
             .reduce(0) { $0 + Int($1.uniforms.spawn.count) }
     }
 
-    func plans(_ system: ParticleSystem, frames: Int) throws -> [FramePlan] {
+    func plans(_ system: ParticleSystemRuntime, frames: Int) throws -> [FramePlan] {
         try (0..<frames).map { _ in try system.planFrame(deltaTime: deltaTime) }
     }
 
     // MARK: Timing
 
     @Test func birthRateSpreadsAcrossFrames() throws {
-        let system = try ParticleSystem(device: device, capacity: 1_000, emitter: emitter { $0.birthRate = 90 })
+        let system = try ParticleSystemRuntime(device: device, capacity: 1_000, emitter: emitter { $0.birthRate = 90 })
         let counts = try plans(system, frames: 60).map { spawned($0, system.emitters[0]) }
         #expect(counts.reduce(0, +) == 90)
         #expect(counts.allSatisfy { $0 == 1 || $0 == 2 })
     }
 
     @Test func warmupRunsAsExtraStepsOnTheFirstFrameOnly() throws {
-        let system = try ParticleSystem(device: device, capacity: 1_000, emitter: emitter {
+        let system = try ParticleSystemRuntime(device: device, capacity: 1_000, emitter: emitter {
             $0.birthRate = 60
             $0.warmupDuration = 0.5
         })
@@ -54,7 +54,7 @@ struct FramePlanTests {
     }
 
     @Test func frameTimeIsClampedAndScaled() throws {
-        let system = try ParticleSystem(device: device, capacity: 10, emitter: emitter())
+        let system = try ParticleSystemRuntime(device: device, capacity: 10, emitter: emitter())
         let clamped = try system.planFrame(deltaTime: 1)
         #expect(clamped.deltaTime == Float(1) / 30)
         system.speedFactor = 2
@@ -69,7 +69,7 @@ struct FramePlanTests {
     // MARK: Slots
 
     @Test func dispatchCoversOnlyTheLiveWindow() throws {
-        let system = try ParticleSystem(device: device, capacity: 1_000, emitter: emitter {
+        let system = try ParticleSystemRuntime(device: device, capacity: 1_000, emitter: emitter {
             $0.birthRate = 600
             $0.lifetime = 0.1...0.1
         })
@@ -80,7 +80,7 @@ struct FramePlanTests {
     }
 
     @Test func stopAndPlayKillsEverySlotOnce() throws {
-        let system = try ParticleSystem(device: device, capacity: 500, emitter: emitter { $0.birthRate = 60 })
+        let system = try ParticleSystemRuntime(device: device, capacity: 500, emitter: emitter { $0.birthRate = 60 })
         _ = try plans(system, frames: 10)
         system.state = .stopped
         system.state = .playing
@@ -94,7 +94,7 @@ struct FramePlanTests {
     @Test func subEmittersGetFixedSlotsAfterTheirParents() throws {
         var parent = emitter { $0.birthRate = 60 }
         parent.subEmitters = [SubEmitter(occasion: .onDeath, countPerEvent: 3, settings: ParticleEmitter())]
-        let system = try ParticleSystem(device: device, capacity: 10, emitter: parent)
+        let system = try ParticleSystemRuntime(device: device, capacity: 10, emitter: parent)
         let plan = try system.planFrame(deltaTime: deltaTime)
         let child = try #require(system.subEmitterInstances.first)
         #expect(plan.dispatches.count == 2)
@@ -107,14 +107,14 @@ struct FramePlanTests {
     }
 
     @Test func colliderVelocityComesFromMotionBetweenFrames() throws {
-        let system = try ParticleSystem(device: device, capacity: 10, emitter: emitter())
+        let system = try ParticleSystemRuntime(device: device, capacity: 10, emitter: emitter())
         _ = try system.planFrame(deltaTime: deltaTime, colliders: [.sphere(center: .zero, radius: 1)])
         let plan = try system.planFrame(deltaTime: deltaTime, colliders: [.sphere(center: [0.1, 0, 0], radius: 1)])
         #expect(abs(plan.colliders[0].velocity.x - 6) < 1e-3)
     }
 
     @Test func categoryMasksFilterEachDispatch() throws {
-        let system = try ParticleSystem(device: device, emitters: [
+        let system = try ParticleSystemRuntime(device: device, emitters: [
             emitter { $0.collisionMask = 0b10; $0.fieldMask = 0b01 },
             emitter(),
         ], capacity: 10)
@@ -133,7 +133,7 @@ struct FramePlanTests {
     // MARK: Triggers
 
     @Test func namedEventsBurstOnTheNextFrame() throws {
-        let system = try ParticleSystem(device: device, capacity: 100, emitter: emitter { $0.triggers = [EmissionTrigger(.event("boom"), .burst(7))] })
+        let system = try ParticleSystemRuntime(device: device, capacity: 100, emitter: emitter { $0.triggers = [EmissionTrigger(.event("boom"), .burst(7))] })
         func next() throws -> Int {
             spawned(try system.planFrame(deltaTime: deltaTime), system.emitters[0])
         }
@@ -148,7 +148,7 @@ struct FramePlanTests {
     }
 
     @Test func afterFiresOnceAndEveryRepeats() throws {
-        let system = try ParticleSystem(device: device, emitters: [
+        let system = try ParticleSystemRuntime(device: device, emitters: [
             emitter { $0.triggers = [EmissionTrigger(.after(seconds: 0.5), .burst(1))] },
             emitter { $0.triggers = [EmissionTrigger(.every(seconds: 0.25), .burst(1))] },
         ], capacity: 100)
@@ -160,7 +160,7 @@ struct FramePlanTests {
 
     @Test func objectEnteringAVolumeFiresOncePerEntry() throws {
         let volume = TriggerVolume.sphere(center: .zero, radius: 1)
-        let system = try ParticleSystem(device: device, capacity: 100, emitter: emitter {
+        let system = try ParticleSystemRuntime(device: device, capacity: 100, emitter: emitter {
             $0.triggers = [EmissionTrigger(.objectEnters(name: "ball", volume: volume), .burst(2))]
         })
         var total = 0
@@ -172,7 +172,7 @@ struct FramePlanTests {
     }
 
     @Test func startAndStopToggleEmission() throws {
-        let system = try ParticleSystem(device: device, capacity: 500, emitter: emitter {
+        let system = try ParticleSystemRuntime(device: device, capacity: 500, emitter: emitter {
             $0.birthRate = 60
             $0.triggers = [EmissionTrigger(.event("on"), .start), EmissionTrigger(.event("off"), .stop)]
         })
@@ -189,7 +189,7 @@ struct FramePlanTests {
     }
 
     @Test func restartResetsTriggerTimers() throws {
-        let system = try ParticleSystem(device: device, capacity: 10, emitter: emitter { $0.triggers = [EmissionTrigger(.after(seconds: 0.1), .burst(1))] })
+        let system = try ParticleSystemRuntime(device: device, capacity: 10, emitter: emitter { $0.triggers = [EmissionTrigger(.after(seconds: 0.1), .burst(1))] })
         func total() throws -> Int {
             try plans(system, frames: 10).reduce(0) { $0 + spawned($1, system.emitters[0]) }
         }

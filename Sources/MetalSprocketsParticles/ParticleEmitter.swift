@@ -1,7 +1,7 @@
 import MetalSprocketsParticlesShaders
 import simd
 
-/// Settings for one emitter. Colliders and force fields are shared by all emitters and live on `ParticleSystem`.
+/// Settings for one emitter. Colliders and force fields are shared by all emitters and live on `ParticleSystemRuntime`.
 public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Center of `shape` in emitter space.
     public var position: SIMD3<Float> = .zero
@@ -119,10 +119,10 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var collisionMask: UInt32 = .max
     /// Force fields apply when their `categoryBitMask` shares a bit with this. All bits by default.
     public var fieldMask: UInt32 = .max
-    /// Shades particles with `ParticleSystem.lights` and `ambientLight`. Off by default: particles keep their colors.
+    /// Shades particles with `ParticleSystemRuntime.lights` and `ambientLight`. Off by default: particles keep their colors.
     public var isLit = false
     /// Soft particles: fade out over this many world units in front of the scene depth passed to
-    /// `ParticleSystem.render(projection:view:sceneDepth:)`, instead of clipping hard. 0 turns it off.
+    /// `ParticleSystemRuntime.render(projection:view:sceneDepth:)`, instead of clipping hard. 0 turns it off.
     public var softness: Float = 0
     /// Runs for every live particle each step, after gravity, force fields, and drag, before collisions.
     public var updateFunction: ParticleFunction?

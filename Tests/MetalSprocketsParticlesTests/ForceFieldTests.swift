@@ -19,7 +19,7 @@ struct ForceFieldTests {
         emitter.drag = 0
         emitter.lifetime = 100...100
         emitter.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: count, emitter: emitter, seed: 9)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 9)
         system.forceFields = fields
         system.burst(count)
         for _ in 0..<steps {

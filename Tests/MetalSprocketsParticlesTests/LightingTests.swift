@@ -15,7 +15,7 @@ struct LightingTests {
         .perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 100)
     }
 
-    func centerBrightness(_ configure: (inout ParticleEmitter) -> Void = { _ in }, system setUp: (ParticleSystem) -> Void = { _ in }, sceneDepth: Float? = nil) throws -> Float {
+    func centerBrightness(_ configure: (inout ParticleEmitter) -> Void = { _ in }, system setUp: (ParticleSystemRuntime) -> Void = { _ in }, sceneDepth: Float? = nil) throws -> Float {
         let renderer = try OffscreenRenderer(size: size)
         var emitter = ParticleEmitter()
         emitter.radius = 0
@@ -27,7 +27,7 @@ struct LightingTests {
         emitter.sizeOverLife = .constant(0.5)
         emitter.colorOverLife = .constant([1, 1, 1, 1])
         configure(&emitter)
-        let system = try ParticleSystem(device: renderer.device, capacity: 1, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
         setUp(system)
         system.burst(1)
         let depthTexture = try sceneDepth.map { try makeDepthTexture(device: renderer.device, depth: $0) }
@@ -103,7 +103,7 @@ struct LightingTests {
         emitter.sizeOverLife = .constant(0.5)
         emitter.colorOverLife = .constant([1, 1, 1, 1])
         emitter.softness = softness
-        let system = try ParticleSystem(device: renderer.device, capacity: 1, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
         system.colliders = colliders
         system.burst(1)
         let sceneDepth = try SceneDepth(device: renderer.device, width: Int(size.width), height: Int(size.height))

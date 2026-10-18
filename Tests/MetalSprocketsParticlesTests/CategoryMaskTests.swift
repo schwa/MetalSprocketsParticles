@@ -30,7 +30,7 @@ struct CategoryMaskTests {
             configure(&emitter, index)
             return emitter
         }
-        let system = try ParticleSystem(device: runner.device, emitters: emitters, capacity: 8, seed: 3)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: emitters, capacity: 8, seed: 3)
         system.colliders = colliders
         system.forceFields = fields
         system.emitters.forEach { $0.burst(8) }

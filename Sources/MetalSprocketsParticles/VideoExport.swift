@@ -5,11 +5,11 @@ import Metal
 import MetalSprockets
 import simd
 
-public extension ParticlePreset {
+public extension ParticleSystem {
     /// Simulates the effect from the start and writes it to a movie file, frame by frame, at `frameRate`. The camera
-    /// defaults to the preset's. Results are deterministic for a given `seed`. `progress` is called after each frame
+    /// defaults to the system's. Results are deterministic for a given `seed`. `progress` is called after each frame
     /// with the fraction done; return false from it to stop early and keep what was written. With `stopWhenFinished`,
-    /// a finite effect (see `ParticleSystem.isFinished`) ends the movie early; `duration` is then the longest it runs.
+    /// a finite effect (see `ParticleSystemRuntime.isFinished`) ends the movie early; `duration` is then the longest it runs.
     /// Returns the length written, in seconds.
     @discardableResult
     func exportVideo(
@@ -30,14 +30,14 @@ public extension ParticlePreset {
             size: size,
             frameRate: frameRate,
             outputURL: url,
-            pixelFormat: ParticleSystem.colorPixelFormat,
+            pixelFormat: ParticleSystemRuntime.colorPixelFormat,
             videoCodec: codec
         )
         // The renderer runs on the system default device; the particle system must use the same one.
         guard let device = MTLCreateSystemDefaultDevice() else {
             throw CocoaError(.featureUnsupported)
         }
-        let system = try ParticleSystem(device: device, emitters: [], capacity: 1, seed: seed)
+        let system = try ParticleSystemRuntime(device: device, emitters: [], capacity: 1, seed: seed)
         try system.load(self)
         let camera = simd_float4x4(lookingFrom: eye ?? cameraEye, at: target ?? cameraTarget)
         let view = camera.inverse

@@ -9,29 +9,29 @@ import Testing
 struct ParticleViewTests {
     let size = CGSize(width: 800, height: 450)
 
-    func frame(_ state: ParticleViewState, _ preset: ParticlePreset, system: ParticleSystem? = nil, time: Float = 0) throws -> ParticleViewFrame {
-        try state.frame(preset: preset, system: system, camera: (preset.cameraEye, preset.cameraTarget), drawableSize: size, time: time)
+    func frame(_ state: ParticleViewState, _ system: ParticleSystem, runtime: ParticleSystemRuntime? = nil, time: Float = 0) throws -> ParticleViewFrame {
+        try state.frame(system: system, runtime: runtime, camera: (system.cameraEye, system.cameraTarget), drawableSize: size, time: time)
     }
 
-    @Test func loadsThePresetOnceAndReloadsWhenItChanges() throws {
+    @Test func loadsTheSystemOnceAndReloadsWhenItChanges() throws {
         let state = ParticleViewState(seed: 0)
-        let first = try frame(state, .campfire).system
-        #expect(first.emitters.count == ParticlePreset.campfire.layers.count)
-        #expect(try frame(state, .campfire).system === first)
-        let second = try frame(state, .fountain).system
+        let first = try frame(state, .campfire).runtime
+        #expect(first.emitters.count == ParticleSystem.campfire.layers.count)
+        #expect(try frame(state, .campfire).runtime === first)
+        let second = try frame(state, .fountain).runtime
         #expect(second !== first)
-        #expect(second.emitters.count == ParticlePreset.fountain.layers.count)
+        #expect(second.emitters.count == ParticleSystem.fountain.layers.count)
     }
 
-    @Test func usesTheCallersSystem() throws {
+    @Test func usesTheCallersRuntime() throws {
         let state = ParticleViewState(seed: 0)
-        let system = try ParticleSystem(emitters: [], capacity: 1)
-        try system.load(.campfire)
-        #expect(try frame(state, .campfire, system: system).system === system)
-        #expect(state.ownedSystem == nil)
+        let runtime = try ParticleSystemRuntime(emitters: [], capacity: 1)
+        try runtime.load(.campfire)
+        #expect(try frame(state, .campfire, runtime: runtime).runtime === runtime)
+        #expect(state.ownedRuntime == nil)
     }
 
-    @Test func sceneDepthOnlyWhenThePresetDrawsColliders() throws {
+    @Test func sceneDepthOnlyWhenTheSystemDrawsColliders() throws {
         let state = ParticleViewState(seed: 0)
         #expect(try frame(state, .campfire).sceneDepth == nil)
         let fog = try #require(try frame(state, .fog).sceneDepth)
@@ -40,7 +40,7 @@ struct ParticleViewTests {
 
     @Test func thePointerDrivesBindingsAndFallsBackToItsPath() throws {
         let state = ParticleViewState(seed: 0)
-        let preset = ParticlePreset.pointerStir
+        let preset = ParticleSystem.pointerStir
         let scripted = try frame(state, preset, time: 1).colliders
         #expect(scripted == preset.colliders(at: 1, pointer: nil))
         // The middle of the view projects to the camera target.

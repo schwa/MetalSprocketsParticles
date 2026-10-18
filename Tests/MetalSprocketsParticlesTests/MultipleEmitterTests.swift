@@ -26,7 +26,7 @@ struct MultipleEmitterTests {
         return emitter
     }
 
-    func particles(_ system: ParticleSystem) -> [Particle] {
+    func particles(_ system: ParticleSystemRuntime) -> [Particle] {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return Array(UnsafeBufferPointer(start: pointer, count: system.capacity))
     }
@@ -36,7 +36,7 @@ struct MultipleEmitterTests {
     }
 
     @Test func emittersOwnDisjointSlices() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [still(at: [-1, 0, 0]), still(at: [1, 0, 0])], capacity: 100, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [still(at: [-1, 0, 0]), still(at: [1, 0, 0])], capacity: 100, seed: 1)
         #expect(system.emitters.map(\.range) == [0..<100, 100..<200])
         system.emitters[0].burst(30)
         system.emitters[1].burst(70)
@@ -51,7 +51,7 @@ struct MultipleEmitterTests {
     }
 
     @Test func emittersRunTheirOwnBirthRates() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [still(at: .zero, birthRate: 120), still(at: .zero, birthRate: 600)], capacity: 1_000, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [still(at: .zero, birthRate: 120), still(at: .zero, birthRate: 600)], capacity: 1_000, seed: 1)
         for _ in 0..<60 {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         }
@@ -63,7 +63,7 @@ struct MultipleEmitterTests {
     @Test func identicalEmittersGetDifferentRandomStreams() throws {
         var settings = still(at: .zero)
         settings.radius = 1
-        let system = try ParticleSystem(device: runner.device, emitters: [settings, settings], capacity: 32, seed: 3)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [settings, settings], capacity: 32, seed: 3)
         system.emitters.forEach { $0.burst(32) }
         try runner.run(try system.simulate(deltaTime: 0))
         let all = particles(system)
@@ -73,8 +73,8 @@ struct MultipleEmitterTests {
     @Test func firstEmitterMatchesASingleEmitterSystem() throws {
         var settings = ParticleEmitter.fountain
         settings.birthRate = 2_000
-        let single = try ParticleSystem(device: runner.device, capacity: 500, emitter: settings, seed: 7)
-        let multiple = try ParticleSystem(device: runner.device, emitters: [settings, still(at: .zero, birthRate: 100)], capacity: 500, seed: 7)
+        let single = try ParticleSystemRuntime(device: runner.device, capacity: 500, emitter: settings, seed: 7)
+        let multiple = try ParticleSystemRuntime(device: runner.device, emitters: [settings, still(at: .zero, birthRate: 100)], capacity: 500, seed: 7)
         for _ in 0..<30 {
             try runner.run(try single.simulate(deltaTime: 1.0 / 60.0))
             try runner.run(try multiple.simulate(deltaTime: 1.0 / 60.0))
@@ -86,7 +86,7 @@ struct MultipleEmitterTests {
         var falling = still(at: [0, 1, 0])
         falling.gravity = [0, -9.8, 0]
         falling.restitution = 0
-        let system = try ParticleSystem(device: runner.device, emitters: [falling, falling], capacity: 16, seed: 2)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [falling, falling], capacity: 16, seed: 2)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
         system.emitters.forEach { $0.burst(16) }
         for _ in 0..<90 {
@@ -99,7 +99,7 @@ struct MultipleEmitterTests {
         var falling = still(at: .zero)
         falling.gravity = [0, -9.8, 0]
         falling.restitution = 0
-        let system = try ParticleSystem(device: runner.device, emitters: [falling], capacity: 16, seed: 2)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [falling], capacity: 16, seed: 2)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
         let emitter = system.emitters[0]
         emitter.simulationSpace = .local
@@ -117,7 +117,7 @@ struct MultipleEmitterTests {
     }
 
     @Test func simulateAppliesTransformsByIndex() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [still(at: .zero), still(at: .zero)], capacity: 4, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [still(at: .zero), still(at: .zero)], capacity: 4, seed: 1)
         var moved = matrix_identity_float4x4
         moved.columns.3 = [3, 0, 0, 1]
         system.emitters.forEach { $0.burst(4) }
@@ -130,7 +130,7 @@ struct MultipleEmitterTests {
     }
 
     @Test func restartingOneEmitterLeavesTheOthers() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [still(at: .zero), still(at: .zero)], capacity: 10, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [still(at: .zero), still(at: .zero)], capacity: 10, seed: 1)
         system.emitters.forEach { $0.burst(10) }
         try runner.run(try system.simulate(deltaTime: 0))
         system.emitters[0].restart()
@@ -141,7 +141,7 @@ struct MultipleEmitterTests {
     }
 
     @Test func addEmitterKeepsRuntimeStateAndClearsParticles() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [still(at: .zero)], capacity: 10, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [still(at: .zero)], capacity: 10, seed: 1)
         let texture = try makeSpriteSheet(device: runner.device, rows: 1, columns: 1) { _, _, _ in }
         system.texture = texture
         system.burst(10)
@@ -163,7 +163,7 @@ struct MultipleEmitterTests {
         right.colorOverLife = .constant([0, 0, 1, 1])
         right.sizeOverLife = .constant(0.3)
         right.blendMode = .additive
-        let system = try ParticleSystem(device: renderer.device, emitters: [left, right], capacity: 1, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [left, right], capacity: 1, seed: 0)
         system.emitters.forEach { $0.burst(1) }
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)

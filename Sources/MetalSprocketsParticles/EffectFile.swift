@@ -88,10 +88,10 @@ extension Collider.Shape: Codable {
     }
 }
 
-public extension ParticlePreset {
+public extension ParticleSystem {
     /// Loads a saved effect (JSON). Emitter meshes are not saved, so mesh emitters load without one.
     init(contentsOf url: URL) throws {
-        self = try JSONDecoder().decode(ParticlePreset.self, from: try Data(contentsOf: url))
+        self = try JSONDecoder().decode(ParticleSystem.self, from: try Data(contentsOf: url))
     }
 
     /// The effect as pretty-printed JSON.
@@ -107,12 +107,12 @@ public extension ParticlePreset {
 }
 
 /// Saved effects as JSON, for file export and import, drag and drop, and sharing.
-extension ParticlePreset: Transferable {
+extension ParticleSystem: Transferable {
     public static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(contentType: .json) { preset in
-            try preset.jsonData()
+        DataRepresentation(contentType: .json) { system in
+            try system.jsonData()
         } importing: { data in
-            try JSONDecoder().decode(ParticlePreset.self, from: data)
+            try JSONDecoder().decode(ParticleSystem.self, from: data)
         }
     }
 }

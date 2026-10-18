@@ -18,7 +18,7 @@ struct ColliderShapeTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: 64, emitter: emitter, seed: 4)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter, seed: 4)
         system.colliders = [collider]
         system.burst(64)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

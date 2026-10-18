@@ -1,18 +1,18 @@
 import CoreGraphics
 import simd
 
-/// Something in a preset that follows the pointer (the mouse in an app, a scripted path elsewhere).
+/// Something in a particle system that follows the pointer (the mouse in an app, a scripted path elsewhere).
 public enum PointerBinding: Sendable, Hashable, Codable {
-    /// The collider at this index in `ParticlePreset.colliders` moves so its center is at the pointer.
+    /// The collider at this index in `ParticleSystem.colliders` moves so its center is at the pointer.
     case collider(Int)
-    /// The force field at this index in `ParticlePreset.forceFields` moves its center (attractors and vortices) to the
+    /// The force field at this index in `ParticleSystem.forceFields` moves its center (attractors and vortices) to the
     /// pointer. Wind and turbulence have no position and are unchanged.
     case forceField(Int)
     /// The emitter for the layer at this index moves to the pointer, keeping its motion's rotation.
     case emitter(Int)
 }
 
-public extension ParticlePreset {
+public extension ParticleSystem {
     /// Where the pointer is at `time` when there is no live input (renders, videos, tests): `pointerMotion`'s path.
     func pointerPosition(at time: Float) -> SIMD3<Float> {
         pointerMotion.transform(time: time).columns.3.xyz

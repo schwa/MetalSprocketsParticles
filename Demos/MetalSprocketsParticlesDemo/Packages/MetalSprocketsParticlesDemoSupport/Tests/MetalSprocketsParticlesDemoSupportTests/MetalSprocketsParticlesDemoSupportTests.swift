@@ -143,7 +143,7 @@ struct ModelTests {
     @Test func loadsEveryPreset() throws {
         let model = ParticlesDemoModel()
         let system = try #require(model.system)
-        for preset in ParticlePreset.all {
+        for preset in ParticleSystem.all {
             model.presetName = preset.name
             #expect(model.emitters.map(\.name) == preset.layers.map(\.name))
             #expect(system.emitters.map(\.capacity) == preset.layers.map(\.capacity))
@@ -160,7 +160,7 @@ struct ModelTests {
 
     @Test func pointerBindingsLoadSaveAndSurviveRemovals() {
         let model = ParticlesDemoModel()
-        var preset = ParticlePreset("Pointer", layers: [ParticlePreset.Layer("A", settings: ParticleEmitter())])
+        var preset = ParticleSystem("Pointer", layers: [ParticleSystem.Layer("A", settings: ParticleEmitter())])
         preset.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: .zero, radius: 0.5)]
         preset.forceFields = [.wind(velocity: [1, 0, 0], strength: 1), .attractor(center: .zero, strength: 2)]
         preset.pointerBindings = [.collider(1), .forceField(1), .emitter(0)]
@@ -196,8 +196,8 @@ struct ModelTests {
         model.selectedEmitter.settings.birthRate = 1
         model.colliders = []
         model.reloadPreset()
-        #expect(model.selectedEmitter.settings == ParticlePreset.fountain.layers[0].settings)
-        #expect(model.colliders.map(\.collider) == ParticlePreset.fountain.colliders)
+        #expect(model.selectedEmitter.settings == ParticleSystem.fountain.layers[0].settings)
+        #expect(model.colliders.map(\.collider) == ParticleSystem.fountain.colliders)
     }
 
     @Test func pushesPlaybackToSystem() throws {
@@ -235,7 +235,7 @@ struct ModelTests {
         #expect(model.selectedEmitter.sprite == .ring)
         #expect(system.emitters[1].texture != nil)
         // The duplicate keeps the preset layer's capacity.
-        #expect(system.emitters[1].capacity == ParticlePreset.fountain.layers[0].capacity)
+        #expect(system.emitters[1].capacity == ParticleSystem.fountain.layers[0].capacity)
         model.addEmitter()
         #expect(system.emitters.count == 3)
         model.removeSelectedEmitter()

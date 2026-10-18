@@ -5,7 +5,7 @@ import MetalSprocketsParticles
 // display order. A separate product from the library, so apps that do not want them do not ship them. Edit a preset by
 // changing its file, or by building it in the demo and saving it over the file.
 
-public extension ParticlePreset {
+public extension ParticleSystem {
     /// The Presets folder in this target's resources.
     static let presetsFolder: URL = {
         guard let url = Bundle.module.url(forResource: "Presets", withExtension: nil) else {
@@ -15,9 +15,9 @@ public extension ParticlePreset {
     }()
 
     /// Every sample preset, in display order (index.json), loaded once.
-    static let all: [ParticlePreset] = {
+    static let all: [ParticleSystem] = {
         do {
-            return try presets(in: presetsFolder)
+            return try systems(in: presetsFolder)
         } catch {
             preconditionFailure("Sample presets failed to load: \(error)")
         }
@@ -32,46 +32,46 @@ public extension ParticlePreset {
     }()
 
     /// A sample preset by name, ignoring case, spaces, and hyphens.
-    static func named(_ name: String) -> ParticlePreset? {
+    static func named(_ name: String) -> ParticleSystem? {
         all.named(name)
     }
 
-    private static func builtIn(_ name: String) -> ParticlePreset {
+    private static func builtIn(_ name: String) -> ParticleSystem {
         guard let preset = named(name) else {
             preconditionFailure("No sample preset named \(name).")
         }
         return preset
     }
 
-    static var fountain: ParticlePreset { builtIn("Fountain") }
-    static var campfire: ParticlePreset { builtIn("Campfire") }
-    static var fireworks: ParticlePreset { builtIn("Fireworks") }
-    static var sparks: ParticlePreset { builtIn("Sparks") }
-    static var snow: ParticlePreset { builtIn("Snow") }
-    static var rain: ParticlePreset { builtIn("Rain") }
-    static var magicTrail: ParticlePreset { builtIn("Magic Trail") }
-    static var comet: ParticlePreset { builtIn("Comet") }
-    static var galaxy: ParticlePreset { builtIn("Galaxy") }
-    static var waterfall: ParticlePreset { builtIn("Waterfall") }
-    static var confetti: ParticlePreset { builtIn("Confetti") }
-    static var portal: ParticlePreset { builtIn("Portal") }
-    static var hearts: ParticlePreset { builtIn("Hearts") }
-    static var moonPhases: ParticlePreset { builtIn("Moon Phases") }
-    static var colorSmoke: ParticlePreset { builtIn("Color Smoke") }
-    static var fog: ParticlePreset { builtIn("Fog") }
-    static var pond: ParticlePreset { builtIn("Pond") }
-    static var ringOfFire: ParticlePreset { builtIn("Ring of Fire") }
-    static var swarms: ParticlePreset { builtIn("Swarms") }
-    static var geyser: ParticlePreset { builtIn("Geyser") }
-    static var bumper: ParticlePreset { builtIn("Bumper") }
-    static var paddleWheel: ParticlePreset { builtIn("Paddle Wheel") }
-    static var teapot: ParticlePreset { builtIn("Teapot") }
-    static var flag: ParticlePreset { builtIn("Flag") }
-    static var strangeAttractor: ParticlePreset { builtIn("Strange Attractor") }
-    static var pointerStir: ParticlePreset { builtIn("Pointer Stir") }
-    static var embersToAsh: ParticlePreset { builtIn("Embers to Ash") }
-    static var awning: ParticlePreset { builtIn("Awning") }
-    static var lantern: ParticlePreset { builtIn("Lantern") }
-    static var dunk: ParticlePreset { builtIn("Dunk") }
-    static var flare: ParticlePreset { builtIn("Flare") }
+    static var fountain: ParticleSystem { builtIn("Fountain") }
+    static var campfire: ParticleSystem { builtIn("Campfire") }
+    static var fireworks: ParticleSystem { builtIn("Fireworks") }
+    static var sparks: ParticleSystem { builtIn("Sparks") }
+    static var snow: ParticleSystem { builtIn("Snow") }
+    static var rain: ParticleSystem { builtIn("Rain") }
+    static var magicTrail: ParticleSystem { builtIn("Magic Trail") }
+    static var comet: ParticleSystem { builtIn("Comet") }
+    static var galaxy: ParticleSystem { builtIn("Galaxy") }
+    static var waterfall: ParticleSystem { builtIn("Waterfall") }
+    static var confetti: ParticleSystem { builtIn("Confetti") }
+    static var portal: ParticleSystem { builtIn("Portal") }
+    static var hearts: ParticleSystem { builtIn("Hearts") }
+    static var moonPhases: ParticleSystem { builtIn("Moon Phases") }
+    static var colorSmoke: ParticleSystem { builtIn("Color Smoke") }
+    static var fog: ParticleSystem { builtIn("Fog") }
+    static var pond: ParticleSystem { builtIn("Pond") }
+    static var ringOfFire: ParticleSystem { builtIn("Ring of Fire") }
+    static var swarms: ParticleSystem { builtIn("Swarms") }
+    static var geyser: ParticleSystem { builtIn("Geyser") }
+    static var bumper: ParticleSystem { builtIn("Bumper") }
+    static var paddleWheel: ParticleSystem { builtIn("Paddle Wheel") }
+    static var teapot: ParticleSystem { builtIn("Teapot") }
+    static var flag: ParticleSystem { builtIn("Flag") }
+    static var strangeAttractor: ParticleSystem { builtIn("Strange Attractor") }
+    static var pointerStir: ParticleSystem { builtIn("Pointer Stir") }
+    static var embersToAsh: ParticleSystem { builtIn("Embers to Ash") }
+    static var awning: ParticleSystem { builtIn("Awning") }
+    static var lantern: ParticleSystem { builtIn("Lantern") }
+    static var dunk: ParticleSystem { builtIn("Dunk") }
+    static var flare: ParticleSystem { builtIn("Flare") }
 }

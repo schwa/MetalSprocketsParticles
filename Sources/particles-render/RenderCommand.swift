@@ -74,14 +74,14 @@ struct RenderCommand: AsyncParsableCommand {
     var target: String?
 
     func run() async throws {
-        let available = try presets.map { try ParticlePreset.presets(in: URL(fileURLWithPath: $0)) } ?? ParticlePreset.all
+        let available = try presets.map { try ParticleSystem.systems(in: URL(fileURLWithPath: $0)) } ?? ParticleSystem.all
         if listPresets {
             available.forEach { print($0.name) }
             return
         }
-        var preset: ParticlePreset
+        var preset: ParticleSystem
         if let effect {
-            preset = try ParticlePreset(contentsOf: URL(fileURLWithPath: effect))
+            preset = try ParticleSystem(contentsOf: URL(fileURLWithPath: effect))
         } else if let found = available.named(self.preset) {
             preset = found
         } else {
@@ -126,7 +126,7 @@ struct RenderCommand: AsyncParsableCommand {
             return
         }
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
-        let system = try ParticleSystem(device: renderer.device, emitters: [], capacity: 1, seed: seed)
+        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1, seed: seed)
         try system.load(preset)
         let camera = simd_float4x4(lookingFrom: eye, at: target)
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)

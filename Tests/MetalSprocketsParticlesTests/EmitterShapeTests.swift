@@ -34,7 +34,7 @@ struct EmitterShapeTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: count, emitter: emitter, seed: 5)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 5)
         system.emitters[0].mesh = mesh
         system.burst(count)
         try runner.run(try system.simulate(deltaTime: 0))

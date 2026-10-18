@@ -17,7 +17,7 @@ struct DieOnCollisionTests {
         emitter.lifetime = 10...10
         emitter.birthRate = 0
         emitter.diesOnCollision = diesOnCollision
-        let system = try ParticleSystem(device: runner.device, capacity: 64, emitter: emitter, seed: 3)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter, seed: 3)
         system.colliders = colliders
         system.burst(64)
         for _ in 0..<steps {

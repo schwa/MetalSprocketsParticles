@@ -36,7 +36,7 @@ struct ParticleFunctionTests {
     }
 
     /// Velocities of every particle after bursting `count` per emitter and running `frames` steps.
-    func velocities(_ system: ParticleSystem, count: Int, frames: Int = 30) throws -> [[SIMD3<Float>]] {
+    func velocities(_ system: ParticleSystemRuntime, count: Int, frames: Int = 30) throws -> [[SIMD3<Float>]] {
         for emitter in system.emitters {
             emitter.burst(count)
         }
@@ -51,7 +51,7 @@ struct ParticleFunctionTests {
 
     @Test func updateFunctionAppliesOnlyToItsEmitter() throws {
         let lifted = fallingEmitter { $0.updateFunction = setVelocity }
-        let system = try ParticleSystem(device: runner.device, emitters: [lifted, fallingEmitter()], capacity: 32)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [lifted, fallingEmitter()], capacity: 32)
         let result = try velocities(system, count: 16)
         // Gravity is applied before the function, so the function wins; the other emitter just falls.
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
@@ -61,7 +61,7 @@ struct ParticleFunctionTests {
     @Test func parametersReachTheFunction() throws {
         var function = setVelocity
         function.parameters = [[2, 0, -3, 0]]
-        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = function })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = function })
         let result = try velocities(system, count: 16)
         #expect(result[0].allSatisfy { simd_distance($0, [2, 0, -3]) < 1e-4 })
     }
@@ -82,7 +82,7 @@ struct ParticleFunctionTests {
             $0.gravity = .zero
             $0.spawnFunction = ring
         }
-        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
         system.burst(16)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 16)
@@ -99,7 +99,7 @@ struct ParticleFunctionTests {
             $0.spawnFunction = ring
             $0.updateFunction = setVelocity
         }
-        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
         let result = try velocities(system, count: 16, frames: 10)
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 16)
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
@@ -113,7 +113,7 @@ struct ParticleFunctionTests {
             $0.spawnFunction = setVelocity
             $0.updateFunction = setVelocity
         }
-        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
         let result = try velocities(system, count: 16, frames: 3)
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
     }
@@ -124,7 +124,7 @@ struct ParticleFunctionTests {
         emitter.position = [0, 0.5, 0]
         emitter.restitution = 1
         emitter.friction = 0
-        let system = try ParticleSystem(device: runner.device, capacity: 8, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: emitter)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
         system.burst(8)
         for _ in 0..<frames {
@@ -180,13 +180,13 @@ struct ParticleFunctionTests {
 
     @Test func compileErrorsThrowFromSimulate() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
-        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = broken })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = broken })
         #expect(throws: (any Error).self) {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         }
     }
 
-    func preset(_ function: ParticleFunction, inSubEmitter: Bool = false) -> ParticlePreset {
+    func preset(_ function: ParticleFunction, inSubEmitter: Bool = false) -> ParticleSystem {
         var settings = fallingEmitter()
         if inSubEmitter {
             var childSettings = ParticleEmitter()
@@ -195,7 +195,7 @@ struct ParticleFunctionTests {
         } else {
             settings.updateFunction = function
         }
-        return ParticlePreset("Test", layers: [ParticlePreset.Layer("Layer", settings: settings, capacity: 16)])
+        return ParticleSystem("Test", layers: [ParticleSystem.Layer("Layer", settings: settings, capacity: 16)])
     }
 
     func functionError(_ body: () throws -> Void) -> ParticleFunctionError? {
@@ -209,7 +209,7 @@ struct ParticleFunctionTests {
 
     @Test func loadReportsCompileErrorsByName() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
-        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
         let error = functionError { try system.load(preset(broken)) }
         #expect(error?.name == "broken")
         #expect(error?.localizedDescription.contains("oops") == true)
@@ -233,10 +233,10 @@ struct ParticleFunctionTests {
     @Test func effectFilesKeepFunctions() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("function-effect-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: url) }
-        try ParticlePreset.strangeAttractor.write(to: url)
-        let loaded = try ParticlePreset(contentsOf: url)
-        #expect(loaded.layers[0].settings.updateFunction == ParticlePreset.strangeAttractor.layers[0].settings.updateFunction)
-        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        try ParticleSystem.strangeAttractor.write(to: url)
+        let loaded = try ParticleSystem(contentsOf: url)
+        #expect(loaded.layers[0].settings.updateFunction == ParticleSystem.strangeAttractor.layers[0].settings.updateFunction)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
         try system.load(loaded)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
     }

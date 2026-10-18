@@ -40,7 +40,7 @@ struct DeformedMeshTests {
         settings.gravity = .zero
         settings.lifetime = 10...10
         settings.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: count, emitter: settings)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: settings)
         system.emitters[0].mesh = mesh
         system.burst(count)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -71,7 +71,7 @@ struct DeformedMeshTests {
         var description = EmitterDescription("Flag", settings: settings, capacity: 256)
         description.mesh = Mesh(positions: [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], faces: [[0, 1, 2], [0, 2, 3]])
         description.meshDeformation = .wave(amplitude: 0.4, wavelength: 1, speed: 1)
-        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
         try system.apply([description])
         for _ in 0..<10 {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

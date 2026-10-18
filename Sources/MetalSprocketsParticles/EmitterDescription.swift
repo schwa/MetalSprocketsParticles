@@ -4,7 +4,7 @@ import simd
 import SwiftMesh
 
 /// Everything needed to create one emitter: its settings plus the resources and runtime choices that live on
-/// `ParticleSystem.Emitter`. Presets, apps, and editors describe emitters with this; `ParticleSystem.apply(_:)` turns
+/// `ParticleSystemRuntime.Emitter`. Presets, apps, and editors describe emitters with this; `ParticleSystemRuntime.apply(_:)` turns
 /// descriptions into running emitters.
 public struct EmitterDescription: Sendable, Identifiable, Equatable {
     /// Identifies the emitter across edits. `apply(_:)` rebuilds the particle buffer when the ids change.
@@ -60,7 +60,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     }
 }
 
-public extension ParticleSystem {
+public extension ParticleSystemRuntime {
     /// Makes the system's emitters match `descriptions`. Adding, removing, reordering, or resizing emitters (a change
     /// in ids or capacities), or `rebuild`, reallocates the particle buffer and removes all particles; otherwise
     /// emitters are updated in place and keep their particles. Textures and GPU meshes are cached.

@@ -28,13 +28,13 @@ struct TriggerTests {
         return emitter
     }
 
-    func step(_ system: ParticleSystem, frames: Int = 1) throws {
+    func step(_ system: ParticleSystemRuntime, frames: Int = 1) throws {
         for _ in 0..<frames {
             try runner.run(try system.simulate(deltaTime: deltaTime))
         }
     }
 
-    func aliveCount(_ system: ParticleSystem, _ emitter: ParticleSystem.Emitter) -> Int {
+    func aliveCount(_ system: ParticleSystemRuntime, _ emitter: ParticleSystemRuntime.Emitter) -> Int {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return emitter.range.filter { pointer[$0].velocity.w > 0 && pointer[$0].position.w < pointer[$0].velocity.w }.count
     }
@@ -43,7 +43,7 @@ struct TriggerTests {
     // GPU's counters, or check that a trigger's burst becomes live particles.
 
     @Test func eventBurstBecomesLiveParticles() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 100, emitter: quiet([EmissionTrigger(.event("boom"), .burst(7))]))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 100, emitter: quiet([EmissionTrigger(.event("boom"), .burst(7))]))
         try step(system, frames: 3)
         #expect(aliveCount(system, system.emitters[0]) == 0)
         system.send(event: "boom")
@@ -58,7 +58,7 @@ struct TriggerTests {
             $0.birthRate = 30
         }
         let gate = TriggerVolume.box(center: [1, 0, 0], halfExtents: [0.1, 1, 1])
-        let system = try ParticleSystem(device: runner.device, emitters: [stream, quiet([EmissionTrigger(.particlesEnter(volume: gate), .burst(5))])], capacity: 200)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [stream, quiet([EmissionTrigger(.particlesEnter(volume: gate), .burst(5))])], capacity: 200)
         try step(system, frames: 20)
         #expect(aliveCount(system, system.emitters[1]) == 0)
         try step(system, frames: 20)
@@ -71,7 +71,7 @@ struct TriggerTests {
             $0.birthRate = 30
         }
         let gate = TriggerVolume.box(center: [1, 0, 0], halfExtents: [0.1, 1, 1])
-        let system = try ParticleSystem(device: runner.device, emitters: [stream, quiet([EmissionTrigger(.particlesEnter(volume: gate, count: 10), .burst(1))])], capacity: 200)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [stream, quiet([EmissionTrigger(.particlesEnter(volume: gate, count: 10), .burst(1))])], capacity: 200)
         // The stream reaches the gate after 0.45 s and delivers 30 particles per second. At 0.67 s about 6 have
         // entered (no burst); at 0.92 s about 14 (one burst per 10).
         try step(system, frames: 40)
@@ -86,7 +86,7 @@ struct TriggerTests {
             $0.velocity = [0, -3, 0]
             $0.restitution = 0
         }
-        let system = try ParticleSystem(device: runner.device, emitters: [falling, quiet([EmissionTrigger(.colliderHit(index: 1), .burst(3))])], capacity: 50)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [falling, quiet([EmissionTrigger(.colliderHit(index: 1), .burst(3))])], capacity: 50)
         system.colliders = [.sphere(center: [5, 0, 0], radius: 0.5), .plane(normal: [0, 1, 0], distance: 0)]
         system.emitters[0].burst(1)
         try step(system, frames: 10)
@@ -100,7 +100,7 @@ struct TriggerTests {
             $0.birthRate = 60
         }
         emitter.lifetime = 10...10
-        let system = try ParticleSystem(device: runner.device, capacity: 500, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 500, emitter: emitter)
         system.isEmitting = false
         try step(system, frames: 10)
         #expect(aliveCount(system, system.emitters[0]) == 0)

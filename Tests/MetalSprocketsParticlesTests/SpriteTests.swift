@@ -70,7 +70,7 @@ struct SpriteTests {
         emitter.sizeStart = 0.5
         emitter.sizeEnd = 0.5
         emitter.imageSequence = sequence
-        let system = try ParticleSystem(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)
         system.texture = try texture(renderer.device)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse

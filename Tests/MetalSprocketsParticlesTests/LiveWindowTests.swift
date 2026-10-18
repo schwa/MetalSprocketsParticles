@@ -15,7 +15,7 @@ struct LiveWindowTests {
         runner = try Runner()
     }
 
-    func makeSystem(capacity: Int = 2_000, configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystem {
+    func makeSystem(capacity: Int = 2_000, configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystemRuntime {
         var emitter = ParticleEmitter()
         emitter.velocity = .zero
         emitter.velocitySpread = 0.5
@@ -23,21 +23,21 @@ struct LiveWindowTests {
         emitter.lifetime = 1...2
         emitter.birthRate = 300
         configure(&emitter)
-        return try ParticleSystem(device: runner.device, capacity: capacity, emitter: emitter, seed: 4)
+        return try ParticleSystemRuntime(device: runner.device, capacity: capacity, emitter: emitter, seed: 4)
     }
 
-    func step(_ system: ParticleSystem, seconds: Float) throws {
+    func step(_ system: ParticleSystemRuntime, seconds: Float) throws {
         for _ in 0..<Int((seconds / deltaTime).rounded()) {
             try runner.run(try system.simulate(deltaTime: deltaTime))
         }
     }
 
-    func aliveSlots(_ system: ParticleSystem) -> [Int] {
+    func aliveSlots(_ system: ParticleSystemRuntime) -> [Int] {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return (0..<system.capacity).filter { pointer[$0].velocity.w > 0 && pointer[$0].position.w < pointer[$0].velocity.w }
     }
 
-    func windowSlots(_ system: ParticleSystem) -> Set<Int> {
+    func windowSlots(_ system: ParticleSystemRuntime) -> Set<Int> {
         let emitter = system.emitters[0]
         let window = emitter.liveWindow
         return Set((0..<window.count).map { (window.start + $0) % emitter.capacity })

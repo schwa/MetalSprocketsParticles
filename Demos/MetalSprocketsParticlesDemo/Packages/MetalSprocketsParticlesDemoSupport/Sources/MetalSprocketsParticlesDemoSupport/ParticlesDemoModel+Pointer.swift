@@ -24,7 +24,7 @@ extension ParticlesDemoModel {
 
     /// Works out this frame's pointer and moves pointer-bound force fields there (simulate takes colliders and
     /// transforms, but not fields). Returns the pointer for `frameColliders` and `frameTransforms`.
-    func preparePointer(for system: ParticleSystem, time: Float, projection: simd_float4x4, cameraToWorld: simd_float4x4) -> SIMD3<Float> {
+    func preparePointer(for system: ParticleSystemRuntime, time: Float, projection: simd_float4x4, cameraToWorld: simd_float4x4) -> SIMD3<Float> {
         let pointer = pointerPosition(time: time, projection: projection, cameraToWorld: cameraToWorld)
         if forceFields.contains(where: \.followsPointer) {
             system.forceFields = frameForceFields(pointer: pointer)

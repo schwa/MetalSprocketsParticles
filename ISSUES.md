@@ -2007,39 +2007,71 @@ Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 
 status: open
 priority: medium
 kind: feature
-labels: area:api, needs-design
+labels: area:api, effort:l
 created: 2026-10-18T19:51:12Z
+updated: 2026-10-18T20:33:26Z
 +++
 
-Particles in view space over other UI, for app effects such as confetti over a window, sparkles on a button, or a burst at a tap. Today everything is a 3D scene with a perspective camera.
+Particles in view space over an app's normal UI: confetti over a window when something succeeds, sparkles on a button, a burst where the user taps. Today everything is a 3D scene with a perspective camera and world units.
 
-Needs: units in points (or a fixed orthographic camera that maps world units to points), emitters and colliders positioned in view coordinates (for example a view's frame as a collider, or the window edges), a transparent background over SwiftUI content, and hit-testing that passes through. Probably a ParticleView variant or modifier (.particleOverlay(effect)). Related: #97.
+Decisions:
+- No separate 2D particle type. 2D is the existing 3D simulation in the z = 0 plane, seen through an orthographic camera looking down -Z.
+- Units are points. The camera maps one world unit to one point, origin at the view's top left with y down (or bottom left with y up; pick one and document it), so sizes, speeds, and gravity read as points and points per second.
+- Billboards facing that camera are flat sprites; particle spin is already rotation around the view axis.
+- Add a per-emitter planar setting (or a system-wide one) that keeps particles at z = 0: zero the z of spawn positions, velocities, spread, turbulence, and force fields. Without it, z motion is invisible but can change collisions.
+- Colliders: planes act as lines. Add a helper that turns a view's frame (CGRect) into a box collider, and the view's edges into four planes.
+- 3D-only features (lighting, soft particles, depth sorting, camera-facing velocity alignment) stay as they are; in 2D they are unused, not removed.
+- API: a SwiftUI modifier, for example .particleOverlay(system, isActive:), and a ParticleView option for 2D. The overlay is transparent and passes hits through to the views below.
+- Triggers: fire bursts at a point in view coordinates (a tap location, a button's center), for example runtime.burst(at:).
+
+Steps:
+1. Spike: orthographic camera with point units over a transparent view; check that existing presets authored for 2D look right. Confirm z leaking is the only real gap.
+2. Planar setting.
+3. View-frame colliders and edges.
+4. Overlay modifier and ParticleView 2D option.
+5. Burst-at-point API.
+6. A few 2D samples (confetti cannon from a button, sparkles, tap bursts) and a demo screen that uses them.
+
+Related: #97 (ParticleView), #101 (rename).
 
 ---
 
-## 100: Demo: edit nested sub-emitters
+## 100: A first-class, document-based particle system editor
 
 +++
 status: open
 priority: medium
 kind: feature
-labels: area:demo, effort:m
+labels: area:demo, effort:xl, needs-design
 created: 2026-10-18T19:51:12Z
+updated: 2026-10-18T20:29:27Z
 +++
 
-Sub-emitters can nest up to ParticleSystem.maxSubEmitterDepth levels (#94), but the demo's outline and inspector only show and edit first-level sub-emitters (OutlineItem.subEmitter(emitterID, index)). Nested transitions, such as Embers to Ash's ash-to-dust stage, cannot be seen or edited in the app. Make outline items and the selected-sub-emitter accessor take a path of indices, show nested sub-emitters as children in the outline, and allow adding and removing them at any level.
+Replace the demo's debug-style inspector with a real editor app for particle systems. It should be something an artist or developer would choose to use, not a test harness. The user is collecting ideas; this issue holds the direction until a design exists.
+
+Direction:
+- Document-based: each document is one particle system (the JSON effect file), opened, saved, and versioned like any other document (SwiftUI DocumentGroup, undo/redo, autosave, recent files, Save As, duplicate). Samples open as untitled copies.
+- A real UI instead of long inspector forms: a structure view (emitters, sub-emitters at any depth, colliders, force fields, lights, triggers, tracked objects), focused editors per item, curve and gradient editors, and direct manipulation in the viewport (move and resize emitters, colliders, fields, and volumes with handles).
+- Viewport: camera controls, playback timeline (play, pause, scrub, restart, speed, loop, finite effects), stats, wireframe and solid collider toggles, background and lighting options, pointer bindings.
+- Editing user Metal functions (update, spawn, collision, death) with error display.
+- Export: effect files, images, videos.
+
+The current demo (MetalSprocketsParticlesDemo) is the starting point but should be refactored, not patched: separate document model, editor views, and viewport. Nested sub-emitter editing (the original scope of this issue) is part of it.
+
+Open: the app's name and whether it stays in this repo; which platforms; whether ParticleView or the editor viewport share code; how much of the current inspector survives. Break into smaller issues once the design exists. Related: #97 (ParticleView), #101 (ParticlePreset -> ParticleSystem rename).
 
 ---
 
 ## 101: Rename ParticlePreset to ParticleSystem, and ParticleSystem to ParticleSystemRuntime
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 created: 2026-10-18T20:17:34Z
-updated: 2026-10-18T20:28:29Z
+updated: 2026-10-18T20:50:09Z
+closed: 2026-10-18T20:50:09Z
 +++
 
 ParticlePreset is the type for a whole effect (emitters, colliders, force fields, lights, camera), but 'preset' suggests a fixed built-in starting point. Most uses are not presets: effects built in code, loaded from effect files, edited in the demo, passed to ParticleView. The docs already call them effects ('effect files', 'Get an effect').
@@ -2052,5 +2084,21 @@ Candidates:
 Scope: the type and its nested Layer alias, file names (ParticlePreset.swift, PresetBuilder.swift, PresetFolder.swift, SamplePresets.swift), APIs with 'preset' in them (presets(in:), ParticlePresetBuilder, PresetComponent, ParticleSystem.load(_:), ParticleView(_:)), the demo (presetName, preset picker labels), CLI flags (--preset, --list-presets, --presets), tests, README, and docs. The JSON format has no type name, so effect files keep working. 'Sample presets' can stay as the name of the samples library's contents.
 
 - `2026-10-18T20:19:46Z`: Decision (user): ParticleSystem is the public name for the effect description (today's ParticlePreset), as in SceneKit's SCNParticleSystem. The runtime (today's ParticleSystem: GPU buffers, simulate, render) becomes ParticleSystemRuntime. Rename the related APIs to match (e.g. ParticleSystemRuntime.load(_:), ParticleView(_ system:), presets(in:) -> systems(in:) or similar). 'Sample presets' can stay as the samples library's wording.
+- `2026-10-18T20:50:09Z`: Done: ParticlePreset -> ParticleSystem (the description), ParticleSystem -> ParticleSystemRuntime (GPU state, simulate, render), ParticlePresetBuilder -> ParticleSystemBuilder, PresetComponent -> ParticleSystemComponent, presets(in:) -> systems(in:), ParticleView(system:preset:) -> ParticleView(runtime:system:), files renamed to match. Mechanical part done with sed across 73 files, then API names and comments by hand. The samples library keeps 'presets' wording (MetalSprocketsParticlesSamples, SamplePresets.swift, .campfire). Effect JSON is unchanged. Demo internals (presetName etc.) still say preset; that is UI wording for picking a sample.
+
+---
+
+## 102: Video export tests occasionally hang
+
++++
+status: open
+priority: medium
+kind: bug
+labels: area:tooling, effort:s, needs-repro
+created: 2026-10-18T20:49:53Z
+updated: 2026-10-18T20:50:08Z
++++
+
+A full library test run hung for 10 minutes (killed by the timeout) and passed in 18 seconds when re-run. A sample of the stuck test process showed nothing working: the main thread idle in its run loop, and AVFoundation's video compression and QuickTime writer threads waiting on semaphores. My guess is that a video export test (VideoExportTests, which uses MetalSprockets' OffscreenVideoRenderer) awaits a completion that never arrives, such as the writer's finish callback or a GPU completion handler. Not confirmed; seen once so far. Next time, sample the process and look for the awaiting task. Consider a timeout inside the video tests so a hang fails instead of stalling the run.
 
 ---

@@ -157,7 +157,7 @@ extension EmitterShape {
     }
 }
 
-/// Which debug wireframes `ParticleSystem.renderWireframes` draws.
+/// Which debug wireframes `ParticleSystemRuntime.renderWireframes` draws.
 public struct WireframeOptions: OptionSet, Sendable {
     public let rawValue: Int
 
@@ -173,7 +173,7 @@ public struct WireframeOptions: OptionSet, Sendable {
     public static let all: Self = [.colliders, .forceFields, .triggerVolumes, .emitters, .trackedObjects]
 }
 
-public extension ParticleSystem {
+public extension ParticleSystemRuntime {
     /// Draws debug wireframes: colliders (blue), force fields (magenta), trigger volumes and tracked objects (green), and
     /// emitter shapes at their current transforms (yellow). Place inside a `RenderPass`.
     func renderWireframes(projection: simd_float4x4, view: simd_float4x4, options: WireframeOptions = .all) throws -> some Element {
@@ -213,7 +213,7 @@ public extension ParticleSystem {
     }
 }
 
-extension ParticleSystem {
+extension ParticleSystemRuntime {
     /// Draws line-list `vertices` in one flat color.
     func wireframe(_ vertices: [SIMD4<Float>], color: SIMD4<Float>, viewProjection: simd_float4x4) throws -> some Element {
         try RenderPipeline(vertexShader: library.wireframeVertex, fragmentShader: library.wireframeFragment) {

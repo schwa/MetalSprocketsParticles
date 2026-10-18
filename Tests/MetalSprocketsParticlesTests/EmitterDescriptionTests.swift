@@ -13,7 +13,7 @@ struct EmitterDescriptionTests {
         runner = try Runner()
     }
 
-    func liveCount(_ system: ParticleSystem) -> Int {
+    func liveCount(_ system: ParticleSystemRuntime) -> Int {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return (0..<system.capacity).filter { pointer[$0].velocity.w > 0 && pointer[$0].position.w < pointer[$0].velocity.w }.count
     }
@@ -26,7 +26,7 @@ struct EmitterDescriptionTests {
     }
 
     @Test func editingInPlaceKeepsParticlesAndChangingIDsRebuilds() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
         var descriptions = [description("A"), description("B")]
         try system.apply(descriptions)
         for _ in 0..<10 {
@@ -49,7 +49,7 @@ struct EmitterDescriptionTests {
     }
 
     @Test func resourcesAreResolvedOnceAndReused() throws {
-        let system = try ParticleSystem(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
         let mesh = Mesh.teapot(diameter: 1)
         var descriptions = [description("A", mesh: mesh), description("B", sprite: .star)]
         descriptions[0].settings.shape = .mesh

@@ -79,7 +79,7 @@ extension Collider {
     }
 }
 
-public extension ParticleSystem {
+public extension ParticleSystemRuntime {
     /// Draws the system's colliders as flat-colored wireframes. Place inside a `RenderPass`.
     func renderColliders(projection: simd_float4x4, view: simd_float4x4, color: SIMD4<Float> = [0.4, 0.6, 1, 1]) throws -> some Element {
         try wireframe(colliders.flatMap(\.wireframe), color: color, viewProjection: projection * view)

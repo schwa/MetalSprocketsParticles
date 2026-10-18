@@ -6,12 +6,12 @@ import Testing
 /// #76: built-in presets come from JSON resources.
 struct BuiltInPresetTests {
     @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() {
-        let slugs = ParticlePreset.sampleSlugs
+        let slugs = ParticleSystem.sampleSlugs
         #expect(slugs.count >= 25)
-        #expect(ParticlePreset.all.count == slugs.count)
-        #expect(Set(ParticlePreset.all.map(\.name)).count == slugs.count)
-        #expect(ParticlePreset.all.allSatisfy { !$0.comment.isEmpty && !$0.layers.isEmpty })
-        #expect(ParticlePreset.teapot.layers.allSatisfy { $0.mesh != nil })
+        #expect(ParticleSystem.all.count == slugs.count)
+        #expect(Set(ParticleSystem.all.map(\.name)).count == slugs.count)
+        #expect(ParticleSystem.all.allSatisfy { !$0.comment.isEmpty && !$0.layers.isEmpty })
+        #expect(ParticleSystem.teapot.layers.allSatisfy { $0.mesh != nil })
     }
 }
 
@@ -23,7 +23,7 @@ struct PresetBuilderTests {
     }
 
     /// Everything but layer ids, which are always fresh.
-    func same(_ a: ParticlePreset, _ b: ParticlePreset) -> Bool {
+    func same(_ a: ParticleSystem, _ b: ParticleSystem) -> Bool {
         a.name == b.name
             && a.layers.map(\.name) == b.layers.map(\.name)
             && a.layers.map(\.settings) == b.layers.map(\.settings)
@@ -35,7 +35,7 @@ struct PresetBuilderTests {
 
     @Test func builderMatchesTheMemberwiseInitializer() {
         let motion = EmitterMotion(kind: .circle)
-        let built = ParticlePreset("Test", ambientLight: [0.1, 0.1, 0.1], cameraEye: [1, 2, 3]) {
+        let built = ParticleSystem("Test", ambientLight: [0.1, 0.1, 0.1], cameraEye: [1, 2, 3]) {
             Collider.plane(normal: [0, 1, 0], distance: 0)
             EmitterDescription("A", settings: settings(10), capacity: 100)
             ForceField.turbulence(strength: 1)
@@ -43,7 +43,7 @@ struct PresetBuilderTests {
             EmitterDescription("B", settings: settings(20))
             TrackedObject("ball", motion: motion)
         }
-        let explicit = ParticlePreset(
+        let explicit = ParticleSystem(
             "Test",
             layers: [EmitterDescription("A", settings: settings(10), capacity: 100), EmitterDescription("B", settings: settings(20))],
             colliders: [.plane(normal: [0, 1, 0], distance: 0)],
@@ -57,8 +57,8 @@ struct PresetBuilderTests {
     }
 
     @Test func controlFlowWorks() {
-        func preset(windy: Bool, count: Int, extra: Collider?) -> ParticlePreset {
-            ParticlePreset("Flow") {
+        func preset(windy: Bool, count: Int, extra: Collider?) -> ParticleSystem {
+            ParticleSystem("Flow") {
                 for index in 0..<count {
                     EmitterDescription("Layer \(index)", settings: settings(Float(index)))
                 }

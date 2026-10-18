@@ -32,9 +32,9 @@ struct PointerBindingTests {
     }
 
     @Test func bindingsMoveOnlyWhatTheyName() {
-        var preset = ParticlePreset("Pointer", layers: [
-            ParticlePreset.Layer("A", settings: ParticleEmitter()),
-            ParticlePreset.Layer("B", settings: ParticleEmitter()),
+        var preset = ParticleSystem("Pointer", layers: [
+            ParticleSystem.Layer("A", settings: ParticleEmitter()),
+            ParticleSystem.Layer("B", settings: ParticleEmitter()),
         ])
         preset.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: .zero, radius: 0.5), .capsule(start: [-1, 0, 0], end: [1, 0, 0], radius: 0.1)]
         preset.forceFields = [.attractor(center: .zero, strength: 3), .wind(velocity: [1, 0, 0], strength: 1), .vortex(center: .zero, strength: 2)]
@@ -57,14 +57,14 @@ struct PointerBindingTests {
     }
 
     @Test func withoutLiveInputThePointerFollowsItsMotion() throws {
-        var preset = ParticlePreset("Pointer", layers: [])
+        var preset = ParticleSystem("Pointer", layers: [])
         preset.forceFields = [.attractor(center: .zero, strength: 3)]
         preset.pointerBindings = [.forceField(0)]
         preset.pointerMotion = EmitterMotion(kind: .circle, radius: 2, offset: [0, 1, 0])
         let start = preset.forceFields(at: 0)
         let later = preset.forceFields(at: 1)
         #expect(start != later)
-        let decoded = try JSONDecoder().decode(ParticlePreset.self, from: try JSONEncoder().encode(preset))
+        let decoded = try JSONDecoder().decode(ParticleSystem.self, from: try JSONEncoder().encode(preset))
         #expect(decoded.pointerBindings == preset.pointerBindings)
         #expect(decoded.forceFields(at: 1) == later)
     }

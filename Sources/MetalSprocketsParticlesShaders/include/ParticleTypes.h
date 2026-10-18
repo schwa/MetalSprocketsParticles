@@ -275,7 +275,7 @@ typedef struct {
     simd_float3 halfExtents; // Box.
     simd_float4 rotation;    // Box orientation quaternion (xyz = imaginary, w = real).
     simd_float3 velocity;    // Collider velocity this step.
-    uint32_t triggerIndex;   // Index in ParticleSystem.colliders, for collider-hit trigger counters.
+    uint32_t triggerIndex;   // Index in ParticleSystemRuntime.colliders, for collider-hit trigger counters.
     // Rotation speed (axis times radians per second) about `pivot`: a contact point moves at
     // velocity + angularVelocity x (point - pivot).
     simd_float3 angularVelocity;

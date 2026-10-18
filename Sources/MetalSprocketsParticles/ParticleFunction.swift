@@ -112,7 +112,7 @@ extension ParticleEmitter {
     }
 }
 
-public extension ParticlePreset {
+public extension ParticleSystem {
     /// Compiles every layer's functions, so a bad effect file fails when opened rather than when it first runs.
     func validateFunctions(device: MTLDevice) throws {
         for function in layers.flatMap(\.settings.allFunctions) {
@@ -121,7 +121,7 @@ public extension ParticlePreset {
     }
 }
 
-public extension ParticleSystem {
+public extension ParticleSystemRuntime {
     /// Compiles every emitter's update and spawn functions, including sub-emitters', so errors show up now rather
     /// than on the next `simulate`. `load(_:)` calls this.
     func compileFunctions() throws {
@@ -142,7 +142,7 @@ struct FunctionTables {
     var parameters: [[SIMD4<Float>]]
 }
 
-extension ParticleSystem {
+extension ParticleSystemRuntime {
     func functionTables(for dispatch: FramePlan.Dispatch) throws -> FunctionTables {
         var functions: [VisibleFunction] = []
         var linked: [VisibleFunction] = []

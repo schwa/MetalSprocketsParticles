@@ -38,7 +38,7 @@ public struct ParticlesView: View {
 struct ParticleCountView: View {
     let alive: Int
     let capacity: Int
-    /// A finite effect has ended (see `ParticleSystem.isFinished`); Restart plays it again.
+    /// A finite effect has ended (see `ParticleSystemRuntime.isFinished`); Restart plays it again.
     var isFinished = false
 
     var body: some View {
@@ -80,7 +80,7 @@ struct ParticleViewportView: View {
     @State private var viewSize: CGSize = .zero
 
     /// Matches OffscreenRenderer, so golden images and particles-render show what the app shows.
-    static let colorPixelFormat = ParticleSystem.colorPixelFormat
+    static let colorPixelFormat = ParticleSystemRuntime.colorPixelFormat
 
     var body: some View {
         if let system = model.system {

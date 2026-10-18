@@ -23,7 +23,7 @@ struct SwiftMeshEmitterTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: 1_024, emitter: emitter, seed: 2)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_024, emitter: emitter, seed: 2)
         system.emitters[0].mesh = try EmitterMesh(device: runner.device, mesh: mesh)
         system.burst(1_024)
         try runner.run(try system.simulate(deltaTime: 0))

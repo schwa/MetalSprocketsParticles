@@ -21,12 +21,12 @@ struct GoldenImageTests {
         colliders: Bool = true,
         worldColliders: [Collider] = ParticleEmitter.fountainColliders(time: 0),
         forceFields: [ForceField] = [],
-        configure: (ParticleSystem) throws -> Void = { _ in },
-        perFrame: (ParticleSystem, Int) -> Void = { _, _ in }
+        configure: (ParticleSystemRuntime) throws -> Void = { _ in },
+        perFrame: (ParticleSystemRuntime, Int) -> Void = { _, _ in }
     ) throws -> CGImage {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystem(device: renderer.device, capacity: 50_000, emitter: emitter, seed: seed)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 50_000, emitter: emitter, seed: seed)
         system.colliders = worldColliders
         system.forceFields = forceFields
         try configure(system)
@@ -76,7 +76,7 @@ struct GoldenImageTests {
     @Test func blendModeChangeOnSameRendererTakesEffect() throws {
         let size = CGSize(width: 160, height: 90)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystem(device: renderer.device, capacity: 5_000, emitter: .fountain, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 5_000, emitter: .fountain, seed: 0)
         system.colliders = ParticleEmitter.fountainColliders(time: 0)
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)

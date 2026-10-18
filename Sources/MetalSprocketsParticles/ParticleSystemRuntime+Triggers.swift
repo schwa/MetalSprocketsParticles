@@ -13,7 +13,7 @@ struct TriggerMemory: Equatable {
     var counterIndex = -1
 }
 
-extension ParticleSystem {
+extension ParticleSystemRuntime {
     /// Trigger volumes for this frame, in the order the GPU counts them.
     var triggerVolumes: [TriggerVolume] {
         emitters.flatMap { emitter in

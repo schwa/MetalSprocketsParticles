@@ -83,26 +83,26 @@ struct EmissionGPUTests {
         runner = try Runner()
     }
 
-    func makeSystem(_ configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystem {
+    func makeSystem(_ configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystemRuntime {
         var emitter = ParticleEmitter()
         emitter.lifetime = 5...5
         emitter.birthRate = 600
         configure(&emitter)
-        return try ParticleSystem(device: runner.device, capacity: 10_000, emitter: emitter, seed: 3)
+        return try ParticleSystemRuntime(device: runner.device, capacity: 10_000, emitter: emitter, seed: 3)
     }
 
-    func step(_ system: ParticleSystem, count: Int = 1) throws {
+    func step(_ system: ParticleSystemRuntime, count: Int = 1) throws {
         for _ in 0..<count {
             try runner.run(try system.simulate(deltaTime: deltaTime))
         }
     }
 
-    func particles(_ system: ParticleSystem) -> [Particle] {
+    func particles(_ system: ParticleSystemRuntime) -> [Particle] {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return Array(UnsafeBufferPointer(start: pointer, count: system.capacity))
     }
 
-    func liveCount(_ system: ParticleSystem) -> Int {
+    func liveCount(_ system: ParticleSystemRuntime) -> Int {
         particles(system).filter { $0.velocity.w > 0 && $0.position.w < $0.velocity.w }.count
     }
 

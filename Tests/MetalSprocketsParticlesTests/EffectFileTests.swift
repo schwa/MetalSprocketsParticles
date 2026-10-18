@@ -7,10 +7,10 @@ import Testing
 
 struct EffectFileTests {
     /// Every built-in preset survives JSON. Meshes come back triangulated, so they are compared by geometry.
-    @Test(arguments: ParticlePreset.all.map(\.name))
+    @Test(arguments: ParticleSystem.all.map(\.name))
     func presetRoundTrips(name: String) throws {
-        let preset = try #require(ParticlePreset.named(name))
-        let decoded = try JSONDecoder().decode(ParticlePreset.self, from: try preset.jsonData())
+        let preset = try #require(ParticleSystem.named(name))
+        let decoded = try JSONDecoder().decode(ParticleSystem.self, from: try preset.jsonData())
         #expect(decoded.name == preset.name)
         #expect(decoded.colliders == preset.colliders)
         #expect(decoded.forceFields == preset.forceFields)
@@ -33,7 +33,7 @@ struct EffectFileTests {
     }
 
     @Test func outOfRangeMeshIndicesAreAnError() throws {
-        var json = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(ParticlePreset.teapot.layers[0])) as! [String: Any]
+        var json = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(ParticleSystem.teapot.layers[0])) as! [String: Any]
         json["meshTriangles"] = [[0, 1, 999_999]]
         let data = try JSONSerialization.data(withJSONObject: json)
         #expect(throws: DecodingError.self) {
@@ -66,8 +66,8 @@ struct EffectFileTests {
     @Test func writeAndReadAFile() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("effect-\(UUID()).json")
         defer { try? FileManager.default.removeItem(at: url) }
-        try ParticlePreset.fireworks.write(to: url)
-        let loaded = try ParticlePreset(contentsOf: url)
-        #expect(loaded.layers.map(\.settings) == ParticlePreset.fireworks.layers.map(\.settings))
+        try ParticleSystem.fireworks.write(to: url)
+        let loaded = try ParticleSystem(contentsOf: url)
+        #expect(loaded.layers.map(\.settings) == ParticleSystem.fireworks.layers.map(\.settings))
     }
 }

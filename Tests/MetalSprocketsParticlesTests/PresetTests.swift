@@ -9,17 +9,17 @@ import Testing
 
 struct PresetLookupTests {
     @Test func namesAreUnique() {
-        #expect(Set(ParticlePreset.all.map(\.name)).count == ParticlePreset.all.count)
+        #expect(Set(ParticleSystem.all.map(\.name)).count == ParticleSystem.all.count)
     }
 
     @Test func lookupIgnoresCaseSpacesAndHyphens() {
-        #expect(ParticlePreset.named("magic trail")?.name == "Magic Trail")
-        #expect(ParticlePreset.named("MAGIC-TRAIL")?.name == "Magic Trail")
-        #expect(ParticlePreset.named("nope") == nil)
+        #expect(ParticleSystem.named("magic trail")?.name == "Magic Trail")
+        #expect(ParticleSystem.named("MAGIC-TRAIL")?.name == "Magic Trail")
+        #expect(ParticleSystem.named("nope") == nil)
     }
 
     @Test func animatedCollidersMoveOnlyWhenAsked() {
-        let still = ParticlePreset("Still", layers: [], colliders: [.sphere(center: .zero, radius: 1)])
+        let still = ParticleSystem("Still", layers: [], colliders: [.sphere(center: .zero, radius: 1)])
         var moving = still
         moving.animatesColliders = true
         #expect(still.colliders(at: 2) == still.colliders)
@@ -64,22 +64,22 @@ struct SpriteAndMotionTests {
 @Suite(.serialized)
 struct PresetRenderTests {
     @Test func loadReplacesEverything() throws {
-        let system = try ParticleSystem(emitters: [ParticleEmitter()], capacity: 10)
+        let system = try ParticleSystemRuntime(emitters: [ParticleEmitter()], capacity: 10)
         system.colliders = [.sphere(center: .zero, radius: 3)]
         try system.load(.campfire)
-        #expect(system.emitters.map(\.capacity) == ParticlePreset.campfire.layers.map(\.capacity))
-        #expect(system.colliders == ParticlePreset.campfire.colliders)
-        #expect(system.forceFields == ParticlePreset.campfire.forceFields)
+        #expect(system.emitters.map(\.capacity) == ParticleSystem.campfire.layers.map(\.capacity))
+        #expect(system.colliders == ParticleSystem.campfire.colliders)
+        #expect(system.forceFields == ParticleSystem.campfire.forceFields)
         #expect(system.emitters[0].texture != nil)
     }
 
     /// Each preset is a showcase; a golden per preset catches regressions in how they look.
-    @Test(arguments: ParticlePreset.all.map(\.name))
+    @Test(arguments: ParticleSystem.all.map(\.name))
     func presetLooksTheSame(name: String) throws {
-        let preset = try #require(ParticlePreset.named(name))
+        let preset = try #require(ParticleSystem.named(name))
         let size = CGSize(width: 480, height: 270)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystem(device: renderer.device, emitters: [], capacity: 1, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1, seed: 0)
         try system.load(preset)
         let view = simd_float4x4(lookingFrom: preset.cameraEye, at: preset.cameraTarget).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
@@ -103,7 +103,7 @@ struct PresetRenderTests {
     @Test func debugWireframesLookTheSame() throws {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystem(device: renderer.device, emitters: [], capacity: 1, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1, seed: 0)
         try system.load(.bumper)
         system.forceFields = [
             .wind(velocity: [1, 0, 0], strength: 1),

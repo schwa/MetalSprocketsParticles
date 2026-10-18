@@ -38,7 +38,7 @@ struct TangentDirectionTests {
         emitter.gravity = .zero
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: 256, emitter: emitter, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 256, emitter: emitter, seed: 1)
         system.burst(256)
         try runner.run(try system.simulate(deltaTime: 0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)

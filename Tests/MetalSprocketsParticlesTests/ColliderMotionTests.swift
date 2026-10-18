@@ -30,7 +30,7 @@ struct ColliderMotionTests {
         emitter.friction = 0
         emitter.lifetime = 10...10
         emitter.birthRate = 0
-        let system = try ParticleSystem(device: runner.device, capacity: 1, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: emitter)
         system.burst(1)
         for frame in 0..<frames {
             try runner.run(try system.simulate(deltaTime: deltaTime, colliders: colliders(frame)))
@@ -73,10 +73,10 @@ struct ColliderMotionTests {
     }
 
     @Test func paddleWheelPresetSpinsItsBlades() throws {
-        let preset = ParticlePreset.paddleWheel
+        let preset = ParticleSystem.paddleWheel
         #expect(preset.colliderSpins.count == 2)
         #expect(preset.colliders(at: 0.5) != preset.colliders(at: 0))
-        let decoded = try JSONDecoder().decode(ParticlePreset.self, from: try JSONEncoder().encode(preset))
+        let decoded = try JSONDecoder().decode(ParticleSystem.self, from: try JSONEncoder().encode(preset))
         #expect(decoded.colliderSpins == preset.colliderSpins)
     }
 

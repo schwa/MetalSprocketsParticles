@@ -4,8 +4,8 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// A depth texture that particle shaders can read, for soft particles. Fill it each frame with
-/// `ParticleSystem.renderSceneDepth(into:projection:view:)`, then pass `texture` to
-/// `ParticleSystem.render(projection:view:sceneDepth:)`. It must be the same size as the render target.
+/// `ParticleSystemRuntime.renderSceneDepth(into:projection:view:)`, then pass `texture` to
+/// `ParticleSystemRuntime.render(projection:view:sceneDepth:)`. It must be the same size as the render target.
 public final class SceneDepth {
     /// Depth-buffer values as `r32Float` colors, readable by the particle fragment shader.
     public let texture: MTLTexture
@@ -32,7 +32,7 @@ public final class SceneDepth {
     }
 }
 
-public extension ParticleSystem {
+public extension ParticleSystemRuntime {
     /// Draws the colliders as shaded solids, depth-tested and writing depth. Place inside a `RenderPass` that has a
     /// depth attachment, before `render`. Planes are drawn as squares `planeExtent` units from their closest point to
     /// the origin.
@@ -90,7 +90,7 @@ public extension ParticleSystem {
     }
 }
 
-extension ParticleSystem {
+extension ParticleSystemRuntime {
     /// Draws interleaved (position, normal) triangle-list `vertices`.
     func solids(_ vertices: [SIMD4<Float>], fragmentShader: FragmentShader, uniforms: WireframeUniforms) throws -> some Element {
         try RenderPipeline(vertexShader: library.solidVertex, fragmentShader: fragmentShader) {

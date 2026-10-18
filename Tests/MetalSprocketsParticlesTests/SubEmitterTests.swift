@@ -42,13 +42,13 @@ struct SubEmitterTests {
         return parent
     }
 
-    func step(_ system: ParticleSystem, seconds: Float) throws {
+    func step(_ system: ParticleSystemRuntime, seconds: Float) throws {
         for _ in 0..<Int((seconds / deltaTime).rounded()) {
             try runner.run(try system.simulate(deltaTime: deltaTime))
         }
     }
 
-    func alive(_ system: ParticleSystem, _ emitter: ParticleSystem.Emitter) -> [Particle] {
+    func alive(_ system: ParticleSystemRuntime, _ emitter: ParticleSystemRuntime.Emitter) -> [Particle] {
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
         return emitter.range.map { pointer[$0] }.filter { $0.velocity.w > 0 && $0.position.w < $0.velocity.w }
     }
@@ -56,7 +56,7 @@ struct SubEmitterTests {
     @Test func atAgeTransitionTurnsTheParentIntoItsChild() throws {
         // The parent lives 5 s but turns into a still-spawned child at 0.25 s, keeping its position and velocity.
         let transition = SubEmitter.transition(on: .atAge(seconds: 0.25), into: stillChild())
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 5...5 })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 5...5 })
         system.burst(4)
         try step(system, seconds: 0.2)
         #expect(alive(system, system.emitters[0]).count == 4)
@@ -73,7 +73,7 @@ struct SubEmitterTests {
         // Parent lives 2 s and turns into a child (own lifetime 10 s) at 0.5 s.
         func children(continuesLife: Bool) throws -> [Particle] {
             let transition = SubEmitter.transition(on: .atAge(seconds: 0.5), into: stillChild(), continuesLife: continuesLife)
-            let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 2...2 })
+            let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 2...2 })
             system.burst(4)
             try step(system, seconds: 0.75)
             return alive(system, system.subEmitterInstances[0])
@@ -91,7 +91,7 @@ struct SubEmitterTests {
         // at about 0.4 s and have all turned into children by 0.75 s.
         let box = TriggerVolume.box(center: [0.5, 1, 0], halfExtents: [0.1, 0.5, 0.5])
         let transition = SubEmitter.transition(on: .onEntering(box), into: stillChild())
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 5...5 })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 5...5 })
         system.burst(4)
         try step(system, seconds: 0.25)
         #expect(alive(system, system.subEmitterInstances[0]).isEmpty)
@@ -118,7 +118,7 @@ struct SubEmitterTests {
     }
 
     @Test func transitionsChain() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(chain(depth: 2)) { $0.lifetime = 5...5 })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(chain(depth: 2)) { $0.lifetime = 5...5 })
         #expect(system.subEmitterInstances.count == 2)
         #expect(system.subEmitterInstances[1].parent === system.subEmitterInstances[0])
         system.burst(4)
@@ -136,12 +136,12 @@ struct SubEmitterTests {
     }
 
     @Test func nestingStopsAtTheMaximumDepth() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(chain(depth: ParticleSystem.maxSubEmitterDepth + 2)))
-        #expect(system.subEmitterInstances.count == ParticleSystem.maxSubEmitterDepth)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(chain(depth: ParticleSystemRuntime.maxSubEmitterDepth + 2)))
+        #expect(system.subEmitterInstances.count == ParticleSystemRuntime.maxSubEmitterDepth)
     }
 
     @Test func addingANestedSubEmitterRebuilds() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(chain(depth: 1)))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(chain(depth: 1)))
         #expect(system.subEmitterInstances.count == 1)
         system.emitters[0].settings.subEmitters = [chain(depth: 2)]
         try runner.run(try system.simulate(deltaTime: deltaTime))
@@ -150,7 +150,7 @@ struct SubEmitterTests {
 
     @Test func missingTheVolumeDoesNotTransition() throws {
         let away = TriggerVolume.sphere(center: [0, -5, 0], radius: 0.5)
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(.transition(on: .onEntering(away), into: stillChild())) { $0.lifetime = 5...5 })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(.transition(on: .onEntering(away), into: stillChild())) { $0.lifetime = 5...5 })
         system.burst(4)
         try step(system, seconds: 1)
         #expect(alive(system, system.emitters[0]).count == 4)
@@ -159,7 +159,7 @@ struct SubEmitterTests {
 
     @Test func collisionTransitionReplacesOnlyParticlesThatHit() throws {
         let transition = SubEmitter.transition(on: .onCollision, into: stillChild(), sprite: .spark)
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) {
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(transition) {
             $0.lifetime = 5...5
             $0.velocity = .zero
             $0.gravity = [0, -9.8, 0]
@@ -188,7 +188,7 @@ struct SubEmitterTests {
     }
 
     @Test func instancesFollowEmittersInTheBuffer() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 10, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 4, settings: stillChild())))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 10, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 4, settings: stillChild())))
         #expect(system.emitters.count == 1)
         let child = try #require(system.subEmitterInstances.first)
         #expect(child.capacity == 40)
@@ -197,7 +197,7 @@ struct SubEmitterTests {
     }
 
     @Test func onDeathSpawnsChildrenWhereTheParentDied() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 6, settings: stillChild())))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 6, settings: stillChild())))
         system.burst(1)
         try step(system, seconds: 0.3)
         let child = system.subEmitterInstances[0]
@@ -213,7 +213,7 @@ struct SubEmitterTests {
     }
 
     @Test func onBirthSpawnsChildrenWithTheParent() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onBirth, countPerEvent: 3, settings: stillChild())))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onBirth, countPerEvent: 3, settings: stillChild())))
         system.burst(2)
         try step(system, seconds: deltaTime)
         #expect(alive(system, system.subEmitterInstances[0]).count == 6)
@@ -225,7 +225,7 @@ struct SubEmitterTests {
             $0.lifetime = 5...5
             $0.restitution = 0
         }
-        let system = try ParticleSystem(device: runner.device, capacity: 1, emitter: falling)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: falling)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
         system.burst(1)
         try step(system, seconds: 1)
@@ -240,7 +240,7 @@ struct SubEmitterTests {
         let moving = parent(SubEmitter(occasion: .whileAlive(interval: 0.05), countPerEvent: 8, settings: trail)) {
             $0.lifetime = 5...5
         }
-        let system = try ParticleSystem(device: runner.device, capacity: 1, emitter: moving)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: moving)
         system.burst(1)
         try step(system, seconds: 1)
         let children = alive(system, system.subEmitterInstances[0])
@@ -255,7 +255,7 @@ struct SubEmitterTests {
     @Test func childrenInheritParentVelocity() throws {
         var moving = stillChild()
         moving.lifetime = 10...10
-        let system = try ParticleSystem(device: runner.device, capacity: 1, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 2, velocityFactor: 0.5, settings: moving)))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 2, velocityFactor: 0.5, settings: moving)))
         system.burst(1)
         try step(system, seconds: 0.55)
         for child in alive(system, system.subEmitterInstances[0]) {
@@ -268,7 +268,7 @@ struct SubEmitterTests {
             var spray = stillChild()
             spray.velocitySpread = 1
             spray.shape = .sphere(radius: 0.1)
-            let system = try ParticleSystem(device: runner.device, capacity: 64, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 8, settings: spray)) {
+            let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 8, settings: spray)) {
                 $0.birthRate = 120
                 $0.velocitySpread = 1
             }, seed: 9)
@@ -282,7 +282,7 @@ struct SubEmitterTests {
     }
 
     @Test func changingTheLayoutRebuilds() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 2, settings: stillChild())))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onDeath, countPerEvent: 2, settings: stillChild())))
         system.emitter.subEmitters[0].countPerEvent = 5
         try step(system, seconds: deltaTime)
         #expect(system.subEmitterInstances.first?.capacity == 20)
@@ -292,7 +292,7 @@ struct SubEmitterTests {
     }
 
     @Test func restartRemovesChildren() throws {
-        let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onBirth, countPerEvent: 3, settings: stillChild())))
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent(SubEmitter(occasion: .onBirth, countPerEvent: 3, settings: stillChild())))
         system.burst(2)
         try step(system, seconds: deltaTime)
         system.restart()

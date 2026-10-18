@@ -36,7 +36,7 @@ struct FramePlan {
     var deltaTime: Float
 }
 
-extension ParticleSystem {
+extension ParticleSystemRuntime {
     // Nil collections mean "leave as they are", which differs from empty ("none").
     // swiftlint:disable discouraged_optional_collection
 

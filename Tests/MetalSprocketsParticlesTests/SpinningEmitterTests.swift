@@ -30,7 +30,7 @@ struct SpinningEmitterTests {
         emitter.lifetime = 10...10
         emitter.birthRate = 1_200
         emitter.inheritVelocity = inheritVelocity
-        let system = try ParticleSystem(device: runner.device, capacity: 1_000, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, emitter: emitter)
         for frame in 0..<frames {
             let rotation = simd_float4x4(simd_quatf(angle: Float(frame) * spinPerFrame, axis: [0, 1, 0]))
             try runner.run(try system.simulate(deltaTime: deltaTime, transforms: [rotation]))
