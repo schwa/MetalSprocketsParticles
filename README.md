@@ -20,9 +20,9 @@ In each frame, call `system.simulate(deltaTime:)` before your render pass. Then 
 To render a preset to an image or a video from the command line, use `particles-render`:
 
 ```sh
-xcb run MetalSprocketsParticles/particles-render -- --list-presets
-xcb run MetalSprocketsParticles/particles-render -- --preset campfire -o campfire.png
-xcb run MetalSprocketsParticles/particles-render -- --preset campfire --video campfire.mov
+swift run -c release particles-render --list-presets
+swift run -c release particles-render --preset campfire -o campfire.png
+swift run -c release particles-render --preset campfire --video campfire.mov
 ```
 
 The demo app is in `Demos/MetalSprocketsParticlesDemo`.

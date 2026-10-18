@@ -1837,14 +1837,17 @@ Design notes: transitions are set on the source emitter (event, target emitter, 
 ## 92: Docs should not refer to xcb
 
 +++
-status: open
+status: closed
 priority: medium
 kind: documentation
-labels: area:docs,effort:xs
+labels: area:docs, effort:xs
 created: 2026-10-18T17:22:24Z
-updated: 2026-10-18T18:50:51Z
+updated: 2026-10-18T18:51:33Z
+closed: 2026-10-18T18:51:33Z
 +++
 
 README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace with standard xcodebuild/swift commands.
+
+- `2026-10-18T18:51:33Z`: README uses swift run -c release particles-render; METHODOLOGY describes the build wrapper generically. Docs only; not built. The swift run commands were not run here (this workspace builds through the wrapper).
 
 ---

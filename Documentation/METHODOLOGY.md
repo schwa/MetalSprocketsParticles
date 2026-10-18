@@ -71,7 +71,8 @@ After each burst of features the human asked, in effect, "is it all shown and so
 
 - **pi** (the harness): file read, edit, write, shell, a JavaScript "codemode" for batching tool calls, a task queue
   that drove the autonomous runs, and structured questions for scope decisions.
-- **xcb** for every build, test, and run (about 85 builds, 129 test runs). Raw `swift`/`xcodebuild` were not used.
+- **A build wrapper** around `xcodebuild` and SwiftPM for every build, test, and run (about 85 builds, 129 test runs),
+  so the agent always got the same compact error and test summaries.
 - **jj** (Jujutsu) for version control: one commit per issue, bookmarks marking each autonomous run, splits and squashes
   where needed. Nothing was pushed.
 - **issues** CLI for the tracker, including dependencies and labels such as `deferred`, `needs-decision`, and
@@ -90,7 +91,7 @@ pi skills are instruction files the agent loads when a task matches. Used direct
 
 - `auto-issue-fixer` (seven runs), `issues`, `issues-triage`, `writing-issues`: the tracker workflow.
 - `improve-codebase-architecture`, `swiftui-house-rules`, `swift-concurrency-pro`: reviews.
-- `xcb`, `jujutsu`, `metalsprockets`, `swift-no-shadow-types`, `writing-comments`: house rules for builds, version
+- Build, `jujutsu`, `metalsprockets`, `swift-no-shadow-types`, `writing-comments`: house rules for builds, version
   control, the MetalSprockets API, Codable design, and comment style.
 
 Global instructions (`AGENTS.md`) set the working style: concise answers, no commits without permission (the
