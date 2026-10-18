@@ -83,8 +83,8 @@ The first day built the engine. The second day was mostly about finish, reach, a
   per sub-emitter, keeping the parent's life, entering a volume, and nesting.
 - **Packaging.** A standalone `ParticleView` in its own UI library, built on MetalSprockets' `RenderView`. The sample
   presets moved out of the core library into their own optional library, on the human's direction.
-- **Demo clips.** A script renders every preset's clip and an animated preview that plays inline on GitHub, and
-  rewrites the demo index. A test fails if any preset is missing one.
+- **Demo previews.** A script renders an animated preview of every preset that plays inline on GitHub, and rewrites
+  the demo index. A test fails if any preset is missing one.
 
 ## Tools
 

@@ -3,7 +3,7 @@ import Foundation
 import MetalSprocketsParticlesSamples
 import Testing
 
-/// Documentation has a clip, an animated preview, and a Demos.md section for every sample preset, and nothing else.
+/// Documentation has an animated preview and a Demos.md section for every sample preset, and nothing else.
 /// Scripts/make-demos.sh regenerates them.
 struct DemoDocumentationTests {
     let demos = URL(filePath: #filePath)
@@ -17,7 +17,6 @@ struct DemoDocumentationTests {
 
     @Test func everyPresetHasAClipAPosterAndASection() throws {
         let slugs = Set(ParticleSystem.sampleSlugs)
-        #expect(try files(in: "videos", extension: "mp4") == slugs)
         #expect(try files(in: "previews", extension: "webp") == slugs)
         let readme = try String(contentsOf: demos.appending(path: "Demos.md"), encoding: .utf8)
         for preset in ParticleSystem.all {

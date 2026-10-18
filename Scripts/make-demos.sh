@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Renders the demo clips and their animated previews in Documentation, and rewrites Documentation/Demos.md from the
-# presets.
+# Renders an animated preview of each sample preset into Documentation/previews, and rewrites Documentation/Demos.md
+# from the presets.
 #
-#   Scripts/make-demos.sh                # every preset
-#   Scripts/make-demos.sh flare fog      # only these presets (Demos.md is always rewritten)
-#   Scripts/make-demos.sh --from-videos  # remake every preview from the existing clips, and Demos.md; no rendering
-#   Scripts/make-demos.sh --index-only   # only rewrite Demos.md
+#   Scripts/make-demos.sh               # every preset
+#   Scripts/make-demos.sh flare fog     # only these presets (Demos.md is always rewritten)
+#   Scripts/make-demos.sh --index-only  # only rewrite Demos.md
 #
 # Needs ffmpeg, gif2webp (libwebp), and jq. Set PARTICLES_RENDER to use an existing particles-render binary instead of
 # building one.
@@ -20,10 +19,10 @@ clip_seconds=6
 finite="confetti flare"
 
 mode=render
-case "${1:-}" in
---from-videos) mode=previews; shift ;;
---index-only) mode=index; shift ;;
-esac
+if [[ "${1:-}" == "--index-only" ]]; then
+    mode=index
+    shift
+fi
 
 slugs=("$@")
 if [[ $mode == index ]]; then
@@ -37,42 +36,37 @@ if [[ $mode == render && -z "${PARTICLES_RENDER:-}" ]]; then
     PARTICLES_RENDER="$(swift build --package-path "$root" -c release --show-bin-path)/particles-render"
 fi
 
-mkdir -p "$demos/videos" "$demos/previews"
+mkdir -p "$demos/previews"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-# An animated WebP of four seconds of the clip, from one second in, at 480 pixels wide and 15 fps. GitHub shows
-# animated images inline but does not play videos from the repository.
+# An animated WebP of four seconds of the rendered clip, from one second in, at 480 pixels wide and 15 fps. GitHub
+# shows animated images inline but does not play videos from the repository.
 make_preview() {
     local slug="$1"
-    ffmpeg -v error -y -ss 1 -t 4 -i "$demos/videos/$slug.mp4" \
+    ffmpeg -v error -y -ss 1 -t 4 -i "$work/$slug.mov" \
         -vf "fps=15,scale=480:-2:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer" \
         -loop 0 "$work/$slug.gif"
     gif2webp -q 60 -lossy -m 6 -mt -quiet "$work/$slug.gif" -o "$demos/previews/$slug.webp"
 }
 
 for slug in "${slugs[@]+"${slugs[@]}"}"; do
-    if [[ $mode == render ]]; then
-        name="$(jq -r .name "$presets/$slug.json")"
-        if [[ " $finite " == *" $slug "* ]]; then
-            length=(--duration "$finite_seconds" --until-finished)
-        else
-            length=(--duration "$clip_seconds")
-        fi
-        "$PARTICLES_RENDER" --preset "$name" --video "$work/$slug.mov" "${length[@]}" --width 1280 --height 720
-        ffmpeg -v error -y -i "$work/$slug.mov" -c:v libx264 -pix_fmt yuv420p -crf 23 -movflags +faststart -an \
-            "$demos/videos/$slug.mp4"
+    name="$(jq -r .name "$presets/$slug.json")"
+    if [[ " $finite " == *" $slug "* ]]; then
+        length=(--duration "$finite_seconds" --until-finished)
+    else
+        length=(--duration "$clip_seconds")
     fi
+    "$PARTICLES_RENDER" --preset "$name" --video "$work/$slug.mov" "${length[@]}" --width 960 --height 540
     make_preview "$slug"
 done
 
-# Demos.md lists every preset in index.json order, with its comment and preview. A preview links to the full clip.
+# Demos.md lists every preset in index.json order, with its comment and preview.
 {
     echo "# MetalSprocketsParticles Demos"
     echo
-    echo "Every sample preset, rendered offscreen with \`particles-render --video\` (seed 0, the preset's camera). The"
-    echo "previews are four-second loops; click one for the full 1280×720 clip. Regenerate them with"
-    echo "\`Scripts/make-demos.sh\`."
+    echo "Every sample preset as a four-second loop, rendered offscreen with \`particles-render --video\` (seed 0, the"
+    echo "preset's camera). Regenerate them with \`Scripts/make-demos.sh\`."
     echo
     echo "## Contents"
     echo
@@ -85,6 +79,6 @@ done
         echo
         jq -r .comment "$presets/$slug.json"
         echo
-        echo "[![$slug](previews/$slug.webp)](videos/$slug.mp4)"
+        echo "![$slug](previews/$slug.webp)"
     done < <(jq -r '.[]' "$presets/index.json")
 } > "$demos/Demos.md"
