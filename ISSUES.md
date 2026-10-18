@@ -1088,12 +1088,13 @@ Check first: dependency weight for the library target (maybe keep wireframes in 
 ## 56: Crash when removing a collider while the simulation is running
 
 +++
-status: new
+status: closed
 priority: high
 kind: bug
-labels: area:demo
+labels: area:demo, effort:xs
 created: 2026-10-18T02:07:29Z
-updated: 2026-10-18T02:08:03Z
+updated: 2026-10-18T12:35:29Z
+closed: 2026-10-18T12:35:29Z
 +++
 
 Removing a collider while the particle system is running crashes the app (seen in the demo).
@@ -1107,5 +1108,7 @@ To do: get the crash log/backtrace, write a test that removes a collider mid-run
 Likely cause: EmitterInspectorView.swift:44 uses 'if let collider = Binding($model.colliders[id: id])'. Binding(optional) force-unwraps on every read. After removal, ColliderEditorView's child bindings update before the parent body re-runs, so the unwrap hits nil. Same pattern at line 51 for force fields, so removing a force field probably crashes too.
 
 Fix: drop Binding(optional). Use a custom Binding whose get falls back to a cached/default value and whose set ignores missing ids, or pass the id down and look it up in the model.
+
+- `2026-10-18T12:35:29Z`: Fixed: the inspector bound colliders and force fields with Binding(optional), which force-unwraps on every read; after a removal SwiftUI read it once more and trapped. Sub-emitter and trigger editors had the same class of bug (array index binding out of range after removal). All four now bind through non-optional model properties (selectedCollider, selectedForceField, selectedSubEmitter, selectedTrigger) that read a placeholder and drop writes when the item is gone. Regression test exemption: the trap is inside SwiftUI's binding and kills the test process, so no red-first test; OutlineTests.selectedItemsSurviveRemoval checks the model contract instead. Not verified in the running app.
 
 ---

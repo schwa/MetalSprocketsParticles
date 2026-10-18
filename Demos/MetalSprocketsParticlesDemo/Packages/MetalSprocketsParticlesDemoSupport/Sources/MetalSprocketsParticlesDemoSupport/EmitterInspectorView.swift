@@ -24,7 +24,7 @@ struct EmitterInspectorView: View {
             case let .subEmitter(_, index):
                 if index < model.selectedEmitter.settings.subEmitters.count {
                     Section {
-                        SubEmitterEditorView(subEmitter: $model.selectedEmitter.settings.subEmitters[index])
+                        SubEmitterEditorView(subEmitter: $model.selectedSubEmitter)
                     } header: {
                         Text("Sub-Emitter of \(model.selectedEmitter.name)")
                     } footer: {
@@ -35,22 +35,22 @@ struct EmitterInspectorView: View {
             case let .trigger(_, index):
                 if index < model.selectedEmitter.settings.triggers.count {
                     Section("Trigger on \(model.selectedEmitter.name)") {
-                        TriggerEditorView(trigger: $model.selectedEmitter.settings.triggers[index])
+                        TriggerEditorView(trigger: $model.selectedTrigger)
                     }
                     SendEventSectionView(model: model)
                     RemoveSectionView(title: "Remove Trigger", model: model)
                 }
             case let .collider(id):
-                if let collider = Binding($model.colliders[id: id]) {
+                if model.colliders[id: id] != nil {
                     Section("Collider") {
-                        ColliderEditorView(collider: collider.collider)
+                        ColliderEditorView(collider: $model.selectedCollider)
                     }
                     RemoveSectionView(title: "Remove Collider", model: model)
                 }
             case let .forceField(id):
-                if let field = Binding($model.forceFields[id: id]) {
+                if model.forceFields[id: id] != nil {
                     Section("Force Field") {
-                        ForceFieldEditorView(field: field.field)
+                        ForceFieldEditorView(field: $model.selectedForceField)
                     }
                     RemoveSectionView(title: "Remove Force Field", model: model)
                 }

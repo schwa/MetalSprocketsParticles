@@ -45,6 +45,66 @@ final class ParticlesDemoModel {
         }
     }
 
+    // The selected collider and force field for the inspector. Never optional: after a removal, SwiftUI can read an
+    // editor's bindings once more before the inspector stops showing it, so a missing item reads as a harmless
+    // placeholder and writes to it are dropped.
+
+    var selectedCollider: Collider {
+        get {
+            guard case let .collider(id) = selection, let item = colliders[id: id] else {
+                return .plane(normal: [0, 1, 0], distance: 0)
+            }
+            return item.collider
+        }
+        set {
+            if case let .collider(id) = selection, let index = colliders.firstIndex(where: { $0.id == id }) {
+                colliders[index].collider = newValue
+            }
+        }
+    }
+
+    var selectedSubEmitter: SubEmitter {
+        get {
+            guard case let .subEmitter(_, index) = selection, index < selectedEmitter.settings.subEmitters.count else {
+                return SubEmitter(occasion: .onDeath, countPerEvent: 1, settings: ParticleEmitter())
+            }
+            return selectedEmitter.settings.subEmitters[index]
+        }
+        set {
+            if case let .subEmitter(_, index) = selection, index < selectedEmitter.settings.subEmitters.count {
+                selectedEmitter.settings.subEmitters[index] = newValue
+            }
+        }
+    }
+
+    var selectedTrigger: EmissionTrigger {
+        get {
+            guard case let .trigger(_, index) = selection, index < selectedEmitter.settings.triggers.count else {
+                return EmissionTrigger(.event(""), .start)
+            }
+            return selectedEmitter.settings.triggers[index]
+        }
+        set {
+            if case let .trigger(_, index) = selection, index < selectedEmitter.settings.triggers.count {
+                selectedEmitter.settings.triggers[index] = newValue
+            }
+        }
+    }
+
+    var selectedForceField: ForceField {
+        get {
+            guard case let .forceField(id) = selection, let item = forceFields[id: id] else {
+                return .wind(velocity: .zero, strength: 0)
+            }
+            return item.field
+        }
+        set {
+            if case let .forceField(id) = selection, let index = forceFields.firstIndex(where: { $0.id == id }) {
+                forceFields[index].field = newValue
+            }
+        }
+    }
+
     /// Collider rest positions. `animateColliders` moves them each frame.
     var colliders: [ColliderItem] = [] {
         didSet { system?.colliders = colliders.map(\.collider) }

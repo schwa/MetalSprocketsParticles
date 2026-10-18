@@ -47,6 +47,47 @@ struct OutlineTests {
         #expect(model.forceFields.count == 1)
     }
 
+    /// #56: after a removal SwiftUI may read and write an editor's bindings once more. They must not trap, and writes must
+    /// not bring the item back or touch another one.
+    @Test func selectedItemsSurviveRemoval() {
+        let model = ParticlesDemoModel()
+        model.addCollider(.box)
+        model.selectedCollider = .sphere(center: [1, 1, 1], radius: 2)
+        #expect(model.colliders.last?.collider == .sphere(center: [1, 1, 1], radius: 2))
+        let colliderCount = model.colliders.count
+        let removed = model.selection
+        model.removeSelection()
+        model.selection = removed
+        _ = model.selectedCollider
+        model.selectedCollider = .sphere(center: .zero, radius: 9)
+        #expect(model.colliders.count == colliderCount - 1)
+        #expect(!model.colliders.contains { $0.collider == .sphere(center: .zero, radius: 9) })
+
+        model.addForceField(.vortex)
+        let field = model.selection
+        model.removeSelection()
+        model.selection = field
+        _ = model.selectedForceField
+        model.selectedForceField = .turbulence(strength: 9)
+        #expect(model.forceFields.isEmpty)
+
+        let emitter = model.emitters[0].id
+        model.addSubEmitter(to: emitter)
+        model.addTrigger(to: emitter)
+        model.selection = .subEmitter(emitter, 0)
+        model.removeSelection()
+        model.selection = .subEmitter(emitter, 0)
+        _ = model.selectedSubEmitter
+        model.selectedSubEmitter = SubEmitter(occasion: .onBirth, countPerEvent: 9, settings: ParticleEmitter())
+        #expect(model.selectedEmitter.settings.subEmitters.isEmpty)
+        model.selection = .trigger(emitter, 0)
+        model.removeSelection()
+        model.selection = .trigger(emitter, 0)
+        _ = model.selectedTrigger
+        model.selectedTrigger = EmissionTrigger(.event("x"), .stop)
+        #expect(model.selectedEmitter.settings.triggers.isEmpty)
+    }
+
     @Test func presetMeshReachesTheSystem() throws {
         let model = ParticlesDemoModel(preset: .teapot)
         let system = try #require(model.system)
