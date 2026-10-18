@@ -174,6 +174,12 @@ public final class ParticleSystem {
     /// Multiplies simulation time. 2 runs twice as fast; 0.5 is slow motion.
     public var speedFactor: Float = 1
 
+    // SPIKE #85: a user [[visible]] update function and its parameters, called for every live particle each step.
+    public var userUpdate: VisibleFunction?
+    public var userParameters: [SIMD4<Float>] = []
+    // SPIKE #85: bind the table even without a user function, to measure the cost of the plumbing alone.
+    public var alwaysBindUserTable = true
+
     public var state: SimulationState = .playing {
         didSet {
             if state == .stopped {
@@ -423,6 +429,15 @@ public final class ParticleSystem {
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
+        let userUpdate = self.userUpdate
+        let bindsTable = userUpdate != nil || alwaysBindUserTable
+        let updateFunction = try userUpdate ?? library.function(type: VisibleFunction.self, named: "particleNoUpdate")
+        let userParameters = self.userParameters.isEmpty ? [SIMD4<Float>.zero] : self.userParameters
+        let allUniforms = dispatches.map { dispatch in
+            var uniforms = dispatch.uniforms
+            uniforms.hasUserUpdate = userUpdate == nil ? 0 : 1
+            return uniforms
+        }
         let sortKernels = sortKernels
         return try ComputePass {
             // Previous frame's vertex stage reads the buffer we are about to write.
@@ -433,10 +448,17 @@ public final class ParticleSystem {
                     EncoderBarrier(after: .dispatch, before: .dispatch)
                 }
                 try ComputePipeline(computeKernel: kernel) {
-                    try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
+                    if bindsTable {
+                        try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
+                            .visibleFunctionTable("userUpdate", function: updateFunction)
+                    } else {
+                        try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
+                    }
                 }
+                .linkedFunctions(bindsTable ? [updateFunction] : [])
+                .parameter("userParameters", values: userParameters)
                 .parameter("particles", buffer: buffer)
-                .parameter("uniforms", value: dispatches[index].uniforms)
+                .parameter("uniforms", value: allUniforms[index])
                 // Never bind an empty array; the counts in uniforms keep the padding unused.
                 .parameter("colliders", values: dispatches[index].colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : dispatches[index].colliders)
                 .parameter("forceFields", values: dispatches[index].forceFields.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : dispatches[index].forceFields)

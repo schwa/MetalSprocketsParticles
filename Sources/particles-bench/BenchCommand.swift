@@ -25,6 +25,13 @@ struct BenchCommand: ParsableCommand {
     @Option(help: "Image height in pixels.")
     var height = 1_080
 
+    // SPIKE #85
+    @Option(help: "User update function: none (no table), table (placeholder bound), noop, work.")
+    var user = "table"
+
+    @Flag(help: "Only the 1M scenarios.")
+    var only1M = false
+
     struct Scenario {
         var name: String
         var capacity: Int
@@ -48,9 +55,10 @@ struct BenchCommand: ParsableCommand {
             Scenario(name: "100K, sorted", capacity: 100_000, alive: 100_000, sortMode: .backToFront),
             Scenario(name: "1M, sorted", capacity: 1_000_000, alive: 1_000_000, sortMode: .backToFront),
         ]
+        let selected = only1M ? scenarios.filter { $0.name.hasPrefix("1M") && $0.sortMode == .none } : scenarios
         print("Scenario              | simulate GPU | render GPU | CPU/frame")
         print("----------------------|--------------|------------|----------")
-        for scenario in scenarios {
+        for scenario in selected {
             let result = try measure(scenario)
             let name = scenario.name.padding(toLength: 21, withPad: " ", startingAt: 0)
             print("\(name) | \(milliseconds(result.simulate)) | \(milliseconds(result.render)) | \(milliseconds(result.cpu))")
@@ -83,6 +91,23 @@ struct BenchCommand: ParsableCommand {
         let system = try ParticleSystem(device: renderer.device, capacity: scenario.capacity, emitter: emitter(scenario), seed: 0)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: [0, 0.5, 0], radius: 0.6)]
         system.forceFields = scenario.turbulence ? [.turbulence(strength: 1, scale: 1, speed: 0.3)] : []
+        system.alwaysBindUserTable = user != "none"
+        if user == "noop" || user == "work" {
+            let source = """
+            #include <metal_stdlib>
+            using namespace metal;
+            struct ParticleState { float3 position; float3 velocity; float age; float lifetime; uint id; };
+            [[visible]] void noop(thread ParticleState &p, float dt, float time, constant float4 *parameters) {}
+            [[visible]] void work(thread ParticleState &p, float dt, float time, constant float4 *parameters) {
+                float3 swirl = float3(-p.position.z, sin(time + p.position.x), p.position.x) * parameters[0].x;
+                p.velocity += swirl * dt;
+                p.position += normalize(p.velocity + 1e-4) * 0.001 * cos(p.age * 6.0);
+            }
+            """
+            let library = try renderer.device.makeLibrary(source: source, options: nil)
+            system.userUpdate = try VisibleFunction(library: library, name: user)
+            system.userParameters = [[0.5, 0, 0, 0]]
+        }
         let view = simd_float4x4(lookingFrom: [0, 2, 5], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
 

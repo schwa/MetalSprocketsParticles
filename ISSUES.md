@@ -450,14 +450,15 @@ Colliding particles always bounce. SceneKit has particleDiesOnCollision and coll
 status: open
 priority: medium
 kind: feature
-labels: effort:xl, area:simulation
+labels: effort:xl, area:simulation, tracking
 created: 2026-10-17T14:01:52Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-18T17:06:39Z
 +++
 
 SceneKit lets callers attach event handlers (birth, death, collision) and per-frame modifier blocks at several simulation stages. A GPU system needs an equivalent, e.g. user-supplied Metal functions for spawn, update, or render, so effects can go beyond the built-in parameters.
 
 - `2026-10-18T13:33:59Z`: Decision (user): functions. Custom per-particle behavior is user-supplied Metal functions called from the simulation kernel (e.g. visible functions or function constants/stitching via MetalSprockets), not Swift closures or a fixed set of built-in modifier stages. Next: split into a design spike for the function signature and linking, then implementation.
+- `2026-10-18T17:06:39Z`: Split into #85 (spike, do first), #86 (update hook), #87 (spawn hook), #88 (effect files), and #89 (event hooks). A render-stage hook is left out until needed.
 
 ---
 
@@ -1679,5 +1680,140 @@ Scope:
 - Doc comments on the public API, and fixes to the existing ones.
 
 Rules: write in simple English (the simple-english skill), and follow the writing-comments and swift-documentation skills. The doc build must have no warnings.
+
+---
+
+## 85: Spike: how user Metal functions plug into the simulation
+
++++
+status: closed
+priority: medium
+kind: task
+labels: effort:m, area:simulation, spike
+created: 2026-10-18T17:06:25Z
+updated: 2026-10-18T17:19:40Z
+closed: 2026-10-18T17:19:40Z
++++
+
+Part of #24. Choose how user-supplied Metal functions are linked into the particle kernels: visible function tables, function stitching, or compiling the kernel from source with the user function inserted. Check what MetalSprockets supports. Define the signature: which particle fields, uniforms, and user parameters the function sees, and what it may write. Measure the per-particle cost at 1M particles. Output: a short design note on #24, and sizes for the follow-up issues.
+
+\- `2026-10-18T17:19:40Z`: Spike result (prototype in the working copy, not committed).
+
+Linking: visible function table. The precompiled updateParticles kernel declares visible_function_table<ParticleUpdateFunction> userUpdate and calls userUpdate[0] when uniforms.hasUserUpdate is set. The user function lives in its own MTLLibrary compiled at runtime (device.makeLibrary(source:)) and is linked with MetalSprockets .linkedFunctions + .visibleFunctionTable. Cross-library linking works (test: a user function compiled from source sets velocity and overrides gravity). A built-in [[visible]] no-op fills the table when there is no user function, so the pipeline shape never changes. Rejected: recompiling the whole kernel from source (slow, ships shader source, harder errors) and function stitching (too limited for arbitrary code).
+
+Signature: void f(thread ParticleState &, float deltaTime, float time, constant float4 *parameters). ParticleState is a small public ABI of plain Metal types (position, velocity, age, lifetime, id), declared in a prelude we prepend to user source, so user code needs no project headers and our internal Particle packing can change freely. Parameters are a float4 array set from Swift.
+
+Cost (M5 Max, release, 1M particles, interleaved 3x against the pre-spike build): baseline 0.245-0.249 ms simulate; with the table bound and a user function doing real math 0.245-0.248 ms. No measurable cost.
+
+Follow-ups: #86 update hook: as prototyped, called after forces and before collisions; API is a ParticleUpdateFunction type (source string or MTLFunction plus parameters) on the emitter, not the system, since each dispatch is per emitter. More state (color, size, kill) can be added to ParticleState. Size m (was l). #87 spawn hook: same table pattern, called after built-in spawn; m. #88 effect files: store the source string; compile on load and report compile errors; s. #89 events: same pattern, later.
+
+---
+
+## 86: User Metal function: per-step update hook
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:m
+depends: 85
+created: 2026-10-18T17:06:38Z
+updated: 2026-10-18T17:19:40Z
++++
+
+Part of #24; needs the design from #85. A user-supplied Metal function runs for each live particle every step, after the built-in forces and before collisions. It needs a Swift API to supply the function and its parameter buffer, tests, and a preset that uses it.
+
+---
+
+## 87: User Metal function: spawn hook
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:simulation
+depends: 85
+created: 2026-10-18T17:06:38Z
+updated: 2026-10-18T17:06:46Z
++++
+
+Part of #24; needs the design from #85. A user-supplied Metal function sets up each newly born particle after the built-in spawn, e.g. custom positions, velocities, or colors.
+
+---
+
+## 88: Effect files with user Metal functions
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:s, area:simulation
+depends: 85
+created: 2026-10-18T17:06:38Z
+updated: 2026-10-18T17:06:46Z
++++
+
+Part of #24; needs the design from #85. Decide whether effect JSON can carry the Metal source or only a reference to a function the app supplies, and what happens when the function is missing (a clear error, or fall back to the built-in behavior).
+
+---
+
+## 89: User Metal functions for birth, death, and collision events
+
++++
+status: open
+priority: medium
+kind: feature
+labels: effort:m, area:simulation
+depends: 85
+created: 2026-10-18T17:06:39Z
+updated: 2026-10-18T17:06:46Z
++++
+
+Part of #24; needs the design from #85. Call user functions when particles are born, die, or collide, built on the existing event counters. Lower priority than the update and spawn hooks.
+
+---
+
+## 90: Keep demo videos and posters in sync with the presets
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:docs, effort:s
+created: 2026-10-18T17:07:32Z
+updated: 2026-10-18T17:07:41Z
++++
+
+Documentation/Demos should have a video, a poster, and a README section for every built-in preset. Right now Flare has none: it was added after the clips were made, and new presets get their clips by hand.
+
+Do:
+- Add Flare's clip and poster (use --until-finished).
+- Add a way to regenerate them all, e.g. a script or a particles-render option that writes the mp4, the poster, and the README section for every preset in index.json.
+- Add a test that every preset in index.json has a video, a poster, and a README section, and that there are no extras (removed presets).
+
+---
+
+## 91: Change particles on collision: new color, or turn into another particle type
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:collision,needs-design
+created: 2026-10-18T17:20:05Z
++++
+
+Let a collision change a particle instead of only bouncing or dying. Examples: sparks turn red when they hit the ground, snow turns to slush, rain becomes a splash droplet, an ember becomes ash.
+
+Today:
+- diesOnCollision plus an onCollision sub-emitter can fake 'turn into another type': the particle dies and children spawn where it hit. But the child is a new particle with its own spawn settings; it does not keep the parent's velocity, age, or size, and there is a frame of lag.
+- Nothing can change a living particle's color, size, or curves on collision.
+
+Options to decide:
+1. Built-in collision response settings on the emitter: e.g. a color tint or color-over-life switch after the first hit, a size factor, a lifetime change.
+2. 'Transfer' to another emitter: on collision the particle moves into another emitter's slice (or is respawned there in the same step) keeping position, velocity, and optionally age. That emitter's sprite, curves, and settings then apply.
+3. A user Metal function called on collision (#89) that can edit the particle state; needs color and size in ParticleState (see #85).
+
+1 and 2 work in presets and the demo without code; 3 is the general escape hatch. Related: #46 (rain splashes), #89, #85.
 
 ---

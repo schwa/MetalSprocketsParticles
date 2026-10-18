@@ -516,6 +516,18 @@ static Particle spawnParticle(
     return p;
 }
 
+// SPIKE #85: the user-function ABI. Plain Metal types only, so user source needs no project headers.
+struct ParticleState {
+    float3 position;
+    float3 velocity;
+    float age;
+    float lifetime;
+    uint id;
+};
+using ParticleUpdateFunction = void(thread ParticleState &, float deltaTime, float time, constant float4 *parameters);
+
+[[visible]] void particleNoUpdate(thread ParticleState &, float, float, constant float4 *) {}
+
 kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
     constant SimulationUniforms &uniforms [[buffer(1)]],
@@ -530,6 +542,8 @@ kernel void updateParticles(
     constant SimulationUniforms *subEmitterUniforms [[buffer(7)]],
     device atomic_uint *triggerCounters [[buffer(8)]],
     constant TriggerVolumeData *triggerVolumes [[buffer(9)]],
+    visible_function_table<ParticleUpdateFunction> userUpdate [[buffer(13)]],
+    constant float4 *userParameters [[buffer(14)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -578,6 +592,12 @@ kernel void updateParticles(
     velocity += acceleration * dt;
     velocity *= max(0.0, 1.0 - uniforms.drag * dt);
     position += velocity * dt;
+    if (uniforms.hasUserUpdate != 0) {
+        ParticleState state { position, velocity, age, lifetime, id };
+        userUpdate[0](state, dt, uniforms.time, userParameters);
+        position = state.position;
+        velocity = state.velocity;
+    }
     p.rotation.x += p.rotation.y * dt;
 
     float restitution = max(0.0, uniforms.restitution + p.properties.y);
