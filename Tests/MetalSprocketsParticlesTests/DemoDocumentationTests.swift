@@ -3,13 +3,12 @@ import Foundation
 import MetalSprocketsParticlesSamples
 import Testing
 
-/// Documentation/Demos has a clip, an animated preview, and a Demos.md section for every sample preset, and nothing
-/// else.
+/// Documentation has a clip, an animated preview, and a Demos.md section for every sample preset, and nothing else.
 /// Scripts/make-demos.sh regenerates them.
 struct DemoDocumentationTests {
     let demos = URL(filePath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .appending(path: "Documentation/Demos")
+        .appending(path: "Documentation")
 
     func files(in folder: String, extension fileExtension: String) throws -> Set<String> {
         let names = try FileManager.default.contentsOfDirectory(atPath: demos.appending(path: folder).path)

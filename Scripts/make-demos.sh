@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Renders the demo clips and their animated previews in Documentation/Demos, and rewrites Demos.md from the presets.
+# Renders the demo clips and their animated previews in Documentation, and rewrites Documentation/Demos.md from the
+# presets.
 #
 #   Scripts/make-demos.sh                # every preset
 #   Scripts/make-demos.sh flare fog      # only these presets (Demos.md is always rewritten)
@@ -12,7 +13,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 presets="$root/Sources/MetalSprocketsParticlesSamples/Resources/Presets"
-demos="$root/Documentation/Demos"
+demos="$root/Documentation"
 # Finite effects play until they finish, up to this many seconds; the rest get a fixed length.
 finite_seconds=15
 clip_seconds=6
