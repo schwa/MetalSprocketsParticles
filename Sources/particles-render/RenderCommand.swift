@@ -20,7 +20,7 @@ struct RenderCommand: ParsableCommand {
     @Flag(help: "List the preset names and exit.")
     var listPresets = false
 
-    @Flag(help: "Draw collider wireframes.")
+    @Flag(help: "Draw wireframes for colliders, force fields, trigger volumes, and emitter shapes.")
     var wireframes = false
 
     @Flag(help: "Turn off back-to-front sorting, to compare against the sorted render.")
@@ -78,7 +78,7 @@ struct RenderCommand: ParsableCommand {
                 try system.simulate(deltaTime: deltaTime, colliders: preset.colliders(at: time), transforms: preset.transforms(at: time), view: camera.inverse)
                 try RenderPass {
                     if wireframes {
-                        try system.renderColliders(projection: projection, view: camera.inverse)
+                        try system.renderWireframes(projection: projection, view: camera.inverse)
                     }
                     try system.render(projection: projection, view: camera.inverse)
                 }

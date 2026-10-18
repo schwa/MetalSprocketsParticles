@@ -48,7 +48,7 @@ public struct ParticlesView: View {
                 )
                 try RenderPass {
                     if model.showColliders {
-                        try system.renderColliders(projection: projection, view: cameraMatrix.inverse)
+                        try system.renderWireframes(projection: projection, view: cameraMatrix.inverse)
                     }
                     try system.render(projection: projection, view: cameraMatrix.inverse)
                 }

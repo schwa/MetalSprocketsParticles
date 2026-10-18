@@ -929,14 +929,18 @@ A few smaller features are unused by every preset: cone and cylinder emitter sha
 ## 48: Force fields, trigger volumes, and emitter shapes are not drawn
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:rendering
 created: 2026-10-18T00:32:50Z
+updated: 2026-10-18T00:58:46Z
+closed: 2026-10-18T00:58:46Z
 +++
 
 renderColliders draws collider wireframes, but nothing else in the world is visible: force fields (attractor and vortex centers, axes, and radii; wind direction), trigger volumes (#34), and emitter shapes and transforms (where a disc, cone, torus, or mesh emitter sits and how it is oriented, including pitch/spin from #36). Tuning a scene means guessing where these are. Add debug wireframes for them, toggled like the collider wireframes (demo Wireframes toggle and particles-render --wireframes). Related: #1 (collider wireframes).
+
+- `2026-10-18T00:58:46Z`: Added ParticleSystem.renderWireframes(projection:view:options:) drawing colliders (blue), force fields (magenta: wind arrows, attractor cross+radius, vortex rings with spin arrows; turbulence draws nothing), trigger volumes (green), and emitter shapes at their current transforms (yellow; mesh shows a center cross). particles-render --wireframes and the demo Wireframes toggle use it. Golden debug-wireframes added. Highlighting the outline selection (#49) is not done.
 
 ---
 
