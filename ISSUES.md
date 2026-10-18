@@ -1339,15 +1339,16 @@ Lighting (#10: ParticleSystem.lights, ambientLight, ParticleEmitter.isLit) is un
 status: open
 priority: medium
 kind: feature
-labels: effort:m, area:demo, needs-decision
+labels: effort:m, area:demo
 created: 2026-10-18T13:34:41Z
-updated: 2026-10-18T14:00:06Z
+updated: 2026-10-18T15:36:11Z
 +++
 
 Soft particles (#10) need a scene depth texture, but the demo and particles-render draw no scene geometry or depth. Add one: e.g. render a ground plane/box into a depth texture (or a pre-filled depth like LightingTests) and pass it as render(..., sceneDepth:), then a preset or demo toggle with softness on smoke meeting the ground. Related: #10.
 
 - `2026-10-18T14:00:06Z`: Investigated. Punting: bigger than m and partly blocked on MetalSprockets API. Soft particles only show against opaque, depth-tested geometry, and the demo/CLI draw none (wireframes only); particles are not depth-tested, so nothing clips hard and fading near invisible surfaces would barely show. Needed: (1) draw colliders as shaded solids (SwiftMesh quad/box/sphere/capsule), (2) depth-test particles against them (test, no write), (3) a readable copy of the depth for the fragment shader (a pass can't read its own depth attachment). Blockers: MetalSprockets DepthState is package-internal (only a raw depthStencilDescriptor environment value is public; I haven't verified what depth state particles draw with now), and RenderView does not expose its depth texture to content, so the demo needs its own view-sized depth texture and a collider depth pre-pass per frame. Question: OK to (a) add a public depth-state modifier and depth-texture access to MetalSprockets, or (b) do it all inside this project with its own depth texture and pre-pass?
 - `2026-10-18T14:27:44Z`: Correction: MetalSprockets does have a public depth-test modifier, Element.depthCompare(function:enabled:) (where 'enabled' means depth writes; filed MetalSprockets #531 on the naming). Only its full DepthState modifier is package-internal. So depth-testing particles needs no upstream change. The real upstream gap is reading the frame's depth: RenderViewContext does not expose the depth attachment and the MTKView depth texture is memoryless; filed MetalSprockets #530. Updated options: (A) wait for/implement MetalSprockets #530, or (B) in this project, keep our own view-sized depth texture with a collider depth pre-pass.
+- `2026-10-18T15:36:09Z`: Unblocked: MetalSprockets main (1ee86220) closes #530 and #531. RenderViewContext.depthTexture exposes the frame depth, readable in a later pass when configured with .metalDepthStencilAttachmentTextureUsage([.renderTarget, .shaderRead]), .metalDepthStencilStorageMode(.private) and .metalDepthStoreAction(.store). depthCompare(function:enabled:) is now depthCompare(function:writes:). Package now tracks MetalSprockets main. Option A is available.
 
 ---
 
@@ -1512,5 +1513,27 @@ Plan:
 
 - `2026-10-18T15:04:45Z`: Built-in presets are now JSON resources: Sources/MetalSprocketsParticles/Resources/Presets/<slug>.json (exported with particles-render --save-effect) plus index.json for display order, bundled via Package.swift resources. ParticlePreset.all loads them once; named accessors (.fireworks, .teapot, ...) remain, backed by the resources. Presets.swift (1,176 lines) is deleted. All 27 preset goldens are unchanged (Teapot included, from the triangulated mesh in JSON). Not done: Teapot's mesh stays inline (~1.4 MB pretty JSON; a named-mesh reference or compact JSON would shrink it). The preset result builder (#32) stays as public API, but no built-in uses it now.
 - `2026-10-18T15:05:25Z`: Note: teapot.json is stored as compact JSON (434 KB); pretty-printed it was 1.4 MB, over jj's 1 MiB new-file snapshot limit, and was silently left out of the first commit. Fixed by compacting it in the same commit.
+
+---
+
+## 77: Interactive particles: react to the camera and the mouse
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:demo,needs-design
+created: 2026-10-18T15:36:26Z
++++
+
+Particles can't react to the user. Let them respond to the camera and the pointer.
+
+Ideas:
+- Mouse: unproject the pointer into the scene (ray, or a point on a plane or depth). Use it as a moving force field (attract, repel, vortex), a moving collider, or an emitter position. Click to burst.
+- Camera: particles react to the camera position, e.g. push away from the eye, fade or die near the near plane, or a force field that follows the camera.
+
+Probably a library API (pointer ray or position in, as a tracked object or force field) plus demo wiring and a preset that shows it off. particles-render has no input, so test with scripted pointer paths.
+
+Open questions: which interactions first, and whether the pointer is a ray or a point on a plane.
 
 ---

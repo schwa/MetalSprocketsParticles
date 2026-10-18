@@ -10,7 +10,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../.."),
-        .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.3")),
+        // main until a release includes RenderViewContext.depthTexture (MetalSprockets #530).
+        .package(url: "https://github.com/schwa/MetalSprockets", branch: "main"),
         .package(url: "https://github.com/schwa/Interaction3D", .upToNextMinor(from: "0.1.15")),
         .package(url: "https://github.com/schwa/SwiftMesh", .upToNextMinor(from: "0.0.10")),
     ],
