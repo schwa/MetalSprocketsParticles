@@ -141,6 +141,10 @@ public final class ParticleSystem {
     public var colliders: [Collider] = []
     /// World-space force fields shared by every emitter.
     public var forceFields: [ForceField] = []
+    /// Lights for emitters with `isLit`. At most `PARTICLE_MAX_LIGHTS` are used.
+    public var lights: [ParticleLight] = []
+    /// Light that lit particles receive from every direction.
+    public var ambientLight: SIMD3<Float> = [0.25, 0.25, 0.25]
     /// Multiplies simulation time. 2 runs twice as fast; 0.5 is slow motion.
     public var speedFactor: Float = 1
 
@@ -434,17 +438,20 @@ public final class ParticleSystem {
 
     /// Draws every emitter's particles. Place inside a `RenderPass`. Unsorted emitters draw first, in emitter order; then
     /// sorted emitters, farthest first by the distance to their shape's center. Particles of different emitters are
-    /// not interleaved.
-    public func render(projection: simd_float4x4, view: simd_float4x4) throws -> some Element {
+    /// not interleaved. Pass the scene's depth, the same size as the render target and rendered with `projection`, to
+    /// soften emitters with `softness`; it is read, not tested against, so it must not be the pass's depth attachment.
+    public func render(projection: simd_float4x4, view: simd_float4x4, sceneDepth: MTLTexture? = nil) throws -> some Element {
         let cameraToWorld = view.inverse
         let cameraPosition = cameraToWorld.columns.3.xyz
         let unsorted = allEmitters.filter { $0.settings.sortMode == .none }
         let sorted = allEmitters.filter { $0.settings.sortMode != .none }
             .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
         let placeholderSortRecords = placeholderSortRecords
+        let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)))
         let draws = (unsorted + sorted).map { emitter in
-            EmitterDraw(emitter: emitter, viewProjection: projection * view, cameraToWorld: cameraToWorld)
+            EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: sceneDepth != nil)
         }
+        let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
         let buffer = buffer
         let vertexShader = try library.particleVertex as VertexShader
         let fragmentShader = try library.particleFragment as FragmentShader
@@ -466,6 +473,9 @@ public final class ParticleSystem {
             .parameter("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
             .parameter("sprite", texture: draw.texture ?? placeholderTexture)
             .parameter("spriteSampler", samplerState: sampler)
+            // Never bind an empty array; lightCount keeps the padding unused.
+            .parameter("lights", values: lightData.isEmpty ? [ParticleLightData()] : lightData)
+            .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
             .renderPipelineDescriptorTransformer { descriptor in
                 draw.blendMode.configure(descriptor.colorAttachments[0]!)
             }
@@ -485,7 +495,14 @@ private struct EmitterDraw {
     var segments: [(start: Int, count: Int)]
     var sortRecords: MTLBuffer?
 
-    init(emitter: ParticleSystem.Emitter, viewProjection: simd_float4x4, cameraToWorld: simd_float4x4) {
+    struct Lighting {
+        var ambient: SIMD3<Float>
+        var lightCount: Int
+    }
+
+    init(emitter: ParticleSystem.Emitter, projection: simd_float4x4, view: simd_float4x4, lighting: Lighting, hasSceneDepth: Bool) {
+        let viewProjection = projection * view
+        let cameraToWorld = view.inverse
         let settings = emitter.settings
         let sequence = emitter.texture == nil ? ImageSequence() : settings.imageSequence ?? ImageSequence()
         let opacity = settings.opacityOverLife.baked()
@@ -521,7 +538,16 @@ private struct EmitterDraw {
             sheetRows: UInt32(max(sequence.rows, 1)),
             frameCount: UInt32(max(sequence.frameCount, 1)),
             sequenceMode: sequence.mode,
-            readsSortRecords: sortRecords == nil ? 0 : 1
+            readsSortRecords: sortRecords == nil ? 0 : 1,
+            // The camera looks down its -Z axis.
+            cameraForward: -simd_normalize(cameraToWorld.columns.2.xyz),
+            ambientLight: lighting.ambient,
+            isLit: settings.isLit ? 1 : 0,
+            lightCount: UInt32(lighting.lightCount),
+            softness: max(settings.softness, 0),
+            hasSceneDepth: hasSceneDepth ? 1 : 0,
+            // Clip z = a * zView + b and clip w = c * zView, so depth d = (a * zView + b) / (c * zView).
+            depthUnproject: [projection.columns.2.z, projection.columns.3.z, projection.columns.2.w]
         )
     }
 }

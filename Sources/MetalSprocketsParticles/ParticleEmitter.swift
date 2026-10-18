@@ -114,6 +114,11 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var collisionMask: UInt32 = .max
     /// Force fields apply when their `categoryBitMask` shares a bit with this. All bits by default.
     public var fieldMask: UInt32 = .max
+    /// Shades particles with `ParticleSystem.lights` and `ambientLight`. Off by default: particles keep their colors.
+    public var isLit = false
+    /// Soft particles: fade out over this many world units in front of the scene depth passed to
+    /// `ParticleSystem.render(projection:view:sceneDepth:)`, instead of clipping hard. 0 turns it off.
+    public var softness: Float = 0
 
     public init() {}
 }
@@ -163,6 +168,8 @@ extension ParticleEmitter {
         try container.update(&triggers, .triggers)
         try container.update(&collisionMask, .collisionMask)
         try container.update(&fieldMask, .fieldMask)
+        try container.update(&isLit, .isLit)
+        try container.update(&softness, .softness)
     }
 }
 

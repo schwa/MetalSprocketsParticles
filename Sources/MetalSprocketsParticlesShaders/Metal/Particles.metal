@@ -580,7 +580,34 @@ struct VertexOut {
     float4 color;
     float2 uv;       // Quad corner space, -1...1. Drives the procedural dot.
     float2 texcoord; // Sprite sheet cell coordinates.
+    float viewDepth; // Distance in front of the camera, for soft particles.
 };
+
+// Diffuse light at a quad corner. The quad is shaded like a small sphere: the normal leans from the camera direction
+// toward the corner, so lit particles get a soft gradient instead of a flat tint.
+static float3 particleLight(constant RenderUniforms &uniforms, constant ParticleLightData *lights, float3 center, float3 cornerDirection) {
+    float3 toCamera = normalize(uniforms.cameraPosition - center);
+    float3 normal = normalize(cornerDirection + toCamera);
+    float3 light = uniforms.ambientLight;
+    for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
+        ParticleLightData source = lights[i];
+        float3 toLight;
+        float attenuation = 1;
+        if (source.kind == ParticleLightKindPoint) {
+            float3 offset = source.position - center;
+            float distance = length(offset);
+            toLight = distance > 1e-5 ? offset / distance : normal;
+            if (source.range > 0) {
+                float falloff = saturate(1 - distance / source.range);
+                attenuation = falloff * falloff;
+            }
+        } else {
+            toLight = -source.direction;
+        }
+        light += source.color * max(0.0, dot(normal, toLight)) * attenuation;
+    }
+    return light;
+}
 
 // Frame index for a particle `age` seconds old.
 static uint sequenceFrame(float initialFrame, float frameRate, float age, uint frameCount, uint mode) {
@@ -609,7 +636,8 @@ vertex VertexOut particleVertex(
     constant RenderUniforms &uniforms [[buffer(1)]],
     constant float4 *colorCurve [[buffer(2)]],
     constant float *sizeCurve [[buffer(3)]],
-    const device uint2 *sortRecords [[buffer(4)]]
+    const device uint2 *sortRecords [[buffer(4)]],
+    constant ParticleLightData *lights [[buffer(5)]]
 ) {
     const float2 corners[4] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(1, 1) };
     // Sorted emitters draw instance i as the i-th farthest particle.
@@ -622,6 +650,7 @@ vertex VertexOut particleVertex(
         out.color = 0;
         out.uv = 0;
         out.texcoord = 0;
+        out.viewDepth = 0;
         return out;
     }
     float t = saturate(age / lifetime);
@@ -674,6 +703,10 @@ vertex VertexOut particleVertex(
     float3 world = center + (right * offset.x + up * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = applyColorVariation(sampleCurve(colorCurve, t), p.color);
+    if (uniforms.isLit != 0) {
+        out.color.rgb *= particleLight(uniforms, lights, center, right * offset.x + up * offset.y);
+    }
+    out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     out.uv = corner;
     uint columns = max(uniforms.sheetColumns, 1u);
     uint rows = max(uniforms.sheetRows, 1u);
@@ -707,8 +740,20 @@ fragment float4 particleFragment(
     VertexOut in [[stage_in]],
     constant RenderUniforms &uniforms [[buffer(0)]],
     texture2d<float, access::sample> sprite [[texture(0)]],
-    sampler spriteSampler [[sampler(0)]]
+    sampler spriteSampler [[sampler(0)]],
+    texture2d<float, access::read> sceneDepth [[texture(1)]]
 ) {
+    float4 color = in.color;
+    // Soft particles: fade out where the particle comes within `softness` of the scene behind it.
+    if (uniforms.hasSceneDepth != 0 && uniforms.softness > 0) {
+        uint2 pixel = uint2(in.position.xy);
+        if (pixel.x < sceneDepth.get_width() && pixel.y < sceneDepth.get_height()) {
+            float depth = sceneDepth.read(pixel).r;
+            float3 unproject = uniforms.depthUnproject;
+            float sceneDistance = -unproject.y / (depth * unproject.z - unproject.x);
+            color.a *= saturate((sceneDistance - in.viewDepth) / uniforms.softness);
+        }
+    }
     // Premultiplied coverage and color before tinting by the particle color.
     float4 base;
     if (uniforms.hasTexture != 0) {
@@ -718,13 +763,13 @@ fragment float4 particleFragment(
         float coverage = falloff * falloff;
         base = float4(coverage, coverage, coverage, coverage);
     }
-    float alpha = base.a * in.color.a;
+    float alpha = base.a * color.a;
     if (uniforms.blendMode == ParticleBlendModeOpaque) {
         if (alpha < 0.5) {
             discard_fragment();
         }
-        float3 color = base.a > 0 ? base.rgb / base.a : base.rgb;
-        return float4(color * in.color.rgb, 1);
+        float3 unpremultiplied = base.a > 0 ? base.rgb / base.a : base.rgb;
+        return float4(unpremultiplied * color.rgb, 1);
     }
-    return float4(base.rgb * in.color.rgb * in.color.a, alpha);
+    return float4(base.rgb * color.rgb * color.a, alpha);
 }

@@ -266,6 +266,23 @@ typedef struct {
     simd_float3 axis;     // Vortex, unit length.
 } ForceFieldData;
 
+/// Lights for emitters with lighting on. Mirrored by the Swift ParticleLight.
+#define PARTICLE_MAX_LIGHTS 8
+
+typedef MS_ENUM(uint32_t, ParticleLightKind) {
+    ParticleLightKindDirectional = 1,
+    ParticleLightKindPoint = 2,
+};
+
+// World space. Fields a kind does not use are zero.
+typedef struct {
+    ParticleLightKind kind;
+    float range;           // Point: light fades to zero at this distance. 0 means no falloff.
+    simd_float3 color;     // Color times intensity.
+    simd_float3 direction; // Directional: the direction light travels, unit length.
+    simd_float3 position;  // Point.
+} ParticleLightData;
+
 typedef struct {
     simd_float4x4 viewProjection;
     // Simulation space to world. The emitter transform when simulating in local space, otherwise identity.
@@ -283,6 +300,16 @@ typedef struct {
     uint32_t frameCount;
     ParticleImageSequenceMode sequenceMode;
     uint32_t readsSortRecords; // Nonzero to read particles through the sort records.
+    simd_float3 cameraForward; // World space, unit length.
+    // Lighting, when isLit is nonzero: color times (ambientLight + the lights' diffuse light).
+    simd_float3 ambientLight;
+    uint32_t isLit;
+    uint32_t lightCount;
+    // Soft particles, when softness > 0 and hasSceneDepth is nonzero: fade out over `softness` world units in front of
+    // the scene depth. depthUnproject (a, b, c) turns a depth-buffer value d into view distance: -b / (d * c - a).
+    float softness;
+    uint32_t hasSceneDepth;
+    simd_float3 depthUnproject;
 } RenderUniforms;
 
 typedef struct {

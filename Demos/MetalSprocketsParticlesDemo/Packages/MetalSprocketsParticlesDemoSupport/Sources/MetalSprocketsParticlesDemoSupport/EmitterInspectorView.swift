@@ -257,6 +257,7 @@ struct AppearanceSectionView: View {
             KindPicker("Blend", selection: $emitter.settings.blendMode)
             KindPicker("Sort", selection: $emitter.settings.sortMode)
             KindPicker("Orientation", selection: $emitter.settings.orientation.kind)
+            Toggle("Lit", isOn: $emitter.settings.isLit)
             if emitter.settings.orientation.kind == .velocityAligned {
                 ParameterSliderView("Stretch", value: $emitter.settings.velocityStretch, in: 0...2)
             }

@@ -13,6 +13,9 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     /// Moves the colliders with `Collider.animated(time:index:)`.
     public var animatesColliders: Bool
     public var forceFields: [ForceField]
+    /// Lights for emitters with `isLit`.
+    public var lights: [ParticleLight]
+    public var ambientLight: SIMD3<Float>
     /// Suggested camera.
     public var cameraEye: SIMD3<Float>
     public var cameraTarget: SIMD3<Float>
@@ -25,6 +28,8 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         colliders: [Collider] = [],
         animatesColliders: Bool = false,
         forceFields: [ForceField] = [],
+        lights: [ParticleLight] = [],
+        ambientLight: SIMD3<Float> = [0.25, 0.25, 0.25],
         cameraEye: SIMD3<Float> = [0, 3, 6],
         cameraTarget: SIMD3<Float> = [0, 1.5, 0]
     ) {
@@ -33,8 +38,23 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         self.colliders = colliders
         self.animatesColliders = animatesColliders
         self.forceFields = forceFields
+        self.lights = lights
+        self.ambientLight = ambientLight
         self.cameraEye = cameraEye
         self.cameraTarget = cameraTarget
+    }
+
+    /// Missing keys keep their defaults, so effects saved before a field existed still load.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(try container.decode(String.self, forKey: .name), layers: try container.decode([Layer].self, forKey: .layers))
+        try container.update(&colliders, .colliders)
+        try container.update(&animatesColliders, .animatesColliders)
+        try container.update(&forceFields, .forceFields)
+        try container.update(&lights, .lights)
+        try container.update(&ambientLight, .ambientLight)
+        try container.update(&cameraEye, .cameraEye)
+        try container.update(&cameraTarget, .cameraTarget)
     }
 
     /// Colliders for `time`, animated if the preset asks for it.
@@ -65,5 +85,7 @@ public extension ParticleSystem {
         try apply(preset.layers, rebuild: true)
         colliders = preset.colliders
         forceFields = preset.forceFields
+        lights = preset.lights
+        ambientLight = preset.ambientLight
     }
 }

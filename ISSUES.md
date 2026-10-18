@@ -188,17 +188,19 @@ Particles cannot spawn other particles on death or collision (sparks, splashes).
 ## 10: No particle lighting or soft particles
 
 +++
-status: open
+status: closed
 priority: low
 kind: feature
 labels: effort:l, area:rendering
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-17T14:13:05Z
+updated: 2026-10-18T13:16:49Z
+closed: 2026-10-18T13:16:49Z
 +++
 
 Particles are unlit and clip hard against geometry.
 
 - `2026-10-17T14:02:37Z`: Doc review: both have isLightingEnabled. SceneKit also has isBlackPassEnabled. Neither documents soft particles, so soft particles would beat both.
+- `2026-10-18T13:16:49Z`: Lighting: ParticleSystem.lights ([ParticleLight]: directional, point with range) + ambientLight; ParticleEmitter.isLit (off by default). Quads are lit per corner with sphere-like normals. Soft particles: ParticleEmitter.softness + render(projection:view:sceneDepth:) fades particles within softness world units of the scene depth (the app's depth texture, read not attached). Presets and effect files carry lights/ambient (older files still load). Demo: Lit toggle; softness has no demo because the demo has no scene geometry/depth. Goldens unchanged; LightingTests check pixels.
 
 ---
 

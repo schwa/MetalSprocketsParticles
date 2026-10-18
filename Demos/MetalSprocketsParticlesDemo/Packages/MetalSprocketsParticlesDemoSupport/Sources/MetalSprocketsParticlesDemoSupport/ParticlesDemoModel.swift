@@ -164,6 +164,8 @@ final class ParticlesDemoModel {
             colliders: colliders.map(\.collider),
             animatesColliders: animateColliders,
             forceFields: forceFields.map(\.field),
+            lights: system?.lights ?? [],
+            ambientLight: system?.ambientLight ?? [0.25, 0.25, 0.25],
             cameraEye: cameraEye,
             cameraTarget: cameraTarget
         )
@@ -204,6 +206,8 @@ final class ParticlesDemoModel {
         colliders = preset.colliders.map { ColliderItem(collider: $0) }
         forceFields = preset.forceFields.map { ForceFieldItem(field: $0) }
         animateColliders = preset.animatesColliders
+        system?.lights = preset.lights
+        system?.ambientLight = preset.ambientLight
         cameraEye = preset.cameraEye
         cameraTarget = preset.cameraTarget
     }
