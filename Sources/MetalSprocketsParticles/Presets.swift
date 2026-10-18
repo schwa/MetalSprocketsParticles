@@ -11,8 +11,99 @@ private let ground = Collider.plane(normal: [0, 1, 0], distance: 0)
 public extension ParticlePreset {
     static let all: [ParticlePreset] = [
         .fountain, .campfire, .fireworks, .sparks, .smoke, .snow, .rain, .magicTrail, .comet, .galaxy, .waterfall, .confetti,
-        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser,
+        .portal, .hearts, .moonPhases, .colorSmoke, .pond, .ringOfFire, .swarms, .geyser, .bumper,
     ]
+
+    /// Emission triggers: balls drop onto a bumper (collider hit: spark burst), some bounce into a goal on the left
+    /// (particles enter a volume: star burst), a ring pulses on the ground every 2 seconds (timer), and
+    /// sending the event "boom" fires a shower of confetti.
+    static let bumper: ParticlePreset = {
+        let goal = TriggerVolume.box(center: [-1.6, 0.25, 0], halfExtents: [0.5, 0.25, 1])
+        return ParticlePreset(
+            "Bumper",
+            layers: [
+                Layer("Balls", settings: emitter {
+                    $0.position = [0, 4, 0]
+                    $0.shape = .point
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0.15
+                    $0.lifetime = 4...4
+                    $0.birthRate = 6
+                    $0.restitution = 0.7
+                    $0.friction = 0.2
+                    $0.sizeOverLife = .constant(0.07)
+                    $0.colorOverLife = .constant([1, 1, 1, 1])
+                }, capacity: 100),
+                Layer("Bumper Sparks", settings: emitter {
+                    $0.position = [0, 1.5, 0]
+                    $0.shape = .sphere(radius: 0.42)
+                    $0.birthLocation = .surface
+                    $0.birthDirection = .normal
+                    // Short-lived and slow, so sparks stay near the bumper and never fall into the goal.
+                    $0.velocity = [0, 1.2, 0]
+                    $0.velocitySpread = 0.3
+                    $0.gravity = .zero
+                    $0.drag = 2
+                    $0.lifetime = 0.2...0.4
+                    $0.birthRate = 0
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .linear(from: 0.03, to: 0)
+                    $0.colorOverLife = .linear(from: [1, 0.8, 0.3, 1], to: [1, 0.2, 0, 0])
+                    $0.triggers = [EmissionTrigger(.colliderHit(index: 1), .burst(150))]
+                }, sprite: .spark, capacity: 3_000),
+                Layer("Goal Stars", settings: emitter {
+                    $0.position = [-1.6, 0.3, 0]
+                    $0.shape = .disc(radius: 0.4)
+                    $0.velocity = [0, 2.5, 0]
+                    $0.velocitySpread = 1
+                    $0.gravity = [0, -2, 0]
+                    $0.lifetime = 0.8...1.2
+                    $0.birthRate = 0
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .linear(from: 0.08, to: 0)
+                    $0.colorOverLife = .constant([0.3, 1, 0.5, 1])
+                    $0.angularSpeedVariation = 6
+                    $0.triggers = [EmissionTrigger(.particlesEnter(volume: goal), .burst(30))]
+                }, sprite: .star, capacity: 2_000),
+                Layer("Pulse", settings: emitter {
+                    $0.orientation = .fixed(normal: [0, 1, 0])
+                    $0.position = [0, 0.02, 0]
+                    $0.shape = .point
+                    $0.velocity = .zero
+                    $0.velocitySpread = 0
+                    $0.gravity = .zero
+                    $0.lifetime = 1.2...1.2
+                    $0.birthRate = 0
+                    $0.blendMode = .additive
+                    $0.sizeOverLife = .linear(from: 0.1, to: 2.5)
+                    $0.opacityOverLife = .linear(from: 1, to: 0)
+                    $0.colorOverLife = .constant([0.3, 0.6, 1, 1])
+                    $0.triggers = [EmissionTrigger(.every(seconds: 2), .burst(1))]
+                }, sprite: .ring, capacity: 10),
+                Layer("Confetti", settings: emitter {
+                    $0.position = [0, 3.5, 0]
+                    $0.shape = .sphere(radius: 0.2)
+                    $0.velocity = [0, 3, 0]
+                    $0.velocitySpread = 3
+                    $0.gravity = [0, -3, 0]
+                    $0.drag = 1.5
+                    $0.lifetime = 2.5...3
+                    $0.birthRate = 0
+                    $0.restitution = 0
+                    $0.friction = 1
+                    $0.sizeOverLife = .constant(0.04)
+                    $0.colorOverLife = .constant([1, 0.3, 0.4, 1])
+                    $0.colorVariation = [0.5, 0, 0, 0]
+                    $0.angleVariation = .pi
+                    $0.angularSpeedVariation = 8
+                    $0.triggers = [EmissionTrigger(.event("boom"), .burst(800))]
+                }, sprite: .triangle, capacity: 2_000),
+            ],
+            colliders: [ground, .sphere(center: [0, 1.5, 0], radius: 0.4)],
+            cameraEye: [0, 2.5, 6],
+            cameraTarget: [0, 1.4, 0]
+        )
+    }()
 
     /// A geyser that erupts for 1.5 seconds every 4 (emit/idle loop): a water column from a cylinder, opaque rock
     /// debris, and steam rising from a cone, blended with screen so it brightens without blowing out.

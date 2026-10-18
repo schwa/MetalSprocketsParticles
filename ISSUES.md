@@ -803,14 +803,18 @@ Note: emoji glyphs are color, so the particle color tint must multiply (or be wh
 ## 41: No preset shows emission triggers
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:demo
 created: 2026-10-18T00:32:28Z
+updated: 2026-10-18T00:51:47Z
+closed: 2026-10-18T00:51:47Z
 +++
 
 Triggers (#34) are not used by any preset, so they are invisible in the demo. Add a preset built around them, for example a ball (tracked object or animated collider) dropping into a water volume that bursts a splash on entry (objectEnters / particlesEnter), plus sparks that burst on every collider hit (colliderHit). Ideally the demo also offers a Send Event button target. Related: #34, #40.
+
+- `2026-10-18T00:51:47Z`: Added the Bumper preset: balls drop on a sphere bumper (colliderHit -> spark burst), bounce into a goal volume (particlesEnter -> star burst), a ground ring pulses every 2 s (every), and the event 'boom' (Send Event in the demo) fires confetti. Golden added. objectEnters isn't shown since presets can't carry tracked objects; the app sets those.
 
 ---
 
