@@ -517,17 +517,16 @@ public extension ParticlePreset {
                 $0.orientation = .velocityAligned(stretch: 1.2)
                 $0.sizeOverLife = .constant(0.008)
                 $0.colorOverLife = .constant([0.6, 0.7, 0.9, 0.45])
+                // Each drop that hits the ground or the slab splashes where it lands.
+                $0.subEmitters = [SubEmitter(occasion: .onCollision, countPerEvent: 3, settings: emitter {
+                    $0.shape = .point
+                    $0.velocity = [0, 1.2, 0]
+                    $0.velocitySpread = 0.6
+                    $0.lifetime = 0.25...0.4
+                    $0.sizeOverLife = .linear(from: 0.012, to: 0.003)
+                    $0.colorOverLife = .linear(from: [0.7, 0.8, 1, 0.7], to: [0.7, 0.8, 1, 0])
+                })]
             }, capacity: 50_000),
-            Layer("Splashes", settings: emitter {
-                $0.position = [0, 0.02, 0]
-                $0.shape = .plane(size: [10, 8])
-                $0.velocity = [0, 1.2, 0]
-                $0.velocitySpread = 0.6
-                $0.lifetime = 0.25...0.4
-                $0.birthRate = 6_000
-                $0.sizeOverLife = .linear(from: 0.012, to: 0.003)
-                $0.colorOverLife = .linear(from: [0.7, 0.8, 1, 0.7], to: [0.7, 0.8, 1, 0])
-            }, capacity: 3_000),
         ],
         colliders: [ground, .box(center: [0, 1.4, 0.5], halfExtents: [1.4, 0.05, 1.2], rotation: simd_quatf(angle: 0.25, axis: [0, 0, 1]))]
     )

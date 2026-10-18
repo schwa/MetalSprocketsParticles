@@ -885,14 +885,18 @@ Local simulation space (#22) is unused: every preset simulates in world space. A
 ## 46: Rain splashes do not come from raindrop collisions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:s, area:demo
 created: 2026-10-18T00:32:29Z
+updated: 2026-10-18T00:48:38Z
+closed: 2026-10-18T00:48:38Z
 +++
 
 The Rain preset spawns splashes from a separate emitter spread over the ground plane, so splashes do not line up with where drops land and miss the tilted slab. Use an onCollision sub-emitter (#9) on the raindrops instead, so each drop that hits the ground or slab makes its own splash. Related: #9, #23.
+
+- `2026-10-18T00:48:39Z`: Rain splashes are now an onCollision sub-emitter (3 per drop) on the raindrops instead of a separate ground-plane emitter, so they appear where drops land, including on the tilted slab. Golden updated.
 
 ---
 
