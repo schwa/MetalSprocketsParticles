@@ -6,7 +6,7 @@ import Testing
 struct BuiltInPresetTests {
     @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() {
         let slugs = ParticlePreset.builtInSlugs
-        #expect(slugs.count >= 27)
+        #expect(slugs.count >= 25)
         #expect(ParticlePreset.all.count == slugs.count)
         #expect(Set(ParticlePreset.all.map(\.name)).count == slugs.count)
         #expect(ParticlePreset.all.allSatisfy { !$0.comment.isEmpty && !$0.layers.isEmpty })

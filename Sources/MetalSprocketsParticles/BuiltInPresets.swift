@@ -39,7 +39,6 @@ public extension ParticlePreset {
     static var campfire: ParticlePreset { builtIn("Campfire") }
     static var fireworks: ParticlePreset { builtIn("Fireworks") }
     static var sparks: ParticlePreset { builtIn("Sparks") }
-    static var smoke: ParticlePreset { builtIn("Smoke") }
     static var snow: ParticlePreset { builtIn("Snow") }
     static var rain: ParticlePreset { builtIn("Rain") }
     static var magicTrail: ParticlePreset { builtIn("Magic Trail") }
@@ -57,7 +56,6 @@ public extension ParticlePreset {
     static var geyser: ParticlePreset { builtIn("Geyser") }
     static var bumper: ParticlePreset { builtIn("Bumper") }
     static var teapot: ParticlePreset { builtIn("Teapot") }
-    static var timeWarp: ParticlePreset { builtIn("Time Warp") }
     static var awning: ParticlePreset { builtIn("Awning") }
     static var lantern: ParticlePreset { builtIn("Lantern") }
     static var dunk: ParticlePreset { builtIn("Dunk") }

@@ -8,7 +8,6 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Campfire](#campfire)
 - [Fireworks](#fireworks)
 - [Sparks](#sparks)
-- [Smoke](#smoke)
 - [Snow](#snow)
 - [Rain](#rain)
 - [Magic Trail](#magic-trail)
@@ -26,7 +25,6 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Geyser](#geyser)
 - [Bumper](#bumper)
 - [Teapot](#teapot)
-- [Time Warp](#time-warp)
 - [Awning](#awning)
 - [Lantern](#lantern)
 - [Dunk](#dunk)
@@ -51,15 +49,9 @@ Rockets climb from the ground, leave sparkle trails, and burst into shells of st
 
 ## Sparks
 
-Grinder sparks streak across the floor and bounce off a wall. Shows velocity-aligned stretching, bounce with per-particle variation, and friction. Written with the preset result builder.
+Grinder sparks streak across the floor and bounce off a wall. Shows velocity-aligned stretching, bounce with per-particle variation, and friction.
 
 [![sparks](posters/sparks.jpg)](videos/sparks.mp4)
-
-## Smoke
-
-Soft smoke drifts up and sideways in the wind, curling in turbulence. Shows alpha-blended sprites drawn back to front, wind, and turbulence.
-
-[![smoke](posters/smoke.jpg)](videos/smoke.mp4)
 
 ## Snow
 
@@ -162,12 +154,6 @@ Balls drop onto a bumper. Each hit bursts sparks, balls that bounce into the goa
 The Utah teapot outlined in glowing particles, slowly dissolving into sand that pours onto the ground. Shows emission from the surface of a mesh.
 
 [![teapot](posters/teapot.jpg)](videos/teapot.mp4)
-
-## Time Warp
-
-Clocks orbit a glowing star, each ticking through the hours from its own starting time. Shows an emoji flipbook in a vortex.
-
-[![time-warp](posters/time-warp.jpg)](videos/time-warp.mp4)
 
 ## Awning
 

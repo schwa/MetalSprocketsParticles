@@ -45,7 +45,7 @@
       ]
     }
   ],
-  "comment" : "Grinder sparks streak across the floor and bounce off a wall. Shows velocity-aligned stretching, bounce with per-particle variation, and friction. Written with the preset result builder.",
+  "comment" : "Grinder sparks streak across the floor and bounce off a wall. Shows velocity-aligned stretching, bounce with per-particle variation, and friction.",
   "forceFields" : [
 
   ],

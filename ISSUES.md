@@ -1522,7 +1522,7 @@ Plan:
 status: new
 priority: medium
 kind: feature
-labels: area:demo,needs-design
+labels: area:demo, needs-design
 created: 2026-10-18T15:36:26Z
 +++
 
@@ -1535,5 +1535,103 @@ Ideas:
 Probably a library API (pointer ray or position in, as a tracked object or force field) plus demo wiring and a preset that shows it off. particles-render has no input, so test with scripted pointer paths.
 
 Open questions: which interactions first, and whether the pointer is a ray or a point on a plane.
+
+---
+
+## 78: Demo rotating colliders
+
++++
+status: new
+priority: low
+kind: feature
+labels: area:presets, effort:s
+created: 2026-10-18T15:38:44Z
++++
+
+Collider angular velocity and pivot (#72) are only shown in a golden test. Preset colliders can't rotate, and the demo's Animate Colliders toggle only moves them. Add a way for a preset to spin a collider (e.g. collider motion in JSON), and add a preset with a spinning paddle or box that flings particles.
+
+---
+
+## 79: Demo a deforming mesh emitter
+
++++
+status: new
+priority: low
+kind: feature
+labels: area:presets, effort:s
+created: 2026-10-18T15:38:44Z
++++
+
+EmitterMesh.setDeformedPositions (#73) is Swift API only, with no demo. Add a preset or demo mode where a mesh deforms over time (e.g. a waving flag or a breathing sphere) and particles emit from its surface.
+
+---
+
+## 80: Demo one-shot emitters
+
++++
+status: new
+priority: low
+kind: feature
+labels: area:presets, effort:s
+created: 2026-10-18T15:38:44Z
++++
+
+No preset sets loops = false. Add a preset or a demo button for a one-shot effect, e.g. an explosion or a puff that plays once and finishes, and show the HUD 'Finished' state.
+
+---
+
+## 81: Demo per-particle spin
+
++++
+status: closed
+priority: low
+kind: feature
+labels: area:presets, effort:s
+created: 2026-10-18T15:38:44Z
+updated: 2026-10-18T15:38:59Z
+closed: 2026-10-18T15:38:59Z
++++
+
+Only Magic Trail uses angularSpeed, and only subtly. Add a preset where spinning sprites are clearly visible, e.g. falling leaves or tumbling shards with spin variation.
+
+- `2026-10-18T15:38:59Z`: Invalid: per-particle spin (angularSpeedVariation) is used by 9 presets; Confetti shows it clearly. The audit only checked angularSpeed.
+
+---
+
+## 82: Make Confetti a finite effect with a Restart button in the viewport
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:presets, area:demo, effort:s
+created: 2026-10-18T15:43:07Z
++++
+
+Add a built-in preset that runs for a set time and then finishes. Confetti is a good fit: a party-popper burst that falls, settles on the ground, and fades. The system then reports isFinished.
+
+Use emissionOverTime or loops = false (#80) so emission stops, and limit particle lifetimes so the effect ends.
+
+The demo already has Restart in the inspector, and the HUD shows 'Finished'. Add a Restart button to the viewport, next to the Finished label, so a finite effect is easy to replay.
+
+Related: #75 (Flare is finite too, but long and subtle), #80.
+
+---
+
+## 83: Move scene controls to the toolbar
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:demo,effort:s
+created: 2026-10-18T15:43:24Z
++++
+
+The per-scene controls are in the inspector: the scene picker and play, pause, stop, restart and time. Move them to the window toolbar, in the .principal placement, so they stay visible and the inspector holds only emitter settings.
+
+The viewport Restart button from #82 may then be unnecessary; decide when doing this.
+
+Related: #82.
 
 ---
