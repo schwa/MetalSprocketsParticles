@@ -22,7 +22,7 @@ final class ParticlesDemoModel {
     }
 
     var emitters: [EmitterDescription] = [] {
-        didSet { _ = try? system?.apply(emitters) }
+        didSet { applyToRuntime() }
     }
 
     var selectedEmitterID: EmitterDescription.ID?
@@ -112,7 +112,7 @@ final class ParticlesDemoModel {
 
     /// Collider rest positions. `animateColliders` moves them each frame.
     var colliders: [ColliderItem] = [] {
-        didSet { system?.colliders = colliders.map(\.collider) }
+        didSet { applyToRuntime() }
     }
 
     // Pointer bindings live on the items (and as emitter ids) so removing or reordering items cannot shift them; the
@@ -125,7 +125,13 @@ final class ParticlesDemoModel {
     @ObservationIgnored var pointerLocation: CGPoint?
 
     var forceFields: [ForceFieldItem] = [] {
-        didSet { system?.forceFields = forceFields.map(\.field) }
+        didSet { applyToRuntime() }
+    }
+
+    /// Sends the edited scene to the runtime in one step (`ParticleSystemRuntime.apply`), keeping the particles unless
+    /// the emitter layout changed.
+    private func applyToRuntime() {
+        _ = try? system?.apply(currentEffect)
     }
 
     var playback: SimulationState = .playing {

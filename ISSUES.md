@@ -2177,11 +2177,13 @@ Shape: let player = try ParticlePlayer(system:); player.pointer = worldPoint (op
 ## 104: Architecture: apply a ParticleSystem to the runtime as a whole
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
-labels: area:api, effort:m, needs-design
+labels: area:api, effort:m
 created: 2026-10-18T21:33:49Z
+updated: 2026-10-18T22:39:02Z
+closed: 2026-10-18T22:39:02Z
 +++
 
 The runtime keeps its own copy of the description: public colliders, forceFields, lights, ambientLight, trackedObjects, and emitters[i].settings, set piecemeal or through load(_:) and apply(_ layers:). The demo keeps a third copy (ColliderItem, ForceFieldItem, emitters) and pushes changes with didSet. Ownership is unclear: per-frame overrides replace stored values, and toggling an item resets them. This is the main thing a document-based editor (#100) would trip over.
@@ -2193,6 +2195,7 @@ Tests: 'apply a changed description, check what is kept and what is rebuilt' tes
 Source: improve-codebase-architecture review. Related: #100, and the player issue.
 
 - `2026-10-18T21:57:36Z`: Related: #108 gives every item a stable id, which apply needs to diff descriptions.
+- `2026-10-18T22:39:02Z`: ParticleSystemRuntime.apply(_ system:rebuild:) is now the one way a description reaches the runtime: layers (particles kept unless the emitter layout changes or rebuild is set), colliders, force fields, lights, ambient, compiled functions. load(_:) is apply(rebuild: true); ParticlePlayer.update calls apply. The demo's separate didSet pushes for emitters, colliders, and force fields are now one applyToRuntime() that applies currentEffect. Design choices made here: no item-level diffing (no stable ids, #108 closed), so colliders, fields, and lights are replaced wholesale, which is cheap; emitter diffing stays the existing id/capacity layout check. The demo still keeps its editing items (ids for the inspector) as its editing model; they reach the runtime only through apply. Tests: ApplySystemTests (everything arrives, settings and world changes keep particles, rebuild and layout changes start over).
 
 ---
 

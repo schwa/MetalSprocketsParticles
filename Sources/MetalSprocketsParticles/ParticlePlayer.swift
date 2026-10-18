@@ -42,11 +42,8 @@ public final class ParticlePlayer {
     /// Replaces the description. Particles stay unless the emitter layout changes (emitters added, removed, reordered,
     /// or resized), which rebuilds; settings, colliders, fields, lights, and bindings take effect on the next frame.
     public func update(_ system: ParticleSystem) throws {
-        try runtime.apply(system.layers)
-        runtime.lights = system.lights
-        runtime.ambientLight = system.ambientLight
+        try runtime.apply(system)
         self.system = system
-        try runtime.compileFunctions()
     }
 
     /// Starts over: the clock goes back to zero and every particle is removed.

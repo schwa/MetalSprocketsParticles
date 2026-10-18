@@ -118,13 +118,21 @@ public extension [ParticleSystem] {
 }
 
 public extension ParticleSystemRuntime {
-    /// Replaces every emitter, collider, and force field with the system's. Removes all particles.
-    func load(_ system: ParticleSystem) throws {
-        try apply(system.layers, rebuild: true)
+    /// Makes the runtime match `system`: its emitters, colliders, force fields, lights, and user functions. Particles
+    /// stay unless the emitter layout changes (emitters added, removed, reordered, or resized) or `rebuild` is set.
+    /// This is the one way a description reaches the runtime; per-frame changes (animation, pointer bindings, tracked
+    /// objects) come from `ParticlePlayer` or the caller's `simulate` arguments.
+    func apply(_ system: ParticleSystem, rebuild: Bool = false) throws {
+        try apply(system.layers, rebuild: rebuild)
         colliders = system.colliders
         forceFields = system.forceFields
         lights = system.lights
         ambientLight = system.ambientLight
         try compileFunctions()
+    }
+
+    /// Starts `system` from scratch: `apply(system, rebuild: true)`, which removes all particles.
+    func load(_ system: ParticleSystem) throws {
+        try apply(system, rebuild: true)
     }
 }
