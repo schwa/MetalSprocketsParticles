@@ -1863,11 +1863,12 @@ README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace
 ## 93: Move DEVELOPMENT_TEAM out of xcodeproj into gitignored Local.xcconfig
 
 +++
-status: new
+status: open
 priority: medium
 kind: task
+labels: deferred
 created: 2026-10-18T19:03:42Z
-updated: 2026-10-18T19:03:48Z
+updated: 2026-10-18T19:33:12Z
 +++
 
 The demo xcodeproj has the developer team ID hardcoded in project.pbxproj. Other people must edit it to build.
@@ -1880,5 +1881,106 @@ Fix:
 - Set PRODUCT_BUNDLE_IDENTIFIER = $(BUNDLE_ID_PREFIX).<name>.
 
 Done when a fresh clone builds on macOS with no project edits.
+
+- `2026-10-18T19:33:13Z`: Deferred (user).
+
+---
+
+## 94: Chained transitions: sub-emitter children with their own sub-emitters
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:l
+created: 2026-10-18T19:16:57Z
++++
+
+Sub-emitter children ignore their own subEmitters, so a particle can transition only once (ember -> ash, but not ember -> ash -> dust). Support nested sub-emitters, at least a few levels deep. Each level needs its own child slices (capacity multiplies per level, so cap the depth or the count), and the dispatch order must run each level after its parent. Related: #91.
+
+---
+
+## 95: Transitions can keep the parent's age
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:s
+created: 2026-10-18T19:16:57Z
++++
+
+A transition child (SubEmitter.transition / replacesParent) always starts at age 0. Add an option to carry over the parent's age (and maybe its remaining lifetime), so a change of look does not restart the particle's over-life curves or lifetime. Related: #91.
+
+---
+
+## 96: Transition when a particle enters a trigger volume
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:s
+created: 2026-10-18T19:16:57Z
++++
+
+Sub-emitter occasions cover birth, death, collision, while alive, and age, but not entering a trigger volume. Add an occasion that fires when a particle enters a given TriggerVolume (the kernel already detects entries for trigger counters), so a particle can change type when it crosses a region. Related: #91, #34.
+
+---
+
+## 97: ParticleView: a standalone SwiftUI view for particle effects
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:api, needs-design
+created: 2026-10-18T19:25:35Z
++++
+
+Add a SwiftUI ParticleView that shows an effect with no MetalSprockets setup: no RenderView, render passes, simulate/render calls, or camera matrices.
+
+Possible API:
+    ParticleView(preset: .campfire)
+    ParticleView(effect: url)
+    ParticleView(system: mySystem)
+
+It should handle the device, the frame loop (pause when off screen), the camera (the preset's camera; optionally orbit or fixed), a transparent or colored background, resizing, and collider solids and soft particles when the preset asks for them. Modifiers or parameters could cover playback (paused, speed, restart), events (send a trigger event), and the pointer (follow the mouse or touch, see #77).
+
+Questions:
+- Does it live in the main library or in a small UI target, so the core does not depend on SwiftUI or MetalSprocketsUI?
+- Is it 3D only, or should there be a 2D overlay mode (particles in view space, for UI effects like confetti over an app)?
+- iOS too? The iOS build is currently blocked inside MetalSprockets (Metal 4).
+
+The demo app could then use ParticleView for simple cases, which also tests it.
+
+---
+
+## 98: Immersive (Vision Pro) support
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, needs-design, deferred
+created: 2026-10-18T19:29:44Z
+updated: 2026-10-18T19:32:51Z
++++
+
+Show particle effects in a visionOS immersive space, using MetalSprockets' immersive support.
+
+How MetalSprockets does it (MetalSprocketsUI/VisionOS): ImmersiveRenderContent { context in ... } in an ImmersiveSpace runs the CompositorServices render loop with ARKit world tracking. ImmersiveRenderPass(context:) wraps a render pass set up for stereo, with optional progressive (stencil) rendering. ImmersiveContext gives viewCount, viewports, and per-eye viewMatrix(eye:) and projectionMatrix(eye:). The example (Example/.../ImmersiveCubeElement.swift) draws both eyes in one draw call with vertex amplification: setVertexAmplificationCount with view mappings, setViewports, and maxVertexAmplificationCount on the pipeline descriptor; the shader picks the eye's camera by [[amplification_id]].
+
+What this project needs:
+- Rendering: render(projection:view:) takes one camera. Add a stereo path: per-eye view and projection in the render uniforms, vertex amplification in particleVertex (billboards must face each eye, or a shared center-eye orientation), and the pipeline's maxVertexAmplificationCount. Sorting uses one view; sort by the center eye.
+- Simulation is camera-independent except the sort view; it can run once per frame as now.
+- Soft particles and collider solids need the stereo depth (layered or per-eye) or must be off at first.
+- World scale: presets are in meters already; place the effect with an emitter or system transform.
+- Interaction: hand or gaze positions can drive pointer bindings (#77) or tracked objects.
+- A visionOS demo target with an ImmersiveSpace, and maybe ParticleView (#97) gets an immersive variant.
+
+Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 4); visionOS may have the same problem. Needs a device or a fix upstream.
+
+- `2026-10-18T19:32:51Z`: Deferred (user): no Vision Pro hardware this week.
 
 ---

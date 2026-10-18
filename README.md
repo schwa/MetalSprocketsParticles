@@ -4,6 +4,27 @@ MetalSprocketsParticles is a particle system for [MetalSprockets](https://github
 
 The package has 31 built-in presets. To see each preset, look at the [demo videos](Documentation/Demos/README.md).
 
+## Features
+
+- **Made for MetalSprockets.** Simulation and drawing are MetalSprockets elements. Put `simulate` and `render` in your
+  own render graph, next to your own passes, with no extra Metal setup.
+- **Fast.** The GPU simulates and draws everything. One million particles simulate in about 0.25 ms on an M5 Max.
+- **Many emitters in one system.** Each emitter has its own shape, sprite, curves, blend mode, and settings.
+- **Emitter shapes:** point, sphere, box, plane, disc, cylinder, cone, torus, and meshes. Meshes can deform every frame.
+- **Collisions** with planes, spheres, boxes, and capsules. Colliders can move and spin, and fast particles do not pass
+  through thin colliders.
+- **Force fields:** wind, attractors, vortices, and turbulence.
+- **Sub-emitters and transitions.** Particles can make new particles when they are born, die, or collide. They can also
+  turn into a different kind of particle after a time or on a hit.
+- **Triggers.** Emit when you send an event, when particles hit a collider, or when something enters a volume.
+- **Your own Metal code.** Add Metal functions that run when particles are born, move, collide, or die.
+- **Rendering:** textured sprites, animated sprite sheets, emoji, velocity stretching, lighting, soft particles that
+  fade into scene geometry, and back-to-front sorting.
+- **Interactive.** Move colliders, force fields, and emitters every frame, or bind them to a point such as the mouse, a
+  hand, or an object in your scene.
+- **Effect files.** Save and load effects as JSON, including your Metal code. 31 built-in presets to start from.
+- **Video export.** Render any effect to a movie, offscreen.
+
 ## Usage
 
 Add the package to your `Package.swift`. Then make a particle system from a preset:
@@ -17,15 +38,10 @@ try system.load(.campfire)
 
 In each frame, call `system.simulate(deltaTime:)` before your render pass. Then call `system.render(projection:view:)` in the render pass.
 
-To render a preset to an image or a video from the command line, use `particles-render`:
+To try the presets and edit effects live, open the demo app in `Demos/MetalSprocketsParticlesDemo`. Pick a preset in the
+toolbar, change any setting in the inspector, and save the result as an effect file to load in your own app.
 
-```sh
-swift run -c release particles-render --list-presets
-swift run -c release particles-render --preset campfire -o campfire.png
-swift run -c release particles-render --preset campfire --video campfire.mov
-```
-
-The demo app is in `Demos/MetalSprocketsParticlesDemo`.
+There is also a command-line tool, `particles-render`, that renders presets and effect files to images and videos.
 
 ## 100% vibe coded
 
