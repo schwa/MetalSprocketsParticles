@@ -105,9 +105,11 @@ struct SceneSectionView: View {
         Section(model.presetName) {
             if !model.presetComment.isEmpty {
                 Text(model.presetComment)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .font(.body)
+                    .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .padding(.vertical, 4)
             }
             HStack {
                 Button("Open Effect", systemImage: "folder") { isImporting = true }
