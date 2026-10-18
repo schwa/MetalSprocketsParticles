@@ -639,18 +639,20 @@ The demo inspector (#26) covers only part of ParticleEmitter and ParticleSystem.
 ## 32: Emitters can only be built by mutating a ParticleEmitter struct
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:l, area:tooling
 created: 2026-10-17T17:10:23Z
-updated: 2026-10-18T13:33:59Z
+updated: 2026-10-18T14:24:33Z
+closed: 2026-10-18T14:24:33Z
 +++
 
 Defining an effect means creating a ParticleEmitter and setting many properties one by one, then wiring texture, transform, and colliders on ParticleSystem separately. There is no concise, composable way to describe an effect or reuse parts of one. Stretch goal: a small Swift DSL, possibly result-builder or SwiftUI-modifier style (e.g. Emitter { ... }.birthRate(5_000).colorOverLife(...).force(.turbulence(...))), so effects compose like SwiftUI views and presets (#30, #25) become short declarations. Related: #30 (preset scenes), #25 (presets/effect files).
 
 - `2026-10-18T12:48:08Z`: Reviewed against the current API. The wiring half is solved: EmitterDescription + ParticlePreset + ParticleSystem.apply (#50) describe an effect in one value, and effects are JSON files (#25). Punting the rest: the DSL shape is an API decision. Options: (A) public configure init, ParticleEmitter { $0.birthRate = 5_000 }, i.e. publish the private emitter {} helper Presets.swift already uses; tiny. (B) SwiftUI-style modifiers, ParticleEmitter().birthRate(5_000).colorOverLife(...): ~40 near-duplicate methods, or one generic .set(\.birthRate, 5_000) that is barely shorter than A. (C) result builder for presets, ParticlePreset("Sparks") { EmitterDescription(...); Collider.plane(...); ForceField.turbulence(...) }: composes like SwiftUI, bigger commitment. Recommend A now, C if presets should read like SwiftUI; skip B. Which do you want?
 - `2026-10-18T13:33:59Z`: Decision (user): option C, a result builder for presets, e.g. ParticlePreset("Sparks") { EmitterDescription(...); Collider.plane(...); ForceField.turbulence(...) }.
+- `2026-10-18T14:24:33Z`: Option C: ParticlePresetBuilder result builder and ParticlePreset(_ name:, animatesColliders:, ambientLight:, cameraEye:, cameraTarget:) { ... } taking EmitterDescription layers, Collider, ForceField, ParticleLight, and TrackedObject in any order, with if/else, for, if-let, and availability. Each kind keeps its written order. Sparks and Dunk converted as examples (goldens unchanged); the other presets keep the memberwise initializer. Tests: builder equals the memberwise init (ids aside), control flow. Emitter settings are still built by configuring a ParticleEmitter (the presets' emitter {} helper); option A was not chosen.
 
 ---
 
