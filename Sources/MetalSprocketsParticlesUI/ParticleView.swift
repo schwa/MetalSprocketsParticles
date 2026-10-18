@@ -16,6 +16,9 @@ import SwiftUI
 /// and moves pointer-bound colliders, force fields, and emitters with the mouse. To restart, pause, change speed, or send
 /// events, make the runtime yourself and pass it with `init(runtime:system:)`.
 ///
+/// Make the system once (a stored property or `@State`), not in `body`. A system built in `body` gets new emitter ids
+/// each time SwiftUI updates the view, and the view starts the effect over.
+///
 /// For effects over an app's UI, use the overlay camera and let hits pass through:
 ///
 /// ```swift

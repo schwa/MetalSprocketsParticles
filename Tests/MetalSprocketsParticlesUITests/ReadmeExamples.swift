@@ -40,8 +40,12 @@ enum ReadmeExamples {
     }
 
     struct TorchView: View {
+        // Make the system once, not in `body`: a system built in `body` gets new emitter ids on every update, which
+        // restarts the effect.
+        @State private var torch = ParticleSystem.campfire
+
         var body: some View {
-            ParticleView(ReadmeExamples.buildEffect())
+            ParticleView(torch)
         }
     }
 

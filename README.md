@@ -71,11 +71,16 @@ let built = ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6,
 `ParticleView` runs the simulation, draws the effect with its camera, and lets the mouse move pointer-bound items:
 
 ```swift
+import MetalSprocketsParticlesSamples
 import MetalSprocketsParticlesUI
 
 struct TorchView: View {
+    // Make the system once, not in `body`: a system built in `body` gets new emitter ids on every update, which
+    // restarts the effect.
+    @State private var torch = ParticleSystem.campfire
+
     var body: some View {
-        ParticleView(built)
+        ParticleView(torch)
     }
 }
 ```
