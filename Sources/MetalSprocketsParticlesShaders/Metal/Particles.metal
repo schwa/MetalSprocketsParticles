@@ -527,7 +527,9 @@ struct ParticleState {
 };
 using ParticleUpdateFunction = void(thread ParticleState &, float deltaTime, float time, constant float4 *parameters);
 
+// Stand-ins for missing user functions, one per table: linking one function twice into a pipeline is an error.
 [[visible]] void particleNoUpdate(thread ParticleState &, float, float, constant float4 *) {}
+[[visible]] void particleNoSpawn(thread ParticleState &, float, float, constant float4 *) {}
 
 kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
@@ -545,6 +547,8 @@ kernel void updateParticles(
     constant TriggerVolumeData *triggerVolumes [[buffer(9)]],
     visible_function_table<ParticleUpdateFunction> updateFunction [[buffer(13)]],
     constant float4 *updateParameters [[buffer(14)]],
+    visible_function_table<ParticleUpdateFunction> spawnFunction [[buffer(15)]],
+    constant float4 *spawnParameters [[buffer(16)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -570,6 +574,18 @@ kernel void updateParticles(
         float birthAge;
         p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge);
         dt *= birthAge;
+        if (uniforms.hasSpawnFunction != 0) {
+            // The user sees world space, like the update function; deltaTime is 0 at birth.
+            ParticleState state {
+                (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz,
+                (uniforms.simulationToWorld * float4(p.velocity.xyz, 0)).xyz,
+                p.position.w, p.velocity.w, id
+            };
+            spawnFunction[0](state, 0, uniforms.time, spawnParameters);
+            p.position.xyz = (uniforms.worldToSimulation * float4(state.position, 1)).xyz;
+            p.velocity.xyz = (uniforms.worldToSimulation * float4(state.velocity, 0)).xyz;
+            p.velocity.w = max(state.lifetime, 1e-4);
+        }
     }
 
     float lifetime = p.velocity.w;

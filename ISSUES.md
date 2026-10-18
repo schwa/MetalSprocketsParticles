@@ -1731,16 +1731,19 @@ Part of #24; needs the design from #85. A user-supplied Metal function runs for 
 ## 87: User Metal function: spawn hook
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:m, area:simulation
 depends: 85
 created: 2026-10-18T17:06:38Z
-updated: 2026-10-18T17:06:46Z
+updated: 2026-10-18T17:31:56Z
+closed: 2026-10-18T17:31:56Z
 +++
 
 Part of #24; needs the design from #85. A user-supplied Metal function sets up each newly born particle after the built-in spawn, e.g. custom positions, velocities, or colors.
+
+- `2026-10-18T17:31:56Z`: ParticleEmitter.spawnFunction (ParticleFunction, Codable): called once per new particle after the built-in spawn, in world space with deltaTime 0; may change position, velocity, and lifetime. Second visible function table in the kernel with its own built-in no-op (linking one function twice into a pipeline fails with 'duplicated symbol', so an emitter using the same function for spawn and update links it once). Sub-emitter children are not passed through it (documented). Tests: ring placement and lifetime, spawn+update together, same function in both slots, JSON round trip. No preset: the issue asks for none, and color is not in ParticleState yet.
 
 ---
 

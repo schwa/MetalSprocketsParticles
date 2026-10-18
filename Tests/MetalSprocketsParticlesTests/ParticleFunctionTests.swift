@@ -65,6 +65,58 @@ struct ParticleFunctionTests {
         #expect(result[0].allSatisfy { simd_distance($0, [2, 0, -3]) < 1e-4 })
     }
 
+    /// Puts each new particle on a ring of radius parameters[0].x at height parameters[0].y, still, living
+    /// parameters[0].z seconds.
+    let ring = ParticleFunction(source: """
+    [[visible]] void ring(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+        float angle = float(particle.id) * 0.7;
+        particle.position = float3(cos(angle), 0, sin(angle)) * parameters[0].x + float3(0, parameters[0].y, 0);
+        particle.velocity = float3(0);
+        particle.lifetime = parameters[0].z;
+    }
+    """, name: "ring", parameters: [[2, 1, 3.5, 0]])
+
+    @Test func spawnFunctionPlacesNewParticles() throws {
+        let emitter = fallingEmitter {
+            $0.gravity = .zero
+            $0.spawnFunction = ring
+        }
+        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: emitter)
+        system.burst(16)
+        try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
+        let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 16)
+        for index in 0..<16 {
+            let particle = pointer[index]
+            #expect(abs(simd_length(SIMD2(particle.position.x, particle.position.z)) - 2) < 1e-4)
+            #expect(abs(particle.position.y - 1) < 1e-4)
+            #expect(particle.velocity.w == 3.5)
+        }
+    }
+
+    @Test func spawnAndUpdateFunctionsWorkTogether() throws {
+        let emitter = fallingEmitter {
+            $0.spawnFunction = ring
+            $0.updateFunction = setVelocity
+        }
+        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: emitter)
+        let result = try velocities(system, count: 16, frames: 10)
+        let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 16)
+        #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
+        // Started on the ring at y = 1 and rose at 5 units/s.
+        #expect((0..<16).allSatisfy { pointer[$0].position.y > 1.5 && abs(simd_length(SIMD2(pointer[$0].position.x, pointer[$0].position.z)) - 2) < 1e-3 })
+    }
+
+    @Test func oneFunctionCanBeBothSpawnAndUpdate() throws {
+        // Linking the same function twice would fail pipeline creation.
+        let emitter = fallingEmitter {
+            $0.spawnFunction = setVelocity
+            $0.updateFunction = setVelocity
+        }
+        let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: emitter)
+        let result = try velocities(system, count: 16, frames: 3)
+        #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
+    }
+
     @Test func compileErrorsThrowFromSimulate() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
         let system = try ParticleSystem(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = broken })
@@ -77,6 +129,9 @@ struct ParticleFunctionTests {
         let emitter = fallingEmitter { $0.updateFunction = setVelocity }
         let decoded = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(emitter))
         #expect(decoded.updateFunction == setVelocity)
+        var spawning = fallingEmitter()
+        spawning.spawnFunction = ring
+        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(spawning)).spawnFunction == ring)
         let plain = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(fallingEmitter()))
         #expect(plain.updateFunction == nil)
     }

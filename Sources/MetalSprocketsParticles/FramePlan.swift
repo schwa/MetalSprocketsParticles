@@ -21,8 +21,9 @@ struct FramePlan {
         /// `uniforms.subEmitterCount` keeps padding unused.
         var subEmitters: [SubEmitterData]
         var subEmitterUniforms: [SimulationUniforms]
-        /// The emitter's `updateFunction`; `uniforms.hasUpdateFunction` matches it.
+        /// The emitter's `updateFunction` and `spawnFunction`; `uniforms.hasUpdateFunction` and `hasSpawnFunction` match.
         var updateFunction: ParticleFunction?
+        var spawnFunction: ParticleFunction?
     }
 
     /// Warmup steps first, then the frame's step, per emitter; sub-emitter instances after all emitters.
@@ -314,6 +315,7 @@ extension ParticleSystem {
             uniforms.countsAlive = index == steps.count - 1 ? 1 : 0
             uniforms.aliveCounterSlot = aliveCounterSlot
             uniforms.hasUpdateFunction = emitter.settings.updateFunction == nil ? 0 : 1
+            uniforms.hasSpawnFunction = emitter.settings.spawnFunction == nil ? 0 : 1
             return FramePlan.Dispatch(
                 uniforms: uniforms,
                 threadCount: step.threadCount,
@@ -324,7 +326,8 @@ extension ParticleSystem {
                 followsSameEmitter: index > 0 || emitter.isSubEmitter,
                 subEmitters: subEmitters.data,
                 subEmitterUniforms: subEmitters.uniforms,
-                updateFunction: emitter.settings.updateFunction
+                updateFunction: emitter.settings.updateFunction,
+                spawnFunction: emitter.settings.spawnFunction
             )
         }
     }

@@ -126,6 +126,9 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var softness: Float = 0
     /// Runs for every live particle each step, after gravity, force fields, and drag, before collisions.
     public var updateFunction: ParticleFunction?
+    /// Runs once for each new particle, after the built-in spawn. It may change position, velocity, and lifetime.
+    /// Sub-emitter children are not passed through it.
+    public var spawnFunction: ParticleFunction?
 
     public init() {}
 }
@@ -179,6 +182,7 @@ extension ParticleEmitter {
         try container.update(&isLit, .isLit)
         try container.update(&softness, .softness)
         updateFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .updateFunction)
+        spawnFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .spawnFunction)
     }
 }
 

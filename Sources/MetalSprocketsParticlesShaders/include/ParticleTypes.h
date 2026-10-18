@@ -239,6 +239,8 @@ typedef struct {
     uint32_t aliveCounterSlot;
     // Nonzero to call the emitter's user update function (updateFunction[0]) each step.
     uint32_t hasUpdateFunction;
+    // Nonzero to call the emitter's user spawn function (spawnFunction[0]) for each new particle.
+    uint32_t hasSpawnFunction;
 } SimulationUniforms;
 
 /// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.
