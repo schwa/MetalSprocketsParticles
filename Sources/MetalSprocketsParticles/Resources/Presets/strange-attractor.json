@@ -1,0 +1,219 @@
+{
+  "ambientLight" : [
+    0.25,
+    0.25,
+    0.25
+  ],
+  "animatesColliders" : false,
+  "cameraEye" : [
+    1.4,
+    2,
+    3.8
+  ],
+  "cameraTarget" : [
+    0,
+    1.5,
+    0
+  ],
+  "colliderSpins" : [
+
+  ],
+  "colliders" : [
+
+  ],
+  "comment" : "Glowing particles trace the Lorenz attractor. A user Metal function (updateFunction) sets each particle's velocity from the Lorenz equations every step; nothing in the built-in settings moves them.",
+  "drawsColliders" : false,
+  "forceFields" : [
+
+  ],
+  "layers" : [
+    {
+      "capacity" : 60000,
+      "id" : "D949C196-DB91-4BA1-AE66-E0DBC5126FA8",
+      "isEmitting" : true,
+      "motion" : {
+        "kind" : "Still",
+        "offset" : [
+          0,
+          0,
+          0
+        ],
+        "pitch" : 0,
+        "radius" : 1.5,
+        "speed" : 1,
+        "spin" : 0,
+        "yaw" : 0
+      },
+      "name" : "Lorenz",
+      "settings" : {
+        "angle" : 0,
+        "angleVariation" : 0,
+        "angularSpeed" : 0,
+        "angularSpeedVariation" : 0,
+        "birthDirection" : 0,
+        "birthLocation" : 0,
+        "birthRate" : 4000,
+        "birthRateVariation" : 0,
+        "blendMode" : 1,
+        "collisionMask" : 4294967295,
+        "colorOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : [
+                0.3,
+                0.6,
+                1,
+                1
+              ]
+            },
+            {
+              "time" : 0.5,
+              "value" : [
+                0.9,
+                0.4,
+                1,
+                1
+              ]
+            },
+            {
+              "time" : 1,
+              "value" : [
+                1,
+                0.5,
+                0.2,
+                1
+              ]
+            }
+          ]
+        },
+        "colorVariation" : [
+          0.08,
+          0.1,
+          0,
+          0
+        ],
+        "diesOnCollision" : false,
+        "drag" : 0,
+        "emissionOverTime" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 1
+            }
+          ]
+        },
+        "fieldMask" : 4294967295,
+        "friction" : 0.2,
+        "frictionVariation" : 0,
+        "gravity" : [
+          0,
+          0,
+          0
+        ],
+        "idleDuration" : 0,
+        "inheritVelocity" : 0,
+        "isLit" : false,
+        "lifetime" : [
+          10,
+          14
+        ],
+        "loops" : true,
+        "opacityOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0
+            },
+            {
+              "time" : 0.15,
+              "value" : 0.45
+            },
+            {
+              "time" : 0.85,
+              "value" : 0.45
+            },
+            {
+              "time" : 1,
+              "value" : 0
+            }
+          ]
+        },
+        "orientation" : {
+          "billboard" : {
+
+          }
+        },
+        "position" : [
+          0.38,
+          1.5,
+          0.38
+        ],
+        "restitution" : 0.4,
+        "restitutionVariation" : 0,
+        "shape" : {
+          "sphere" : {
+            "radius" : 0.15
+          }
+        },
+        "sizeOverLife" : {
+          "keyframes" : [
+            {
+              "time" : 0,
+              "value" : 0.008
+            }
+          ]
+        },
+        "sizeVariation" : 0,
+        "softness" : 0,
+        "sortMode" : "None",
+        "speedVariation" : 0,
+        "subEmitters" : [
+
+        ],
+        "sweepAngle" : 6.283185,
+        "triggers" : [
+
+        ],
+        "updateFunction" : {
+          "name" : "lorenz",
+          "parameters" : [
+            [
+              10,
+              28,
+              2.6666667,
+              0.045
+            ],
+            [
+              0,
+              1.5,
+              0,
+              0.9
+            ]
+          ],
+          "source" : "\/\/ Lorenz attractor. parameters[0] = (sigma, rho, beta, world units per Lorenz unit);\n\/\/ parameters[1] = (center x, y, z, time scale). Lorenz z is world up.\n[[visible]] void lorenz(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    float4 shape = parameters[0];\n    float4 frame = parameters[1];\n    float3 local = (particle.position - frame.xyz) \/ shape.w;\n    float3 p = float3(local.x, local.z, local.y + shape.y - 1.0);\n    float3 derivative = float3(\n        shape.x * (p.y - p.x),\n        p.x * (shape.y - p.z) - p.y,\n        p.x * p.y - shape.z * p.z\n    );\n    particle.velocity = float3(derivative.x, derivative.z, derivative.y) * shape.w * frame.w;\n}\n"
+        },
+        "velocity" : [
+          0,
+          0,
+          0
+        ],
+        "velocitySpread" : 0,
+        "warmupDuration" : 12
+      },
+      "simulationSpace" : {
+        "world" : {
+
+        }
+      },
+      "sprite" : "Soft Dot"
+    }
+  ],
+  "lights" : [
+
+  ],
+  "name" : "Strange Attractor",
+  "trackedObjects" : {
+
+  }
+}

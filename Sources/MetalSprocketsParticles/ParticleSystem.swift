@@ -152,6 +152,8 @@ public final class ParticleSystem {
     var appliedLayout: [AppliedEmitter] = []
     /// Sprite textures made by `apply(_:)`.
     var spriteTextures: [ParticleSprite: MTLTexture] = [:]
+    /// User functions compiled by `visibleFunction(for:)`.
+    var compiledFunctions: [FunctionKey: VisibleFunction] = [:]
 
     /// Instances for every emitter's `settings.subEmitters`, stored after all emitters in the shared buffer.
     private(set) var subEmitterInstances: [Emitter] = []
@@ -173,12 +175,6 @@ public final class ParticleSystem {
     public var ambientLight: SIMD3<Float> = [0.25, 0.25, 0.25]
     /// Multiplies simulation time. 2 runs twice as fast; 0.5 is slow motion.
     public var speedFactor: Float = 1
-
-    // SPIKE #85: a user [[visible]] update function and its parameters, called for every live particle each step.
-    public var userUpdate: VisibleFunction?
-    public var userParameters: [SIMD4<Float>] = []
-    // SPIKE #85: bind the table even without a user function, to measure the cost of the plumbing alone.
-    public var alwaysBindUserTable = true
 
     public var state: SimulationState = .playing {
         didSet {
@@ -429,14 +425,11 @@ public final class ParticleSystem {
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
-        let userUpdate = self.userUpdate
-        let bindsTable = userUpdate != nil || alwaysBindUserTable
-        let updateFunction = try userUpdate ?? library.function(type: VisibleFunction.self, named: "particleNoUpdate")
-        let userParameters = self.userParameters.isEmpty ? [SIMD4<Float>.zero] : self.userParameters
-        let allUniforms = dispatches.map { dispatch in
-            var uniforms = dispatch.uniforms
-            uniforms.hasUserUpdate = userUpdate == nil ? 0 : 1
-            return uniforms
+        // The table is always bound, with a built-in no-op standing in, so every pipeline has the same shape.
+        let noUpdate = try library.function(type: VisibleFunction.self, named: "particleNoUpdate")
+        let updateFunctions = try dispatches.map { try $0.updateFunction.map(visibleFunction(for:)) ?? noUpdate }
+        let updateParameters = dispatches.map { dispatch in
+            dispatch.updateFunction.map(\.parameters).flatMap { $0.isEmpty ? nil : $0 } ?? [SIMD4<Float>.zero]
         }
         let sortKernels = sortKernels
         return try ComputePass {
@@ -448,17 +441,13 @@ public final class ParticleSystem {
                     EncoderBarrier(after: .dispatch, before: .dispatch)
                 }
                 try ComputePipeline(computeKernel: kernel) {
-                    if bindsTable {
-                        try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
-                            .visibleFunctionTable("userUpdate", function: updateFunction)
-                    } else {
-                        try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
-                    }
+                    try ComputeDispatch(threadsPerGrid: MTLSize(width: dispatches[index].threadCount, height: 1, depth: 1))
+                        .visibleFunctionTable("updateFunction", function: updateFunctions[index])
                 }
-                .linkedFunctions(bindsTable ? [updateFunction] : [])
-                .parameter("userParameters", values: userParameters)
+                .linkedFunctions([updateFunctions[index]])
+                .parameter("updateParameters", values: updateParameters[index])
                 .parameter("particles", buffer: buffer)
-                .parameter("uniforms", value: allUniforms[index])
+                .parameter("uniforms", value: dispatches[index].uniforms)
                 // Never bind an empty array; the counts in uniforms keep the padding unused.
                 .parameter("colliders", values: dispatches[index].colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : dispatches[index].colliders)
                 .parameter("forceFields", values: dispatches[index].forceFields.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : dispatches[index].forceFields)

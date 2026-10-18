@@ -25,9 +25,8 @@ struct BenchCommand: ParsableCommand {
     @Option(help: "Image height in pixels.")
     var height = 1_080
 
-    // SPIKE #85
-    @Option(help: "User update function: none (no table), table (placeholder bound), noop, work.")
-    var user = "table"
+    @Option(help: "User update function on the emitter: none, noop (empty), or work (some math).")
+    var updateFunction = "none"
 
     @Flag(help: "Only the 1M scenarios.")
     var only1M = false
@@ -91,12 +90,8 @@ struct BenchCommand: ParsableCommand {
         let system = try ParticleSystem(device: renderer.device, capacity: scenario.capacity, emitter: emitter(scenario), seed: 0)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: [0, 0.5, 0], radius: 0.6)]
         system.forceFields = scenario.turbulence ? [.turbulence(strength: 1, scale: 1, speed: 0.3)] : []
-        system.alwaysBindUserTable = user != "none"
-        if user == "noop" || user == "work" {
+        if updateFunction == "noop" || updateFunction == "work" {
             let source = """
-            #include <metal_stdlib>
-            using namespace metal;
-            struct ParticleState { float3 position; float3 velocity; float age; float lifetime; uint id; };
             [[visible]] void noop(thread ParticleState &p, float dt, float time, constant float4 *parameters) {}
             [[visible]] void work(thread ParticleState &p, float dt, float time, constant float4 *parameters) {
                 float3 swirl = float3(-p.position.z, sin(time + p.position.x), p.position.x) * parameters[0].x;
@@ -104,9 +99,7 @@ struct BenchCommand: ParsableCommand {
                 p.position += normalize(p.velocity + 1e-4) * 0.001 * cos(p.age * 6.0);
             }
             """
-            let library = try renderer.device.makeLibrary(source: source, options: nil)
-            system.userUpdate = try VisibleFunction(library: library, name: user)
-            system.userParameters = [[0.5, 0, 0, 0]]
+            system.emitters[0].settings.updateFunction = ParticleFunction(source: source, name: updateFunction, parameters: [[0.5, 0, 0, 0]])
         }
         let view = simd_float4x4(lookingFrom: [0, 2, 5], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)

@@ -237,8 +237,8 @@ typedef struct {
     // particles to aliveCounters[aliveCounterSlot].
     uint32_t countsAlive;
     uint32_t aliveCounterSlot;
-    // SPIKE #85: nonzero to call userUpdate[0] each step.
-    uint32_t hasUserUpdate;
+    // Nonzero to call the emitter's user update function (updateFunction[0]) each step.
+    uint32_t hasUpdateFunction;
 } SimulationUniforms;
 
 /// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.

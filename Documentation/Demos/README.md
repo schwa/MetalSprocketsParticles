@@ -28,6 +28,7 @@ Six-second clips of every built-in preset, rendered offscreen with `particles-re
 - [Paddle Wheel](#paddle-wheel)
 - [Teapot](#teapot)
 - [Flag](#flag)
+- [Strange Attractor](#strange-attractor)
 - [Awning](#awning)
 - [Lantern](#lantern)
 - [Dunk](#dunk)
@@ -175,6 +176,12 @@ The Utah teapot outlined in glowing particles, slowly dissolving into sand that 
 A flag of glowing sparks waves from a pole. The flag is a mesh that the system deforms every frame, and the sparks are born on its moving surface. Shows a deforming mesh emitter.
 
 [![flag](posters/flag.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/flag.mp4)
+
+## Strange Attractor
+
+Glowing particles trace the Lorenz attractor. A user Metal function sets each particle's velocity from the Lorenz equations every step; nothing in the built-in settings moves them.
+
+[![strange-attractor](posters/strange-attractor.jpg)](https://raw.githubusercontent.com/schwa/MetalSprocketsParticles/main/Documentation/Demos/videos/strange-attractor.mp4)
 
 ## Awning
 

@@ -1712,16 +1712,19 @@ Follow-ups: #86 update hook: as prototyped, called after forces and before colli
 ## 86: User Metal function: per-step update hook
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:m
 depends: 85
 created: 2026-10-18T17:06:38Z
-updated: 2026-10-18T17:19:40Z
+updated: 2026-10-18T17:29:00Z
+closed: 2026-10-18T17:29:00Z
 +++
 
 Part of #24; needs the design from #85. A user-supplied Metal function runs for each live particle every step, after the built-in forces and before collisions. It needs a Swift API to supply the function and its parameter buffer, tests, and a preset that uses it.
+
+- `2026-10-18T17:29:00Z`: ParticleEmitter.updateFunction: ParticleFunction (Metal source, visible function name, float4 parameters), Codable. Compiled once per source+name after ParticleFunction.prelude (public; declares ParticleState) and cached on the system; bound per dispatch through the kernel's visible function table, with a built-in no-op otherwise. Called after gravity, fields, and drag, before collisions. Compile errors throw from simulate. Replaced the spike-only system API. Tests: per-emitter scope, parameters, compile error, JSON round trip. New Strange Attractor preset (Lorenz system); golden, clip, poster.
 
 ---
 

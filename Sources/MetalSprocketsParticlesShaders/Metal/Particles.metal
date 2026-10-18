@@ -516,7 +516,8 @@ static Particle spawnParticle(
     return p;
 }
 
-// SPIKE #85: the user-function ABI. Plain Metal types only, so user source needs no project headers.
+// The user-function ABI, mirrored by ParticleFunction.prelude in Swift. Plain Metal types only, so user source needs no
+// project headers and Particle's packing can change freely.
 struct ParticleState {
     float3 position;
     float3 velocity;
@@ -542,8 +543,8 @@ kernel void updateParticles(
     constant SimulationUniforms *subEmitterUniforms [[buffer(7)]],
     device atomic_uint *triggerCounters [[buffer(8)]],
     constant TriggerVolumeData *triggerVolumes [[buffer(9)]],
-    visible_function_table<ParticleUpdateFunction> userUpdate [[buffer(13)]],
-    constant float4 *userParameters [[buffer(14)]],
+    visible_function_table<ParticleUpdateFunction> updateFunction [[buffer(13)]],
+    constant float4 *updateParameters [[buffer(14)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -592,9 +593,9 @@ kernel void updateParticles(
     velocity += acceleration * dt;
     velocity *= max(0.0, 1.0 - uniforms.drag * dt);
     position += velocity * dt;
-    if (uniforms.hasUserUpdate != 0) {
+    if (uniforms.hasUpdateFunction != 0) {
         ParticleState state { position, velocity, age, lifetime, id };
-        userUpdate[0](state, dt, uniforms.time, userParameters);
+        updateFunction[0](state, dt, uniforms.time, updateParameters);
         position = state.position;
         velocity = state.velocity;
     }

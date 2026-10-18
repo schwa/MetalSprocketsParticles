@@ -124,6 +124,8 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Soft particles: fade out over this many world units in front of the scene depth passed to
     /// `ParticleSystem.render(projection:view:sceneDepth:)`, instead of clipping hard. 0 turns it off.
     public var softness: Float = 0
+    /// Runs for every live particle each step, after gravity, force fields, and drag, before collisions.
+    public var updateFunction: ParticleFunction?
 
     public init() {}
 }
@@ -176,6 +178,7 @@ extension ParticleEmitter {
         try container.update(&emissionOverTime, .emissionOverTime)
         try container.update(&isLit, .isLit)
         try container.update(&softness, .softness)
+        updateFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .updateFunction)
     }
 }
 
