@@ -73,7 +73,7 @@ extension ForceField {
     /// Wind: an arrow along the wind above the origin. Attractor: a cross at the center and its radius. Vortex: rings
     /// around the axis with arrows showing the direction of spin. Turbulence fills all space and draws nothing.
     func addWireframe(to builder: inout WireframeBuilder) {
-        switch self {
+        switch effect {
         case let .wind(velocity, _):
             guard simd_length(velocity) > 0 else {
                 return

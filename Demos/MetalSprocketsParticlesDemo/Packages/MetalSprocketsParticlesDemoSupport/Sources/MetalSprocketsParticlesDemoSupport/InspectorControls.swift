@@ -142,6 +142,37 @@ struct KindPicker<Kind: ParticleKind>: View {
     }
 }
 
+extension UInt32 {
+    /// Bit `index`, for toggle bindings.
+    subscript(bit index: Int) -> Bool {
+        get { self & (1 << index) != 0 }
+        set { self = newValue ? self | (1 << index) : self & ~(1 << index) }
+    }
+}
+
+/// Category bits 1 to 8 as toggle buttons. A collider or field applies to an emitter when they share a bit; bits above 8
+/// are left as they are.
+struct CategoryMaskView: View {
+    let title: LocalizedStringKey
+    @Binding var mask: UInt32
+
+    init(_ title: LocalizedStringKey, mask: Binding<UInt32>) {
+        self.title = title
+        _mask = mask
+    }
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack {
+                ForEach(0..<8, id: \.self) { bit in
+                    Toggle("\(bit + 1)", isOn: $mask[bit: bit])
+                        .toggleStyle(.button)
+                }
+            }
+        }
+    }
+}
+
 #Preview("Slider") {
     @Previewable @State var value: Float = 0.5
     ParameterSliderView("Value", value: $value, in: 0...1)
@@ -154,6 +185,14 @@ struct KindPicker<Kind: ParticleKind>: View {
     Form {
         ColorCurveEditorView(title: "Color", curve: $color)
         FloatCurveEditorView(title: "Size", curve: $size, range: 0...0.3)
+    }
+    .formStyle(.grouped)
+}
+
+#Preview("Category Mask") {
+    @Previewable @State var mask: UInt32 = 0b101
+    Form {
+        CategoryMaskView("Collides With", mask: $mask)
     }
     .formStyle(.grouped)
 }

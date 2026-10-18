@@ -322,6 +322,8 @@ struct CollisionSectionView: View {
             ParameterSliderView("Bounce", value: $settings.restitution, in: 0...1.5)
             ParameterSliderView("Friction", value: $settings.friction, in: 0...1)
             Toggle("Die on Collision", isOn: $settings.diesOnCollision)
+            CategoryMaskView("Collides With", mask: $settings.collisionMask)
+            CategoryMaskView("Feels Fields", mask: $settings.fieldMask)
         }
     }
 }
@@ -414,21 +416,22 @@ struct ColliderEditorView: View {
             KindPicker("Kind", selection: $collider.kind)
             switch collider.kind {
             case .plane:
-                ParameterSliderView("Height", value: $collider.center.y, in: -2...4)
+                ParameterSliderView("Height", value: $collider.shape.center.y, in: -2...4)
             case .sphere:
-                VectorEditorView("Center", value: $collider.center, in: -5...5)
-                ParameterSliderView("Radius", value: $collider.radius, in: 0.05...3)
+                VectorEditorView("Center", value: $collider.shape.center, in: -5...5)
+                ParameterSliderView("Radius", value: $collider.shape.radius, in: 0.05...3)
             case .box:
-                VectorEditorView("Center", value: $collider.center, in: -5...5)
-                VectorEditorView("Size", value: $collider.size, in: 0.05...5)
-                ParameterSliderView("Tilt", value: $collider.tilt, in: -.pi ... .pi)
+                VectorEditorView("Center", value: $collider.shape.center, in: -5...5)
+                VectorEditorView("Size", value: $collider.shape.size, in: 0.05...5)
+                ParameterSliderView("Tilt", value: $collider.shape.tilt, in: -.pi ... .pi)
             case .capsule:
-                VectorEditorView("Center", value: $collider.center, in: -5...5)
-                ParameterSliderView("Length", value: $collider.length, in: 0...5)
-                ParameterSliderView("Radius", value: $collider.radius, in: 0.05...2)
+                VectorEditorView("Center", value: $collider.shape.center, in: -5...5)
+                ParameterSliderView("Length", value: $collider.shape.length, in: 0...5)
+                ParameterSliderView("Radius", value: $collider.shape.radius, in: 0.05...2)
             default:
                 EmptyView()
             }
+            CategoryMaskView("Categories", mask: $collider.categoryBitMask)
         }
     }
 }
@@ -439,19 +442,20 @@ struct ForceFieldEditorView: View {
     var body: some View {
         Group {
             KindPicker("Kind", selection: $field.kind)
-            ParameterSliderView("Strength", value: $field.strength, in: -20...20)
+            ParameterSliderView("Strength", value: $field.effect.strength, in: -20...20)
             switch field.kind {
             case .wind:
-                VectorEditorView("Velocity", value: $field.windVelocity, in: -10...10)
+                VectorEditorView("Velocity", value: $field.effect.windVelocity, in: -10...10)
             case .attractor, .vortex:
-                VectorEditorView("Center", value: $field.center, in: -5...5)
-                ParameterSliderView("Radius", value: $field.radius, in: 0...6)
+                VectorEditorView("Center", value: $field.effect.center, in: -5...5)
+                ParameterSliderView("Radius", value: $field.effect.radius, in: 0...6)
             case .turbulence:
-                ParameterSliderView("Scale", value: $field.turbulenceScale, in: 0.1...5)
-                ParameterSliderView("Speed", value: $field.turbulenceSpeed, in: 0...3)
+                ParameterSliderView("Scale", value: $field.effect.turbulenceScale, in: 0.1...5)
+                ParameterSliderView("Speed", value: $field.effect.turbulenceSpeed, in: 0...3)
             default:
                 EmptyView()
             }
+            CategoryMaskView("Categories", mask: $field.categoryBitMask)
         }
     }
 }

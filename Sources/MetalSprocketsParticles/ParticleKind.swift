@@ -192,7 +192,15 @@ extension ParticleColliderKind: @retroactive CaseIterable, @retroactive Identifi
 }
 
 public extension Collider {
-    /// Setting it makes a default collider of that kind at the same center.
+    /// Setting it makes a default shape of that kind at the same center, keeping the category.
+    var kind: ParticleColliderKind {
+        get { shape.kind }
+        set { shape.kind = newValue }
+    }
+}
+
+public extension Collider.Shape {
+    /// Setting it makes a default shape of that kind at the same center.
     var kind: ParticleColliderKind {
         get {
             switch self {
@@ -235,7 +243,15 @@ extension ParticleForceFieldKind: @retroactive CaseIterable, @retroactive Identi
 }
 
 public extension ForceField {
-    /// Setting it makes a default field of that kind.
+    /// Setting it makes a default field of that kind, keeping the category.
+    var kind: ParticleForceFieldKind {
+        get { effect.kind }
+        set { effect.kind = newValue }
+    }
+}
+
+public extension ForceField.Effect {
+    /// Setting it makes a default effect of that kind.
     var kind: ParticleForceFieldKind {
         get {
             switch self {

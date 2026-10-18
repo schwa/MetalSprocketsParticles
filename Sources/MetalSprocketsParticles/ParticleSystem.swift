@@ -354,8 +354,6 @@ public final class ParticleSystem {
     /// Records the GPU work for `plan`, then any sorts. No CPU state changes here.
     private func encode(_ plan: FramePlan, sorts: [EmitterSort]) throws -> some Element {
         let dispatches = plan.dispatches
-        let colliderData = plan.colliders
-        let forceFieldData = plan.forceFields
         let volumeData = plan.triggerVolumes
         let triggerCounters = triggerCounters
         let placeholderMesh = placeholderMesh
@@ -376,8 +374,8 @@ public final class ParticleSystem {
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: dispatches[index].uniforms)
                 // Never bind an empty array; the counts in uniforms keep the padding unused.
-                .parameter("colliders", values: colliderData.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : colliderData)
-                .parameter("forceFields", values: forceFieldData.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : forceFieldData)
+                .parameter("colliders", values: dispatches[index].colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : dispatches[index].colliders)
+                .parameter("forceFields", values: dispatches[index].forceFields.isEmpty ? [ForceFieldData(.wind(velocity: .zero, strength: 0))] : dispatches[index].forceFields)
                 .parameter("meshTriangles", buffer: (dispatches[index].mesh ?? placeholderMesh).triangles)
                 .parameter("meshVertices", buffer: (dispatches[index].mesh ?? placeholderMesh).vertices)
                 .parameter("subEmitters", values: dispatches[index].subEmitters)

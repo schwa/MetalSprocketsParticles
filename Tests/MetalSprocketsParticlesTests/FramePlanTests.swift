@@ -111,6 +111,23 @@ struct FramePlanTests {
         #expect(abs(plan.colliders[0].velocity.x - 6) < 1e-3)
     }
 
+    @Test func categoryMasksFilterEachDispatch() throws {
+        let system = try ParticleSystem(device: device, emitters: [
+            emitter { $0.collisionMask = 0b10; $0.fieldMask = 0b01 },
+            emitter(),
+        ], capacity: 10)
+        system.colliders = [.plane(normal: [0, 1, 0], distance: 0, categoryBitMask: 0b01), .sphere(center: .zero, radius: 1, categoryBitMask: 0b10)]
+        system.forceFields = [.wind(velocity: [1, 0, 0], strength: 1, categoryBitMask: 0b10)]
+        let plan = try system.planFrame(deltaTime: deltaTime)
+        let masked = plan.dispatches[0]
+        #expect(masked.uniforms.colliderCount == 1 && masked.uniforms.forceFieldCount == 0)
+        // The sphere keeps its index in system.colliders, so collider-hit triggers still match it.
+        #expect(masked.colliders.map(\.triggerIndex) == [1])
+        let unmasked = plan.dispatches[1]
+        #expect(unmasked.uniforms.colliderCount == 2 && unmasked.uniforms.forceFieldCount == 1)
+        #expect(unmasked.colliders.map(\.triggerIndex) == [0, 1])
+    }
+
     // MARK: Triggers
 
     @Test func namedEventsBurstOnTheNextFrame() throws {

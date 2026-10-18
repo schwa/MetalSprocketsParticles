@@ -110,6 +110,10 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
 
     /// Reactions to events, timers, volumes, and collider hits.
     public var triggers: [EmissionTrigger] = []
+    /// Colliders apply when their `categoryBitMask` shares a bit with this. All bits by default.
+    public var collisionMask: UInt32 = .max
+    /// Force fields apply when their `categoryBitMask` shares a bit with this. All bits by default.
+    public var fieldMask: UInt32 = .max
 
     public init() {}
 }
@@ -157,6 +161,8 @@ extension ParticleEmitter {
         try container.update(&warmupDuration, .warmupDuration)
         try container.update(&subEmitters, .subEmitters)
         try container.update(&triggers, .triggers)
+        try container.update(&collisionMask, .collisionMask)
+        try container.update(&fieldMask, .fieldMask)
     }
 }
 

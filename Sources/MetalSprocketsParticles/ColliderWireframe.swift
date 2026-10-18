@@ -6,7 +6,7 @@ import simd
 extension Collider {
     /// Line-list vertices (pairs) outlining the collider.
     var wireframe: [SIMD4<Float>] {
-        switch self {
+        switch shape {
         case let .plane(normal, distance):
             let n = simd_normalize(normal)
             let helper: SIMD3<Float> = abs(n.y) < 0.9 ? [0, 1, 0] : [1, 0, 0]

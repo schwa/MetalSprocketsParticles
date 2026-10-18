@@ -113,7 +113,7 @@ extension ParticleEmitter {
 
 // MARK: - Colliders
 
-extension Collider {
+extension Collider.Shape {
     /// Plane: the point on the plane closest to the origin. Capsule: the segment midpoint.
     var center: SIMD3<Float> {
         get {
@@ -201,7 +201,7 @@ extension Collider {
 
 // MARK: - Force fields
 
-extension ForceField {
+extension ForceField.Effect {
     var strength: Float {
         get {
             switch self {

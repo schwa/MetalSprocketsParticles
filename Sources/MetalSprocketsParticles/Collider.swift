@@ -1,13 +1,46 @@
 import MetalSprocketsParticlesShaders
 import simd
 
-/// A world-space shape that particles bounce off.
-public enum Collider: Sendable, Equatable {
-    case plane(normal: SIMD3<Float>, distance: Float)
-    case sphere(center: SIMD3<Float>, radius: Float)
-    case box(center: SIMD3<Float>, halfExtents: SIMD3<Float>, rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))
-    /// A line segment from `start` to `end` with rounded ends.
-    case capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float)
+/// A world-space shape that particles bounce off. Only emitters whose `ParticleEmitter.collisionMask` shares a bit with
+/// `categoryBitMask` collide with it.
+public struct Collider: Sendable, Equatable {
+    public enum Shape: Sendable, Equatable {
+        case plane(normal: SIMD3<Float>, distance: Float)
+        case sphere(center: SIMD3<Float>, radius: Float)
+        case box(center: SIMD3<Float>, halfExtents: SIMD3<Float>, rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))
+        /// A line segment from `start` to `end` with rounded ends.
+        case capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float)
+    }
+
+    public var shape: Shape
+    /// All bits by default, so every emitter collides.
+    public var categoryBitMask: UInt32
+
+    public init(_ shape: Shape, categoryBitMask: UInt32 = .max) {
+        self.shape = shape
+        self.categoryBitMask = categoryBitMask
+    }
+
+    public static func plane(normal: SIMD3<Float>, distance: Float, categoryBitMask: UInt32 = .max) -> Collider {
+        Collider(.plane(normal: normal, distance: distance), categoryBitMask: categoryBitMask)
+    }
+
+    public static func sphere(center: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Collider {
+        Collider(.sphere(center: center, radius: radius), categoryBitMask: categoryBitMask)
+    }
+
+    public static func box(
+        center: SIMD3<Float>,
+        halfExtents: SIMD3<Float>,
+        rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1),
+        categoryBitMask: UInt32 = .max
+    ) -> Collider {
+        Collider(.box(center: center, halfExtents: halfExtents, rotation: rotation), categoryBitMask: categoryBitMask)
+    }
+
+    public static func capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Collider {
+        Collider(.capsule(start: start, end: end, radius: radius), categoryBitMask: categoryBitMask)
+    }
 }
 
 extension Collider {
@@ -17,7 +50,7 @@ extension Collider {
         guard deltaTime > 0 else {
             return .zero
         }
-        switch (previous, self) {
+        switch (previous.shape, shape) {
         case let (.plane(oldNormal, oldDistance), .plane(normal, distance)) where simd_normalize(oldNormal) == simd_normalize(normal):
             return simd_normalize(normal) * (distance - oldDistance) / deltaTime
         case let (.sphere(oldCenter, _), .sphere(center, _)):
@@ -37,7 +70,7 @@ extension ColliderData {
         self.init()
         self.velocity = velocity
         rotation = [0, 0, 0, 1]
-        switch collider {
+        switch collider.shape {
         case let .plane(normal, distance):
             kind = .plane
             self.normal = simd_normalize(normal)

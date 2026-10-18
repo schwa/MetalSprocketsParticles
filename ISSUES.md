@@ -1053,12 +1053,13 @@ ParticleEmitter+Inspector.swift (~500 lines) and Inspector+Events.swift (~260 li
 ## 54: Emitters can't opt out of specific force fields or colliders
 
 +++
-status: open
+status: closed
 priority: high
 kind: feature
 labels: effort:m, area:simulation, needs-decision
 created: 2026-10-18T01:43:22Z
-updated: 2026-10-18T12:42:01Z
+updated: 2026-10-18T13:04:47Z
+closed: 2026-10-18T13:04:47Z
 +++
 
 Every force field and collider affects every emitter's particles. Often only some should interact, e.g. smoke should feel wind but not a vortex, or sparks should bounce off the floor but rain should pass through a roof.
@@ -1073,6 +1074,7 @@ Defaults keep today's behavior. Add tests for masked vs unmasked particles and e
 
 - `2026-10-18T12:40:25Z`: Triaged: High (raised by user), feature, effort:m, area:simulation.
 - `2026-10-18T12:42:01Z`: Looked at implementing the proposed category masks. Punting: it needs an API decision, because Collider and ForceField are enums with associated values and have nowhere to store a per-instance categoryBitMask. Options: (A) make each a struct (shape enum + categoryBitMask) with static .sphere(...)-style constructors so creation code still compiles, but ~75 pattern-match sites change, including #53's writable kind and the demo adapters; closest to the proposal, effort ~l. (B) Parallel category arrays on ParticleSystem and ParticlePreset matched by index: little churn, but clunky and easy to desync. (C) Emitter-side masks by collider/field index (bit i = item i): no type changes, but breaks on reorder and is not real categories. Recommend A. Which do you want?
+- `2026-10-18T13:04:48Z`: Implemented option A. Collider and ForceField are structs: shape/effect (the old enums, now Collider.Shape and ForceField.Effect) plus categoryBitMask (default all bits); static constructors keep old call sites. ParticleEmitter gains collisionMask and fieldMask (default all bits). Filtering happens on the CPU in the frame planner: each dispatch binds only the colliders/fields that match its emitter, so the shader has no mask cost (an in-shader check measured ~0.4 ms slower at 1M and was dropped); colliders carry triggerIndex so collider-hit triggers keep matching system indices. Demo: category toggles (bits 1-8) on colliders, fields, and emitters. Saved files: masks saved only when not all bits; older collider and force-field JSON still loads. Goldens unchanged.
 
 ---
 

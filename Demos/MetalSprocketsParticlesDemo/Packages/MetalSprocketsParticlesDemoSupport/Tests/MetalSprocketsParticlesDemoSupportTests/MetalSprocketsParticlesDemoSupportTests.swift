@@ -81,50 +81,59 @@ struct EmitterAdapterTests {
 
 struct ColliderAdapterTests {
     @Test func kindChangeKeepsCenter() {
-        var collider = Collider.sphere(center: [1, 2, 3], radius: 0.5)
+        var collider = Collider.sphere(center: [1, 2, 3], radius: 0.5, categoryBitMask: 0b10)
         collider.kind = .box
-        #expect(collider.center == [1, 2, 3])
+        #expect(collider.shape.center == [1, 2, 3])
+        #expect(collider.categoryBitMask == 0b10)
         collider.kind = .capsule
-        #expect(simd_distance(collider.center, [1, 2, 3]) < 1e-5)
+        #expect(simd_distance(collider.shape.center, [1, 2, 3]) < 1e-5)
     }
 
     @Test func planeCenterMovesAlongNormal() {
         var collider = Collider.plane(normal: [0, 1, 0], distance: 0)
-        collider.center.y = 1.5
+        collider.shape.center.y = 1.5
         #expect(collider == .plane(normal: [0, 1, 0], distance: 1.5))
     }
 
     @Test func boxSizeAndTilt() {
         var collider = Collider.box(center: .zero, halfExtents: [1, 1, 1])
-        collider.size = [2, 4, 6]
-        collider.tilt = 0.5
-        #expect(collider.size == [2, 4, 6])
-        #expect(abs(collider.tilt - 0.5) < 1e-5)
+        collider.shape.size = [2, 4, 6]
+        collider.shape.tilt = 0.5
+        #expect(collider.shape.size == [2, 4, 6])
+        #expect(abs(collider.shape.tilt - 0.5) < 1e-5)
     }
 
     @Test func capsuleLengthKeepsMidpoint() {
         var collider = Collider.capsule(start: [-1, 0, 0], end: [1, 0, 0], radius: 0.2)
-        collider.length = 4
+        collider.shape.length = 4
         #expect(collider == .capsule(start: [-2, 0, 0], end: [2, 0, 0], radius: 0.2))
     }
 
+    @Test func categoryBits() {
+        var mask: UInt32 = .max
+        mask[bit: 1] = false
+        #expect(mask == ~UInt32(0b10))
+        #expect(!mask[bit: 1] && mask[bit: 0])
+        mask[bit: 1] = true
+        #expect(mask == .max)
+    }
 }
 
 struct ForceFieldAdapterTests {
     @Test func kindAndStrength() {
         var field = ForceField.wind(velocity: [1, 0, 0], strength: 2)
-        field.strength = 5
+        field.effect.strength = 5
         #expect(field == .wind(velocity: [1, 0, 0], strength: 5))
         field.kind = .vortex
-        field.radius = 3
-        field.center = [0, 1, 0]
+        field.effect.radius = 3
+        field.effect.center = [0, 1, 0]
         #expect(field.kind == .vortex)
-        #expect(field.radius == 3)
-        #expect(field.center == [0, 1, 0])
+        #expect(field.effect.radius == 3)
+        #expect(field.effect.center == [0, 1, 0])
         field.kind = .turbulence
-        field.turbulenceScale = 2
-        field.turbulenceSpeed = 0.25
-        #expect(field.turbulenceScale == 2 && field.turbulenceSpeed == 0.25)
+        field.effect.turbulenceScale = 2
+        field.effect.turbulenceSpeed = 0.25
+        #expect(field.effect.turbulenceScale == 2 && field.effect.turbulenceSpeed == 0.25)
     }
 }
 

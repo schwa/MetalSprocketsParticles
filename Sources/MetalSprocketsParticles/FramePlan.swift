@@ -12,6 +12,9 @@ struct FramePlan {
         /// Slots this step touches, starting at `uniforms.spawn.firstSlot`.
         var threadCount: Int
         var mesh: EmitterMesh?
+        /// Only the colliders and force fields whose category matches the emitter's masks. Counts are in uniforms.
+        var colliders: [ColliderData]
+        var forceFields: [ForceFieldData]
         /// The previous dispatch wrote the same slice.
         var followsSameEmitter: Bool
         /// The emitter's sub-emitters and the settings their children spawn with. Never empty;
@@ -22,6 +25,7 @@ struct FramePlan {
 
     /// Warmup steps first, then the frame's step, per emitter; sub-emitter instances after all emitters.
     var dispatches: [Dispatch]
+    /// Every collider and force field, before filtering by category.
     var colliders: [ColliderData]
     var forceFields: [ForceFieldData]
     /// At most `PARTICLE_TRIGGER_MAX_VOLUMES`.
@@ -52,10 +56,16 @@ extension ParticleSystem {
                 child.settings = parent.settings.subEmitters[child.subEmitterIndex].settings
             }
         }
+        let colliderData = colliderData(deltaTime: state == .playing ? frameDeltaTime : 0)
+        let forceFieldData = forceFields.map(ForceFieldData.init)
+        let world = WorldData(
+            colliders: Array(zip(self.colliders.map(\.categoryBitMask), colliderData)),
+            forceFields: Array(zip(forceFields.map(\.categoryBitMask), forceFieldData))
+        )
         return FramePlan(
-            dispatches: allEmitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime) },
-            colliders: colliderData(deltaTime: state == .playing ? frameDeltaTime : 0),
-            forceFields: forceFields.map(ForceFieldData.init),
+            dispatches: allEmitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime, world: world) },
+            colliders: colliderData,
+            forceFields: forceFieldData,
             triggerVolumes: triggerVolumes.prefix(Int(PARTICLE_TRIGGER_MAX_VOLUMES)).map(\.data),
             deltaTime: state == .playing ? frameDeltaTime : 0
         )
@@ -66,11 +76,23 @@ extension ParticleSystem {
         let current = colliders
         defer { previousColliders = current }
         guard let previous = previousColliders, previous.count == current.count else {
-            return current.map { ColliderData($0) }
+            return current.enumerated().map { index, collider in
+                var data = ColliderData(collider)
+                data.triggerIndex = UInt32(index)
+                return data
+            }
         }
-        return zip(previous, current).map { previous, collider in
-            ColliderData(collider, velocity: collider.velocity(from: previous, deltaTime: deltaTime))
+        return zip(previous, current).enumerated().map { index, pair in
+            var data = ColliderData(pair.1, velocity: pair.1.velocity(from: pair.0, deltaTime: deltaTime))
+            data.triggerIndex = UInt32(index)
+            return data
         }
+    }
+
+    /// Colliders and force fields with their categories, for filtering per emitter.
+    private struct WorldData {
+        var colliders: [(category: UInt32, data: ColliderData)]
+        var forceFields: [(category: UInt32, data: ForceFieldData)]
     }
 
     /// Where an emitter is in simulation space for one step.
@@ -190,7 +212,10 @@ extension ParticleSystem {
         return (data, uniforms)
     }
 
-    private func dispatches(_ emitter: Emitter, frameDeltaTime: Float) -> [FramePlan.Dispatch] {
+    private func dispatches(_ emitter: Emitter, frameDeltaTime: Float, world: WorldData) -> [FramePlan.Dispatch] {
+        // Filtering here keeps category masks off the GPU: unmasked emitters see exactly the full lists.
+        let colliders = world.colliders.filter { $0.category & emitter.settings.collisionMask != 0 }.map(\.data)
+        let forceFields = world.forceFields.filter { $0.category & emitter.settings.fieldMask != 0 }.map(\.data)
         // In local space the emitter is the origin of its own space and never moves.
         let spawnTransform = emitter.simulationSpace == .world ? emitter.transform : matrix_identity_float4x4
         let origin = spawnTransform.columns.3.xyz
@@ -216,10 +241,15 @@ extension ParticleSystem {
         )))
         let subEmitters = subEmitterData(for: emitter)
         return steps.enumerated().map { index, step in
-            FramePlan.Dispatch(
-                uniforms: step.uniforms,
+            var uniforms = step.uniforms
+            uniforms.colliderCount = UInt32(colliders.count)
+            uniforms.forceFieldCount = UInt32(forceFields.count)
+            return FramePlan.Dispatch(
+                uniforms: uniforms,
                 threadCount: step.threadCount,
                 mesh: emitter.mesh,
+                colliders: colliders,
+                forceFields: forceFields,
                 // Sub-emitter instances run after their parents have written their children.
                 followsSameEmitter: index > 0 || emitter.isSubEmitter,
                 subEmitters: subEmitters.data,

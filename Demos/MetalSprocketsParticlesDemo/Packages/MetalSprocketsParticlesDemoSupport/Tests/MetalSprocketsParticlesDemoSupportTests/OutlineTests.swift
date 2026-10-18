@@ -39,7 +39,7 @@ struct OutlineTests {
             return
         }
         #expect(model.colliders[id: id]?.collider.kind == .box)
-        model.colliders[id: id]?.collider.radius = 2
+        model.colliders[id: id]?.collider.shape.radius = 2
         #expect(model.colliders.count == colliders + 1)
         model.removeSelection()
         #expect(model.colliders.count == colliders)

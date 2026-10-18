@@ -12,7 +12,27 @@ extension ParticleBirthLocation: @retroactive Codable {}
 extension ParticleBirthDirection: @retroactive Codable {}
 extension ParticleImageSequenceMode: @retroactive Codable {}
 
+/// Saved flat: the shape's keys plus `categoryBitMask` (omitted when all bits are set).
 extension Collider: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case categoryBitMask
+    }
+
+    public init(from decoder: Decoder) throws {
+        shape = try Shape(from: decoder)
+        categoryBitMask = try decoder.container(keyedBy: CodingKeys.self).decodeIfPresent(UInt32.self, forKey: .categoryBitMask) ?? .max
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        try shape.encode(to: encoder)
+        if categoryBitMask != .max {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(categoryBitMask, forKey: .categoryBitMask)
+        }
+    }
+}
+
+extension Collider.Shape: Codable {
     private enum CodingKeys: String, CodingKey {
         case kind, normal, distance, center, radius, halfExtents, rotation, start, end
     }

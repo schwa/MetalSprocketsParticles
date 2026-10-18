@@ -476,8 +476,8 @@ kernel void updateParticles(
                 collide(position, velocity, c, offset / distance, c.radius - distance, restitution, friction, hit);
             }
         }
-        if (hit && uniforms.countsColliderHits != 0 && i < PARTICLE_TRIGGER_MAX_COLLIDERS) {
-            atomic_fetch_add_explicit(&triggerCounters[i], 1u, memory_order_relaxed);
+        if (hit && uniforms.countsColliderHits != 0 && c.triggerIndex < PARTICLE_TRIGGER_MAX_COLLIDERS) {
+            atomic_fetch_add_explicit(&triggerCounters[c.triggerIndex], 1u, memory_order_relaxed);
         }
         hit = hit || hitBefore;
     }

@@ -216,6 +216,7 @@ typedef struct {
     float initialFrame;
     float frameRate;
     ParticleVariationData variation;
+    // Colliders and force fields bound for this dispatch: only those whose category matches the emitter's masks.
     uint32_t colliderCount;
     uint32_t forceFieldCount;
     uint32_t subEmitterCount;
@@ -242,6 +243,7 @@ typedef struct {
     simd_float3 halfExtents; // Box.
     simd_float4 rotation;    // Box orientation quaternion (xyz = imaginary, w = real).
     simd_float3 velocity;    // Collider velocity this step.
+    uint32_t triggerIndex;   // Index in ParticleSystem.colliders, for collider-hit trigger counters.
 } ColliderData;
 
 /// Mirrored by the Swift ForceField.
