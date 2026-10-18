@@ -2047,9 +2047,9 @@ Related: #97, #107.
 status: open
 priority: medium
 kind: feature
-labels: area:editor, effort:xl, needs-design
+labels: area:editor, effort:xl, needs-design, deferred
 created: 2026-10-18T19:51:12Z
-updated: 2026-10-18T21:47:02Z
+updated: 2026-10-18T21:58:31Z
 +++
 
 Replace the demo's debug-style inspector with a real editor app for particle systems. It should be something an artist or developer would choose to use, not a test harness.
@@ -2094,6 +2094,8 @@ Phases:
 Sub-issues: #108 stable ids, #109 app and package skeleton, #110 document and undo, #111 viewport, #112 structure view, #113 item editors, #114 curve and gradient editors, #115 playback timeline, #116 gizmos, #117 function editor, #118 export, #119 retire the demo.
 
 Related: #97 (ParticleView), #101 (rename, done), #103, #104, #105.
+
+- `2026-10-18T21:58:31Z`: Deferred (user).
 
 ---
 
