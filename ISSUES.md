@@ -1511,5 +1511,6 @@ Plan:
 - Related: #25, #32 (result builder), #65.
 
 - `2026-10-18T15:04:45Z`: Built-in presets are now JSON resources: Sources/MetalSprocketsParticles/Resources/Presets/<slug>.json (exported with particles-render --save-effect) plus index.json for display order, bundled via Package.swift resources. ParticlePreset.all loads them once; named accessors (.fireworks, .teapot, ...) remain, backed by the resources. Presets.swift (1,176 lines) is deleted. All 27 preset goldens are unchanged (Teapot included, from the triangulated mesh in JSON). Not done: Teapot's mesh stays inline (~1.4 MB pretty JSON; a named-mesh reference or compact JSON would shrink it). The preset result builder (#32) stays as public API, but no built-in uses it now.
+- `2026-10-18T15:05:25Z`: Note: teapot.json is stored as compact JSON (434 KB); pretty-printed it was 1.4 MB, over jj's 1 MiB new-file snapshot limit, and was silently left out of the first commit. Fixed by compacting it in the same commit.
 
 ---
