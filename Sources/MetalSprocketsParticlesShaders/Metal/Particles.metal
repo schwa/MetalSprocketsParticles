@@ -754,8 +754,13 @@ kernel void updateParticles(
             // Keyed by parent slot, child slot, and parent age, so results do not depend on thread order.
             Random childRandom { hash(hash(childSlot ^ subEmitterUniforms[i].spawn.seed) ^ as_type<uint>(age)) };
             float childBirthAge;
-            particles[sub.childSliceStart + childSlot] = spawnParticle(
+            Particle child = spawnParticle(
                 childRandom, subEmitterUniforms[i], mesh, position, velocity * sub.velocityFactor, childBirthAge);
+            if (sub.continuesParentLife != 0) {
+                child.position.w = age;
+                child.velocity.w = lifetime;
+            }
+            particles[sub.childSliceStart + childSlot] = child;
         }
         // A transition: the parent turns into its children. On-death sub-emitters listed after this one fire too.
         if (count > 0 && sub.replacesParent != 0) {

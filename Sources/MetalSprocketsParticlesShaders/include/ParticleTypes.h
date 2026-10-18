@@ -66,6 +66,7 @@ typedef struct {
     float velocityFactor;     // Fraction of the parent's velocity children inherit.
     float interval;           // Seconds between children for ParticleSpawnOccasionWhileAlive; the age for Age.
     uint32_t replacesParent;  // Nonzero: the parent dies when it spawns children, so it turns into them.
+    uint32_t continuesParentLife; // Nonzero: children take the parent's age and lifetime instead of starting at 0.
 } SubEmitterData;
 
 /// Trigger counters: one per collider, then one per trigger volume. Monotonic; the CPU diffs them between frames.

@@ -262,7 +262,8 @@ extension ParticleSystem {
                 childCapacity: UInt32(child.capacity),
                 velocityFactor: sub.velocityFactor,
                 interval: sub.interval,
-                replacesParent: sub.replacesParent ? 1 : 0
+                replacesParent: sub.replacesParent ? 1 : 0,
+                continuesParentLife: sub.continuesParentLife ? 1 : 0
             ))
             let still = Spawner.Step(cursor: 0, count: 0, serial: 0)
             uniforms.append(self.uniforms(for: child, deltaTime: 0, motion: SpawnMotion(), spawn: still))

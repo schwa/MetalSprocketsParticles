@@ -69,6 +69,23 @@ struct SubEmitterTests {
         #expect(children.allSatisfy { abs($0.velocity.x - 1) < 1e-4 && abs($0.position.x - 0.4) < 0.03 && abs($0.position.y - 1) < 1e-4 })
     }
 
+    @Test func transitionsCanContinueTheParentsLife() throws {
+        // Parent lives 2 s and turns into a child (own lifetime 10 s) at 0.5 s.
+        func children(continuesLife: Bool) throws -> [Particle] {
+            let transition = SubEmitter.transition(on: .atAge(seconds: 0.5), into: stillChild(), continuesLife: continuesLife)
+            let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) { $0.lifetime = 2...2 })
+            system.burst(4)
+            try step(system, seconds: 0.75)
+            return alive(system, system.subEmitterInstances[0])
+        }
+        let fresh = try children(continuesLife: false)
+        let continuing = try children(continuesLife: true)
+        #expect(fresh.count == 4 && continuing.count == 4)
+        // A fresh child is about 0.25 s into a 10 s life; a continuing one is about 0.75 s into the parent's 2 s life.
+        #expect(fresh.allSatisfy { $0.position.w < 0.3 && $0.velocity.w == 10 })
+        #expect(continuing.allSatisfy { abs($0.position.w - 0.75) < 0.05 && $0.velocity.w == 2 })
+    }
+
     @Test func collisionTransitionReplacesOnlyParticlesThatHit() throws {
         let transition = SubEmitter.transition(on: .onCollision, into: stillChild(), sprite: .spark)
         let system = try ParticleSystem(device: runner.device, capacity: 4, emitter: parent(transition) {

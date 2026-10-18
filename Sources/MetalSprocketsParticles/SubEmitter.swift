@@ -29,6 +29,9 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     public var sprite: ParticleSprite = .softDot
     /// The parent dies when it spawns children, so it turns into them: a transition to another particle type.
     public var replacesParent = false
+    /// Children take the parent's age and lifetime instead of starting a new life, so over-life curves carry on from
+    /// where the parent was and the child dies when the parent would have.
+    public var continuesParentLife = false
 
     public init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, settings: ParticleEmitter) {
         self.occasion = occasion
@@ -39,15 +42,22 @@ public struct SubEmitter: Sendable, Equatable, Codable {
 
     /// The parent turns into one particle with `settings` and `sprite` when `occasion` happens, keeping its position
     /// and velocity. Set the child's own velocity and spread to zero to keep exactly the parent's motion.
-    public static func transition(on occasion: Occasion, into settings: ParticleEmitter, sprite: ParticleSprite = .softDot) -> Self {
+    /// With `continuesLife`, the child also keeps the parent's age and lifetime (see `continuesParentLife`).
+    public static func transition(
+        on occasion: Occasion,
+        into settings: ParticleEmitter,
+        sprite: ParticleSprite = .softDot,
+        continuesLife: Bool = false
+    ) -> Self {
         var transition = Self(occasion: occasion, countPerEvent: 1, velocityFactor: 1, settings: settings)
         transition.sprite = sprite
         transition.replacesParent = true
+        transition.continuesParentLife = continuesLife
         return transition
     }
 
     private enum CodingKeys: String, CodingKey {
-        case occasion, countPerEvent, velocityFactor, settings, sprite, replacesParent
+        case occasion, countPerEvent, velocityFactor, settings, sprite, replacesParent, continuesParentLife
     }
 
     /// Missing keys keep their defaults, so effects saved before a setting existed still load.
@@ -61,6 +71,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         )
         try container.update(&sprite, .sprite)
         try container.update(&replacesParent, .replacesParent)
+        try container.update(&continuesParentLife, .continuesParentLife)
     }
 
     var interval: Float {

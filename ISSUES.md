@@ -1903,14 +1903,18 @@ Sub-emitter children ignore their own subEmitters, so a particle can transition 
 ## 95: Transitions can keep the parent's age
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:s
 created: 2026-10-18T19:16:57Z
+updated: 2026-10-18T19:37:00Z
+closed: 2026-10-18T19:37:00Z
 +++
 
 A transition child (SubEmitter.transition / replacesParent) always starts at age 0. Add an option to carry over the parent's age (and maybe its remaining lifetime), so a change of look does not restart the particle's over-life curves or lifetime. Related: #91.
+
+- `2026-10-18T19:37:00Z`: SubEmitter.continuesParentLife (and transition(..., continuesLife:)): children take the parent's age and lifetime, so over-life curves continue and the child dies when the parent would have. Carrying only the age was rejected: a short-lived child would die at once. Demo toggle. Test: fresh vs continuing child ages and lifetimes.
 
 ---
 

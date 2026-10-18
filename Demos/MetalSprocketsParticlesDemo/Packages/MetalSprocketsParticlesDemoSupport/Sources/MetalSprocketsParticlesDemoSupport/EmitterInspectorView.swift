@@ -465,6 +465,8 @@ struct SubEmitterEditorView: View {
             }
             Toggle("Replaces Parent", isOn: $subEmitter.replacesParent)
                 .help("The parent dies when it spawns children, so it turns into them.")
+            Toggle("Continues Parent's Life", isOn: $subEmitter.continuesParentLife)
+                .help("Children keep the parent's age and lifetime instead of starting a new life.")
             KindPicker("Sprite", selection: $subEmitter.sprite)
             Stepper("Per Event: \(subEmitter.countPerEvent)", value: $subEmitter.countPerEvent, in: 1...1_000, step: 10)
             ParameterSliderView("Inherit Velocity", value: $subEmitter.velocityFactor, in: 0...1)
