@@ -63,7 +63,7 @@ public extension ParticlePreset {
                 $0.colorOverLife = .constant([0.4, 0.6, 1, 1])
             }, sprite: .ring, capacity: 40)
         }
-    }()
+    }().commented("A ball bounces through a pool, and every time it enters the water a splash bursts up. Shows a tracked object and an object-enters trigger.")
 
     /// Lighting: smoke and dust motes lit by a warm lantern (point light) near their base and cool moonlight from the
     /// side, over low ambient light. The lantern's glow is a small unlit emitter.
@@ -128,7 +128,7 @@ public extension ParticlePreset {
             cameraEye: [0, 1.8, 4.5],
             cameraTarget: [0, 1.3, 0]
         )
-    }()
+    }().commented("Smoke and dust lit by a warm lantern and cool moonlight. Shows particle lighting: point and directional lights over low ambient light.")
 
     /// Category masks: rain (category 1) falls through a tilted awning (category 2) and slants in the wind (category 1),
     /// while sparks from a grinder above collide with both and ignore the wind.
@@ -188,7 +188,7 @@ public extension ParticlePreset {
             cameraEye: [0, 2.6, 6.5],
             cameraTarget: [0, 1.6, 0]
         )
-    }()
+    }().commented("Rain falls straight through an awning and slants in the wind, while sparks from a grinder land on the awning and slide off. Shows category masks: each emitter chooses which colliders and fields affect it.")
 
     /// Clocks spiral into a glowing core, each ticking through the clock-face flipbook from its own hour.
     static let timeWarp: ParticlePreset = {
@@ -240,7 +240,7 @@ public extension ParticlePreset {
             cameraEye: [0, 4, 6],
             cameraTarget: center
         )
-    }()
+    }().commented("Clocks orbit a glowing star, each ticking through the hours from its own starting time. Shows an emoji flipbook in a vortex.")
 
     /// The Utah teapot (from SwiftMesh) outlined in glowing particles and slowly dissolving into sand that pours onto
     /// the ground. Both layers emit from the mesh surface.
@@ -283,7 +283,7 @@ public extension ParticlePreset {
             cameraEye: [0, 2.5, 5],
             cameraTarget: [0, 1, 0]
         )
-    }()
+    }().commented("The Utah teapot outlined in glowing particles, slowly dissolving into sand that pours onto the ground. Shows emission from the surface of a mesh.")
 
     /// Emission triggers: balls drop onto a bumper (collider hit: spark burst), some bounce into a goal on the left
     /// (particles enter a volume: star burst), a ring pulses on the ground every 2 seconds (timer), and
@@ -374,7 +374,7 @@ public extension ParticlePreset {
             cameraEye: [0, 2.5, 6],
             cameraTarget: [0, 1.4, 0]
         )
-    }()
+    }().commented("Balls drop onto a bumper. Each hit bursts sparks, balls that bounce into the goal burst stars, a ring pulses every 2 seconds, and sending the event 'boom' fires confetti. Shows the emission triggers.")
 
     /// A geyser that erupts for 1.5 seconds every 4 (emit/idle loop): a water column from a cylinder, opaque rock
     /// debris, and steam rising from a cone, blended with screen so it brightens without blowing out.
@@ -436,7 +436,7 @@ public extension ParticlePreset {
             cameraEye: [0, 3, 8],
             cameraTarget: [0, 2.5, 0]
         )
-    }()
+    }().commented("A geyser erupts for 1.5 seconds every 4: water shoots from a cylinder, rocks tumble out and bounce, and steam rises from a cone. Shows the emit/idle loop, opaque particles, and screen blending.")
 
     /// Two identical firefly swarms circling side by side. The gold one simulates in local space and travels as a
     /// tight cloud; the blue one simulates in world space and leaves its fireflies behind as a trail.
@@ -464,7 +464,7 @@ public extension ParticlePreset {
             ],
             cameraEye: [0, 4, 6]
         )
-    }()
+    }().commented("Two identical firefly swarms circle side by side. The gold one simulates in local space and travels as a tight cloud; the blue one simulates in world space and leaves a trail.")
 
     /// Rain drops on a pond: each drop spreads a ripple that lies flat on the water (fixed orientation).
     static let pond = ParticlePreset(
@@ -503,7 +503,7 @@ public extension ParticlePreset {
         colliders: [ground],
         cameraEye: [0, 3.5, 5],
         cameraTarget: [0, 0, 0]
-    )
+    ).commented("Raindrops fall into a pond, and each one spreads a ripple that lies flat on the water. Shows fixed (flat) orientation and emoji droplet sprites.")
 
     /// A ring of emoji flames seen from above. Y-aligned flames stay upright and only turn around Y, so they do not
     /// tip over toward the camera like billboards would.
@@ -540,7 +540,7 @@ public extension ParticlePreset {
         forceFields: [.turbulence(strength: 1, scale: 1, speed: 0.6)],
         cameraEye: [0, 4.5, 5],
         cameraTarget: [0, 0.3, 0]
-    )
+    ).commented("A ring of emoji flames seen from above. The flames are Y-aligned: they stay upright and turn only around Y, instead of tipping toward the camera like billboards.")
 
     /// Thick, nearly opaque puffs of colored smoke billowing up and out. Every puff overlaps others, so drawing them
     /// back to front matters: switch Sort to None to see far puffs paint over near ones.
@@ -568,7 +568,7 @@ public extension ParticlePreset {
             }, sprite: .smoke, capacity: 1_000),
         ],
         forceFields: [.turbulence(strength: 0.6, scale: 0.7, speed: 0.3)]
-    )
+    ).commented("Thick, nearly opaque colored smoke billows up and out. Every puff overlaps others, so drawing back to front matters: set Sort to None to see far puffs paint over near ones.")
 
     /// Emoji hearts drift up and wobble, with a few sparkles. Emoji sprites keep their own colors (white tint).
     static let hearts = ParticlePreset(
@@ -606,7 +606,7 @@ public extension ParticlePreset {
             }, sprite: .spark, capacity: 500),
         ],
         forceFields: [.turbulence(strength: 0.8, scale: 0.8, speed: 0.4)]
-    )
+    ).commented("Emoji hearts float up and wobble, with pink sparkles. Shows emoji sprites drawn with Core Text: tint them white so they keep their own colors.")
 
     /// Emoji moons orbit slowly, each playing the moon-phase flipbook from its own starting phase.
     static let moonPhases = ParticlePreset(
@@ -647,7 +647,7 @@ public extension ParticlePreset {
             }, capacity: 1_000),
         ],
         forceFields: [.vortex(center: [0, 1.5, 0], axis: [0, 1, 0], strength: 0.3, radius: 4)]
-    )
+    ).commented("Emoji moons orbit slowly, each cycling through the moon phases from its own starting phase. Shows a sprite-sheet flipbook with random start frames.")
 
     /// A sorcerer's portal: a spinning ring of fire that throws sparks off its rim like a Catherine wheel.
     static let portal: ParticlePreset = {
@@ -713,14 +713,14 @@ public extension ParticlePreset {
             cameraEye: [0, 1.6, 4.5],
             cameraTarget: center
         )
-    }()
+    }().commented("A sorcerer's portal: a spinning ring of fire that throws sparks off its rim like a Catherine wheel. Shows tangential birth direction and a spinning emitter whose births spread along its rotation.")
 
     static let fountain = ParticlePreset(
         "Fountain",
         layers: [Layer("Fountain", settings: .fountain, capacity: 100_000)],
         colliders: ParticleEmitter.fountainColliders(time: 0),
         animatesColliders: true
-    )
+    ).commented("A water fountain sprays up and falls back onto the ground and a few colliders that move around. Shows gravity, bouncing, and colliders that push and carry particles as they move.")
 
     static let campfire = ParticlePreset(
         "Campfire",
@@ -786,7 +786,7 @@ public extension ParticlePreset {
         forceFields: [.turbulence(strength: 1.2, scale: 1.4, speed: 0.6)],
         cameraEye: [0, 1.8, 5.5],
         cameraTarget: [0, 1.3, 0]
-    )
+    ).commented("Flames, rising smoke, and embers over two logs. The flames are additive smoke puffs, the smoke is alpha-blended and sorted back to front, the embers are velocity-stretched sparks, and turbulence makes everything flicker. The logs are rotated capsule colliders.")
 
     static let fireworks: ParticlePreset = {
         // Rockets climb from the ground, leave a sparkle trail, and burst into a shell of stars when they burn out.
@@ -846,7 +846,7 @@ public extension ParticlePreset {
             cameraEye: [0, 2.5, 10],
             cameraTarget: [0, 3.2, 0]
         )
-    }()
+    }().commented("Rockets climb from the ground, leave sparkle trails, and burst into shells of stars when they burn out. Shows sub-emitters: a while-alive trail and an on-death burst.")
 
     static let sparks = ParticlePreset("Sparks", cameraEye: [0.4, 1.6, 4], cameraTarget: [0.4, 0.8, 0]) {
         Layer("Sparks", settings: emitter {
@@ -869,7 +869,7 @@ public extension ParticlePreset {
         }, capacity: 10_000)
         ground
         Collider.box(center: [1.6, 0.6, 0], halfExtents: [0.1, 0.6, 1])
-    }
+    }.commented("Grinder sparks streak across the floor and bounce off a wall. Shows velocity-aligned stretching, bounce with per-particle variation, and friction. Written with the preset result builder.")
 
     static let smoke = ParticlePreset(
         "Smoke",
@@ -893,7 +893,7 @@ public extension ParticlePreset {
         forceFields: [.wind(velocity: [0.8, 0, 0], strength: 0.25), .turbulence(strength: 0.8, scale: 0.8, speed: 0.4)],
         cameraEye: [0.5, 2.5, 9],
         cameraTarget: [1, 2.5, 0]
-    )
+    ).commented("Soft smoke drifts up and sideways in the wind, curling in turbulence. Shows alpha-blended sprites drawn back to front, wind, and turbulence.")
 
     static let snow = ParticlePreset(
         "Snow",
@@ -920,7 +920,7 @@ public extension ParticlePreset {
         forceFields: [.turbulence(strength: 0.6, scale: 0.6, speed: 0.3)],
         cameraEye: [0, 2.5, 7],
         cameraTarget: [0, 1.5, 0]
-    )
+    ).commented("Snowflakes drift down through gentle turbulence and settle on the ground and on a sphere. Shows plane emission over a large area, turbulence, and particles that come to rest on colliders.")
 
     static let rain = ParticlePreset(
         "Rain",
@@ -948,7 +948,7 @@ public extension ParticlePreset {
             }, capacity: 50_000),
         ],
         colliders: [ground, .box(center: [0, 1.4, 0.5], halfExtents: [1.4, 0.05, 1.2], rotation: simd_quatf(angle: 0.25, axis: [0, 0, 1]))]
-    )
+    ).commented("Rain falls onto the ground and a tilted slab. Each drop dies when it hits and splashes where it lands. Shows velocity stretching, die-on-collision, and an on-collision sub-emitter.")
 
     static let magicTrail = ParticlePreset(
         "Magic Trail",
@@ -984,7 +984,7 @@ public extension ParticlePreset {
         ],
         cameraEye: [0, 3, 4.5],
         cameraTarget: [0, 1.5, 0]
-    )
+    ).commented("A wand of stars traces a figure eight, leaving a continuous trail and drifting dust. Shows a moving emitter, births spread along its path, and inherited velocity.")
 
     static let comet = ParticlePreset(
         "Comet",
@@ -1013,7 +1013,7 @@ public extension ParticlePreset {
                 $0.colorOverLife = .linear(from: [1, 1, 1, 0.3], to: [0.6, 0.8, 1, 0])
             }, motion: EmitterMotion(kind: .circle, radius: 2.2, speed: 1.1, offset: [0, 1.8, 0]), capacity: 2_000),
         ]
-    )
+    ).commented("A comet circles overhead with a long glowing tail and a bright core. Shows a fast-moving emitter that still leaves a smooth trail.")
 
     static let galaxy: ParticlePreset = {
         // Two arms: short arcs on opposite sides of a ring. Drag keeps the vortex from flinging stars out, and the
@@ -1060,7 +1060,7 @@ public extension ParticlePreset {
             cameraEye: [0, 5, 4.5],
             cameraTarget: [0, 1.5, 0]
         )
-    }()
+    }().commented("Two spiral arms of stars swirl around a bright core. Shows torus emitters, a vortex force field, and an attractor.")
 
     static let waterfall = ParticlePreset(
         "Waterfall",
@@ -1104,7 +1104,7 @@ public extension ParticlePreset {
         ],
         cameraEye: [5, 2.2, 3.5],
         cameraTarget: [0, 1.4, 0]
-    )
+    ).commented("A sheet of water pours over a ledge, hits rocks, and throws up mist. Shows a box emitter, collisions, and soft sorted mist.")
 
     static let confetti = ParticlePreset(
         "Confetti",
@@ -1133,5 +1133,5 @@ public extension ParticlePreset {
         ],
         colliders: [ground],
         forceFields: [.turbulence(strength: 2, scale: 1, speed: 0.5)]
-    )
+    ).commented("Confetti flutters down, tumbling as it falls, and settles on the ground. Shows textured sprites with random spin, turbulence, and friction.")
 }

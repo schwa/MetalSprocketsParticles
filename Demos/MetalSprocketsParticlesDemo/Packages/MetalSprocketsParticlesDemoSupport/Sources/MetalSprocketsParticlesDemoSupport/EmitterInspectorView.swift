@@ -105,6 +105,12 @@ struct SceneSectionView: View {
                     Text(preset.name).tag(preset.name)
                 }
             }
+            if !model.presetComment.isEmpty {
+                Text(model.presetComment)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack {
                 Button("Open Effect", systemImage: "folder") { isImporting = true }
                 Button("Save Effect", systemImage: "square.and.arrow.down") { isExporting = true }

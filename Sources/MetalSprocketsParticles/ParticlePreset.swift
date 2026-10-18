@@ -7,6 +7,8 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
     public typealias Layer = EmitterDescription
 
     public var name: String
+    /// What the effect shows and how, for people browsing presets.
+    public var comment: String = ""
     public var layers: [Layer]
     /// Default colliders. Apps can replace or add to them at runtime.
     public var colliders: [Collider]
@@ -59,8 +61,16 @@ public struct ParticlePreset: Sendable, Identifiable, Codable {
         try container.update(&lights, .lights)
         try container.update(&ambientLight, .ambientLight)
         try container.update(&trackedObjects, .trackedObjects)
+        try container.update(&comment, .comment)
         try container.update(&cameraEye, .cameraEye)
         try container.update(&cameraTarget, .cameraTarget)
+    }
+
+    /// The same preset with `comment` set.
+    public func commented(_ comment: String) -> ParticlePreset {
+        var preset = self
+        preset.comment = comment
+        return preset
     }
 
     /// Where each tracked object is at `time`.

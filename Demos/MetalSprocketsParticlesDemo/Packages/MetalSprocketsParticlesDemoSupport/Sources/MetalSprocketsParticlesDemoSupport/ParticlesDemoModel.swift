@@ -173,6 +173,7 @@ final class ParticlesDemoModel {
             cameraEye: cameraEye,
             cameraTarget: cameraTarget
         )
+        .commented(presetComment)
     }
 
     /// Reads a saved effect and loads it, named after the file.
@@ -213,6 +214,7 @@ final class ParticlesDemoModel {
         system?.lights = preset.lights
         system?.ambientLight = preset.ambientLight
         trackedObjects = preset.trackedObjects
+        presetComment = preset.comment
         cameraEye = preset.cameraEye
         cameraTarget = preset.cameraTarget
     }
@@ -322,6 +324,9 @@ final class ParticlesDemoModel {
     }
 
     // MARK: Per frame
+
+    /// What the loaded preset shows, for the inspector.
+    private(set) var presetComment = ""
 
     /// The preset's stand-ins for app objects, for objectEnters triggers.
     var trackedObjects: [String: EmitterMotion] = [:]

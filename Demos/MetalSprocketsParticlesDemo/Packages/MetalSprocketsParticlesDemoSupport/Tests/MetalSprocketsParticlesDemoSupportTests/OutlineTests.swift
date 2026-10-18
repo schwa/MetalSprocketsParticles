@@ -146,6 +146,16 @@ struct OutlineTests {
         #expect(model.frameTrackedObjects(time: 0).isEmpty)
     }
 
+    @Test func presetCommentIsShownAndSaved() {
+        let model = ParticlesDemoModel(preset: .fireworks)
+        #expect(model.presetComment == ParticlePreset.fireworks.comment)
+        #expect(!model.presetComment.isEmpty)
+        #expect(model.currentEffect.comment == ParticlePreset.fireworks.comment)
+        model.presetName = ParticlePreset.rain.name
+        #expect(model.presetComment == ParticlePreset.rain.comment)
+        #expect(ParticlePreset.all.allSatisfy { !$0.comment.isEmpty })
+    }
+
     @Test func presetMeshReachesTheSystem() throws {
         let model = ParticlesDemoModel(preset: .teapot)
         let system = try #require(model.system)
