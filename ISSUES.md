@@ -2854,14 +2854,18 @@ Decide whether to merge. If yes: add ParticleEmitter.categoryMask, decode old fi
 ## 139: Toggle to show and hide the viewport overlays
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:demo, effort:xs
 created: 2026-10-19T11:46:53Z
+updated: 2026-10-19T12:27:21Z
+closed: 2026-10-19T12:27:21Z
 +++
 
 The demo viewport always shows its overlays (the particle count view, ParticleCountView, and any other stats or labels drawn over the render). Add a toggle to hide and show them: a toolbar button and a keyboard shortcut (for example Cmd-Shift-H), remembered between launches (@AppStorage). Useful for clean screenshots and recordings, and alongside #135 (more stats) and #134 (debug views).
+
+- `2026-10-19T12:27:21Z`: Done: an Overlays toggle in the toolbar (⇧⌘H) hides the frame timing and particle count, remembered between launches (@AppStorage showsViewportOverlays). No unit test: a view-only toggle with no logic; checked by building (and per house rules the app is not launched).
 
 ---
 

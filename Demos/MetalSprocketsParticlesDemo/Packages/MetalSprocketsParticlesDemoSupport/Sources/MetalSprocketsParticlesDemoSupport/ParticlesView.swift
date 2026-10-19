@@ -8,6 +8,7 @@ import SwiftUI
 public struct ParticlesView: View {
     @State private var model = ParticlesDemoModel()
     @State private var isInspectorPresented = true
+    @AppStorage(ParticleViewportView.showsOverlaysKey) private var showsOverlays = true
     @Environment(\.openWindow) private var openWindow
 
     public init() {}
@@ -29,6 +30,11 @@ public struct ParticlesView: View {
                             openWindow(id: OverlayDemoView.windowID)
                         }
                         .help("Open the 2D overlay demo")
+                    }
+                    ToolbarItem {
+                        Toggle("Overlays", systemImage: "square.text.square", isOn: $showsOverlays)
+                            .keyboardShortcut("h", modifiers: [.command, .shift])
+                            .help("Show or hide the frame timing and particle count over the viewport (⇧⌘H)")
                     }
                     ToolbarItem {
                         Button("Inspector", systemImage: "sidebar.trailing") {
@@ -79,7 +85,11 @@ struct ParticleCountView: View {
 
 /// The 3D view: simulates and draws the model's particle system each frame, with an orbit camera and frame timing.
 struct ParticleViewportView: View {
+    /// The user default for showing the frame timing and particle count, shared with the toolbar toggle.
+    static let showsOverlaysKey = "showsViewportOverlays"
+
     @Environment(ParticlesDemoModel.self) private var model
+    @AppStorage(showsOverlaysKey) private var showsOverlays = true
     @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
     @State private var frameTiming: FrameTimingStatistics?
     @State private var aliveParticles = 0
@@ -128,7 +138,7 @@ struct ParticleViewportView: View {
             }
             .overlay(alignment: .topLeading) {
                 // Frame timing: FPS, frame time, and GPU time per pass (Simulate, Render).
-                if let frameTiming {
+                if showsOverlays, let frameTiming {
                     // Dark, so its panel and text contrast with the black viewport and bright particles.
                     FrameTimingView(statistics: frameTiming, options: .all)
                         .environment(\.colorScheme, .dark)
@@ -136,8 +146,10 @@ struct ParticleViewportView: View {
                 }
             }
             .overlay(alignment: .top) {
-                ParticleCountView(alive: aliveParticles, capacity: system.capacity, isFinished: isFinished)
-                    .padding()
+                if showsOverlays {
+                    ParticleCountView(alive: aliveParticles, capacity: system.capacity, isFinished: isFinished)
+                        .padding()
+                }
             }
         } else {
             ContentUnavailableView("Failed to create particle system", systemImage: "exclamationmark.triangle")
