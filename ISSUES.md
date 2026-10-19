@@ -2687,14 +2687,18 @@ Fix whatever dominates; compare against Rain (similar count, analytic colliders)
 ## 131: Frame time benchmark for every sample preset
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:performance, effort:m
 created: 2026-10-19T11:42:02Z
+updated: 2026-10-19T12:26:04Z
+closed: 2026-10-19T12:26:04Z
 +++
 
 Nothing catches performance regressions: Sand on Shapes dropped to 80 fps unnoticed. Add a benchmark (particles-bench or a test tagged as slow) that runs each sample preset for a few seconds at a fixed size and reports GPU time per frame, with a budget per preset (for example 8 ms for 120 fps) and a table in the output. Run it before releases, not in every test run.
+
+- `2026-10-19T12:26:04Z`: Done: particles-bench --presets runs every sample preset through ParticlePlayer at 1920x1080 (scene depth and solid colliders included) and prints median frame build (CPU), GPU, and whole-frame times, the worst frame, live particles, and ok/OVER against --budget (8.33 ms default, 120 fps). --preset filters by name; --check exits with an error when any preset is over budget, for a pre-release run. Use a release build (xcb build -c release, then .build/out/Products/Release/particles-bench) for meaningful numbers. No unit test: it is a measuring tool; checked with a debug run and --check against a tiny budget (exit 1).
 
 ---
 

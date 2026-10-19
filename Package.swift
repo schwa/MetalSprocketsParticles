@@ -70,6 +70,7 @@ let package = Package(
             name: "particles-bench",
             dependencies: [
                 "MetalSprocketsParticles",
+                "MetalSprocketsParticlesSamples",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]

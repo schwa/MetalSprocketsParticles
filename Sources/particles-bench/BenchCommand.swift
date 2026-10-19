@@ -3,6 +3,7 @@ import CoreGraphics
 import Foundation
 import MetalSprockets
 import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import simd
 
 /// Measures GPU time for the simulate and render passes separately, plus CPU time to build and encode each frame.
@@ -31,6 +32,18 @@ struct BenchCommand: ParsableCommand {
     @Flag(help: "Only the 1M scenarios.")
     var only1M = false
 
+    @Flag(help: "Benchmark every sample preset (whole frames, as the demo plays them) instead of the scenarios.")
+    var presets = false
+
+    @Option(help: "With --presets: only presets whose name contains this.")
+    var preset: String?
+
+    @Option(help: "With --presets: frame budget in milliseconds (8.33 is 120 fps).")
+    var budget = 8.33
+
+    @Flag(help: "With --presets: exit with an error when any preset's median frame is over budget.")
+    var check = false
+
     struct Scenario {
         var name: String
         var capacity: Int
@@ -42,6 +55,10 @@ struct BenchCommand: ParsableCommand {
     }
 
     func run() throws {
+        if presets {
+            try runPresets()
+            return
+        }
         let scenarios = [
             Scenario(name: "10K", capacity: 10_000, alive: 10_000),
             Scenario(name: "100K", capacity: 100_000, alive: 100_000),
