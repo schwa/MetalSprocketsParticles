@@ -20,10 +20,8 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public var mesh: Mesh?
     /// Animates `mesh`.
     public var meshDeformation: MeshDeformation = .none
-    /// Points for `EmitterShape.points`, in emitter space. Takes the place of `mesh` when set.
-    // nil (use `mesh`) differs from empty (no points).
-    // swiftlint:disable:next discouraged_optional_collection
-    public var points: [EmitterPoint]?
+    /// Points for `EmitterShape.points`, in emitter space. Takes the place of `mesh` when set; nil uses `mesh`.
+    public var points: [EmitterPoint]? // swiftlint:disable:this discouraged_optional_collection
     public var isEmitting: Bool
 
     public init(

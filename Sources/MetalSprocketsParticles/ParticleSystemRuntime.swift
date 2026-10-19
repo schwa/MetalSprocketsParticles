@@ -40,8 +40,7 @@ public final class ParticleSystemRuntime {
         /// The mesh `mesh` was made from by `ParticleSystemRuntime.apply(_:)`, to skip remaking it.
         var meshSource: Mesh?
         /// The point cache `mesh` was made from by `apply(_:)`.
-        // swiftlint:disable:next discouraged_optional_collection
-        var pointsSource: [EmitterPoint]?
+        var pointsSource: [EmitterPoint]? // swiftlint:disable:this discouraged_optional_collection
         /// Animates `mesh` each frame, by the emitter's own clock.
         public var meshDeformation: MeshDeformation = .none
         /// Particles this emitter can have alive at once.
