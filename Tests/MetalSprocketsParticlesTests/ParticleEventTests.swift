@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleEventTests {
     let runner: Runner
 

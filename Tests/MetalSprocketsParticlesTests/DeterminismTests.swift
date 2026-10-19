@@ -4,7 +4,7 @@ import MetalSprockets
 import MetalSprocketsParticlesShaders
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct DeterminismTests {
     func simulate(seed: UInt32, steps: Int) throws -> [Particle] {
         let runner = try Runner()

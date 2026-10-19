@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// Rotating colliders fling particles, and fast particles do not pass through thin colliders between steps.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ColliderMotionTests {
     let runner: Runner
     let deltaTime: Float = 1.0 / 60.0

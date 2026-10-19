@@ -8,7 +8,7 @@ import simd
 import Testing
 
 /// User Metal functions (`ParticleEmitter.updateFunction`) compiled at runtime and called from the simulation kernel.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleFunctionTests {
     let runner: Runner
 

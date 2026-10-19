@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct SubEmitterTests {
     let runner: Runner
     let deltaTime: Float = 1.0 / 60.0

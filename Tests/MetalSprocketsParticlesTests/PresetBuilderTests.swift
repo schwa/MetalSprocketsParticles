@@ -4,6 +4,7 @@ import simd
 import Testing
 
 /// #76: built-in presets come from JSON resources.
+@Suite(.requiresMetal4)
 struct BuiltInPresetTests {
     @Test func everyIndexedPresetLoadsWithAUniqueNameAndAComment() {
         let slugs = ParticleSystem.sampleSlugs
@@ -15,6 +16,7 @@ struct BuiltInPresetTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct PresetBuilderTests {
     func settings(_ birthRate: Float) -> ParticleEmitter {
         var settings = ParticleEmitter()

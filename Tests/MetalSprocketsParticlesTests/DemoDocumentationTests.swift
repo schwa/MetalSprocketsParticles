@@ -5,6 +5,7 @@ import Testing
 
 /// Documentation has an animated preview and a Demos.md section for every sample preset, and nothing else.
 /// Scripts/make-demos.sh regenerates them.
+@Suite(.requiresMetal4)
 struct DemoDocumentationTests {
     let demos = URL(filePath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

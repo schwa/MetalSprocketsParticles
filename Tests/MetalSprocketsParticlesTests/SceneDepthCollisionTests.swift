@@ -7,7 +7,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct SceneDepthCollisionTests {
     /// Drops particles onto a sphere of radius 0.5 at the origin that the emitter does not collide with directly
     /// (collisionMask 0); the sphere is only in the scene depth. Returns the particles' final positions.

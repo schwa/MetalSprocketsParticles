@@ -8,7 +8,7 @@ import simd
 import Testing
 
 /// `minimumScreenSize` and `lodScalesSize` (#124).
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ScreenSizeTests {
     /// Lit pixels of one opaque particle `distance` units in front of the camera, after `frames` frames.
     func litPixels(distance: Float, size: Float, frames: Int = 2, configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> Int {

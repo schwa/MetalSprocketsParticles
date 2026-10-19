@@ -4,6 +4,7 @@ import MetalSprocketsParticlesSamples
 import Testing
 
 /// `ParticleEmitter.emissionOverTime` shapes births over time and lets effects finish.
+@Suite(.requiresMetal4)
 struct EmissionEnvelopeTests {
     let device = MTLCreateSystemDefaultDevice()!
     let deltaTime: Float = 1.0 / 60.0

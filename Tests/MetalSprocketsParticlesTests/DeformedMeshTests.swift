@@ -7,7 +7,7 @@ import SwiftMesh
 import Testing
 
 /// Mesh emitters following a morphing or skinned mesh through `EmitterMesh.setDeformedPositions`.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct DeformedMeshTests {
     let runner: Runner
     /// A unit square at y = 0, two triangles.

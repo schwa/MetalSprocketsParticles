@@ -5,7 +5,7 @@ import MetalSprocketsParticlesShaders
 import SwiftMesh
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct EmitterDescriptionTests {
     let runner: Runner
 

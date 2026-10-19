@@ -7,6 +7,7 @@ import simd
 import SwiftUI
 import Testing
 
+@Suite(.requiresMetal4)
 struct ColorPipelineTests {
     /// Golden images and particles-render use OffscreenRenderer. If the app renders to a different format, tests
     /// check different colors than users see (#15).
@@ -16,6 +17,7 @@ struct ColorPipelineTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct EmitterAdapterTests {
     @Test func lifetimeSlidersMoveTheRangeAndKeepTheSpread() {
         var emitter = ParticleEmitter()
@@ -119,6 +121,7 @@ struct EmitterAdapterTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct ColliderAdapterTests {
     @Test func kindChangeKeepsCenter() {
         var collider = Collider.sphere(center: [1, 2, 3], radius: 0.5, categoryBitMask: 0b10)
@@ -159,6 +162,7 @@ struct ColliderAdapterTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct ForceFieldAdapterTests {
     @Test func kindAndStrength() {
         var field = ForceField.wind(velocity: [1, 0, 0], strength: 2)
@@ -178,6 +182,7 @@ struct ForceFieldAdapterTests {
 }
 
 @MainActor
+@Suite(.requiresMetal4)
 struct ModelTests {
     /// The scene the model hands the player must be the preset itself, so settings added later cannot be dropped by the
     /// editor without a test failing. Layer ids differ on purpose (load renews them).

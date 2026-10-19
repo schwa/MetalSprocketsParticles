@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// Positioned bursts and view-geometry colliders, for 2D overlays.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct OverlayTests {
     let runner: Runner
     let deltaTime: Float = 1.0 / 60.0

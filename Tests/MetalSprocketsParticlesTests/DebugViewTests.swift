@@ -7,7 +7,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct DebugViewTests {
     func still(at position: SIMD3<Float>, size: Float = 0.6) -> ParticleEmitter {
         var emitter = ParticleEmitter()

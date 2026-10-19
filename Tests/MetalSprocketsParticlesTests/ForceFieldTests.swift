@@ -5,7 +5,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ForceFieldTests {
     /// Still particles spawned at `origin` with no gravity, drag, or colliders; returns them after `steps` steps.
     func simulate(origin: SIMD3<Float> = .zero, radius: Float = 0, count: Int = 16, steps: Int, fields: [ForceField]) throws -> [Particle] {

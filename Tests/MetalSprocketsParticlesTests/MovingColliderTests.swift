@@ -4,7 +4,7 @@ import MetalSprockets
 import MetalSprocketsParticlesShaders
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct MovingColliderTests {
     // Particles sit still at the origin; a sphere sweeps through them along +x.
     func sweep(speed: Float) throws -> [Particle] {

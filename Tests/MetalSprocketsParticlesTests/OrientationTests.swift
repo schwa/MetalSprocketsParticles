@@ -35,7 +35,7 @@ extension CGImage {
     }
 }
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct OrientationTests {
     /// One white particle at the origin moving at `velocity`, rendered after one step from `eye`.
     func render(orientation: ParticleOrientation, velocity: SIMD3<Float> = .zero, eye: SIMD3<Float> = [0, 0, 3]) throws -> CGImage {

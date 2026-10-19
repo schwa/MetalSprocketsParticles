@@ -12,7 +12,7 @@ import UniformTypeIdentifiers
 // GPU rasterization and float precision vary slightly across hardware; see MetalSprocketsAddOns.
 private let psnrThreshold = 30.0
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct GoldenImageTests {
     func render(
         emitter: ParticleEmitter = .fountain,

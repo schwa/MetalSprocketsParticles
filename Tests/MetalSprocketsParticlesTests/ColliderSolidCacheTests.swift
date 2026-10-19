@@ -4,6 +4,7 @@ import Testing
 
 /// Solid collider meshes are tessellated once per change, not for every pass of every frame (#130: Fog and Sand on
 /// Shapes spent about 10 ms a frame on the CPU doing it twice per frame).
+@Suite(.requiresMetal4)
 struct ColliderSolidCacheTests {
     @Test func solidsAreMadeOncePerColliderChange() throws {
         let system = try ParticleSystemRuntime(capacity: 1, emitter: ParticleEmitter())

@@ -6,7 +6,7 @@ import simd
 import Testing
 
 /// `ParticleSystemRuntime.apply(_:rebuild:)`: a description reaches the runtime in one step.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ApplySystemTests {
     let runner: Runner
 

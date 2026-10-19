@@ -5,6 +5,7 @@ import Testing
 
 /// The hand-written tolerant decoders (missing keys keep defaults) must read every key their types write. A forgotten
 /// `container.update` line would otherwise drop a setting from effect files without any error.
+@Suite(.requiresMetal4)
 struct DecodingCoverageTests {
     /// Every key `value` encodes, each replaced in turn by a value of the wrong type, must make decoding fail; if decoding
     /// still succeeds, the decoder never read that key. Returns the keys it ignored.

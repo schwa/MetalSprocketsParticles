@@ -6,6 +6,7 @@ import simd
 import Testing
 
 /// Colliders, force fields, and emitters that follow the pointer, and turning a mouse location into a world position.
+@Suite(.requiresMetal4)
 struct PointerBindingTests {
     let cameraToWorld = simd_float4x4(lookingFrom: [0, 2, 6], at: [0, 1, 0])
     let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 16.0 / 9.0, near: 0.1, far: 100)

@@ -7,6 +7,7 @@ import simd
 import Testing
 
 /// `ParticleSystem.is2D`: one switch for the overlay camera and emitters on their plane (#141).
+@Suite(.requiresMetal4)
 struct TwoDModeTests {
     func system(is2D: Bool) -> ParticleSystem {
         var emitter = ParticleEmitter()

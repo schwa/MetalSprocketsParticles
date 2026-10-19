@@ -3,6 +3,7 @@ import MetalSprocketsParticles
 import simd
 import Testing
 
+@Suite(.requiresMetal4)
 struct ParticleKindTests {
     /// Setting each kind gives a value of that kind; setting the current kind changes nothing.
     func checkRoundTrip<Value: Equatable, Kind: ParticleKind>(_ start: Value, _ kind: WritableKeyPath<Value, Kind>) {

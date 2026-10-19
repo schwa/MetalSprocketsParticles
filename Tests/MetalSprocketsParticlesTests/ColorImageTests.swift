@@ -10,7 +10,7 @@ import Testing
 import UniformTypeIdentifiers
 
 /// `ParticleEmitter.colorImage`: particles take the image's color under their current position (#123).
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ColorImageTests {
     /// 40×20: red on the left half, blue on the right.
     func redBluePNG() throws -> Data {

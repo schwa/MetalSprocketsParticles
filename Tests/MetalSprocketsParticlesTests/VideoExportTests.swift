@@ -5,7 +5,7 @@ import MetalSprocketsParticlesSamples
 import Testing
 
 // Video export has hung a few times (#102); fail instead of stalling the whole run.
-@Suite(.serialized, .timeLimit(.minutes(1)))
+@Suite(.serialized, .timeLimit(.minutes(1)), .requiresMetal4)
 struct VideoExportTests {
     func temporaryURL() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("particles-\(UUID()).mov")

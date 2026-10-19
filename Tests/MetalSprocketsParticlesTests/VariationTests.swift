@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct VariationTests {
     /// Spawns `count` particles in one burst and runs one zero-length step so birth values are untouched.
     func spawn(count: Int = 512, configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
@@ -90,6 +90,7 @@ struct VariationTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct BirthRateVariationTests {
     @Test func rateChangesPerCycleWithinRange() {
         var emitter = ParticleEmitter()

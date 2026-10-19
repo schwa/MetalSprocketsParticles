@@ -2935,15 +2935,18 @@ closed: 2026-10-19T13:17:19Z
 ## 142: Add CI using xcb ci
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:tooling, effort:m
 created: 2026-10-19T11:57:41Z
-updated: 2026-10-19T13:07:05Z
+updated: 2026-10-19T13:31:49Z
+closed: 2026-10-19T13:31:49Z
 +++
 
 Use `xcb ci` to generate the CI rules. Metal 4 fails on GitHub runners, so use conditional compilation to work around it, the same way other MetalSprockets projects do.
+
+- `2026-10-19T13:31:49Z`: Done: .github/workflows/swift.yml (SwiftLint --strict; swift build and swift test with warnings as errors) and xcode.yml (the demo app, macOS), from 'xcb ci generate --warnings-as-errors --destination platform=macOS'; 'xcb ci check' passes. Metal 4: the GitHub runners' paravirtual GPU has none, so every test suite now carries a .requiresMetal4 trait (RequiresMetal4.swift in each test target, as in MetalSprocketsAddOns), which skips it there and runs it everywhere else. Not verified: the first real GitHub run (not pushed), building with Xcode 26.6 instead of 27, and iOS/visionOS demo builds (left out: the iOS simulator build is known to fail inside MetalSprockets, and visionOS is #98).
 
 ---
 

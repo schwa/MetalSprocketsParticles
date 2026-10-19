@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// `ParticleEmitter.constrainsToPlane` keeps particles on the emitter's XY plane.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct PlaneConstraintTests {
     let runner: Runner
 

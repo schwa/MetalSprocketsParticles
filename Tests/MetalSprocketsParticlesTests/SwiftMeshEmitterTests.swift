@@ -6,7 +6,7 @@ import simd
 import SwiftMesh
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct SwiftMeshEmitterTests {
     let runner: Runner
 

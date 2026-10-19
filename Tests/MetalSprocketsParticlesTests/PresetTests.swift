@@ -7,6 +7,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
+@Suite(.requiresMetal4)
 struct PresetLookupTests {
     @Test func namesAreUnique() {
         #expect(Set(ParticleSystem.all.map(\.name)).count == ParticleSystem.all.count)
@@ -27,6 +28,7 @@ struct PresetLookupTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct SpriteAndMotionTests {
     @Test func everySpriteExceptSoftDotBuilds() throws {
         let device = try #require(MTLCreateSystemDefaultDevice())
@@ -61,7 +63,7 @@ struct SpriteAndMotionTests {
     }
 }
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct PresetRenderTests {
     @Test func loadReplacesEverything() throws {
         let system = try ParticleSystemRuntime(emitters: [ParticleEmitter()], capacity: 10)

@@ -5,6 +5,7 @@ import simd
 import Testing
 
 /// Frame planning is CPU only: these check what `simulate` would dispatch without running the GPU.
+@Suite(.requiresMetal4)
 struct FramePlanTests {
     let device = MTLCreateSystemDefaultDevice()!
     let deltaTime: Float = 1.0 / 60.0

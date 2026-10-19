@@ -5,6 +5,7 @@ import Testing
 
 // Switching kinds is tested in the library (ParticleKindTests); these cover the demo's per-field adapters.
 
+@Suite(.requiresMetal4)
 struct SubEmitterAdapterTests {
     @Test func trailInterval() {
         var sub = SubEmitter.sparks
@@ -15,6 +16,7 @@ struct SubEmitterAdapterTests {
     }
 }
 
+@Suite(.requiresMetal4)
 struct TriggerAdapterTests {
     @Test func conditionKindSwitchesAndKeepsOtherFieldsSensible() {
         var trigger = EmissionTrigger(.event("boom"), .burst(10))

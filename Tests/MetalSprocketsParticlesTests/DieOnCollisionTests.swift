@@ -4,7 +4,7 @@ import MetalSprockets
 import MetalSprocketsParticlesShaders
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct DieOnCollisionTests {
     /// Particles dropped from y = 1 onto a floor, alive count after `steps` steps.
     func aliveAfterFalling(diesOnCollision: Bool, steps: Int, colliders: [Collider] = [.plane(normal: [0, 1, 0], distance: 0)]) throws -> Int {

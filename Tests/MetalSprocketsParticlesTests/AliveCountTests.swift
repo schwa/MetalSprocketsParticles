@@ -5,7 +5,7 @@ import MetalSprocketsParticlesShaders
 import Testing
 
 /// `ParticleSystemRuntime.aliveParticleCount` is counted on the GPU and read a few frames late.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct AliveCountTests {
     let runner: Runner
 

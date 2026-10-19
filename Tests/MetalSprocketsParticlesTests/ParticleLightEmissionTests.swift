@@ -7,7 +7,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleLightEmissionTests {
     func still(at position: SIMD3<Float>, _ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
         var emitter = ParticleEmitter()

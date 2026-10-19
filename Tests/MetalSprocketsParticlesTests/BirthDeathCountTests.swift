@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import Testing
 
 /// `bornParticleCount` and `diedParticleCount`, counted on the GPU and read a few frames late (#135).
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct BirthDeathCountTests {
     func emitter(_ configure: (inout ParticleEmitter) -> Void) -> ParticleEmitter {
         var emitter = ParticleEmitter()

@@ -8,7 +8,7 @@ import simd
 import Testing
 
 /// `colorBySpeed`, `alternateColorOverLife`, and `colorByPosition`.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ColorGradientTests {
     /// A particle sitting at `position` with `velocity` (the step is 0 s, so it does not move).
     func still(at position: SIMD3<Float>, velocity: SIMD3<Float> = .zero, _ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {

@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import Testing
 
 /// Contact friction slows spin as well as sliding (#132).
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ContactSpinTests {
     func spin(afterFalling frames: Int, friction: Float, floor: Bool) throws -> [Float] {
         let runner = try Runner()

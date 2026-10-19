@@ -4,7 +4,7 @@ import MetalSprockets
 import MetalSprocketsParticlesShaders
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct RotationTests {
     func simulate(steps: Int, configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
         let runner = try Runner()

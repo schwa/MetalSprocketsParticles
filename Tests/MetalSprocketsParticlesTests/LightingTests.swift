@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// One still white particle at the origin, seen from 3 units away; checks the brightness of the center pixel.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct LightingTests {
     let size = CGSize(width: 64, height: 64)
     let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse

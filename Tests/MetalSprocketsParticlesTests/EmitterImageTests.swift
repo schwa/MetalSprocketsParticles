@@ -9,7 +9,7 @@ import simd
 import Testing
 import UniformTypeIdentifiers
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct EmitterImageTests {
     /// A 40×20 PNG: the left half filled with `left`, the right half with `right` (nil = transparent).
     func png(left: CGColor?, right: CGColor?) throws -> Data {

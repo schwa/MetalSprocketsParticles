@@ -8,7 +8,7 @@ import simd
 import Testing
 
 /// ParticlePlayer: the per-frame loop over a runtime.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticlePlayerTests {
     let size = CGSize(width: 320, height: 180)
     let deltaTime: Float = 1.0 / 60.0

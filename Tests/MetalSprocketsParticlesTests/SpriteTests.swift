@@ -53,7 +53,7 @@ extension CGImage {
     }
 }
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct SpriteTests {
     /// One large still particle at the origin, viewed head-on, rendered after `steps` steps.
     func renderSingleParticle(texture: (MTLDevice) throws -> MTLTexture, sequence: ImageSequence?, steps: Int) throws -> CGImage {

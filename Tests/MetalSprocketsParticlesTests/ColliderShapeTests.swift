@@ -5,7 +5,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ColliderShapeTests {
     /// Spawns still particles in a small cloud around `origin` with one collider and runs one step.
     func pushOut(origin: SIMD3<Float>, collider: Collider) throws -> [SIMD3<Float>] {

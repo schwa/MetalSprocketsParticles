@@ -5,6 +5,7 @@ import MetalSprocketsParticlesSamples
 import Testing
 
 @MainActor
+@Suite(.requiresMetal4)
 struct OutlineTests {
     @Test func selectingAnEmitterChildSelectsTheEmitter() {
         let model = ParticlesDemoModel(preset: .fireworks)

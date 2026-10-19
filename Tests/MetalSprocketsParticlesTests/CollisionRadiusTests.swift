@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// `ParticleEmitter.collisionRadius`: particles collide as spheres, so big ones rest on colliders (#126).
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct CollisionRadiusTests {
     /// Final positions of particles dropped straight down from `start` onto `collider`.
     func rest(radius: Float, on collider: Collider, from start: SIMD3<Float> = [0, 1, 0]) throws -> [SIMD3<Float>] {

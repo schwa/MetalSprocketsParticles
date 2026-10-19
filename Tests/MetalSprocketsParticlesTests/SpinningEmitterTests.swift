@@ -6,7 +6,7 @@ import simd
 import Testing
 
 /// Emitters that rotate quickly should spread a step's births along the arc they swept, and pass their spin on.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct SpinningEmitterTests {
     let runner: Runner
     let deltaTime: Float = 1.0 / 60.0

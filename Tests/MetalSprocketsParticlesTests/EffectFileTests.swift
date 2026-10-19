@@ -5,6 +5,7 @@ import simd
 import SwiftMesh
 import Testing
 
+@Suite(.requiresMetal4)
 struct EffectFileTests {
     /// Every built-in preset survives JSON. Meshes come back triangulated, so they are compared by geometry.
     @Test(arguments: ParticleSystem.all.map(\.name))

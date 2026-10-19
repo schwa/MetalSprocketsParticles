@@ -8,7 +8,7 @@ import simd
 import SwiftMesh
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleMeshTests {
     /// Positions and normals from the interleaved vertex data.
     func split(_ mesh: ParticleMesh) -> (positions: [SIMD3<Float>], normals: [SIMD3<Float>]) {

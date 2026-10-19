@@ -6,7 +6,7 @@ import Testing
 
 /// The system only simulates and draws the ring slots that can hold live particles. These check that no live particle
 /// ever falls outside that window, and that particles leaving it are stored as dead.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct LiveWindowTests {
     let runner: Runner
     let deltaTime: Float = 1.0 / 60.0

@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct SortTests {
     let view = simd_float4x4(lookingFrom: [0, 1, 6], at: [0, 1, 0]).inverse
     let cameraPosition: SIMD3<Float> = [0, 1, 6]

@@ -4,6 +4,7 @@ import MetalSprocketsParticles
 import simd
 import Testing
 
+@Suite(.requiresMetal4)
 struct ParticleCurveTests {
     @Test func linearInterpolatesBetweenKeyframes() {
         let curve = ParticleCurve<Float>([.init(0, 0), .init(0.5, 10), .init(1, 0)])
@@ -66,7 +67,7 @@ struct ParticleCurveTests {
     }
 }
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleCurveGPUTests {
     /// One still, procedurally drawn particle at the origin, 1 s lifetime, viewed head-on after `steps` frames.
     func centerPixel(steps: Int, configure: (inout ParticleEmitter) -> Void) throws -> SIMD4<UInt8> {

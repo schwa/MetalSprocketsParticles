@@ -78,6 +78,7 @@ enum ReadmeExamples {
     }
 }
 
+@Suite(.requiresMetal4)
 struct ReadmeExampleTests {
     @Test func builtEffectLoads() throws {
         let system = try ParticleSystemRuntime(emitters: [], capacity: 1)

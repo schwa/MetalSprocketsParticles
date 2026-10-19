@@ -8,7 +8,7 @@ import simd
 import Testing
 
 /// `ParticleSystemRuntime.reverseZ` (#144): the same pictures and physics with depth running from 1 near to 0 far.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ReverseZTests {
     @Test func reversedProjectionsSendNearToOneAndFarToZero() {
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 100)

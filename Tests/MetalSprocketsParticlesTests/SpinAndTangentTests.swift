@@ -5,6 +5,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
+@Suite(.requiresMetal4)
 struct SpinMotionTests {
     @Test func pitchStandsARingUpright() {
         let transform = EmitterMotion(pitch: .pi / 2).transform(time: 0)
@@ -24,7 +25,7 @@ struct SpinMotionTests {
     }
 }
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct TangentDirectionTests {
     @Test func tangentVelocityRunsAroundTheAxis() throws {
         let runner = try Runner()

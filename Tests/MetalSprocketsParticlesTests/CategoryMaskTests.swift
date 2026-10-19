@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// Colliders and force fields apply to an emitter only when its mask shares a bit with their category.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct CategoryMaskTests {
     let runner: Runner
 

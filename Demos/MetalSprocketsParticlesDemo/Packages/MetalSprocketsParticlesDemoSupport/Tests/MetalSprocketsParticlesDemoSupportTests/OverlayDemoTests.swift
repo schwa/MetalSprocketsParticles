@@ -7,6 +7,7 @@ import Testing
 
 /// The 2D overlay demo's effects, without a window. Overlay physics (positioned bursts, view edges, the plane) are
 /// tested in the library.
+@Suite(.requiresMetal4)
 struct OverlayDemoTests {
     @Test func effectsAreFlatAndBurstFromTheButton() throws {
         let system = OverlayEffects.system

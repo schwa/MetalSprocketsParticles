@@ -6,6 +6,7 @@ import simd
 import Testing
 
 /// ParticleView's per-frame setup, without a window.
+@Suite(.requiresMetal4)
 struct ParticleViewTests {
     let size = CGSize(width: 800, height: 450)
 

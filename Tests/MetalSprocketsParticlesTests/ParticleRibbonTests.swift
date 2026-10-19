@@ -7,7 +7,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleRibbonTests {
     /// Particles burst one per frame at each of `positions`, then rendered; returns the middle row of pixels.
     func row(ribbon: ParticleRibbon?, positions: [SIMD3<Float>], lifetimes: Float = 10) throws -> [SIMD4<UInt8>] {

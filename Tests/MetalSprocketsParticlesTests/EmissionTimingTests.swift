@@ -6,6 +6,7 @@ import Testing
 
 private let deltaTime: Float = 1.0 / 60.0
 
+@Suite(.requiresMetal4)
 struct SpawnerTests {
     func totalSpawned(seconds: Float, emitter: ParticleEmitter, capacity: Int = 1_000_000) -> Int {
         var spawner = Spawner()
@@ -75,7 +76,7 @@ struct SpawnerTests {
     }
 }
 
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct EmissionGPUTests {
     let runner: Runner
 

@@ -7,7 +7,7 @@ import simd
 import Testing
 
 /// `ParticleState.color`, `size`, and `custom` in user functions.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct ParticleStateAttributeTests {
     let runner: Runner
 

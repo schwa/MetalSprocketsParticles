@@ -5,7 +5,7 @@ import MetalSprockets
 import Testing
 
 /// Effect files come from users and other tools; bad values must fail cleanly or be fixed up, not crash.
-@Suite(.serialized)
+@Suite(.serialized, .requiresMetal4)
 struct HostileInputTests {
     @Test func emptyCurvesInAFileDoNotCrash() throws {
         var emitter = ParticleEmitter()
