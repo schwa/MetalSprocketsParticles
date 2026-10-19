@@ -103,6 +103,10 @@ struct RenderCommand: AsyncParsableCommand {
             let url = URL(fileURLWithPath: video)
             let codec: AVVideoCodecType = .h264
             var lastReported = -1
+            // Video export has hung a few times (#102). A stall exits with an error and a sample instead of waiting forever.
+            let stallSeconds = ProcessInfo.processInfo.environment["PARTICLES_RENDER_STALL_SECONDS"].flatMap(TimeInterval.init) ?? 30
+            let watchdog = ExportWatchdog(stallSeconds: stallSeconds)
+            defer { watchdog.stop() }
             let written = try await preset.exportVideo(
                 to: url,
                 size: CGSize(width: width, height: height),
@@ -115,6 +119,7 @@ struct RenderCommand: AsyncParsableCommand {
                 codec: codec,
                 stopWhenFinished: untilFinished
             ) { fraction in
+                watchdog.progressed()
                 let percent = Int(fraction * 100)
                 if percent / 10 != lastReported / 10 {
                     lastReported = percent

@@ -2144,6 +2144,7 @@ A full library test run hung for 10 minutes (killed by the timeout) and passed i
 
 - `2026-10-18T23:06:20Z`: Could not reproduce: 40 runs of VideoExportTests alone and 15 full library runs, no hangs. Best guess if it recurs: MetalSprockets VideoFrameWriter.waitUntilReady awaits AVAssetWriterInput.isReadyForMoreMediaData with no timeout and no check of the writer's status; if the writer fails, the flag stays false and the wait never resumes (matches the idle sample: test task suspended, AVFoundation threads waiting). If it happens again: sample the stuck test process, check assetWriter.status, and consider .timeLimit on VideoExportTests and an upstream fix that throws on writer failure. Closed (user): deal with it if it happens again.
 - `2026-10-19T01:43:06Z`: Recurred: particles-render --video hung (showreel run stalled on the last preset; make-demos.sh point-cloud hung 34 min with no output).
+- `2026-10-19T01:54:51Z`: Not reproduced on demand (7 CLI exports, 5 full test runs, make-demos, showreel). Likely cause filed upstream as MetalSprockets#2 (waitUntilReady never resumes if the writer fails). Added: particles-render --video watchdog (no progress for 30 s, or PARTICLES_RENDER_STALL_SECONDS, writes a sample to $TMPDIR/particles-render-hang-<pid>.txt and exits 2) and a 1-minute time limit on VideoExportTests. Leaving open until the upstream fix lands.
 
 ---
 
