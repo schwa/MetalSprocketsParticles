@@ -114,7 +114,7 @@ struct FixedWidthText: View {
 /// Marks the viewport as showing 2D mode: the scene flat from the front, emitters kept on their plane.
 struct TwoDBadgeView: View {
     var body: some View {
-        Label("2D", systemImage: "square.on.square")
+        Label("2D", systemImage: "view.2d")
             .font(.headline)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)

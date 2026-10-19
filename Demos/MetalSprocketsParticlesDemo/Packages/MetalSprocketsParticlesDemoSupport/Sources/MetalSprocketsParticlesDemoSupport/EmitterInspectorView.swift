@@ -164,7 +164,7 @@ struct SceneToolbarContent: ToolbarContent {
         }
         ToolbarSpacer(.fixed, placement: .principal)
         ToolbarItem(placement: .principal) {
-            Toggle("2D", systemImage: "square.on.square", isOn: $model.is2D)
+            Toggle("2D", systemImage: "view.2d", isOn: $model.is2D)
                 .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
         }
         ToolbarSpacer(.fixed, placement: .principal)
