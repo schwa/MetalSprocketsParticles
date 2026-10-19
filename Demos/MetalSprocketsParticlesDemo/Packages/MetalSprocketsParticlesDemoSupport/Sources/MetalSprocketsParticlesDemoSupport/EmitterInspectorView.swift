@@ -293,10 +293,8 @@ struct EmissionSectionView: View {
     var body: some View {
         Section("Emission") {
             LabeledContent("Max Particles") {
-                TextField("Max Particles", value: $capacity, format: .number)
-                    .labelsHidden()
-                    .multilineTextAlignment(.trailing)
-                    .monospacedDigit()
+                // Each new capacity rebuilds the buffer and restarts the effect, so only a finished number is applied.
+                CommittedNumberField("Max Particles", value: $capacity)
                     .frame(width: 110)
             }
             .help("Particles this emitter can have alive at once. Changing it restarts the effect. The limit is the GPU's largest buffer (80 bytes a particle).")

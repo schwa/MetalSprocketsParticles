@@ -54,6 +54,16 @@ struct EmitterAdapterTests {
         #expect(categoryMatchSummary(0, categories: [.max], noun: "field") == "Matches 0 of 1 field")
     }
 
+    /// The Max Particles field applies only finished numbers (#148); its text is parsed when committed.
+    @Test func committedNumbersParse() {
+        #expect(CommittedNumberField.parse("1,000,000") == 1_000_000)
+        #expect(CommittedNumberField.parse(" 2500 ") == 2_500)
+        #expect(CommittedNumberField.parse("12\u{202F}345") == 12_345)
+        #expect(CommittedNumberField.parse("") == nil)
+        #expect(CommittedNumberField.parse("12a") == nil)
+        #expect(CommittedNumberField.parse("-5") == nil)
+    }
+
     @Test func capacityHasAFloorButNoCeiling() {
         var description = EmitterDescription("Dots", settings: ParticleEmitter(), capacity: 1_000)
         description.editableCapacity = 5_000

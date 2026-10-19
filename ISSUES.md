@@ -3051,11 +3051,13 @@ Possible fixes: give each number a fixed width sized for its largest expected va
 ## 148: Max Particles field refreshes the UI on every edit, so it is hard to type into
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:editor, effort:s
 created: 2026-10-19T15:21:46Z
+updated: 2026-10-19T16:08:26Z
+closed: 2026-10-19T16:08:26Z
 +++
 
 Typing in the inspector's Max Particles field (EmissionSectionView, bound to EmitterDescription.editableCapacity) refreshes the UI on each edit, which makes it hard to enter a number.
@@ -3066,6 +3068,8 @@ Not investigated yet. Things to check first:
 - The warning label appearing and disappearing under the field shifts the layout as the value changes.
 
 Expected: type a whole number, press Return (or leave the field), then one rebuild. Fix likely: edit a local @State draft and write the capacity only on submit/focus loss. Related: the Max Particles commits (f0b8e34c, 6b17e95f).
+
+- `2026-10-19T16:08:26Z`: Fixed: Max Particles is now a CommittedNumberField, which edits a draft string and writes the capacity only on Return or when the field loses focus (unparsable text puts the current value back), so typing a number no longer rebuilds the buffer per digit. Outside changes still show when the field is not being edited. Test: the commit-time parsing (grouping separators, bad input). The typing behavior itself needs a window and keyboard, so it is not unit-tested; worth a quick try in the app.
 
 ---
 
@@ -3156,7 +3160,6 @@ priority: medium
 kind: enhancement
 labels: area:simulation, effort:s
 created: 2026-10-19T15:47:44Z
-updated: 2026-10-19T15:47:44Z
 +++
 
 Swift's synthesized Codable writes an enum case's unlabeled associated value under the key "_0", so effect files contain blobs like:

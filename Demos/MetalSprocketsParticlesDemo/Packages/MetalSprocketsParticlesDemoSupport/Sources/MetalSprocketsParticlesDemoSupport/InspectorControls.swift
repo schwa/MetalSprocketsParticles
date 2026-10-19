@@ -149,6 +149,58 @@ struct KindPicker<Kind: ParticleKind>: View {
     }
 }
 
+/// A number field that edits a draft and writes `value` only when the edit is finished: on Return or when the field
+/// loses focus. For values whose every change is expensive (a capacity rebuilds the particle buffer), so typing a
+/// number does not apply each digit on the way. Text that does not parse puts the current value back.
+struct CommittedNumberField: View {
+    let title: LocalizedStringKey
+    @Binding var value: Int
+    @State private var draft = ""
+    @FocusState private var isFocused: Bool
+
+    init(_ title: LocalizedStringKey, value: Binding<Int>) {
+        self.title = title
+        _value = value
+    }
+
+    var body: some View {
+        TextField(title, text: $draft)
+            .labelsHidden()
+            .multilineTextAlignment(.trailing)
+            .monospacedDigit()
+            .focused($isFocused)
+            .onSubmit(commit)
+            .onChange(of: isFocused) { _, focused in
+                if !focused {
+                    commit()
+                }
+            }
+            .onChange(of: value, initial: true) { _, newValue in
+                // Outside changes (another emitter selected, a value put back) show unless the user is typing.
+                if !isFocused {
+                    draft = newValue.formatted(.number)
+                }
+            }
+    }
+
+    private func commit() {
+        if let parsed = Self.parse(draft), parsed != value {
+            value = parsed
+        }
+        draft = value.formatted(.number)
+    }
+
+    /// The integer in `text`, allowing grouping separators and spaces ("1,000,000"); nil when it is not one. Pure, so
+    /// not tied to the main actor like the rest of the view.
+    nonisolated static func parse(_ text: String) -> Int? {
+        let digits = text.filter { !$0.isWhitespace && $0 != "," && $0 != "_" && $0 != "." && $0 != "\u{202F}" && $0 != "\u{00A0}" && $0 != "'" }
+        guard !digits.isEmpty, digits.allSatisfy(\.isNumber) else {
+            return nil
+        }
+        return Int(digits)
+    }
+}
+
 extension UInt32 {
     /// Bit `index`, for toggle bindings.
     subscript(bit index: Int) -> Bool {
