@@ -41,6 +41,8 @@ public final class ParticleSystemRuntime {
         var meshSource: Mesh?
         /// The point cache `mesh` was made from by `apply(_:)`.
         var pointsSource: [EmitterPoint]? // swiftlint:disable:this discouraged_optional_collection
+        /// The image `mesh` was sampled from by `apply(_:)`.
+        var imageSource: EmitterImage?
         /// Animates `mesh` each frame, by the emitter's own clock.
         public var meshDeformation: MeshDeformation = .none
         /// Particles this emitter can have alive at once.
@@ -398,6 +400,7 @@ public final class ParticleSystemRuntime {
             new.mesh = old.mesh
             new.meshSource = old.meshSource
             new.pointsSource = old.pointsSource
+            new.imageSource = old.imageSource
             new.meshDeformation = old.meshDeformation
         }
     }

@@ -2365,15 +2365,18 @@ Check whether the turbulence force field is curl noise (divergence-free). If not
 ## 113: Sample textures: spawn from an image, color from an image
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:m
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:09:15Z
+closed: 2026-10-19T02:09:15Z
 +++
 
 Emit particles from the bright or opaque pixels of an image (a logo dissolving into sparks), and let particles take their color from a texture at their spawn position or as they move. Niagara and VFX Graph both sample textures. Needs an image emitter shape (weighted by pixel brightness or alpha, like the mesh area table) and a texture input for color.
+
+- `2026-10-19T02:09:15Z`: Done: spawn from an image (EmitterImage on EmitterDescription.image: alpha or brightness weighting, colors from pixels, saved in effect files as PNG data). Not done: coloring moving particles from a texture each frame (sampling a texture in the simulation or in user functions). Spawn colors cover the common case; file a follow-up if per-frame texture lookups are needed.
 
 ---
 

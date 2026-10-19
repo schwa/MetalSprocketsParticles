@@ -38,6 +38,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Flare](#flare)
 - [Point Cloud](#point-cloud)
 - [Fireflies](#fireflies)
+- [Butterfly Dust](#butterfly-dust)
 
 ## Fountain
 
@@ -236,3 +237,9 @@ The word PARTICLES, baked as 1,500 colored points, shimmers and drifts toward th
 Fireflies drift over a dark meadow, each blinking at its own rate. User Metal functions store a per-firefly phase and rate in ParticleState.custom at birth, then pulse ParticleState.size and color from it every step.
 
 ![fireflies](previews/fireflies.webp)
+
+## Butterfly Dust
+
+A butterfly emoji dissolves into colored dust that drifts away on the breeze. Shows emitting from an image: particles are born on its opaque pixels and take their colors.
+
+![butterfly-dust](previews/butterfly-dust.webp)
