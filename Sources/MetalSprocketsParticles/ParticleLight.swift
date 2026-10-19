@@ -22,12 +22,31 @@ public struct ParticleLightEmission: Sendable, Equatable, Codable {
     public var intensity: Float
     /// Light fades to zero at this distance from the particle.
     public var range: Float
+    /// Each light takes the brightest particle in its share of the emitter's particles (by color over life and tint),
+    /// so lights sit on the hottest sparks. Off takes the first live one, which is cheaper.
+    public var picksBrightest: Bool
 
-    public init(count: Int = 4, color: SIMD3<Float> = [1, 0.6, 0.3], intensity: Float = 1, range: Float = 2) {
+    public init(count: Int = 4, color: SIMD3<Float> = [1, 0.6, 0.3], intensity: Float = 1, range: Float = 2, picksBrightest: Bool = true) {
         self.count = count
         self.color = color
         self.intensity = intensity
         self.range = range
+        self.picksBrightest = picksBrightest
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case count, color, intensity, range, picksBrightest
+    }
+
+    /// Missing keys keep their defaults, so effects saved before a setting existed still load.
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        try container.update(&count, .count)
+        try container.update(&color, .color)
+        try container.update(&intensity, .intensity)
+        try container.update(&range, .range)
+        try container.update(&picksBrightest, .picksBrightest)
     }
 }
 

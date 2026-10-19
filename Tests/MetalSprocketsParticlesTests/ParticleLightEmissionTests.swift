@@ -51,6 +51,30 @@ struct ParticleLightEmissionTests {
         #expect(system.emittedLights().count == 8)
     }
 
+    /// Four particles a frame apart along x; color fades from white to black over life, so the newest is brightest.
+    @Test func lightsPickTheBrightestParticle() throws {
+        func lightX(picksBrightest: Bool) throws -> Float {
+            let runner = try Runner()
+            let settings = still(at: .zero) {
+                $0.colorOverLife = .linear(from: [1, 1, 1, 1], to: [0, 0, 0, 1])
+                $0.lifetime = 1...1
+                $0.light = ParticleLightEmission(count: 1, picksBrightest: picksBrightest)
+            }
+            let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: settings)
+            for x in 0..<4 {
+                system.burst(1, at: [Float(x), 0, 0])
+                try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
+            }
+            guard case let .point(position, _, _, _) = try #require(system.emittedLights().first) else {
+                Issue.record("Expected a point light")
+                return .nan
+            }
+            return position.x
+        }
+        #expect(try lightX(picksBrightest: true) == 3)
+        #expect(try lightX(picksBrightest: false) == 0)
+    }
+
     @Test func noLiveParticlesNoLights() throws {
         let runner = try Runner()
         let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: still(at: .zero) { $0.light = ParticleLightEmission() })

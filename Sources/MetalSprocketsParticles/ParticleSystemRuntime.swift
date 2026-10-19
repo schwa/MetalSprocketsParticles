@@ -170,6 +170,8 @@ public final class ParticleSystemRuntime {
     public let particleLightBuffer: MTLBuffer
     public internal(set) var particleLightCount = 0
     var particleLightGathers: [ParticleLightGatherData] = []
+    /// Each gather's emitter's color over life, for picking the brightest particles.
+    var particleLightColorCurves: [[SIMD4<Float>]] = []
     /// Points between particles' trails in `trails`; 0 without trails.
     var trailStride = 0
     /// Vertex buffers for `ParticleEmitter.particleMesh`, made once per shape.
@@ -585,6 +587,7 @@ public final class ParticleSystemRuntime {
         let triggerCounters = triggerCounters
         let eventCursor = eventCursor
         let particleLightGathers = particleLightGathers
+        let particleLightColorCurves = particleLightColorCurves
         let particleLightBuffer = particleLightBuffer
         let gatherKernel = try library.gatherParticleLights as ComputeKernel
         let depthCollision = collisionDepth?.data ?? DepthCollisionData()
@@ -666,6 +669,7 @@ public final class ParticleSystemRuntime {
                     }
                     .parameter("particles", buffer: buffer)
                     .parameter("gather", value: particleLightGathers[index])
+                    .parameter("colorCurve", values: particleLightColorCurves[index])
                     .parameter("particleLights", buffer: particleLightBuffer)
                 }
             }

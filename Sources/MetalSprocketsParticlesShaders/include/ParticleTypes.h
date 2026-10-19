@@ -379,6 +379,8 @@ typedef struct {
     simd_float3 color; // Color times intensity, at full remaining life.
     float range;
     simd_float4x4 simulationToWorld;
+    // Nonzero: the brightest live particle in each stretch (by its color over life and tint) instead of the first.
+    uint32_t picksBrightest;
 } ParticleLightGatherData;
 
 /// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight. The

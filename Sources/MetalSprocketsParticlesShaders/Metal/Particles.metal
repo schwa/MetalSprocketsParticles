@@ -1173,11 +1173,13 @@ kernel void gatherParticleLights(
     const device Particle *particles [[buffer(0)]],
     constant ParticleLightGatherData &gather [[buffer(1)]],
     device ParticleLightData *particleLights [[buffer(2)]],
+    constant float4 *colorCurve [[buffer(3)]],
     uint index [[thread_position_in_grid]]
 ) {
     if (index >= gather.count) {
         return;
     }
+    float brightest = -1;
     // Stretches cover the live window, where the live particles are, not the whole ring.
     // Proportional split, so every stretch is nonempty whenever the window has at least as many slots as lights.
     uint first = index * gather.windowCount / gather.count;
@@ -1191,9 +1193,21 @@ kernel void gatherParticleLights(
     for (uint offset = first; offset < last; offset++) {
         Particle p = particles[gather.sliceStart + (gather.windowStart + offset) % gather.capacity];
         if (p.velocity.w > 0 && p.position.w < p.velocity.w) {
+            float brightness = 0;
+            if (gather.picksBrightest != 0) {
+                // Luminance of the particle's color (opacity included) at its age, times its tint.
+                float4 color = sampleCurve(colorCurve, p.position.w / p.velocity.w) * particleTint(p);
+                brightness = dot(color.rgb, float3(0.2126, 0.7152, 0.0722)) * color.a;
+                if (brightness <= brightest) {
+                    continue;
+                }
+            }
+            brightest = brightness;
             light.position = (gather.simulationToWorld * float4(p.position.xyz, 1)).xyz;
             light.color = gather.color * (1 - p.position.w / p.velocity.w);
-            break;
+            if (gather.picksBrightest == 0) {
+                break;
+            }
         }
     }
     particleLights[gather.firstLight + index] = light;

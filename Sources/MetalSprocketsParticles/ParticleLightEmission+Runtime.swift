@@ -6,6 +6,7 @@ extension ParticleSystemRuntime {
     /// Works out which emitters gather lights this frame and where each writes in `particleLightBuffer`.
     func planParticleLights() {
         var gathers: [ParticleLightGatherData] = []
+        var lightColorCurves: [[SIMD4<Float>]] = []
         var next = 0
         let maximum = Int(PARTICLE_MAX_PARTICLE_LIGHTS)
         for emitter in allEmitters {
@@ -23,12 +24,22 @@ extension ParticleSystemRuntime {
                 firstLight: UInt32(next),
                 color: light.color * light.intensity,
                 range: max(light.range, 0),
-                simulationToWorld: emitter.modelTransform
+                simulationToWorld: emitter.modelTransform,
+                picksBrightest: light.picksBrightest ? 1 : 0
             ))
+            lightColorCurves.append(Self.bakedColorWithOpacity(emitter.settings))
             next += count
         }
         particleLightGathers = gathers
+        particleLightColorCurves = lightColorCurves
         particleLightCount = next
+    }
+
+    /// Color over life with opacity, as the renderer bakes it.
+    static func bakedColorWithOpacity(_ settings: ParticleEmitter) -> [SIMD4<Float>] {
+        zip(settings.colorOverLife.baked(), settings.opacityOverLife.baked()).map { color, opacity in
+            SIMD4(color.x, color.y, color.z, color.w * opacity)
+        }
     }
 
     /// The particle lights as of the last finished frame, for lighting your own geometry. Lights without a live

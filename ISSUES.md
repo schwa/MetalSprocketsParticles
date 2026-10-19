@@ -2587,15 +2587,18 @@ Distance LOD (#117) scales emission only. Optionally scale size with distance fr
 ## 125: Pick the brightest particles as lights
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:rendering, effort:m
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:44:33Z
+closed: 2026-10-19T12:44:33Z
 +++
 
 ParticleEmitter.light (#118) takes one live particle from each stretch of the live window. Picking the brightest (by color times opacity at their age) would light more convincingly: a GPU reduction or a top-k pass over the live window.
+
+- `2026-10-19T12:44:33Z`: Done: ParticleLightEmission.picksBrightest (default on): each light takes the brightest live particle in its stretch of the live window, by the luminance of its color over life (opacity included) at its age times its tint, instead of the first live one. Lights stay spread across the effect. Off restores the cheaper first-live pick. Ember Glow's golden is within tolerance. A global top-k over the whole emitter is not done (lights could then bunch up).
 
 ---
 
