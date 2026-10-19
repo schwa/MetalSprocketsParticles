@@ -3,5 +3,6 @@
 .swiftpm/
 DerivedData/
 *.xcassets/
+*.icon/
 *.xcodeproj/
 *.xcworkspace/
