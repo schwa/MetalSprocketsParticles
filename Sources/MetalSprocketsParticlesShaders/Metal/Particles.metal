@@ -1153,6 +1153,40 @@ static uint sequenceFrame(float initialFrame, float frameRate, float age, uint f
 
 static float4 particleBaseColor(constant RenderUniforms &uniforms, constant float4 *colorCurve, constant float4 *extraColorCurves, Particle p, uint index, float t, float3 center);
 
+// Blue, cyan, green, yellow, red for 0...1.
+static float3 heatColor(float t) {
+    t = saturate(t);
+    return saturate(float3(1.5 - abs(4 * t - 3), 1.5 - abs(4 * t - 2), 1.5 - abs(4 * t - 1)));
+}
+
+// The debug view's color for a particle, or `color` when there is no debug view.
+static float4 debugColor(constant RenderUniforms &uniforms, float4 color, Particle p, uint index, float t) {
+    switch (uniforms.debugMode) {
+    case ParticleDebugModeWireframe:
+        return float4(0.3, 1, 0.4, 1);
+    case ParticleDebugModeEmitter: {
+        float hue = fract(float(uniforms.debugEmitterIndex) * 0.618034);
+        float3 rgb = saturate(abs(fract(hue + float3(0, 2.0 / 3.0, 1.0 / 3.0)) * 6 - 3) - 1);
+        return float4(rgb, 1);
+    }
+    case ParticleDebugModeAge:
+        return float4(heatColor(t), 1);
+    case ParticleDebugModeSpeed: {
+        float speed = length((uniforms.model * float4(p.velocity.xyz, 0)).xyz);
+        float2 range = uniforms.debugRange;
+        return float4(heatColor((speed - range.x) / max(range.y - range.x, 1e-5)), 1);
+    }
+    case ParticleDebugModeLifeRemaining:
+        return float4(heatColor(1 - (p.velocity.w - p.position.w) / max(uniforms.debugRange.y, 1e-5)), 1);
+    case ParticleDebugModeSlot:
+        return float4(heatColor(float(index - uniforms.debugSliceStart) / float(max(uniforms.debugCapacity, 1u))), 1);
+    case ParticleDebugModeOverdraw:
+        return float4(0.08, 0.04, 0.02, 1);
+    default:
+        return color;
+    }
+}
+
 // ParticleEmitter.trail: each particle's recent positions as a camera-facing ribbon, two vertices per point, head first.
 vertex VertexOut particleTrailVertex(
     uint vertexID [[vertex_id]],
@@ -1207,6 +1241,7 @@ vertex VertexOut particleTrailVertex(
     if (uniforms.isLit != 0) {
         out.color.rgb *= particleLight(uniforms, lights, particleLights, here, float3(0));
     }
+    out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     // Soft edges across the ribbon; textures run along it.
     out.uv = float2(0, side);
@@ -1318,6 +1353,7 @@ vertex VertexOut particleVertex(
     if (uniforms.isLit != 0) {
         out.color.rgb *= particleLight(uniforms, lights, particleLights, center, right * offset.x + up * offset.y);
     }
+    out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     out.uv = corner;
     uint columns = max(uniforms.sheetColumns, 1u);
@@ -1441,6 +1477,7 @@ vertex VertexOut particleMeshVertex(
         // Unlit: a little shading toward the camera so the shape reads. Both sides of a face count.
         out.color.rgb *= 0.55 + 0.45 * abs(dot(normal, toCamera));
     }
+    out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     return out;
 }
@@ -1471,6 +1508,10 @@ fragment float4 particleFragment(
         float falloff = saturate(1.0 - length(in.uv));
         float coverage = falloff * falloff;
         base = float4(coverage, coverage, coverage, coverage);
+    }
+    // Wireframe lines run along the quad's edges, where the soft dot is transparent: draw them solid.
+    if (uniforms.debugMode == ParticleDebugModeWireframe) {
+        base = float4(1);
     }
     float alpha = base.a * color.a;
     if (uniforms.blendMode == ParticleBlendModeOpaque) {

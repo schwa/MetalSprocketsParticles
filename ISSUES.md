@@ -2735,12 +2735,13 @@ Reported by the user: 'I expect to be able to easily extend lifetime but these s
 ## 134: Debug view modes: particle wireframes and false-color views
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T11:43:47Z
-updated: 2026-10-19T11:43:48Z
+updated: 2026-10-19T12:17:22Z
+closed: 2026-10-19T12:17:22Z
 +++
 
 Add debug view modes that replace normal particle drawing, selectable in the demo (and as an option on render / ParticlePlayer, so particles-render can use them):
@@ -2759,6 +2760,8 @@ False color (color each particle by something other than its color):
 - Overdraw / fill cost (additive count per pixel, heat-mapped)
 
 Debug views ignore blend mode and textures (opaque or additive heat map as fits). Collider and field wireframes already exist (DebugWireframes) and should combine with these.
+
+- `2026-10-19T12:17:22Z`: Done: ParticleSystemRuntime.debugView (ParticleDebugView: none, wireframe, emitter, age, speed, lifeRemaining, slot, overdraw) with debugRange for speed and life remaining. Works for sprites, mesh particles, and ribbons; wireframe draws triangles as lines (solid green), overdraw is a dim additive heat map, the others are a blue-to-red ramp. In the demo: World section, Debug View picker; in the CLI: --debug-view (images and videos). Simulation is unaffected. Not done: collision state, culled/LOD state, flocking neighbor count, scene depth contacts (they need extra per-particle data).
 
 ---
 

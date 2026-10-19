@@ -240,6 +240,10 @@ public final class ParticleSystemRuntime {
     private(set) var attributes: MTLBuffer?
     /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
     var trails: MTLBuffer?
+    /// Draws particles in false colors or as wireframes instead of their own colors. Simulation is unaffected.
+    public var debugView: ParticleDebugView = .none
+    /// Speeds for `ParticleDebugView.speed`; the upper bound is also the seconds for `.lifeRemaining`.
+    public var debugRange: ClosedRange<Float> = 0...5
     /// See `colliderSolidVertices(planeExtent:)`.
     var solidVertexCache: (colliders: [Collider], planeExtent: Float, vertices: [SIMD4<Float>])?
     /// For `ParticleEmitter.flocking`, made when an emitter flocks.
@@ -715,6 +719,18 @@ public final class ParticleSystemRuntime {
                 // Solid shapes: the fragment shader's procedural dot is fully covered at the center.
                 draw.uniforms.hasTexture = 0
             }
+            if debugView != .none {
+                draw.uniforms.debugMode = debugView.gpuMode
+                draw.uniforms.debugEmitterIndex = UInt32(allEmitters.firstIndex { $0 === emitter } ?? 0)
+                draw.uniforms.debugSliceStart = UInt32(emitter.range.lowerBound)
+                draw.uniforms.debugCapacity = UInt32(emitter.capacity)
+                draw.uniforms.debugRange = [debugRange.lowerBound, debugRange.upperBound]
+                if let blendMode = debugView.blendMode {
+                    draw.blendMode = blendMode
+                    draw.uniforms.blendMode = blendMode
+                }
+                draw.wireframe = debugView == .wireframe
+            }
             if let trail = emitter.settings.trail, trails != nil, trailStride > 0 {
                 draw.uniforms.trailPointCount = UInt32(min(trail.clampedPointCount, trailStride))
                 draw.uniforms.trailStride = UInt32(trailStride)
@@ -737,6 +753,7 @@ public final class ParticleSystemRuntime {
             if let mesh = draw.mesh {
                 try RenderPipeline(vertexShader: meshVertexShader, fragmentShader: fragmentShader) {
                     Draw { encoder in
+                        encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
                         for segment in draw.segments where segment.count > 0 {
                             encoder.drawPrimitives(primitiveType: .triangle, vertexStart: 0, vertexCount: mesh.vertexCount, instanceCount: segment.count, baseInstance: segment.start)
                         }
@@ -764,6 +781,7 @@ public final class ParticleSystemRuntime {
             } else if draw.uniforms.trailPointCount > 1 {
                 try RenderPipeline(vertexShader: trailVertexShader, fragmentShader: fragmentShader) {
                     Draw { encoder in
+                        encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
                         for segment in draw.segments where segment.count > 0 {
                             encoder.drawPrimitives(
                                 primitiveType: .triangleStrip,
@@ -795,6 +813,7 @@ public final class ParticleSystemRuntime {
             } else {
             try RenderPipeline(vertexShader: vertexShader, fragmentShader: fragmentShader) {
                 Draw { encoder in
+                    encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
                     for segment in draw.segments where segment.count > 0 {
                         encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: segment.count, baseInstance: segment.start)
                     }
@@ -835,6 +854,8 @@ private struct EmitterDraw {
     var sortRecords: MTLBuffer?
     /// By speed, alternate over life (with opacity, like `colorCurve`), and by position; white where unused.
     var extraColorCurves: [SIMD4<Float>]
+    /// Draws triangles as lines (`ParticleDebugView.wireframe`).
+    var wireframe = false
     /// `ParticleEmitter.particleMesh`'s vertices, drawn instead of a quad.
     var mesh: (buffer: MTLBuffer, vertexCount: Int)?
 
@@ -908,7 +929,13 @@ private struct EmitterDraw {
             trailPointCount: 0,
             trailStride: 0,
             trailTapers: 0,
-            trailFades: 0
+            trailFades: 0,
+            // Set by render for debug views.
+            debugMode: .none,
+            debugEmitterIndex: 0,
+            debugSliceStart: 0,
+            debugCapacity: 0,
+            debugRange: .zero
         )
     }
 }

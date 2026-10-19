@@ -552,6 +552,12 @@ struct WorldSectionView: View {
                     .help("Draw colliders as solids. Emitters with Softness fade where they meet them.")
                 Toggle("Wireframes", isOn: $model.showColliders)
             }
+            Picker("Debug View", selection: $model.debugView) {
+                ForEach(ParticleDebugView.allCases, id: \.self) { view in
+                    Text(view.name).tag(view)
+                }
+            }
+            .help("Draw particles in false colors or as wireframes instead of their own colors.")
         }
     }
 }

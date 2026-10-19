@@ -23,6 +23,7 @@ public extension ParticleSystem {
         wireframes: Bool = false,
         codec: AVVideoCodecType = .h264,
         stopWhenFinished: Bool = false,
+        debugView: ParticleDebugView = .none,
         progress: (Double) -> Bool = { _ in true }
     ) async throws -> TimeInterval {
         try? FileManager.default.removeItem(at: url)
@@ -39,6 +40,7 @@ public extension ParticleSystem {
         }
         let player = try ParticlePlayer(system: self, device: device, seed: seed)
         player.camera = .lookAt(eye: eye ?? cameraEye, target: target ?? cameraTarget)
+        player.runtime.debugView = debugView
         let deltaTime = Float(1 / frameRate)
         let frameCount = max(Int((duration * frameRate).rounded()), 1)
         var framesWritten = 0

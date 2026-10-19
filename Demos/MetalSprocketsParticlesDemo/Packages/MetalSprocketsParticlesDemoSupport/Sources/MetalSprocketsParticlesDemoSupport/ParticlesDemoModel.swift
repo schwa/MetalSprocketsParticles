@@ -146,6 +146,8 @@ final class ParticlesDemoModel {
 
     var animateColliders = false
     var showColliders = false
+    /// Draws particles in false colors or as wireframes (see ParticleDebugView).
+    var debugView: ParticleDebugView = .none
     /// Draws colliders as solids and gives soft particles their depth.
     var drawColliders = false
     /// The preset's spinning colliders, by index.
@@ -169,6 +171,7 @@ final class ParticlesDemoModel {
             cachedPlayer = player
         }
         player.pointer = pointerPosition(projection: projection, cameraToWorld: cameraToWorld)
+        player.runtime.debugView = debugView
         return player
     }
 

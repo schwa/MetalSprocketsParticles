@@ -49,6 +49,9 @@ struct RenderCommand: AsyncParsableCommand {
     @Flag(help: "Turn off back-to-front sorting, to compare against the sorted render.")
     var noSort = false
 
+    @Option(help: "Debug view instead of particle colors: none, wireframe, emitter, age, speed, lifeRemaining, slot, or overdraw.")
+    var debugView: String = "none"
+
     @Option(name: .shortAndLong, help: "Output PNG path.")
     var output = "particles.png"
 
@@ -97,6 +100,9 @@ struct RenderCommand: AsyncParsableCommand {
             print("Wrote \(saveEffect): \(preset.name)")
             return
         }
+        guard let debugView = ParticleDebugView(rawValue: debugView) else {
+            throw ValidationError("Unknown --debug-view \(debugView). Use one of: \(ParticleDebugView.allCases.map(\.rawValue).joined(separator: ", ")).")
+        }
         let eye = try self.eye.map(parseVector) ?? preset.cameraEye
         let target = try self.target.map(parseVector) ?? preset.cameraTarget
         if let video {
@@ -117,7 +123,8 @@ struct RenderCommand: AsyncParsableCommand {
                 target: target,
                 wireframes: wireframes,
                 codec: codec,
-                stopWhenFinished: untilFinished
+                stopWhenFinished: untilFinished,
+                debugView: debugView
             ) { fraction in
                 watchdog.progressed()
                 let percent = Int(fraction * 100)
@@ -133,6 +140,7 @@ struct RenderCommand: AsyncParsableCommand {
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
         let player = try ParticlePlayer(system: preset, device: renderer.device, seed: seed)
         player.camera = .lookAt(eye: eye, target: target)
+        player.runtime.debugView = debugView
         let size = CGSize(width: width, height: height)
         var rendering: OffscreenRenderer.Rendering?
         for _ in 0..<max(frames, 1) {

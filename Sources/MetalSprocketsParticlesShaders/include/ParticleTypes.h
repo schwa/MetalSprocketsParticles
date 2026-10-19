@@ -142,6 +142,25 @@ typedef MS_ENUM(uint32_t, ParticleBlendMode) {
     ParticleBlendModeOpaque = 3,
 };
 
+/// Debug views that replace particle colors (ParticleSystemRuntime.debugView).
+typedef MS_ENUM(uint32_t, ParticleDebugMode) {
+    ParticleDebugModeNone = 0,
+    /// Geometry as lines, solid color.
+    ParticleDebugModeWireframe = 1,
+    /// A distinct color per emitter.
+    ParticleDebugModeEmitter = 2,
+    /// Age as a fraction of lifetime, blue (born) to red (dying).
+    ParticleDebugModeAge = 3,
+    /// Speed through debugSpeedRange, blue (slow) to red (fast).
+    ParticleDebugModeSpeed = 4,
+    /// Seconds of life left, through debugSpeedRange.y seconds, red (none) to blue (plenty).
+    ParticleDebugModeLifeRemaining = 5,
+    /// Position in the emitter's ring of slots, blue (first) to red (last).
+    ParticleDebugModeSlot = 6,
+    /// A dim additive color, so bright areas show where many particles overlap.
+    ParticleDebugModeOverdraw = 7,
+};
+
 typedef MS_ENUM(uint32_t, ParticleImageSequenceMode) {
     /// Wraps to the first frame after the last.
     ParticleImageSequenceModeRepeat = 0,
@@ -465,6 +484,13 @@ typedef struct {
     uint32_t trailStride;
     uint32_t trailTapers;
     uint32_t trailFades;
+    // Debug view: the mode, the emitter's index (for per-emitter colors), its slice, and ranges for speed (x...y) and
+    // remaining life (0...y seconds).
+    ParticleDebugMode debugMode;
+    uint32_t debugEmitterIndex;
+    uint32_t debugSliceStart;
+    uint32_t debugCapacity;
+    simd_float2 debugRange;
 } RenderUniforms;
 
 typedef struct {
