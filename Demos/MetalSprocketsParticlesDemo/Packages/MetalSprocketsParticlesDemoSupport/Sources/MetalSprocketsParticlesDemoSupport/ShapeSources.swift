@@ -42,6 +42,19 @@ extension ParticleEmitter {
     }
 }
 
+extension ParticleEmitter {
+    var hasFoil: Bool {
+        get { foil != nil }
+        set { foil = newValue ? (foil ?? ParticleFoil()) : nil }
+    }
+
+    /// The foil settings, or the defaults when off. Setting them turns foil on.
+    var editableFoil: ParticleFoil {
+        get { foil ?? ParticleFoil() }
+        set { foil = newValue }
+    }
+}
+
 /// Meshes to emit from (`EmitterShape.mesh`), from SwiftMesh, about two units across.
 enum DemoMesh: String, CaseIterable, Identifiable {
     case teapot = "Teapot"

@@ -127,6 +127,8 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var categoryMask: UInt32 = .max
     /// Shades particles with `ParticleSystemRuntime.lights` and `ambientLight`. Off by default: particles keep their colors.
     public var isLit = false
+    /// Shades mesh particles like metallic foil: glints, iridescence, darker edge-on. Nil for none.
+    public var foil: ParticleFoil?
     /// Soft particles: fade out over this many world units in front of the scene depth passed to
     /// `ParticleSystemRuntime.render(projection:view:sceneDepth:)`, instead of clipping hard. 0 turns it off.
     public var softness: Float = 0
@@ -311,6 +313,7 @@ extension ParticleEmitter {
         try container.update(&colorByPositionEnd, .colorByPositionEnd)
         trail = try container.decodeIfPresent(ParticleTrail.self, forKey: .trail)
         flocking = try container.decodeIfPresent(ParticleFlocking.self, forKey: .flocking)
+        foil = try container.decodeIfPresent(ParticleFoil.self, forKey: .foil)
         try container.update(&collisionRadius, .collisionRadius)
         ribbon = try container.decodeIfPresent(ParticleRibbon.self, forKey: .ribbon)
         try container.update(&minimumScreenSize, .minimumScreenSize)

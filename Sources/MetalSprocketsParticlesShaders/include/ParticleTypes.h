@@ -537,6 +537,10 @@ typedef struct {
     simd_float3 colorImageOrigin;
     simd_float3 colorImageU;
     simd_float3 colorImageV;
+    // ParticleEmitter.foil, for mesh particles: glint 0 is off.
+    float foilGlint;
+    float foilShininess;
+    float foilIridescence;
 } RenderUniforms;
 
 typedef struct {

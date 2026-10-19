@@ -3224,11 +3224,13 @@ Fix (agreed with the user): in 2D, the scene cameras (.system and .lookAt) becom
 ## 155: Foil particles: glinting, iridescent confetti
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T19:16:26Z
+updated: 2026-10-19T22:35:26Z
+closed: 2026-10-19T22:35:26Z
 +++
 
 Particles that render like metallic foil: tumbling pieces that flash when they catch the light and shift color with viewing angle, for confetti, tinsel, and glitter.
@@ -3244,6 +3246,8 @@ Scope:
 Out of scope: a bloom post-process (the library has none); fake halos with additive star sprites instead.
 
 Acceptance: a tumbling foil piece's brightness peaks when its normal bisects the light and view directions; color changes with angle; presets look like foil confetti in particles-render.
+
+- `2026-10-19T22:35:25Z`: Done for mesh particles: ParticleFoil (glint, shininess, iridescence) on ParticleEmitter.foil, saved in effect files. In particleMeshVertex, foilColor gives a two-sided Blinn-Phong glint from each scene light and particle light (a fixed light above and in front when there are none), a thin-film hue shift with viewing angle, and darkening edge-on; per vertex, so a flat piece flashes as a whole. Presets Foil Confetti and Foil Confetti 2D (coin meshes, varied hues, fast tumbling), with goldens, previews, and Demos.md sections; inspector Foil switch and sliders for mesh particles. Test: one coin swept through 36 angles; with foil the brightest angle is far above the median and well above plain shading's variation, and the color balance changes with angle. Not done (filed as #171): foil for sprites (they have no facing direction) and sparkle sub-emitters on glints. Existing goldens unchanged (foil is off unless set).
 
 ---
 
@@ -3561,5 +3565,23 @@ Emitter meshes are saved inline in effect JSON as `meshPositions` and `meshTrian
 Store the mesh as a file reference instead, using the same reference scheme as #169: a name (next to the JSON or in the bundle) or a URL. Load OBJ and PLY (e.g. via ModelIO `MDLAsset`, or SwiftMesh if it has loaders).
 
 Move the existing inline meshes in the presets out to files. Decide whether to keep reading the inline arrays for old files.
+
+---
+
+## 171: Foil shading for tumbling sprites, and sparkles on glints
+
++++
+status: open
+priority: low
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T22:35:25Z
++++
+
+Follow-up to #155, which added foil (ParticleEmitter.foil) for mesh particles only. Not done there:
+- Sprites: they always face the camera and only spin in their plane, so they have no facing direction for the glint. Needs a per-particle 3D orientation (tumble axis and angle) carried to the sprite vertex shader, turning the quad (like mesh particles) or at least its shading normal.
+- Sparkles: a short-lived star sub-emitter when a piece glints. Needs a glint event (the glint is computed at draw time, not in the simulation), or computing the glint term in the simulation kernel to fire a sub-emitter.
+
+Workaround today: use mesh particles (Draw As Coin) for foil confetti, as the Foil Confetti presets do.
 
 ---

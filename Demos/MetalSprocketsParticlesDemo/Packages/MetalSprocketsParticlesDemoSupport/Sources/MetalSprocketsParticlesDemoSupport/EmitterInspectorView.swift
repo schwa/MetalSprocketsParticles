@@ -520,6 +520,15 @@ struct AppearanceSectionView: View {
                 }
             }
             .help("Sprites, or a small mesh per particle (lit, turned by the particle's orientation and spin).")
+            if emitter.settings.drawing != .sprite {
+                Toggle("Foil", isOn: $emitter.settings.hasFoil)
+                    .help("Shade the meshes like metallic foil: they flash as they turn to catch the light and shift color with the angle.")
+                if emitter.settings.hasFoil {
+                    ParameterSliderView("Glint", value: $emitter.settings.editableFoil.glint, in: 0...10)
+                    ParameterSliderView("Shininess", value: $emitter.settings.editableFoil.shininess, in: 1...200, format: .number.precision(.fractionLength(0)))
+                    ParameterSliderView("Iridescence", value: $emitter.settings.editableFoil.iridescence, in: 0...1)
+                }
+            }
             KindPicker("Sprite", selection: $emitter.sprite)
             KindPicker("Blend", selection: $emitter.settings.blendMode)
             KindPicker("Sort", selection: $emitter.settings.sortMode)

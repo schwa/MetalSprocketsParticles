@@ -60,6 +60,8 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Snow Globe](#snow-globe)
 - [Sand on Letters](#sand-on-letters)
 - [Inside the Teapot](#inside-the-teapot)
+- [Foil Confetti](#foil-confetti)
+- [Foil Confetti 2D](#foil-confetti-2d)
 
 ## Fountain
 
@@ -390,3 +392,15 @@ Shows: collision with an arbitrary concave mesh. Sand pours over 3D text (a Swif
 Shows: a mesh turned inside out as a container (its baked distance field negated). Beads tumble inside a teapot as it rolls over.
 
 ![inside-the-teapot](previews/inside-the-teapot.webp)
+
+## Foil Confetti
+
+Shows: foil shading on mesh particles. Discs of confetti flutter down, flashing as they turn to catch the lights and shifting color with the angle.
+
+![foil-confetti](previews/foil-confetti.webp)
+
+## Foil Confetti 2D
+
+Shows: foil shading in 2D mode. The same confetti seen flat from the front; the discs still tumble, so they still glint.
+
+![foil-confetti-2d](previews/foil-confetti-2d.webp)

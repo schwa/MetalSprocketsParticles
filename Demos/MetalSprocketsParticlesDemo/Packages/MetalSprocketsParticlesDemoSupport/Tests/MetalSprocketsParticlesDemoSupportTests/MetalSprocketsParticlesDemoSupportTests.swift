@@ -65,6 +65,16 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// Foil in the inspector (#155).
+    @Test func foilTurnsOnAndOff() {
+        var emitter = ParticleEmitter()
+        emitter.hasFoil = true
+        #expect(emitter.foil == ParticleFoil())
+        emitter.editableFoil.glint = 7
+        emitter.hasFoil = false
+        #expect(emitter.foil == nil)
+    }
+
     /// Scene-level animation and events (#168). Kept by id, so removing or reordering items keeps them pointing at the
     /// right ones; saved by index.
     @MainActor

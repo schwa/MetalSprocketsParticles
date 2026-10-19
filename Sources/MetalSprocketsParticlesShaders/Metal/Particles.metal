@@ -1708,6 +1708,33 @@ static float3 rotateAbout(float3 v, float3 axis, float angle) {
 
 // ParticleEmitter.particleMesh: instanced triangles. Each particle tumbles about its own random axis (hashed from its
 // slot) by its rotation angle, scaled by its size, at its position.
+// Metallic foil (ParticleEmitter.foil). Two-sided: the face toward the camera counts. The color shifts with the viewing
+// angle like a thin film, darkens edge-on, and gets a Blinn-Phong glint from each light, or from a fixed light above and
+// in front when there are none. Per vertex, so a flat piece flashes as a whole.
+static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base) {
+    float facing = dot(normal, toCamera);
+    float3 n = facing < 0 ? -normal : normal;
+    float cosine = abs(facing);
+    float3 film = 0.5 + 0.5 * cos(6.2831853 * ((1 - cosine) * 1.5 + float3(0, 0.33, 0.67)));
+    float3 color = base * mix(float3(1), film, saturate(uniforms.foilIridescence)) * mix(0.2, 1.0, cosine);
+    float glint = 0;
+    uint lightCount = min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS));
+    uint particleLightCount = min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS));
+    if (lightCount + particleLightCount == 0) {
+        float3 toLight = normalize(float3(0.3, 1, 0.6));
+        glint = pow(max(dot(n, normalize(toLight + toCamera)), 0.0), uniforms.foilShininess);
+    }
+    for (uint i = 0; i < lightCount; i++) {
+        float3 toLight = lights[i].kind == ParticleLightKindPoint ? normalize(lights[i].position - position) : -lights[i].direction;
+        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), uniforms.foilShininess) * max(max(lights[i].color.r, lights[i].color.g), lights[i].color.b);
+    }
+    for (uint i = 0; i < particleLightCount; i++) {
+        float3 toLight = normalize(particleLights[i].position - position);
+        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), uniforms.foilShininess) * max(max(particleLights[i].color.r, particleLights[i].color.g), particleLights[i].color.b);
+    }
+    return color + glint * uniforms.foilGlint * mix(float3(1), film, 0.3);
+}
+
 vertex VertexOut particleMeshVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
@@ -1754,7 +1781,9 @@ vertex VertexOut particleMeshVertex(
         out.color *= unpack_unorm4x8_to_float(tint);
     }
     float3 toCamera = normalize(uniforms.cameraPosition - world);
-    if (uniforms.isLit != 0) {
+    if (uniforms.foilGlint > 0 || uniforms.foilIridescence > 0) {
+        out.color.rgb = foilColor(uniforms, lights, particleLights, world, normal, toCamera, out.color.rgb);
+    } else if (uniforms.isLit != 0) {
         float3 light = uniforms.ambientLight;
         for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
             light += diffuseLight(lights[i], world, normal);
