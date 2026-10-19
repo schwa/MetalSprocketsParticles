@@ -2991,12 +2991,13 @@ Add an option to render with reverse Z (clear depth to 0, compare greater, swap 
 ## 145: Expand Methodology.md: issue subsystem and CLI rendering
 
 +++
-status: open
+status: closed
 priority: medium
 kind: documentation
 labels: area:docs, effort:s
 created: 2026-10-19T12:10:30Z
-updated: 2026-10-19T13:07:05Z
+updated: 2026-10-19T13:32:52Z
+closed: 2026-10-19T13:32:52Z
 +++
 
 Documentation/Methodology.md should say more about the issues subsystem (how issues were filed, triaged, and closed during development) and the CLI rendering tool we used (what it does and how it fit into the workflow).

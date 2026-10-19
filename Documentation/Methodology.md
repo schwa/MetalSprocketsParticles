@@ -21,7 +21,7 @@ The first session began on 17 October 2026 with:
 >
 > stretch goal - particles that interact with geometry
 
-The work took about two days, with breaks.
+The work took a few days, with breaks.
 
 ## The loop: issues first, then work
 
@@ -45,6 +45,62 @@ Almost all work went through an issue tracker (the `issues` CLI, which stores is
    cautious ("coliders and force fields have positions and other attributes a mask doesn't seem too difficult?").
 
 Small requests skipped the tracker: "add a particle count hud", "lets add video export", "commit".
+
+## The issue tracker
+
+The tracker is the `issues` CLI. It keeps every issue in one Markdown file, `ISSUES.md`, in the repository, so issues
+are versioned with the code and each change to them is a commit. An issue has a title, a description, a kind (bug,
+feature, enhancement, task, or documentation), a priority, labels, a status, and comments.
+
+**Filing.** Most issues started as one line from the human, such as "new issue: the coins keep rotating when they hit
+the floor". The agent wrote the full description: what happens, what should happen, a likely place in the code, and
+related issues. It read the code first, so the description named real files and settings. When it was guessing, the
+description said so. When a guess turned out wrong, the agent added a comment with the correction instead of
+rewriting history.
+
+**Triage.** New issues get a kind, a priority, an effort label (`effort:xs` to `effort:xl`), and an area label (such as
+`area:rendering` or `area:demo`), and then move from New to Open. Triage also looks for duplicates and adds "related"
+comments between issues that touch the same code. Labels also say when an issue must wait: `deferred`, `needs-design`,
+`needs-decision`, or `needs-info`.
+
+**Decisions.** When an issue needed a choice, the agent asked one short question with its recommendation, and wrote
+the answer on the issue as a comment. The decision then traveled with the issue, so the run that fixed it could follow
+it without asking again.
+
+**Working.** Autonomous runs skip any issue whose labels say to wait, and sort the rest: priority first, then bugs
+before enhancements before features, then small before large. Each fix is one commit that also closes the issue, so the
+history shows the change and the closed issue together. The closing comment says what was done, and also what was
+left out and why.
+
+**Follow-ups.** Parts left out of a fix did not stay hidden in comments. At the end of a run the human asked which of
+them were worth doing, and they became new issues with links back to the issue they came from.
+
+## Rendering from the command line
+
+Early on, the human asked the agent to stop launching the demo app to check its work. The agent used a command-line
+renderer, `particles-render`, instead. It loads a sample preset or a saved effect file, runs the simulation offscreen
+with the preset's camera and a fixed seed, and writes a PNG of the last frame or a movie. Options set the size, the
+number of frames, the camera, wireframes, and debug views such as false colors by age or speed.
+
+The agent then looked at the PNG itself. Most visual problems were found this way: smoke too gray, letters smeared by
+turbulence, ribbons that zigzagged, coins half buried in the floor. Each fix was checked by rendering again.
+
+The same renderer made the rest of the visual tooling possible:
+
+- **Golden images.** Tests render every sample preset and compare the result with a stored image. A changed image
+  fails the test and writes the new image to a temporary file. The agent looked at each changed image before it
+  replaced the stored one.
+- **Demo previews.** A script renders a short movie of each preset, turns it into an animated image that plays on
+  GitHub, and rewrites the demo index from the preset files.
+- **Showreels.** On request, the agent cut clips of presets into one titled movie for sharing, compressed for social
+  media.
+- **Measurement.** A second tool, `particles-bench`, times frames for large particle counts and for every sample
+  preset against a frame budget. It found that one slow demo spent its time on the CPU, rebuilding collider meshes
+  every frame, and not on the GPU as first guessed.
+
+Video export once hung with no output. The agent could not make it happen again on demand, so it added a watchdog to
+the renderer: if no frame finishes for a while, the renderer saves a sample of the stuck process and exits with an
+error. The cause was later fixed in MetalSprockets.
 
 ## Gap reviews
 
