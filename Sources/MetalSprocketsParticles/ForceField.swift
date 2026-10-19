@@ -87,11 +87,15 @@ public struct ForceField: Sendable, Equatable {
                 let t = Float(sample) / Float(samples)
                 let t2 = t * t
                 let t3 = t2 * t
-                let a = 2 * p1
-                let b = (p2 - p0) * t
-                let c = (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
-                let d = (3 * p1 - p0 - 3 * p2 + p3) * t3
-                result.append(0.5 * (a + b + c + d))
+                // Typed steps: as one expression, Xcode 26's compiler gives up type-checking it.
+                let a: SIMD3<Float> = 2 * p1
+                let b: SIMD3<Float> = (p2 - p0) * t
+                let cTerms: SIMD3<Float> = 2 * p0 - 5 * p1
+                let c: SIMD3<Float> = (cTerms + 4 * p2 - p3) * t2
+                let dTerms: SIMD3<Float> = 3 * p1 - p0
+                let d: SIMD3<Float> = (dTerms - 3 * p2 + p3) * t3
+                let sum: SIMD3<Float> = a + b + c + d
+                result.append(0.5 * sum)
             }
         }
         if !closed {
