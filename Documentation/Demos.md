@@ -55,6 +55,9 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Whirlpool](#whirlpool)
 - [Sand Funnel](#sand-funnel)
 - [Spinning Teapot](#spinning-teapot)
+- [Umbrella](#umbrella)
+- [Marble Run](#marble-run)
+- [Snow Globe](#snow-globe)
 
 ## Fountain
 
@@ -355,3 +358,21 @@ Shows: 2D mode with rotated box colliders. Sand pours into a funnel, slides down
 Shows: a collider baked from a mesh (a SwiftMesh teapot as a signed distance field) that turns each frame, as a scene-graph node would. Sand rains on the spinning teapot and is flung off its spout and handle.
 
 ![spinning-teapot](previews/spinning-teapot.webp)
+
+## Umbrella
+
+Shows: a collider baked from an open mesh, as a thin shell (an uncapped SwiftMesh hemisphere). Rain bounces off the umbrella and runs off its rim.
+
+![umbrella](previews/umbrella.webp)
+
+## Marble Run
+
+Shows: particles riding a curved mesh collider. Marbles roll down a helical track (a swept SwiftMesh mesh baked to a distance field) and drop off the end.
+
+![marble-run](previews/marble-run.webp)
+
+## Snow Globe
+
+Shows: an interactive 2D effect inside a distance field container. Snow swirls in a globe; the vortex follows the mouse.
+
+![snow-globe](previews/snow-globe.webp)
