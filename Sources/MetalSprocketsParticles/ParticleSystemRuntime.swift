@@ -706,6 +706,7 @@ public final class ParticleSystemRuntime {
                     }
                 }
                 .parameter("meshVertices", buffer: mesh.buffer)
+                .parameter("extraColorCurves", values: draw.extraColorCurves)
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: draw.uniforms)
                 .parameter("colorCurve", values: draw.colorCurve)
@@ -735,6 +736,7 @@ public final class ParticleSystemRuntime {
             .parameter("uniforms", value: draw.uniforms)
             .parameter("colorCurve", values: draw.colorCurve)
             .parameter("sizeCurve", values: draw.sizeCurve)
+            .parameter("extraColorCurves", values: draw.extraColorCurves)
             .parameter("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
             .parameter("sprite", texture: draw.texture ?? placeholderTexture)
             .parameter("spriteSampler", samplerState: sampler)
@@ -763,6 +765,8 @@ private struct EmitterDraw {
     /// sorted, the sorted records.
     var segments: [(start: Int, count: Int)]
     var sortRecords: MTLBuffer?
+    /// By speed, alternate over life (with opacity, like `colorCurve`), and by position; white where unused.
+    var extraColorCurves: [SIMD4<Float>]
     /// `ParticleEmitter.particleMesh`'s vertices, drawn instead of a quad.
     var mesh: (buffer: MTLBuffer, vertexCount: Int)?
 
@@ -782,6 +786,11 @@ private struct EmitterDraw {
             SIMD4(color.x, color.y, color.z, color.w * opacity)
         }
         sizeCurve = settings.sizeOverLife.baked()
+        let white = [SIMD4<Float>](repeating: .one, count: Int(PARTICLE_CURVE_SAMPLES))
+        let alternate = settings.alternateColorOverLife.map { curve in
+            zip(curve.baked(), opacity).map { color, opacity in SIMD4(color.x, color.y, color.z, color.w * opacity) }
+        }
+        extraColorCurves = (settings.colorBySpeed?.baked() ?? white) + (alternate ?? white) + (settings.colorByPosition?.baked() ?? white)
         texture = emitter.texture
         blendMode = settings.blendMode
         if emitter.sortedCount > 0, let buffers = emitter.sortBuffers {
@@ -820,7 +829,13 @@ private struct EmitterDraw {
             softness: max(settings.softness, 0),
             hasSceneDepth: hasSceneDepth ? 1 : 0,
             // Clip z = a * zView + b and clip w = c * zView, so depth d = (a * zView + b) / (c * zView).
-            depthUnproject: [projection.columns.2.z, projection.columns.3.z, projection.columns.2.w]
+            depthUnproject: [projection.columns.2.z, projection.columns.3.z, projection.columns.2.w],
+            hasSpeedColor: settings.colorBySpeed == nil ? 0 : 1,
+            hasAlternateColor: settings.alternateColorOverLife == nil ? 0 : 1,
+            hasPositionColor: settings.colorByPosition == nil ? 0 : 1,
+            speedColorRange: [settings.colorBySpeedRange.lowerBound, settings.colorBySpeedRange.upperBound],
+            positionColorStart: settings.colorByPositionStart,
+            positionColorEnd: settings.colorByPositionEnd
         )
     }
 }

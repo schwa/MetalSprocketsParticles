@@ -2506,12 +2506,13 @@ Collide particles against whatever the host renders, using the depth buffer (scr
 ## 121: More color gradients: by speed, random between two, by position
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T00:15:37Z
-updated: 2026-10-19T00:15:38Z
+updated: 2026-10-19T02:51:12Z
+closed: 2026-10-19T02:51:12Z
 +++
 
 Colors today: colorOverLife (a multi-stop RGBA gradient over each particle's life), opacityOverLife, and per-particle HSB colorVariation. Add, as Unity and Niagara have:
@@ -2519,5 +2520,7 @@ Colors today: colorOverLife (a multi-stop RGBA gradient over each particle's lif
 - Random between two gradients: each particle picks a blend between two over-life gradients at birth. More varied than a hue shift.
 - Color by position: a gradient across the emitter's shape or along a world axis, picked at birth (a rainbow along a line, a two-tone fountain).
 Each needs a setting, a curve table on the GPU, the demo's gradient editor, and Codable with tolerant decoding. Related: #110 (user functions could do these once ParticleState has color).
+
+- `2026-10-19T02:51:12Z`: Done, all at draw time: colorBySpeed + colorBySpeedRange (multiplies), alternateColorOverLife (each particle blends toward it by a fixed random amount hashed from its slot), colorByPosition + colorByPositionStart/End (multiplies, by current position in world space). Deviation: position color uses the current position rather than the birth position, so it needs no particle storage; birth-position color can be done with a spawn function setting ParticleState.color (#110). Demo: Spark Spectrum.
 
 ---

@@ -423,6 +423,15 @@ typedef struct {
     float softness;
     uint32_t hasSceneDepth;
     simd_float3 depthUnproject;
+    // Extra gradients, in the extra color curve table (PARTICLE_CURVE_SAMPLES each): by speed (multiplies; speed mapped
+    // from speedColorRange to 0...1), an alternate over-life gradient (each particle blends toward it by a fixed random
+    // amount), and by position (multiplies; from positionColorStart to positionColorEnd).
+    uint32_t hasSpeedColor;
+    uint32_t hasAlternateColor;
+    uint32_t hasPositionColor;
+    simd_float2 speedColorRange;
+    simd_float3 positionColorStart;
+    simd_float3 positionColorEnd;
 } RenderUniforms;
 
 typedef struct {

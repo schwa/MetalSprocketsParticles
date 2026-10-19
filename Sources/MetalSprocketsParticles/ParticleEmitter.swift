@@ -169,6 +169,18 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Bounces particles off whatever the host drew into the scene depth last frame (`ParticleSystemRuntime.collisionDepth`),
     /// so they hit arbitrary geometry without colliders. Only works on screen; use colliders for the rest.
     public var collidesWithSceneDepth = false
+    /// Multiplies the color by a gradient sampled by speed: `colorBySpeedRange.lowerBound` and slower sample time 0,
+    /// `upperBound` and faster sample time 1. Hot fast sparks, cool slow ones.
+    public var colorBySpeed: ParticleCurve<SIMD4<Float>>?
+    public var colorBySpeedRange: ClosedRange<Float> = 0...5
+    /// A second color-over-life gradient: each particle blends between `colorOverLife` and this by its own fixed random
+    /// amount, for more varied color than a hue shift.
+    public var alternateColorOverLife: ParticleCurve<SIMD4<Float>>?
+    /// Multiplies the color by a gradient across the world from `colorByPositionStart` (time 0) to
+    /// `colorByPositionEnd` (time 1), by each particle's current position.
+    public var colorByPosition: ParticleCurve<SIMD4<Float>>?
+    public var colorByPositionStart: SIMD3<Float> = [0, 0, 0]
+    public var colorByPositionEnd: SIMD3<Float> = [0, 1, 0]
 
     public init() {}
 }
@@ -236,6 +248,12 @@ extension ParticleEmitter {
         light = try container.decodeIfPresent(ParticleLightEmission.self, forKey: .light)
         particleMesh = try container.decodeIfPresent(ParticleMesh.self, forKey: .particleMesh)
         try container.update(&collidesWithSceneDepth, .collidesWithSceneDepth)
+        colorBySpeed = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .colorBySpeed)
+        try container.update(&colorBySpeedRange, .colorBySpeedRange)
+        alternateColorOverLife = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .alternateColorOverLife)
+        colorByPosition = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .colorByPosition)
+        try container.update(&colorByPositionStart, .colorByPositionStart)
+        try container.update(&colorByPositionEnd, .colorByPositionEnd)
     }
 }
 

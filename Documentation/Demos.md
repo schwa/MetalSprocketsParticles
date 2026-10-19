@@ -45,6 +45,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Ember Glow](#ember-glow)
 - [Coin Shower](#coin-shower)
 - [Sand on Shapes](#sand-on-shapes)
+- [Spark Spectrum](#spark-spectrum)
 
 ## Fountain
 
@@ -285,3 +286,9 @@ Gold coins rain down, tumble, and bounce on the floor. Each particle is drawn as
 Sand pours onto a box, a sphere, a capsule, and the floor. The sand ignores the colliders: it bounces off the scene depth (collidesWithSceneDepth), the same way it would land on any geometry an app draws.
 
 ![sand-on-shapes](previews/sand-on-shapes.webp)
+
+## Spark Spectrum
+
+A fountain of sparks colored three ways at once: white-hot while fast and deep red as they slow (colorBySpeed), each spark leaning toward a gold or a magenta palette (alternateColorOverLife), and a cool blue wash toward the top of the arc (colorByPosition).
+
+![spark-spectrum](previews/spark-spectrum.webp)
