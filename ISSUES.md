@@ -2904,3 +2904,29 @@ created: 2026-10-19T12:03:12Z
 Add a demo preset with a very large number of particles (millions), for performance testing and profiling.
 
 ---
+
+## 144: Option to use reverse Z in depth buffers
+
++++
+status: new
+priority: medium
+kind: feature
+created: 2026-10-19T12:09:39Z
++++
+
+Add an option to render with reverse Z (clear depth to 0, compare greater, swap near/far in the projection) for better depth precision at distance.
+
+---
+
+## 145: Expand Methodology.md: issue subsystem and CLI rendering
+
++++
+status: new
+priority: medium
+kind: documentation
+created: 2026-10-19T12:10:30Z
++++
+
+Documentation/Methodology.md should say more about the issues subsystem (how issues were filed, triaged, and closed during development) and the CLI rendering tool we used (what it does and how it fit into the workflow).
+
+---
