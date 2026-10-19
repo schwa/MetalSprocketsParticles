@@ -2132,12 +2132,13 @@ Scope: the type and its nested Layer alias, file names (ParticlePreset.swift, Pr
 ## 102: Video export tests occasionally hang
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:tooling, effort:s
 created: 2026-10-18T20:49:53Z
-updated: 2026-10-19T01:43:06Z
+updated: 2026-10-19T11:52:19Z
+closed: 2026-10-19T11:52:19Z
 +++
 
 A full library test run hung for 10 minutes (killed by the timeout) and passed in 18 seconds when re-run. A sample of the stuck test process showed nothing working: the main thread idle in its run loop, and AVFoundation's video compression and QuickTime writer threads waiting on semaphores. My guess is that a video export test (VideoExportTests, which uses MetalSprockets' OffscreenVideoRenderer) awaits a completion that never arrives, such as the writer's finish callback or a GPU completion handler. Not confirmed; seen once so far. Next time, sample the process and look for the awaiting task. Consider a timeout inside the video tests so a hang fails instead of stalling the run.
@@ -2146,6 +2147,7 @@ A full library test run hung for 10 minutes (killed by the timeout) and passed i
 - `2026-10-19T01:43:06Z`: Recurred: particles-render --video hung (showreel run stalled on the last preset; make-demos.sh point-cloud hung 34 min with no output).
 - `2026-10-19T01:54:51Z`: Not reproduced on demand (7 CLI exports, 5 full test runs, make-demos, showreel). Likely cause filed upstream as MetalSprockets#2 (waitUntilReady never resumes if the writer fails). Added: particles-render --video watchdog (no progress for 30 s, or PARTICLES_RENDER_STALL_SECONDS, writes a sample to $TMPDIR/particles-render-hang-<pid>.txt and exits 2) and a 1-minute time limit on VideoExportTests. Leaving open until the upstream fix lands.
 - `2026-10-19T01:57:03Z`: Correction: the upstream issue is MetalSprockets#532 (not #2, which was filed in the wrong ISSUES.md and removed).
+- `2026-10-19T11:52:19Z`: Closing: MetalSprockets main 232673a includes the video writer wait fix (MetalSprockets#532); CLI smoke test and VideoExportTests pass. The watchdog stays in particles-render; reopen if a hang comes back.
 
 ---
 
@@ -2528,5 +2530,315 @@ Colors today: colorOverLife (a multi-stop RGBA gradient over each particle's lif
 Each needs a setting, a curve table on the GPU, the demo's gradient editor, and Codable with tolerant decoding. Related: #110 (user functions could do these once ParticleState has color).
 
 - `2026-10-19T02:51:12Z`: Done, all at draw time: colorBySpeed + colorBySpeedRange (multiplies), alternateColorOverLife (each particle blends toward it by a fixed random amount hashed from its slot), colorByPosition + colorByPositionStart/End (multiplies, by current position in world space). Deviation: position color uses the current position rather than the birth position, so it needs no particle storage; birth-position color can be done with a spawn function setting ParticleState.color (#110). Demo: Spark Spectrum.
+
+---
+
+## 122: More than one custom attribute per particle
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:simulation, effort:m
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+ParticleState.custom is one float4 per particle (#110). Allow a few (for example up to 4), chosen per emitter so memory is only spent where used. Needs a per-emitter attribute count, a strided attributes buffer, and a prelude change (custom as an array or custom0...custom3).
+
+---
+
+## 123: Color particles from a texture as they move
+
++++
+status: open
+priority: low
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+EmitterImage (#113) colors particles at birth only. Add sampling a texture each frame by position, projected onto a plane or by screen position, so particles change color as they move over an image. Could be a render-time lookup, like colorByPosition (#121), with a texture instead of a gradient.
+
+---
+
+## 124: Scale particle size with camera distance
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:rendering, effort:s
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+Distance LOD (#117) scales emission only. Optionally scale size with distance from the camera too, for example keeping a minimum on-screen size so far particles do not shrink to nothing, or growing them to fill in for lower emission.
+
+---
+
+## 125: Pick the brightest particles as lights
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:rendering, effort:m
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+ParticleEmitter.light (#118) takes one live particle from each stretch of the live window. Picking the brightest (by color times opacity at their age) would light more convincingly: a GPU reduction or a top-k pass over the live window.
+
+---
+
+## 126: Collision radius for particles
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:collision, effort:m
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+Collisions treat particles as points, so mesh particles (#119) and large sprites sink into colliders by up to their size (visible in Coin Shower). Add a per-emitter collision radius (or use the particle's size) that offsets every collider test: planes by distance, spheres and capsules by radius, boxes by half extents, and scene depth.
+
+- `2026-10-19T11:47:47Z`: Related: #132 (spin should also stop on contact).
+
+---
+
+## 127: Color gradient by birth position
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:rendering, effort:s
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+colorByPosition (#121) uses the current position. Add an option to sample it once at birth and keep it (in the particle tint, like point cache colors), for two-tone fountains whose colors stay with each particle. A spawn function setting ParticleState.color can do this today.
+
+---
+
+## 128: Ribbons that join an emitter's particles in birth order
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:l
+created: 2026-10-19T11:40:05Z
+updated: 2026-10-19T11:40:06Z
++++
+
+Trails (#109) are per particle. Add a mode that draws one ribbon through all of an emitter's live particles in birth order, as Niagara and VFX Graph strips do: a stream from a moving emitter, a sword arc, a lightning bolt. Needs the live window in spawn order (it already is, as a ring) and handling of dead gaps.
+
+---
+
+## 129: Space trail points by time, not by step
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:rendering, effort:s
+created: 2026-10-19T11:40:06Z
++++
+
+Trail points (#109) are recorded once per simulation step, so a trail covers less time at higher frame rates. Add a point interval in seconds: record a point only when that much time has passed since the last, and move the head point every step so the ribbon still reaches the particle.
+
+---
+
+## 130: Sand on Shapes runs at 80 fps instead of 120
+
++++
+status: open
+priority: medium
+kind: bug
+labels: area:performance, effort:m
+created: 2026-10-19T11:42:02Z
++++
+
+Reported in the demo app: Sand on Shapes (scene depth collision, #120) is the slowest demo, about 80 fps where others hold 120 on the M5 Max. Cause not measured yet. Candidates to check with a GPU capture or particles-bench:
+- The depth collision test in the update kernel: every particle of the emitter projects into the depth texture, and contacts read five depth texels and do two 4x4 matrix inverses' worth of math (depthWorldPosition) per step.
+- The extra scene depth render pass (renderSceneDepth) plus the solid collider pass, every frame.
+- Overdraw from about 8,000 alpha-blended sand sprites, or the preset's warmup.
+- CPU side: renderSceneDepth runs SceneDepthCollision.data, which inverts the view-projection matrix each frame (cheap, but check nothing else per frame is heavy).
+Fix whatever dominates; compare against Rain (similar count, analytic colliders).
+
+- `2026-10-19T11:42:11Z`: Correction to the description: the shader does no matrix inversion; each contact does five depth reads and five matrix-vector multiplies by the precomputed inverse view-projection.
+- `2026-10-19T11:47:47Z`: Related: #131 (benchmark to catch regressions like this).
+
+---
+
+## 131: Frame time benchmark for every sample preset
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:performance, effort:m
+created: 2026-10-19T11:42:02Z
++++
+
+Nothing catches performance regressions: Sand on Shapes dropped to 80 fps unnoticed. Add a benchmark (particles-bench or a test tagged as slow) that runs each sample preset for a few seconds at a fixed size and reports GPU time per frame, with a budget per preset (for example 8 ms for 120 fps) and a table in the output. Run it before releases, not in every test run.
+
+---
+
+## 132: Particles keep spinning after they come to rest on a collider
+
++++
+status: open
+priority: medium
+kind: bug
+labels: area:collision, effort:s
+created: 2026-10-19T11:42:29Z
++++
+
+In Coin Shower, coins stop sliding on the floor but keep rotating in place. Collisions damp linear velocity (restitution and friction) but never touch angular velocity (Particle.rotation.y), so spin set by angularSpeedVariation runs for the particle's whole life. Most visible with mesh particles (#119), also true for spinning sprites.
+
+Expected: contact friction slows spin as well, so a particle resting on a collider stops turning. Possible fix: in collide(), scale rotation.y by the same friction factor applied to tangential velocity (or a separate angular damping on contact). Related: #126 (collision radius).
+
+---
+
+## 133: Lifetime sliders are hard to use: replace Min/Max with Lifetime and Variation
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T11:43:27Z
+updated: 2026-10-19T11:43:28Z
++++
+
+The inspector shows lifetime as two sliders, Lifetime Min and Lifetime Max (0.1...10 s; sub-emitters 0.05...5 s). To make particles live longer you must raise Max and then Min, and dragging either one past the other drags the other along (ParticleEmitter+Inspector.swift lifetimeMinimum/lifetimeMaximum). It does not match the rest of the inspector, which uses a value plus a variation (birth rate, size, speed, angle).
+
+Proposal: show Lifetime (the middle of the range) and Lifetime Variation (plus or minus, in seconds or as a fraction), so one slider makes particles live longer and the spread stays the same. Map onto the existing lifetime range, so effect files do not change. Also raise or remove the 10 s cap (long-lived presets like Murmuration use 1000 s) and allow typing a value.
+Reported by the user: 'I expect to be able to easily extend lifetime but these sliders are counterintuitive.'
+
+---
+
+## 134: Debug view modes: particle wireframes and false-color views
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T11:43:47Z
+updated: 2026-10-19T11:43:48Z
++++
+
+Add debug view modes that replace normal particle drawing, selectable in the demo (and as an option on render / ParticlePlayer, so particles-render can use them):
+
+Wireframe:
+- Draw each particle's geometry as lines: sprite quads (shows size, orientation, stretch, overdraw), mesh particles (#119), and ribbons (#109).
+
+False color (color each particle by something other than its color):
+- Emitter or layer (a distinct color per emitter, sub-emitters included)
+- Normalized age (age / lifetime)
+- Speed (with a range)
+- Lifetime remaining
+- Slot index or ring position (shows spawn order and the live window)
+- Collision state (hit this step, resting), and scene depth contacts (#120)
+- Culled or LOD scale (#117), flocking neighbor count (#111)
+- Overdraw / fill cost (additive count per pixel, heat-mapped)
+
+Debug views ignore blend mode and textures (opaque or additive heat map as fits). Collider and field wireframes already exist (DebugWireframes) and should combine with these.
+
+---
+
+## 135: Show particles born and died per frame in the stats overlay
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:demo, effort:s
+created: 2026-10-19T11:44:07Z
++++
+
+The demo's stats overlay (StatsView in ParticlesView.swift) shows the live particle count (aliveParticleCount). Add how many particles were born and how many died over the last N frames (shown as per-second rates, or per-frame averages), per emitter if room.
+
+Born is known on the CPU (the spawner's count per step, plus bursts and sub-emitter children, which are written on the GPU). Deaths need a GPU counter (like aliveCounters, read a few frames late) or can be derived from births and the change in live count. Helps tune birth rates and lifetimes and spot capacity limits (births overwriting live particles when the ring is full, which could get its own counter).
+
+- `2026-10-19T11:44:22Z`: Correction: the overlay is ParticleCountView in ParticlesView.swift (alive count and capacity), not StatsView.
+- `2026-10-19T11:47:47Z`: Related: #139 (toggle to hide overlays).
+
+---
+
+## 136: Paint Drops does not splatter in the demo app: the model drops eventBursts
+
++++
+status: open
+priority: high
+kind: bug
+labels: area:demo, effort:s
+created: 2026-10-19T11:44:54Z
++++
+
+In the demo app, Paint Drops' drops fall and vanish without splattering. particles-render, the preview, and the golden image are fine.
+
+Cause (from the code, not yet confirmed by a test): ParticlesDemoModel.currentEffect rebuilds the ParticleSystem from the model's editor state every frame and never sets eventBursts (added in #114), and the model does not store it when a preset loads. ParticlePlayer applies system.eventBursts, so the player gets none. Saving an effect from the demo loses them too.
+
+Fix: keep eventBursts in the model on load and set it in currentEffect. Test: for every sample preset, loading it into ParticlesDemoModel and reading currentEffect gives back an equal system (or at least equal encoded JSON), so fields added later cannot be silently dropped again. An editor for eventBursts in the inspector can be a separate issue.
+
+---
+
+## 137: Category mask UI is confusing
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T11:46:26Z
+updated: 2026-10-19T11:46:27Z
++++
+
+CategoryMaskView (InspectorControls.swift) shows a row of eight toggle buttons numbered 1-8 for each mask (Collides With, Feels Fields, and Categories on colliders and fields). Problems:
+- The numbers mean nothing; categories have no names.
+- Only bits 0-7 are shown, but masks are 32 bits and default to all bits set, so 24 set bits are invisible and cannot be changed.
+- No All or None, and no way to see which colliders or fields an emitter will actually feel.
+Ideas: named categories per scene (for example Floor, Walls, Wind) stored with the effect; a menu or popover of checkboxes with All and None; show the colliders and fields an emitter matches (or highlight them in the viewport). Related: the next issue on having one mask instead of two.
+
+- `2026-10-19T11:47:47Z`: Related: #138 (merging the two emitter masks would simplify this UI).
+
+---
+
+## 138: One mask per emitter instead of collisionMask and fieldMask
+
++++
+status: open
+priority: low
+kind: task
+labels: area:simulation, effort:s, needs-decision
+created: 2026-10-19T11:46:26Z
+updated: 2026-10-19T11:46:27Z
++++
+
+An emitter has two masks, collisionMask (matched against Collider.categoryBitMask) and fieldMask (matched against ForceField.categoryBitMask), both UInt32. A single UInt32 would do the same job if colliders and fields use different bits: an emitter that should bounce off the floor but ignore the wind keeps the floor's bit and drops the wind's.
+Trade-off: with one mask, colliders and fields share one 32-bit category space, and a bit used by both a collider and a field cannot be split per emitter. Two masks allow that but are more to explain and edit (and the UI, previous issue, shows both).
+Decide whether to merge. If yes: add ParticleEmitter.categoryMask, decode old files by combining (an emitter matches a collider when collisionMask matches, and a field when fieldMask matches, so map carefully or keep reading the old keys), update docs, the inspector, and CategoryMaskTests.
+
+---
+
+## 139: Toggle to show and hide the viewport overlays
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:demo, effort:xs
+created: 2026-10-19T11:46:53Z
++++
+
+The demo viewport always shows its overlays (the particle count view, ParticleCountView, and any other stats or labels drawn over the render). Add a toggle to hide and show them: a toolbar button and a keyboard shortcut (for example Cmd-Shift-H), remembered between launches (@AppStorage). Useful for clean screenshots and recordings, and alongside #135 (more stats) and #134 (debug views).
 
 ---
