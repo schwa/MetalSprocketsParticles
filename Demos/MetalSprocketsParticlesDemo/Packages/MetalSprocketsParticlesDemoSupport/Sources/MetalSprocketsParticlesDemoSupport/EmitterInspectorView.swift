@@ -143,14 +143,14 @@ struct SceneSectionView: View {
 struct SceneToolbarContent: ToolbarContent {
     @Environment(ParticlesDemoModel.self) private var model
 
+    // Explicit groups with fixed spacers: left to itself, the toolbar merges neighboring items into capsules that cut
+    // across these (the 2D toggle shared one with Next Preset).
     var body: some ToolbarContent {
         @Bindable var model = model
-        ToolbarItem(placement: .principal) {
+        ToolbarItemGroup(placement: .principal) {
             Button("Previous Preset", systemImage: "chevron.backward") { model.stepPreset(by: -1) }
                 .keyboardShortcut("[", modifiers: .command)
                 .help("Previous preset (⌘[)")
-        }
-        ToolbarItem(placement: .principal) {
             Picker("Preset", selection: $model.presetName) {
                 ForEach(model.presets) { preset in
                     Text(preset.name).tag(preset.name)
@@ -158,16 +158,16 @@ struct SceneToolbarContent: ToolbarContent {
             }
             .labelsHidden()
             .fixedSize()
-        }
-        ToolbarItem(placement: .principal) {
             Button("Next Preset", systemImage: "chevron.forward") { model.stepPreset(by: 1) }
                 .keyboardShortcut("]", modifiers: .command)
                 .help("Next preset (⌘])")
         }
+        ToolbarSpacer(.fixed, placement: .principal)
         ToolbarItem(placement: .principal) {
             Toggle("2D", systemImage: "square.on.square", isOn: $model.is2D)
                 .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
         }
+        ToolbarSpacer(.fixed, placement: .principal)
         ToolbarItem(placement: .principal) {
             Picker("Playback", selection: $model.playback) {
                 Label("Play", systemImage: "play.fill").tag(SimulationState.playing)
@@ -178,13 +178,10 @@ struct SceneToolbarContent: ToolbarContent {
             .labelsHidden()
             .fixedSize()
         }
-        ToolbarItem(placement: .principal) {
+        ToolbarSpacer(.fixed, placement: .principal)
+        ToolbarItemGroup(placement: .principal) {
             Button("Restart", systemImage: "arrow.counterclockwise") { model.restart() }
-        }
-        ToolbarItem(placement: .principal) {
             Button("Revert", systemImage: "arrow.uturn.backward") { model.reloadPreset() }
-        }
-        ToolbarItem(placement: .principal) {
             SpeedControlView()
         }
     }
