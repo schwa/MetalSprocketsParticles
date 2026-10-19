@@ -13,18 +13,32 @@ It comes with sample presets. To see them, look at the [demos](Documentation/Dem
 - **Fast.** The GPU simulates and draws everything, so effects scale to a million particles.
 - **Many emitters in one system.** Each emitter has its own shape, sprite, curves, blend mode, and settings.
 - **Emitter shapes:** point, sphere, box, plane, disc, cylinder, cone, torus, and meshes. Meshes can deform every frame.
+  Particles can also start from a list of points or from the pixels of an image, and take their colors.
 - **Collisions** with planes, spheres, boxes, and capsules. Colliders can move and spin, and fast particles do not pass
-  through thin colliders.
-- **Force fields:** wind, attractors, vortices, and turbulence.
+  through thin colliders. Particles can collide as small spheres, so large particles rest on surfaces. They can also
+  collide with the scene's depth buffer, so they hit any geometry you draw, with no colliders.
+- **Force fields:** wind, attractors, vortices, curl-noise turbulence, and paths that carry particles along a curve.
+- **Flocking.** Particles steer by their neighbors, like birds, with a spatial grid built on the GPU each frame.
 - **Sub-emitters and transitions.** Particles can make new particles when they are born, die, or collide. They can also
   turn into a different kind of particle after a time or on a hit.
-- **Triggers.** Emit when you send an event, when particles hit a collider, or when something enters a volume.
-- **Your own Metal code.** Add Metal functions that run when particles are born, move, collide, or die.
-- **Rendering:** textured sprites, animated sprite sheets, emoji, velocity stretching, lighting, soft particles that
-  fade into scene geometry, and back-to-front sorting.
+- **Triggers and events.** Emit when you send an event, when particles hit a collider, or when something enters a
+  volume. The GPU can also report each hit or death to your app, with its position and speed, for sounds and decals.
+- **Your own Metal code.** Add Metal functions that run when particles are born, move, collide, or die. They can change
+  each particle's color and size and keep up to four values of their own between frames.
+- **Rendering:**
+  - Textured sprites, animated sprite sheets, emoji, velocity stretching, and back-to-front sorting.
+  - Small 3D meshes, such as coins or debris, that tumble as they fly.
+  - Trails behind each particle, and ribbons that join an emitter's particles into one stream.
+  - Lighting, and particles that light other particles and your scene.
+  - Soft particles that fade into scene geometry.
+- **Color:** gradients over life, by speed, by position, or a random mix of two. Particles can also take their color
+  from an image as they move.
+- **Scale.** Emitters can emit less when they are far away, and skip work when they are out of view.
 - **Interactive.** Move colliders, force fields, and emitters every frame, or bind them to a point such as the mouse, a
   hand, or an object in your scene.
-- **Effect files.** Save and load effects as JSON, including your Metal code. Sample presets to start from.
+- **Debugging.** Show particles as wireframes or in false colors by emitter, age, speed, or overlap. See how many
+  particles are born and die each second.
+- **Effect files.** Save and load effects as JSON, including your Metal code and images. Sample presets to start from.
 - **Video export.** Render any effect to a movie, offscreen.
 
 ## Usage
@@ -134,7 +148,10 @@ For soft particles, which fade where they meet your geometry, render your scene'
 To try the presets and edit effects live, open the demo app in `Demos/MetalSprocketsParticlesDemo`. Pick a preset in the
 toolbar, change any setting in the inspector, and save the result as an effect file to load in your own app.
 
-There is also a command-line tool, `particles-render`, that renders presets and effect files to images and videos.
+There are also two command-line tools:
+
+- `particles-render` renders presets and effect files to images and videos, with debug views if you want them.
+- `particles-bench` measures frame times, for particle counts or for every sample preset against a frame budget.
 
 ## 100% vibe coded
 
