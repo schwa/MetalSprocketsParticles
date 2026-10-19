@@ -37,6 +37,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Dunk](#dunk)
 - [Flare](#flare)
 - [Point Cloud](#point-cloud)
+- [Fireflies](#fireflies)
 
 ## Fountain
 
@@ -229,3 +230,9 @@ A road flare that ignites, burns, and dies out: sparks and pink smoke whose emis
 The word PARTICLES, baked as 1,500 colored points, shimmers and drifts toward the camera. Shows emitting from a point cache with per-point colors.
 
 ![point-cloud](previews/point-cloud.webp)
+
+## Fireflies
+
+Fireflies drift over a dark meadow, each blinking at its own rate. User Metal functions store a per-firefly phase and rate in ParticleState.custom at birth, then pulse ParticleState.size and color from it every step.
+
+![fireflies](previews/fireflies.webp)

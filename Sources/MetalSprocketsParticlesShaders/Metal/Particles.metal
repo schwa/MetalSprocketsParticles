@@ -538,7 +538,37 @@ struct ParticleState {
     float age;
     float lifetime;
     uint id;
+    float4 color;  // Multiplies the color over life; 1 leaves it alone. Stored as 8 bits per channel.
+    float size;    // Multiplies the size over life.
+    float4 custom; // Free for user code; kept between steps, zero at birth.
 };
+
+// The tint packed in properties.w as a color multiplier: 1 when there is none.
+static float4 particleTint(Particle p) {
+    uint tint = as_type<uint>(p.properties.w);
+    return tint == 0 ? float4(1) : unpack_unorm4x8_to_float(tint);
+}
+
+static void setParticleTint(thread Particle &p, float4 color) {
+    // A set tint never packs to 0 (no tint): transparent black becomes the smallest nonzero value.
+    uint tint = all(color == 1) ? 0u : max(pack_float_to_unorm4x8(saturate(color)), 1u);
+    p.properties.w = as_type<float>(tint);
+}
+
+static ParticleState makeState(Particle p, float3 position, float3 velocity, float age, float lifetime, uint id, float4 custom) {
+    return { position, velocity, age, lifetime, id, particleTint(p), p.properties.x, custom };
+}
+
+// Copies back what every slot may change; callers copy age and lifetime where their slot allows it.
+static void applyState(ParticleState state, thread Particle &p, thread float3 &position, thread float3 &velocity, thread float4 &custom) {
+    position = state.position;
+    velocity = state.velocity;
+    custom = state.custom;
+    p.properties.x = max(state.size, 0.0);
+    if (any(state.color != particleTint(p))) {
+        setParticleTint(p, state.color);
+    }
+}
 using ParticleUpdateFunction = void(thread ParticleState &, float deltaTime, float time, constant float4 *parameters);
 
 // Stand-ins for missing user functions, one per table: linking one function twice into a pipeline is an error.
@@ -579,6 +609,8 @@ kernel void updateParticles(
     constant float4 *collisionParameters [[buffer(18)]],
     visible_function_table<ParticleUpdateFunction> deathFunction [[buffer(19)]],
     constant float4 *deathParameters [[buffer(20)]],
+    device float4 *attributes [[buffer(21)]],
+    constant uint &attributeCount [[buffer(22)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -589,6 +621,9 @@ kernel void updateParticles(
     uint id = spawn.sliceStart + slot;
     Particle p = particles[id];
     float dt = uniforms.deltaTime;
+    // ParticleState.custom. The buffer only covers every particle when some emitter has user functions.
+    bool hasAttributes = id < attributeCount;
+    float4 custom = hasAttributes ? attributes[id] : float4(0);
 
     if (spawn.kill != 0) {
         p.position.w = 0;
@@ -604,16 +639,19 @@ kernel void updateParticles(
         float birthAge;
         p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge);
         dt *= birthAge;
+        custom = float4(0);
         if (uniforms.hasSpawnFunction != 0) {
             // The user sees world space, like the update function; deltaTime is 0 at birth.
-            ParticleState state {
+            ParticleState state = makeState(p,
                 (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz,
                 (uniforms.simulationToWorld * float4(p.velocity.xyz, 0)).xyz,
-                p.position.w, p.velocity.w, id
-            };
+                p.position.w, p.velocity.w, id, custom);
             spawnFunction[0](state, 0, uniforms.time, spawnParameters);
-            p.position.xyz = (uniforms.worldToSimulation * float4(state.position, 1)).xyz;
-            p.velocity.xyz = (uniforms.worldToSimulation * float4(state.velocity, 0)).xyz;
+            float3 position;
+            float3 velocity;
+            applyState(state, p, position, velocity, custom);
+            p.position.xyz = (uniforms.worldToSimulation * float4(position, 1)).xyz;
+            p.velocity.xyz = (uniforms.worldToSimulation * float4(velocity, 0)).xyz;
             p.velocity.w = max(state.lifetime, 1e-4);
         }
     }
@@ -622,6 +660,9 @@ kernel void updateParticles(
     float age = p.position.w;
     if (lifetime <= 0 || age >= lifetime) {
         particles[id] = p;
+        if (hasAttributes) {
+            attributes[id] = custom;
+        }
         return;
     }
     float previousAge = age;
@@ -640,10 +681,9 @@ kernel void updateParticles(
     velocity *= max(0.0, 1.0 - uniforms.drag * dt);
     position += velocity * dt;
     if (uniforms.hasUpdateFunction != 0) {
-        ParticleState state { position, velocity, age, lifetime, id };
+        ParticleState state = makeState(p, position, velocity, age, lifetime, id, custom);
         updateFunction[0](state, dt, uniforms.time, updateParameters);
-        position = state.position;
-        velocity = state.velocity;
+        applyState(state, p, position, velocity, custom);
     }
     // After spawn spread, fields, turbulence, and user code, before collisions.
     constrainToPlane(position, velocity, uniforms);
@@ -728,18 +768,16 @@ kernel void updateParticles(
     // Event functions may also change age and lifetime: setting age to lifetime kills the particle, and a death
     // function that raises lifetime keeps it alive. Collision runs first, so it can kill.
     if (hit && uniforms.hasCollisionFunction != 0) {
-        ParticleState state { position, velocity, age, lifetime, id };
+        ParticleState state = makeState(p, position, velocity, age, lifetime, id, custom);
         collisionFunction[0](state, dt, uniforms.time, collisionParameters);
-        position = state.position;
-        velocity = state.velocity;
+        applyState(state, p, position, velocity, custom);
         age = state.age;
         lifetime = state.lifetime;
     }
     if (age >= lifetime && uniforms.hasDeathFunction != 0) {
-        ParticleState state { position, velocity, age, lifetime, id };
+        ParticleState state = makeState(p, position, velocity, age, lifetime, id, custom);
         deathFunction[0](state, dt, uniforms.time, deathParameters);
-        position = state.position;
-        velocity = state.velocity;
+        applyState(state, p, position, velocity, custom);
         age = state.age;
         lifetime = state.lifetime;
     }
@@ -792,6 +830,9 @@ kernel void updateParticles(
                 child.velocity.w = lifetime;
             }
             particles[sub.childSliceStart + childSlot] = child;
+            if (sub.childSliceStart + childSlot < attributeCount) {
+                attributes[sub.childSliceStart + childSlot] = float4(0);
+            }
         }
         // A transition: the parent turns into its children. On-death sub-emitters listed after this one fire too.
         if (count > 0 && sub.replacesParent != 0) {
@@ -804,6 +845,9 @@ kernel void updateParticles(
     p.position = float4(position, age);
     p.velocity = float4(velocity, lifetime);
     particles[id] = p;
+    if (hasAttributes) {
+        attributes[id] = custom;
+    }
 
     // Statistics: one atomic per SIMD group, not per particle. Particles that were already dead returned earlier.
     if (uniforms.countsAlive != 0) {

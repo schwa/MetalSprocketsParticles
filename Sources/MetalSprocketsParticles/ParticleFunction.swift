@@ -39,6 +39,9 @@ public struct ParticleFunction: Sendable, Hashable, Codable {
         float age;       // Seconds since birth.
         float lifetime;  // Seconds the particle lives.
         uint id;         // Index in the system's particle buffer.
+        float4 color;    // Multiplies the color over life; 1 leaves it alone. Kept at 8 bits per channel.
+        float size;      // Multiplies the size over life (starts at the emitter's size variation).
+        float4 custom;   // Free for your own data; kept between steps, zero at birth.
     };
 
     """

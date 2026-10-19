@@ -205,6 +205,9 @@ public final class ParticleSystemRuntime {
 
     public let device: MTLDevice
     private(set) var buffer: MTLBuffer
+    /// `ParticleState.custom`, one float4 per particle. Made the first time an emitter has user functions, so other
+    /// systems do not pay for it; dropped when the particle buffer is rebuilt.
+    private(set) var attributes: MTLBuffer?
     let library: ShaderLibrary
     private let sampler: MTLSamplerState
     /// Bound in place of a missing texture; the shader ignores it.
@@ -354,6 +357,7 @@ public final class ParticleSystemRuntime {
             level = nextLevel
         }
         buffer = try Self.makeBuffer(device: device, count: start)
+        attributes = nil
         appliedLayout = []
         self.emitters = created
         subEmitterInstances = children
@@ -471,7 +475,23 @@ public final class ParticleSystemRuntime {
     ) throws -> some Element {
         // swiftlint:enable discouraged_optional_collection
         let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
+        try makeAttributesIfNeeded(for: plan)
         return try encode(plan, sorts: try sorts(view: view))
+    }
+
+    private func makeAttributesIfNeeded(for plan: FramePlan) throws {
+        guard attributes == nil, plan.dispatches.contains(where: { dispatch in
+            let uniforms = dispatch.uniforms
+            return uniforms.hasUpdateFunction | uniforms.hasSpawnFunction | uniforms.hasCollisionFunction | uniforms.hasDeathFunction != 0
+        }) else {
+            return
+        }
+        // New Metal buffers are zero-filled, which is what custom starts as.
+        guard let attributes = device.makeBuffer(length: buffer.length / MemoryLayout<Particle>.stride * MemoryLayout<SIMD4<Float>>.stride, options: .storageModeShared) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        attributes.label = "Particle attributes"
+        self.attributes = attributes
     }
 
     /// Records the GPU work for `plan`, then any sorts. No CPU state changes here.
@@ -483,6 +503,9 @@ public final class ParticleSystemRuntime {
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
         let buffer = buffer
+        // Without attributes, a count of 0 keeps the one-entry placeholder unread.
+        let attributes = attributes ?? placeholderMesh.vertices
+        let attributeCount = self.attributes == nil ? UInt32(0) : UInt32(buffer.length / MemoryLayout<Particle>.stride)
         let functionTables = try dispatches.map(functionTables)
         let sortKernels = sortKernels
         return try ComputePass {
@@ -507,6 +530,8 @@ public final class ParticleSystemRuntime {
                 .parameter(ParticleFunctionSlot.collision.parametersName, values: tables.parameters[2])
                 .parameter(ParticleFunctionSlot.death.parametersName, values: tables.parameters[3])
                 .parameter("particles", buffer: buffer)
+                .parameter("attributes", buffer: attributes)
+                .parameter("attributeCount", value: attributeCount)
                 .parameter("uniforms", value: dispatches[index].uniforms)
                 // Never bind an empty array; the counts in uniforms keep the padding unused.
                 .parameter("colliders", values: dispatches[index].colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : dispatches[index].colliders)

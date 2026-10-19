@@ -2314,12 +2314,13 @@ Draw particles as connected strips instead of separate sprites: trails behind sp
 ## 110: Custom particle attributes, and color and size in ParticleState
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:m
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:05:05Z
+closed: 2026-10-19T02:05:05Z
 +++
 
 User Metal functions (#86-89) see only position, velocity, age, lifetime, and id. Add color and size, and a few custom float4 attributes per particle that functions can read and write and that persist between steps (Niagara and VFX Graph attributes). Lets functions do things like change color on collision, store a phase or target, or pass state from spawn to update. Costs particle memory, so make the custom ones optional per emitter.
