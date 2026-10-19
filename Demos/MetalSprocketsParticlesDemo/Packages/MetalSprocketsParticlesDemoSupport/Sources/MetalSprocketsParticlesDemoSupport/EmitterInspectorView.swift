@@ -1,5 +1,6 @@
 import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
+import SwiftMesh
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -20,6 +21,9 @@ struct EmitterInspectorView: View {
                 EmitterSectionView()
                 EmissionSectionView(settings: $model.selectedEmitter.settings, capacity: $model.selectedEmitter.editableCapacity)
                 ShapeSectionView(settings: $model.selectedEmitter.settings)
+                if [.mesh, .points].contains(model.selectedEmitter.settings.shape.kind) {
+                    ShapeSourceSectionView(emitter: $model.selectedEmitter)
+                }
                 MotionSectionView(emitter: $model.selectedEmitter)
                 AppearanceSectionView(emitter: $model.selectedEmitter)
                 CollisionSectionView(settings: $model.selectedEmitter.settings)
@@ -332,6 +336,104 @@ struct EmissionSectionView: View {
     }
 }
 
+/// Where the Mesh and Point Cache shapes get their data: a mesh (built in, or a model file) with an optional wave, or
+/// points from an image (or a point cache from a saved effect).
+struct ShapeSourceSectionView: View {
+    @Binding var emitter: EmitterDescription
+    @State private var isImporting = false
+    @State private var importing = Importing.model
+    @State private var isShowingError = false
+    @State private var errorMessage = ""
+
+    enum Importing {
+        case model
+        case image
+    }
+
+    var body: some View {
+        Section("Shape Source") {
+            if emitter.settings.shape.kind == .mesh {
+                LabeledContent("Mesh") {
+                    Menu(emitter.mesh.map { "\($0.positions.count) vertices" } ?? "None") {
+                        ForEach(DemoMesh.allCases) { choice in
+                            Button(choice.rawValue) { emitter.mesh = choice.mesh }
+                        }
+                        Divider()
+                        Button("Model File…") {
+                            importing = .model
+                            isImporting = true
+                        }
+                    }
+                    .fixedSize()
+                }
+                Toggle("Wave", isOn: $emitter.hasWaveDeformation)
+                    .help("Ripples the mesh, so particles born on it move with the wave.")
+                if emitter.hasWaveDeformation {
+                    ParameterSliderView("Amplitude", value: $emitter.waveAmplitude, in: 0...1)
+                    ParameterSliderView("Wavelength", value: $emitter.waveLength, in: 0.1...5)
+                    ParameterSliderView("Speed", value: $emitter.waveSpeed, in: 0...5)
+                }
+            } else {
+                LabeledContent("Points") {
+                    HStack {
+                        Button(emitter.image == nil ? "From Image…" : "Replace Image…") {
+                            importing = .image
+                            isImporting = true
+                        }
+                        if emitter.image != nil || emitter.points != nil {
+                            Button("Clear", role: .destructive) {
+                                emitter.image = nil
+                                emitter.points = nil
+                            }
+                        }
+                    }
+                }
+                if emitter.image != nil {
+                    ParameterSliderView("Points", value: $emitter.editableImage.editablePointCount, in: 100...100_000, format: .number.precision(.fractionLength(0)))
+                    ParameterSliderView("Width", value: $emitter.editableImage.width, in: 0.1...10)
+                    Picker("Weighting", selection: $emitter.editableImage.weighting) {
+                        ForEach(EmitterImage.Weighting.allCases, id: \.self) { weighting in
+                            Text(weighting.rawValue.capitalized).tag(weighting)
+                        }
+                    }
+                    .help("Alpha: opaque pixels emit (logos, emoji). Brightness: bright pixels emit more (photos, glows).")
+                    Toggle("Use Image Colors", isOn: $emitter.editableImage.usesColors)
+                } else if let points = emitter.points {
+                    LabeledContent("Point Cache", value: "\(points.count) points")
+                }
+            }
+        }
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: importing == .image ? [.image] : [.threeDContent]) { result in
+            load(result)
+        }
+        .alert("Shape Source", isPresented: $isShowingError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+
+    private func load(_ result: Result<URL, Error>) {
+        do {
+            let url = try result.get()
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+            if importing == .image {
+                emitter.image = try EmitterImage.choosing(data: Data(contentsOf: url), replacing: emitter.image)
+            } else {
+                emitter.mesh = try Mesh.loadingFirstMesh(from: url, device: ParticleSystemRuntime.defaultDevice())
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            isShowingError = true
+        }
+    }
+}
+
 struct ShapeSectionView: View {
     @Binding var settings: ParticleEmitter
 
@@ -400,6 +502,12 @@ struct AppearanceSectionView: View {
 
     var body: some View {
         Section("Appearance") {
+            Picker("Draw As", selection: $emitter.settings.drawing) {
+                ForEach(ParticleDrawing.allCases.filter { $0 != .custom || emitter.settings.drawing == .custom }) { drawing in
+                    Text(drawing.rawValue).tag(drawing)
+                }
+            }
+            .help("Sprites, or a small mesh per particle (lit, turned by the particle's orientation and spin).")
             KindPicker("Sprite", selection: $emitter.sprite)
             KindPicker("Blend", selection: $emitter.settings.blendMode)
             KindPicker("Sort", selection: $emitter.settings.sortMode)
@@ -563,6 +671,7 @@ struct ImageSequenceEditorView: View {
         Stepper("Columns: \(sequence.columns)", value: $sequence.gridColumns, in: 1...16)
         ParameterSliderView("Frame Rate", value: $sequence.frameRate, in: 0...60)
         ParameterSliderView("Rate Variation", value: $sequence.frameRateVariation, in: 0...30)
+        ParameterSliderView("Start Frame", value: $sequence.initialFrame, in: 0...16)
         ParameterSliderView("Start Frame Variation", value: $sequence.initialFrameVariation, in: 0...16)
         KindPicker("Playback", selection: $sequence.mode)
     }

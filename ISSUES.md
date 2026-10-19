@@ -3445,16 +3445,20 @@ Found by an audit of every public setting in the description types against the d
 ## 165: Inspector: mesh particles, emitter meshes, point caches, emitter images
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T21:37:17Z
+updated: 2026-10-19T22:13:53Z
+closed: 2026-10-19T22:13:53Z
 +++
 
 Inputs that need data, not just numbers: ParticleEmitter.particleMesh (mesh particles); EmitterDescription.mesh (for the mesh shape), points (point caches), image (EmitterImage: data, pointCount, weighting, usesColors), meshDeformation; ImageSequence.initialFrame. Pickers could offer SwiftMesh primitives, the teapot, and files (images, OBJ).
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:13:53Z`: Done. Appearance: Draw As (sprite, cube, tetrahedron, coin; a custom triangle mesh from a saved effect shows as Custom Mesh and is kept). Sprite sheet: Start Frame (initialFrame). New Shape Source section, shown for the Mesh and Point Cache shapes: Mesh picks a SwiftMesh teapot, sphere, torus, cube, or cylinder, or the first mesh in a model file Model I/O reads (OBJ, USD, ...), with a Wave deformation (amplitude, wavelength, speed); Point Cache takes points from an image (points, width, weighting, use image colors; Replace keeps the settings) or shows an existing point cache's size, with Clear. Tests: Draw As mapping, built-in meshes, model file loading (an OBJ cube, and a file with no mesh), wave edits, image choice. The model-file test caught that MDLAsset needs an MTKMeshBufferAllocator for SwiftMesh's MetalKit conversion. Not done: making a point cache from scratch other than from an image (none of the presets need it).
 
 ---
 

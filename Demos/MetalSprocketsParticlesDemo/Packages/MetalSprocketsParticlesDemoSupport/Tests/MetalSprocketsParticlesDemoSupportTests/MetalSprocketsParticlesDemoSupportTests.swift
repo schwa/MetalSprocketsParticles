@@ -4,6 +4,7 @@ import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
 import MetalSprocketsParticlesSamples
 import simd
+import SwiftMesh
 import SwiftUI
 import Testing
 
@@ -62,6 +63,86 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("") == nil)
         #expect(CommittedNumberField.parse("12a") == nil)
         #expect(CommittedNumberField.parse("-5") == nil)
+    }
+
+    /// Draw As, shape meshes, point sources, and the sprite sheet's start frame (#165).
+    @Test func drawAsMapsToParticleMeshes() {
+        var emitter = ParticleEmitter()
+        #expect(emitter.drawing == .sprite)
+        emitter.drawing = .coin
+        #expect(emitter.particleMesh == .coin)
+        emitter.particleMesh = .triangles(positions: [.zero, [1, 0, 0], [0, 1, 0]], normals: [[0, 0, 1], [0, 0, 1], [0, 0, 1]])
+        #expect(emitter.drawing == .custom)
+        // A custom mesh is kept, never made here.
+        emitter.drawing = .custom
+        #expect(emitter.drawing == .custom)
+        emitter.drawing = .sprite
+        #expect(emitter.particleMesh == nil)
+    }
+
+    @Test func demoMeshesHaveTriangles() {
+        for choice in DemoMesh.allCases {
+            #expect(choice.mesh.positions.count >= 4, "\(choice.rawValue)")
+        }
+    }
+
+    @Test func modelFilesLoadTheirFirstMesh() throws {
+        let url = FileManager.default.temporaryDirectory.appending(path: "tmp-cube-\(UUID().uuidString).obj")
+        let obj = """
+        v 0 0 0
+        v 1 0 0
+        v 1 1 0
+        v 0 1 0
+        v 0 0 1
+        v 1 0 1
+        v 1 1 1
+        v 0 1 1
+        f 1 2 3 4
+        f 5 8 7 6
+        f 1 5 6 2
+        f 2 6 7 3
+        f 3 7 8 4
+        f 4 8 5 1
+        """
+        try obj.write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let mesh = try Mesh.loadingFirstMesh(from: url, device: ParticleSystemRuntime.defaultDevice())
+        #expect(!mesh.positions.isEmpty)
+        let empty = FileManager.default.temporaryDirectory.appending(path: "tmp-empty-\(UUID().uuidString).obj")
+        try "# nothing".write(to: empty, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: empty) }
+        #expect(throws: (any Error).self) { try Mesh.loadingFirstMesh(from: empty, device: ParticleSystemRuntime.defaultDevice()) }
+    }
+
+    @Test func waveDeformationEdits() {
+        var emitter = EmitterDescription("Mesh", settings: ParticleEmitter())
+        emitter.waveAmplitude = 5 // Ignored while off.
+        #expect(emitter.meshDeformation == .none)
+        emitter.hasWaveDeformation = true
+        emitter.waveAmplitude = 0.3
+        emitter.waveLength = 2
+        emitter.waveSpeed = 0.5
+        #expect(emitter.meshDeformation == .wave(amplitude: 0.3, wavelength: 2, speed: 0.5))
+        emitter.hasWaveDeformation = false
+        #expect(emitter.meshDeformation == .none)
+    }
+
+    @Test func emitterImagesKeepTheirSettingsWhenReplaced() throws {
+        let png = try #require(NSImage(size: NSSize(width: 4, height: 4), flipped: false) { rect in
+            NSColor.white.setFill()
+            rect.fill()
+            return true
+        }.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0)?.representation(using: .png, properties: [:]) })
+        var emitter = EmitterDescription("Image", settings: ParticleEmitter())
+        emitter.editableImage.width = 9 // Ignored without an image.
+        #expect(emitter.image == nil)
+        emitter.image = try EmitterImage.choosing(data: png, replacing: nil)
+        emitter.editableImage.width = 3
+        emitter.editableImage.editablePointCount = 0
+        emitter.image = try EmitterImage.choosing(data: png, replacing: emitter.image)
+        #expect(emitter.image?.width == 3)
+        #expect(emitter.image?.pointCount == 1)
+        #expect(throws: (any Error).self) { try EmitterImage.choosing(data: Data("no".utf8), replacing: nil) }
     }
 
     /// Particle lights and the scene's lights and ambient light (#164).
