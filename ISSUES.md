@@ -2654,14 +2654,18 @@ Trails (#109) are per particle. Add a mode that draws one ribbon through all of 
 ## 129: Space trail points by time, not by step
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:rendering, effort:s
 created: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:35:38Z
+closed: 2026-10-19T12:35:38Z
 +++
 
 Trail points (#109) are recorded once per simulation step, so a trail covers less time at higher frame rates. Add a point interval in seconds: record a point only when that much time has passed since the last, and move the head point every step so the ribbon still reaches the particle.
+
+- `2026-10-19T12:35:38Z`: Done: ParticleTrail.pointInterval (seconds; 0 keeps one point per step). The head point follows the particle every step; a new point is pushed only once pointInterval has passed since the head was recorded (the age is kept in each trail point's w). Trails then cover pointCount x pointInterval seconds at any frame rate, plus the partly covered newest interval.
 
 ---
 

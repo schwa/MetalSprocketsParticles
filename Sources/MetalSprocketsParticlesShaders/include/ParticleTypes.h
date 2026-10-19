@@ -293,6 +293,8 @@ typedef struct {
     // 0 for emitters without trails.
     uint32_t trailPointCount;
     uint32_t trailStride;
+    // Seconds between recorded trail points; 0 records one every step. Each point's w is the age it was recorded at.
+    float trailPointInterval;
     // Flocking: add steering[id].xyz (from the flocking pass) to velocity, then keep speed in flockSpeedRange.
     uint32_t flocks;
     simd_float2 flockSpeedRange;

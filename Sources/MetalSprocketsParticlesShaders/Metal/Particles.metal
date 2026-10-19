@@ -677,18 +677,24 @@ static void constrainToPlane(thread float3 &position, thread float3 &velocity, c
     velocity -= normal * dot(velocity, normal);
 }
 
-// Shifts the trail one point toward the tail and puts `position` at the head; `reset` fills it with `position`.
-static void pushTrail(device float4 *trails, uint base, uint count, float3 position, bool reset) {
+// Records `position` at the trail's head. Every step (interval 0), or when `interval` seconds have passed since the head
+// was recorded, the trail shifts one point toward the tail first; otherwise the head just follows the particle. Each
+// point's w is the age it was recorded at. `reset` fills the trail with `position` at `age`.
+static void pushTrail(device float4 *trails, uint base, uint count, float3 position, bool reset, float age, float interval) {
     if (reset) {
         for (uint i = 0; i < count; i++) {
-            trails[base + i] = float4(position, 1);
+            trails[base + i] = float4(position, age);
         }
+        return;
+    }
+    if (interval > 0 && age - trails[base].w < interval) {
+        trails[base].xyz = position;
         return;
     }
     for (uint i = count - 1; i > 0; i--) {
         trails[base + i] = trails[base + i - 1];
     }
-    trails[base] = float4(position, 1);
+    trails[base] = float4(position, age);
 }
 
 static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *events, ParticleEventKind kind, float3 position, float3 velocity, float time, uint emitterIndex, uint colliderIndex) {
@@ -1010,7 +1016,7 @@ kernel void updateParticles(
             particles[sub.childSliceStart + childSlot] = child;
             SimulationUniforms childUniforms = subEmitterUniforms[i];
             if (childUniforms.trailPointCount > 1 && childUniforms.trailStride > 0) {
-                pushTrail(trails, (sub.childSliceStart + childSlot) * childUniforms.trailStride, childUniforms.trailPointCount, child.position.xyz, true);
+                pushTrail(trails, (sub.childSliceStart + childSlot) * childUniforms.trailStride, childUniforms.trailPointCount, child.position.xyz, true, child.position.w, 0);
             }
             if (sub.childSliceStart + childSlot < attributeCount) {
                 attributes[sub.childSliceStart + childSlot] = float4(0);
@@ -1029,7 +1035,7 @@ kernel void updateParticles(
     particles[id] = p;
     if (uniforms.trailPointCount > 1 && uniforms.trailStride > 0) {
         // New particles start with the whole trail at their position, so they do not streak from the slot's last one.
-        pushTrail(trails, id * uniforms.trailStride, uniforms.trailPointCount, position, born);
+        pushTrail(trails, id * uniforms.trailStride, uniforms.trailPointCount, position, born, age, uniforms.trailPointInterval);
     }
     if (hasAttributes) {
         attributes[id] = custom;

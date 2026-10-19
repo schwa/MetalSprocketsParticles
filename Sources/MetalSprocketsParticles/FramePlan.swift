@@ -239,6 +239,7 @@ extension ParticleSystemRuntime {
         uniforms.diesOnCollision = settings.diesOnCollision ? 1 : 0
         // The stride is filled in once the trail buffer is sized, after planning.
         uniforms.trailPointCount = UInt32(settings.trail?.clampedPointCount ?? 0)
+        uniforms.trailPointInterval = max(settings.trail?.pointInterval ?? 0, 0)
         uniforms.collisionRadius = max(settings.collisionRadius, 0)
         uniforms.ordersBirths = settings.ribbon == nil ? 0 : 1
         if settings.colorByPositionAtBirth, settings.colorByPosition != nil {

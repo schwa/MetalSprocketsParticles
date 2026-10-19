@@ -97,6 +97,33 @@ struct ParticleTrailTests {
         #expect(litColumns.count > 22)
     }
 
+    /// Head-to-tail length of an 8-point trail after 0.5 s at `stepsPerSecond`.
+    func trailLength(stepsPerSecond: Int, interval: Float) throws -> Float {
+        let runner = try Runner()
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: mover {
+            $0.trail = ParticleTrail(pointCount: 8, pointInterval: interval)
+        })
+        system.burst(1)
+        for _ in 0..<(stepsPerSecond / 2) {
+            try runner.run(try system.simulate(deltaTime: 1 / Float(stepsPerSecond)))
+        }
+        let points = try trail(system, particle: 0)
+        return points[0].x - points[7].x
+    }
+
+    @Test func timedTrailsCoverTheSameTimeAtAnyFrameRate() throws {
+        // 8 points 0.05 s apart at 6 units per second: 7 full intervals (2.1 units) plus however much of the current one
+        // the moving head has covered, so 2.1 to 2.4 units at 60 and at 120 steps per second.
+        let at60 = try trailLength(stepsPerSecond: 60, interval: 0.05)
+        let at120 = try trailLength(stepsPerSecond: 120, interval: 0.05)
+        #expect((2.0...2.5).contains(at60))
+        #expect((2.0...2.5).contains(at120))
+        // Per step, the 120 fps trail covers half the time.
+        let perStep60 = try trailLength(stepsPerSecond: 60, interval: 0)
+        let perStep120 = try trailLength(stepsPerSecond: 120, interval: 0)
+        #expect(abs(perStep120 * 2 - perStep60) < 0.05)
+    }
+
     @Test func trailsRoundTripThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.trail = ParticleTrail(pointCount: 24, tapers: false, fades: true)
