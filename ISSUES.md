@@ -2469,16 +2469,19 @@ Let particles emit light onto other particles and, through the host, onto scene 
 ## 119: Mesh particles
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:37:52Z
+closed: 2026-10-19T02:37:52Z
 +++
 
 Draw each particle as a small 3D mesh instead of a sprite: debris, rocks, leaves, coins, confetti with thickness. Unity and Niagara both have mesh renderers. Instanced draw of a SwiftMesh mesh with the particle's position, rotation (needs a full 3D orientation per particle), scale, and color; lit by the particle lights.
 
 - `2026-10-19T00:16:31Z`: Related: #118 (mesh particles would be lit by particle lights) and #110 (needs a full 3D orientation per particle).
+- `2026-10-19T02:37:52Z`: Done: ParticleEmitter.particleMesh (ParticleMesh: cube, tetrahedron, coin, or custom triangles, also from a SwiftMesh mesh) draws each particle as an instanced 3D shape with depth testing. Full 3D orientation without new particle storage: each particle tumbles about a random axis hashed from its slot by its existing rotation angle. Lit by scene and particle lights with real normals. Limitation: collisions still treat particles as points, so shapes sink into colliders by up to their size (visible in Coin Shower); a per-particle collision radius would fix it.
 
 ---
 

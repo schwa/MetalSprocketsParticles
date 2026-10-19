@@ -43,6 +43,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Magic Loop](#magic-loop)
 - [Torch Avenue](#torch-avenue)
 - [Ember Glow](#ember-glow)
+- [Coin Shower](#coin-shower)
 
 ## Fountain
 
@@ -271,3 +272,9 @@ Two rows of torches recede into the night. Each torch uses distance LOD: it emit
 Smoke rises in the dark, lit only by the embers drifting through it. Twelve embers become point lights each frame (ParticleEmitter.light), and the lit smoke picks up their orange glow where they pass.
 
 ![ember-glow](previews/ember-glow.webp)
+
+## Coin Shower
+
+Gold coins rain down, tumble, and bounce on the floor. Each particle is drawn as a small 3D coin (ParticleEmitter.particleMesh), lit with real normals, so the faces flash as they turn.
+
+![coin-shower](previews/coin-shower.webp)

@@ -164,6 +164,8 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var simulatesWhenCulled = true
     /// Makes some of this emitter's particles light the scene.
     public var light: ParticleLightEmission?
+    /// Draws each particle as this 3D shape instead of a sprite; `orientation` and the sprite are then ignored.
+    public var particleMesh: ParticleMesh?
 
     public init() {}
 }
@@ -229,6 +231,7 @@ extension ParticleEmitter {
         try container.update(&cullingRadius, .cullingRadius)
         try container.update(&simulatesWhenCulled, .simulatesWhenCulled)
         light = try container.decodeIfPresent(ParticleLightEmission.self, forKey: .light)
+        particleMesh = try container.decodeIfPresent(ParticleMesh.self, forKey: .particleMesh)
     }
 }
 

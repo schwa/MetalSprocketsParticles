@@ -1181,6 +1181,75 @@ fragment float solidDepthFragment(SolidOut in [[stage_in]]) {
     return in.position.z;
 }
 
+// Rotates `v` by `angle` radians about the unit `axis` (Rodrigues).
+static float3 rotateAbout(float3 v, float3 axis, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return v * c + cross(axis, v) * s + axis * dot(axis, v) * (1 - c);
+}
+
+// ParticleEmitter.particleMesh: instanced triangles. Each particle tumbles about its own random axis (hashed from its
+// slot) by its rotation angle, scaled by its size, at its position.
+vertex VertexOut particleMeshVertex(
+    uint vertexID [[vertex_id]],
+    uint instanceID [[instance_id]],
+    const device Particle *particles [[buffer(0)]],
+    constant RenderUniforms &uniforms [[buffer(1)]],
+    constant float4 *colorCurve [[buffer(2)]],
+    constant float *sizeCurve [[buffer(3)]],
+    const device uint2 *sortRecords [[buffer(4)]],
+    constant ParticleLightData *lights [[buffer(5)]],
+    const device ParticleLightData *particleLights [[buffer(6)]],
+    const device float4 *meshVertices [[buffer(7)]]
+) {
+    uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
+    Particle p = particles[index];
+    VertexOut out;
+    out.uv = 0;
+    out.texcoord = 0;
+    float age = p.position.w;
+    float lifetime = p.velocity.w;
+    if (lifetime <= 0 || age >= lifetime) {
+        out.position = float4(0);
+        out.color = 0;
+        out.viewDepth = 0;
+        return out;
+    }
+    float t = saturate(age / lifetime);
+    float size = sampleCurve(sizeCurve, t) * p.properties.x;
+    uint h0 = hash(index * 3u + 1u);
+    uint h1 = hash(index * 3u + 2u);
+    uint h2 = hash(index * 3u + 3u);
+    float3 axis = float3(h0, h1, h2) / 4294967295.0 * 2 - 1;
+    axis = length_squared(axis) > 1e-6 ? normalize(axis) : float3(0, 1, 0);
+    float3 local = rotateAbout(meshVertices[vertexID * 2].xyz, axis, p.rotation.x) * size;
+    float3 normal = rotateAbout(meshVertices[vertexID * 2 + 1].xyz, axis, p.rotation.x);
+    float3 center = (uniforms.model * float4(p.position.xyz, 1)).xyz;
+    float3 world = center + local;
+    out.position = uniforms.viewProjection * float4(world, 1);
+    out.color = applyColorVariation(sampleCurve(colorCurve, t), p.color);
+    uint tint = as_type<uint>(p.properties.w);
+    if (tint != 0) {
+        out.color *= unpack_unorm4x8_to_float(tint);
+    }
+    float3 toCamera = normalize(uniforms.cameraPosition - world);
+    if (uniforms.isLit != 0) {
+        float3 light = uniforms.ambientLight;
+        for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
+            light += diffuseLight(lights[i], world, normal);
+        }
+        for (uint i = 0; i < min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS)); i++) {
+            light += diffuseLight(particleLights[i], world, normal);
+        }
+        out.color.rgb *= light;
+    } else {
+        // Unlit: a little shading toward the camera so the shape reads. Both sides of a face count.
+        out.color.rgb *= 0.55 + 0.45 * abs(dot(normal, toCamera));
+    }
+    out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
+    return out;
+}
+
 fragment float4 particleFragment(
     VertexOut in [[stage_in]],
     constant RenderUniforms &uniforms [[buffer(0)]],

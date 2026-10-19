@@ -170,6 +170,8 @@ public final class ParticleSystemRuntime {
     public let particleLightBuffer: MTLBuffer
     public internal(set) var particleLightCount = 0
     var particleLightGathers: [ParticleLightGatherData] = []
+    /// Vertex buffers for `ParticleEmitter.particleMesh`, made once per shape.
+    var particleMeshBuffers: [ParticleMesh: (buffer: MTLBuffer, vertexCount: Int)] = [:]
     /// The camera of the last `render`, for LOD and culling.
     var cullingCamera: CullingCamera?
     /// Live-particle counts, one slot per recent frame; see `aliveParticleCount`.
@@ -670,9 +672,16 @@ public final class ParticleSystemRuntime {
         let placeholderSortRecords = placeholderSortRecords
         let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)), particleLightCount: particleLightCount)
         let particleLightBuffer = particleLightBuffer
-        let draws = (unsorted + sorted).map { emitter in
-            EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: sceneDepth != nil)
+        let draws = try (unsorted + sorted).map { emitter in
+            var draw = EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: sceneDepth != nil)
+            draw.mesh = try emitter.settings.particleMesh.flatMap(vertexBuffer(for:))
+            if draw.mesh != nil {
+                // Solid shapes: the fragment shader's procedural dot is fully covered at the center.
+                draw.uniforms.hasTexture = 0
+            }
+            return draw
         }
+        let meshVertexShader = try library.particleMeshVertex as VertexShader
         let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
         let buffer = buffer
         let vertexShader = try library.particleVertex as VertexShader
@@ -681,6 +690,33 @@ public final class ParticleSystemRuntime {
         let sampler = sampler
         return ForEach(Array(draws.indices), id: \.self) { index in
             let draw = draws[index]
+            if let mesh = draw.mesh {
+                try RenderPipeline(vertexShader: meshVertexShader, fragmentShader: fragmentShader) {
+                    Draw { encoder in
+                        for segment in draw.segments where segment.count > 0 {
+                            encoder.drawPrimitives(primitiveType: .triangle, vertexStart: 0, vertexCount: mesh.vertexCount, instanceCount: segment.count, baseInstance: segment.start)
+                        }
+                    }
+                }
+                .parameter("meshVertices", buffer: mesh.buffer)
+                .parameter("particles", buffer: buffer)
+                .parameter("uniforms", value: draw.uniforms)
+                .parameter("colorCurve", values: draw.colorCurve)
+                .parameter("sizeCurve", values: draw.sizeCurve)
+                .parameter("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
+                .parameter("sprite", texture: placeholderTexture)
+                .parameter("spriteSampler", samplerState: sampler)
+                .parameter("lights", values: lightData.isEmpty ? [ParticleLightData()] : lightData)
+                .parameter("particleLights", buffer: particleLightBuffer)
+                .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
+                // Shapes hide each other; only opaque ones write depth, so blended ones still show what is behind.
+                .depthCompare(function: .less, writes: draw.blendMode == .opaque)
+                .renderPipelineDescriptorTransformer { descriptor in
+                    if let attachment = descriptor.colorAttachments[0] {
+                        draw.blendMode.configure(attachment)
+                    }
+                }
+            } else {
             try RenderPipeline(vertexShader: vertexShader, fragmentShader: fragmentShader) {
                 Draw { encoder in
                     for segment in draw.segments where segment.count > 0 {
@@ -704,6 +740,7 @@ public final class ParticleSystemRuntime {
                     draw.blendMode.configure(attachment)
                 }
             }
+            }
         }
     }
 }
@@ -719,6 +756,8 @@ private struct EmitterDraw {
     /// sorted, the sorted records.
     var segments: [(start: Int, count: Int)]
     var sortRecords: MTLBuffer?
+    /// `ParticleEmitter.particleMesh`'s vertices, drawn instead of a quad.
+    var mesh: (buffer: MTLBuffer, vertexCount: Int)?
 
     struct Lighting {
         var ambient: SIMD3<Float>
