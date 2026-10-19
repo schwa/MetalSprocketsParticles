@@ -2844,3 +2844,42 @@ created: 2026-10-19T11:46:53Z
 The demo viewport always shows its overlays (the particle count view, ParticleCountView, and any other stats or labels drawn over the render). Add a toggle to hide and show them: a toolbar button and a keyboard shortcut (for example Cmd-Shift-H), remembered between launches (@AppStorage). Useful for clean screenshots and recordings, and alongside #135 (more stats) and #134 (debug views).
 
 ---
+
+## 140: 2D mode: particles all blob in the middle
+
++++
+status: new
+priority: medium
+kind: bug
+created: 2026-10-19T11:56:35Z
++++
+
+In 2D mode, particles clump together in the center of the view instead of spreading out. Screenshot: /Users/schwa/Library/Application Support/CleanShot/media/media_p1yXCD4QzP/Screenshot 2026-10-19 at 07.56.00@2x.png
+
+---
+
+## 141: Make 2D mode a single toggle
+
++++
+status: new
+priority: medium
+kind: enhancement
+created: 2026-10-19T11:56:36Z
++++
+
+2D mode should be one toggle. Turning it on should change rendering, z limits, the camera, and any other related settings together.
+
+---
+
+## 142: Add CI using xcb ci
+
++++
+status: new
+priority: medium
+kind: task
+created: 2026-10-19T11:57:41Z
++++
+
+Use `xcb ci` to generate the CI rules. Metal 4 fails on GitHub runners, so use conditional compilation to work around it, the same way other MetalSprockets projects do.
+
+---
