@@ -2566,15 +2566,18 @@ EmitterImage (#113) colors particles at birth only. Add sampling a texture each 
 ## 124: Scale particle size with camera distance
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:rendering, effort:s
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:30:20Z
+closed: 2026-10-19T12:30:20Z
 +++
 
 Distance LOD (#117) scales emission only. Optionally scale size with distance from the camera too, for example keeping a minimum on-screen size so far particles do not shrink to nothing, or growing them to fill in for lower emission.
+
+- `2026-10-19T12:30:20Z`: Done: ParticleEmitter.minimumScreenSize (half-size as a fraction of the view height; far particles never draw smaller) and lodScalesSize (grows particles by 1/sqrt of the distance LOD rate scale, so coverage stays about the same with fewer particles). Sprites and mesh particles; trails and ribbons keep their widths. Both off by default, so goldens hold.
 
 ---
 

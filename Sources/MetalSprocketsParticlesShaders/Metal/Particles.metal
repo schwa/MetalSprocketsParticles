@@ -1256,6 +1256,19 @@ vertex VertexOut particleTrailVertex(
     return out;
 }
 
+// `size` at world position `center` after the emitter's size adjustments; unchanged when they are off.
+static float adjustedSize(constant RenderUniforms &uniforms, float size, float3 center) {
+    if (uniforms.sizeScale != 1) {
+        size *= uniforms.sizeScale;
+    }
+    if (uniforms.minimumScreenSize > 0) {
+        // On screen, a half-size s at view depth d covers s * projectionScaleY / d of the half view height.
+        float depth = max(dot(center - uniforms.cameraPosition, uniforms.cameraForward), 1e-4);
+        size = max(size, uniforms.minimumScreenSize * 2 * depth / max(uniforms.projectionScaleY, 1e-6));
+    }
+    return size;
+}
+
 static bool isLive(Particle p) {
     return p.velocity.w > 0 && p.position.w < p.velocity.w;
 }
@@ -1392,6 +1405,7 @@ vertex VertexOut particleVertex(
     float3 up = uniforms.cameraUp;
     float stretch = 1;
     float3 center = (uniforms.model * float4(p.position.xyz, 1)).xyz;
+    size = adjustedSize(uniforms, size, center);
     float3 toCamera = uniforms.cameraPosition - center;
     switch (uniforms.orientationMode) {
     case ParticleOrientationModeYAligned: {
@@ -1540,9 +1554,10 @@ vertex VertexOut particleMeshVertex(
     uint h2 = hash(index * 3u + 3u);
     float3 axis = float3(h0, h1, h2) / 4294967295.0 * 2 - 1;
     axis = length_squared(axis) > 1e-6 ? normalize(axis) : float3(0, 1, 0);
+    float3 center = (uniforms.model * float4(p.position.xyz, 1)).xyz;
+    size = adjustedSize(uniforms, size, center);
     float3 local = rotateAbout(meshVertices[vertexID * 2].xyz, axis, p.rotation.x) * size;
     float3 normal = rotateAbout(meshVertices[vertexID * 2 + 1].xyz, axis, p.rotation.x);
-    float3 center = (uniforms.model * float4(p.position.xyz, 1)).xyz;
     float3 world = center + local;
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, center), p.color);

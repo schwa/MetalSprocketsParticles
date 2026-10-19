@@ -978,7 +978,10 @@ private struct EmitterDraw {
             ribbonCapacity: 0,
             ribbonWindowStart: 0,
             ribbonWindowCount: 0,
-            ribbonTapers: 0
+            ribbonTapers: 0,
+            sizeScale: settings.lodScalesSize && emitter.lodRateScale > 0 ? 1 / emitter.lodRateScale.squareRoot() : 1,
+            minimumScreenSize: max(settings.minimumScreenSize, 0),
+            projectionScaleY: projection.columns.1.y
         )
     }
 }

@@ -500,6 +500,12 @@ typedef struct {
     uint32_t ribbonWindowStart;
     uint32_t ribbonWindowCount;
     uint32_t ribbonTapers;
+    // Size adjustments, off at 1 and 0: sizeScale multiplies every particle (distance LOD compensation), and particles
+    // are never smaller on screen than minimumScreenSize (half-size as a fraction of the view height). projectionScaleY
+    // is projection[1][1], to turn sizes at a distance into screen fractions.
+    float sizeScale;
+    float minimumScreenSize;
+    float projectionScaleY;
 } RenderUniforms;
 
 typedef struct {

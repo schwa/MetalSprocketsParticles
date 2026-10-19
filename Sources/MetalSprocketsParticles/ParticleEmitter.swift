@@ -191,6 +191,12 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Joins the live particles into one ribbon in birth order instead of drawing sprites. Takes precedence over `trail`
     /// and `particleMesh`.
     public var ribbon: ParticleRibbon?
+    /// Far particles never draw smaller than this on screen: half their size as a fraction of the view height (0.002 is
+    /// about two pixels at 1080p). 0 lets them shrink with distance. Sprites and mesh particles.
+    public var minimumScreenSize: Float = 0
+    /// Grows particles as distance LOD thins them out (by 1 / sqrt of the LOD rate scale), so the effect covers about
+    /// the same area of the screen with fewer particles.
+    public var lodScalesSize = false
 
     public init() {}
 }
@@ -268,6 +274,8 @@ extension ParticleEmitter {
         flocking = try container.decodeIfPresent(ParticleFlocking.self, forKey: .flocking)
         try container.update(&collisionRadius, .collisionRadius)
         ribbon = try container.decodeIfPresent(ParticleRibbon.self, forKey: .ribbon)
+        try container.update(&minimumScreenSize, .minimumScreenSize)
+        try container.update(&lodScalesSize, .lodScalesSize)
     }
 }
 
