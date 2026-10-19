@@ -25,10 +25,6 @@ public struct ParticlesView: View {
                 .toolbar {
                     SceneToolbarContent()
                     ToolbarItem {
-                        Toggle("2D", systemImage: "square.on.square", isOn: $model.is2D)
-                            .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
-                    }
-                    ToolbarItem {
                         Toggle("Overlays", systemImage: "square.text.square", isOn: $showsOverlays)
                             .keyboardShortcut("h", modifiers: [.command, .shift])
                             .help("Show or hide the frame timing and particle count over the viewport (⇧⌘H)")

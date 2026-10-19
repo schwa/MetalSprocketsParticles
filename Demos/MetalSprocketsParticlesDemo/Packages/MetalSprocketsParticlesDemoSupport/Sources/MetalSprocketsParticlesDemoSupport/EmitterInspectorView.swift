@@ -165,6 +165,10 @@ struct SceneToolbarContent: ToolbarContent {
                 .help("Next preset (⌘])")
         }
         ToolbarItem(placement: .principal) {
+            Toggle("2D", systemImage: "square.on.square", isOn: $model.is2D)
+                .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
+        }
+        ToolbarItem(placement: .principal) {
             Picker("Playback", selection: $model.playback) {
                 Label("Play", systemImage: "play.fill").tag(SimulationState.playing)
                 Label("Pause", systemImage: "pause.fill").tag(SimulationState.paused)
