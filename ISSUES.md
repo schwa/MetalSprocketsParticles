@@ -3027,12 +3027,13 @@ Preset comments (the source of Documentation/Demos.md) mostly describe the scene
 ## 147: Particle count overlay keeps resizing, so the centered panel jumps around
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:demo, effort:xs
 created: 2026-10-19T13:43:11Z
-updated: 2026-10-19T13:43:12Z
+updated: 2026-10-19T13:48:22Z
+closed: 2026-10-19T13:48:22Z
 +++
 
 The particle count overlay at the top of the viewport (ParticleCountView in ParticlesView.swift) changes width every time its numbers change, and since it is centered (.overlay(alignment: .top)) the whole panel jumps left and right. It got worse with #135, which added the '+N/s -M/s' rates that change every update.

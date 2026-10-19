@@ -1,8 +1,10 @@
+import AppKit
 import CoreGraphics
 import MetalSprockets
 import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
 import simd
+import SwiftUI
 import Testing
 
 /// The 2D overlay demo's effects, without a window. Overlay physics (positioned bursts, view edges, the plane) are
@@ -44,6 +46,19 @@ struct OverlayDemoTests {
         model.addEmitter()
         #expect(model.emitters.last?.settings != ParticleEmitter.default2D)
         #expect(!model.currentEffect.is2D)
+    }
+
+    /// The count overlay is centered, so its width must not follow the numbers, or the panel jumps around (#147).
+    @MainActor
+    @Test func particleCountOverlayKeepsItsWidth() {
+        func width(alive: Int, births: Double, deaths: Double, finished: Bool = false) -> CGFloat {
+            let view = ParticleCountView(alive: alive, capacity: 100_000, birthsPerSecond: births, deathsPerSecond: deaths, isFinished: finished)
+            return NSHostingView(rootView: view).fittingSize.width
+        }
+        let reference = width(alive: 0, births: 0, deaths: 0)
+        #expect(width(alive: 9_980, births: 3, deaths: 17) == reference)
+        #expect(width(alive: 100_000, births: 12_345, deaths: 99_999) == reference)
+        #expect(width(alive: 100_000, births: 0, deaths: 0, finished: true) == reference)
     }
 
     @Test func spreadsAreInPointsPerSecond() {

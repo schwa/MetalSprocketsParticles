@@ -57,22 +57,30 @@ struct ParticleCountView: View {
     /// A finite effect has ended (see `ParticleSystemRuntime.isFinished`); Restart plays it again.
     var isFinished = false
 
+    /// The widest rates shown; rates are sized for them, so the panel keeps its width.
+    private static let birthTemplate = "+9,999,999/s"
+    private static let deathTemplate = "\u{2212}9,999,999/s"
+
     var body: some View {
+        // The panel is centered over the viewport, so each changing number sits in a slot sized for its widest value;
+        // otherwise every change in digit count moves the whole panel.
         HStack(alignment: .firstTextBaseline) {
-            Text(alive, format: .number)
+            FixedWidthText(alive.formatted(.number), template: capacity.formatted(.number))
                 .font(.title.bold())
             Text("/ \(capacity, format: .number) particles")
                 .font(.title3)
                 .foregroundStyle(.secondary)
-            Text("+\(birthsPerSecond, format: .number.precision(.fractionLength(0)))/s −\(deathsPerSecond, format: .number.precision(.fractionLength(0)))/s")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .help("Particles born and died per second, over the last half second")
-            if isFinished {
-                Text("Finished")
-                    .font(.title3.bold())
-                    .foregroundStyle(.orange)
+            HStack(alignment: .firstTextBaseline) {
+                FixedWidthText("+\(birthsPerSecond.formatted(.number.precision(.fractionLength(0))))/s", template: Self.birthTemplate)
+                FixedWidthText("\u{2212}\(deathsPerSecond.formatted(.number.precision(.fractionLength(0))))/s", template: Self.deathTemplate)
             }
+            .font(.title3)
+            .foregroundStyle(.secondary)
+            .help("Particles born and died per second, over the last half second")
+            // Space kept for the badge, so finishing does not widen the panel either.
+            FixedWidthText(isFinished ? "Finished" : "", template: "Finished")
+                .font(.title3.bold())
+                .foregroundStyle(.orange)
         }
         .monospacedDigit()
         .padding(.horizontal)
@@ -81,6 +89,26 @@ struct ParticleCountView: View {
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(alive) of \(capacity) particles, \(Int(birthsPerSecond)) born and \(Int(deathsPerSecond)) died per second")
+    }
+}
+
+/// `text`, right-aligned in the width `template` would take, so changing numbers do not change the layout.
+struct FixedWidthText: View {
+    let text: String
+    let template: String
+
+    init(_ text: String, template: String) {
+        self.text = text
+        self.template = template
+    }
+
+    var body: some View {
+        Text(template)
+            .hidden()
+            .overlay(alignment: .trailing) {
+                Text(text)
+                    .fixedSize()
+            }
     }
 }
 
