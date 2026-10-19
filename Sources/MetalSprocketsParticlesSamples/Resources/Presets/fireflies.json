@@ -1,1 +1,82 @@
-{"ambientLight":[0.25,0.25,0.25],"animatesColliders":false,"cameraEye":[0,1.2,5],"cameraTarget":[0,1,0],"colliders":[],"comment":"Shows: user Metal functions that store per-particle data in ParticleState.custom at birth and drive size and color from it every step. Fireflies blink at their own rates.","forceFields":[],"layers":[{"capacity":300,"id":"8B21F0C4-6A3E-4D5B-B9E2-7C1D4A0F3E61","isEmitting":true,"motion":{"kind":"Still","offset":[0,0,0],"pitch":0,"radius":1.5,"speed":1,"spin":0,"yaw":0},"name":"Fireflies","settings":{"angle":0,"angleVariation":0,"angularSpeed":0,"angularSpeedVariation":0,"birthDirection":0,"birthLocation":0,"birthRate":40,"birthRateVariation":0,"blendMode":1,"colorOverLife":{"keyframes":[{"time":0,"value":[1,1,1,1]}]},"colorVariation":[0,0,0,0],"diesOnCollision":false,"drag":0,"emissionOverTime":{"keyframes":[{"time":0,"value":1}]},"friction":0.2,"frictionVariation":0,"gravity":[0,0,0],"idleDuration":0,"inheritVelocity":0,"isLit":false,"lifetime":[6,9],"loops":true,"opacityOverLife":{"keyframes":[{"time":0,"value":0},{"time":0.1,"value":1},{"time":0.85,"value":1},{"time":1,"value":0}]},"orientation":{"billboard":{}},"position":[0,1,0],"restitution":0.4,"restitutionVariation":0,"shape":{"box":{"size":[6,1.6,3]}},"sizeOverLife":{"keyframes":[{"time":0,"value":0.07}]},"sizeVariation":0,"softness":0,"sortMode":"None","speedVariation":0,"subEmitters":[],"sweepAngle":6.283185,"triggers":[],"velocity":[0,0,0],"velocitySpread":0.1,"warmupDuration":8,"spawnFunction":{"name":"fireflySpawn","parameters":[[0.3,1.1,0,0]],"source":"// Gives each firefly its own blink: custom.x = phase, custom.y = blinks per second, custom.z = wander seed.\n[[visible]] void fireflySpawn(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    uint h = particle.id * 747796405u + 2891336453u;\n    h = ((h >> ((h >> 28u) + 4u)) ^ h) * 277803737u;\n    float a = float(h & 0xffffu) / 65535.0;\n    float b = float(h >> 16u) / 65535.0;\n    particle.custom = float4(a * 6.2831853, mix(parameters[0].x, parameters[0].y, b), a * 100.0 + b, 0);\n}"},"updateFunction":{"name":"fireflyUpdate","parameters":[[0.3,1.1,1.0,0.25]],"source":"// Blinks with the phase and rate stored at spawn: size and color pulse, and each firefly wanders on its own path.\n// parameters[0] = (slowest blinks per second, fastest, glow size, wander speed).\n[[visible]] void fireflyUpdate(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    float4 settings = parameters[0];\n    float pulse = pow(0.5 + 0.5 * sin(particle.custom.x + time * particle.custom.y * 6.2831853), 6.0);\n    particle.size = mix(0.15, settings.z, pulse);\n    particle.color = float4(mix(float3(0.15, 0.35, 0.0), float3(0.75, 1.0, 0.15), pulse), mix(0.25, 1.0, pulse));\n    float seed = particle.custom.z;\n    float3 wander = float3(sin(time * 0.7 + seed), sin(time * 0.9 + seed * 1.7) * 0.5, cos(time * 0.6 + seed * 2.3));\n    particle.velocity = mix(particle.velocity, wander * settings.w, saturate(deltaTime * 2.0));\n}"},"categoryMask":4294967295},"simulationSpace":{"world":{}},"sprite":"Soft Dot"}],"lights":[],"name":"Fireflies","trackedObjects":{}}
+{
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 1.2, 5],
+  "cameraTarget": [0, 1, 0],
+  "colliders": [],
+  "comment": "Shows: user Metal functions that store per-particle data in ParticleState.custom at birth and drive size and color from it every step. Fireflies blink at their own rates.",
+  "forceFields": [],
+  "layers": [
+    {
+      "capacity": 300,
+      "id": "8B21F0C4-6A3E-4D5B-B9E2-7C1D4A0F3E61",
+      "isEmitting": true,
+      "motion": { "kind": "Still", "offset": [0, 0, 0], "pitch": 0, "radius": 1.5, "speed": 1, "spin": 0, "yaw": 0 },
+      "name": "Fireflies",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 40,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "colorOverLife": { "keyframes": [{ "time": 0, "value": [1, 1, 1, 1] }] },
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0,
+        "emissionOverTime": { "keyframes": [{ "time": 0, "value": 1 }] },
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [6, 9],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
+            { "time": 0, "value": 0 },
+            { "time": 0.1, "value": 1 },
+            { "time": 0.85, "value": 1 },
+            { "time": 1, "value": 0 }
+          ]
+        },
+        "orientation": { "billboard": {} },
+        "position": [0, 1, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": { "box": { "size": [6, 1.6, 3] } },
+        "sizeOverLife": { "keyframes": [{ "time": 0, "value": 0.07 }] },
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0.1,
+        "warmupDuration": 8,
+        "spawnFunction": {
+          "name": "fireflySpawn",
+          "parameters": [[0.3, 1.1, 0, 0]],
+          "source": "// Gives each firefly its own blink: custom.x = phase, custom.y = blinks per second, custom.z = wander seed.\n[[visible]] void fireflySpawn(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    uint h = particle.id * 747796405u + 2891336453u;\n    h = ((h >> ((h >> 28u) + 4u)) ^ h) * 277803737u;\n    float a = float(h & 0xffffu) / 65535.0;\n    float b = float(h >> 16u) / 65535.0;\n    particle.custom = float4(a * 6.2831853, mix(parameters[0].x, parameters[0].y, b), a * 100.0 + b, 0);\n}"
+        },
+        "updateFunction": {
+          "name": "fireflyUpdate",
+          "parameters": [[0.3, 1.1, 1.0, 0.25]],
+          "source": "// Blinks with the phase and rate stored at spawn: size and color pulse, and each firefly wanders on its own path.\n// parameters[0] = (slowest blinks per second, fastest, glow size, wander speed).\n[[visible]] void fireflyUpdate(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    float4 settings = parameters[0];\n    float pulse = pow(0.5 + 0.5 * sin(particle.custom.x + time * particle.custom.y * 6.2831853), 6.0);\n    particle.size = mix(0.15, settings.z, pulse);\n    particle.color = float4(mix(float3(0.15, 0.35, 0.0), float3(0.75, 1.0, 0.15), pulse), mix(0.25, 1.0, pulse));\n    float seed = particle.custom.z;\n    float3 wander = float3(sin(time * 0.7 + seed), sin(time * 0.9 + seed * 1.7) * 0.5, cos(time * 0.6 + seed * 2.3));\n    particle.velocity = mix(particle.velocity, wander * settings.w, saturate(deltaTime * 2.0));\n}"
+        },
+        "categoryMask": 4294967295
+      },
+      "simulationSpace": { "world": {} },
+      "sprite": "Soft Dot"
+    }
+  ],
+  "lights": [],
+  "name": "Fireflies",
+  "trackedObjects": {}
+}

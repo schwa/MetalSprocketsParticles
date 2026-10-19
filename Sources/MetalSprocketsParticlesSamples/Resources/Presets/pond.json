@@ -1,314 +1,220 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    3.5,
-    5
-  ],
-  "cameraTarget" : [
-    0,
-    0,
-    0
-  ],
-  "colliders" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 3.5, 5],
+  "cameraTarget": [0, 0, 0],
+  "colliders": [
     {
-      "distance" : 0,
-      "kind" : "plane",
-      "normal" : [
-        0,
-        1,
-        0
-      ]
+      "distance": 0,
+      "kind": "plane",
+      "normal": [0, 1, 0]
     }
   ],
-  "comment" : "Shows: fixed (flat) orientation and emoji sprites. Raindrops fall into a pond and spread ripples that lie flat on the water.",
-  "forceFields" : [
-  ],
-  "layers" : [
+  "comment": "Shows: fixed (flat) orientation and emoji sprites. Raindrops fall into a pond and spread ripples that lie flat on the water.",
+  "forceFields": [],
+  "layers": [
     {
-      "capacity" : 200,
-      "id" : "1521C066-8D04-4EEF-AB7E-535361DAC79B",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 200,
+      "id": "1521C066-8D04-4EEF-AB7E-535361DAC79B",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Ripples",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 12,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Ripples",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 12,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.6,
-                0.85,
-                1,
-                1
-              ]
+              "time": 0,
+              "value": [0.6, 0.85, 1, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          1.5,
-          2.5
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [1.5, 2.5],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.9
+              "time": 0,
+              "value": 0.9
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "orientation" : {
-          "fixed" : {
-            "normal" : [
-              0,
-              1,
-              0
-            ]
+        "orientation": {
+          "fixed": {
+            "normal": [0, 1, 0]
           }
         },
-        "position" : [
-          0,
-          0.01,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "plane" : {
-            "size" : [
-              6,
-              6
-            ]
+        "position": [0, 0.01, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "plane": {
+            "size": [6, 6]
           }
         },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.02
+              "time": 0,
+              "value": 0.02
             },
             {
-              "time" : 1,
-              "value" : 0.7
+              "time": 1,
+              "value": 0.7
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0,
-          0
-        ],
-        "velocitySpread" : 0,
-        "warmupDuration" : 3
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0,
+        "warmupDuration": 3
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Ring"
+      "sprite": "Ring"
     },
     {
-      "capacity" : 200,
-      "id" : "E2C0CDB8-81F5-428F-8DFA-E89EDDBE50C4",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 200,
+      "id": "E2C0CDB8-81F5-428F-8DFA-E89EDDBE50C4",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Drops",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 40,
-        "birthRateVariation" : 0,
-        "blendMode" : 0,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Drops",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 40,
+        "birthRateVariation": 0,
+        "blendMode": 0,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                1,
-                1,
-                1
-              ]
+              "time": 0,
+              "value": [1, 1, 1, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : true,
-        "drag" : 0.1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": true,
+        "drag": 0.1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          -9.8,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          2,
-          2
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, -9.8, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [2, 2],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 4, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "plane": {
+            "size": [6, 6]
           }
         },
-        "position" : [
-          0,
-          4,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "plane" : {
-            "size" : [
-              6,
-              6
-            ]
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.12
+              "time": 0,
+              "value": 0.12
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          -6,
-          0
-        ],
-        "velocitySpread" : 0,
-        "warmupDuration" : 2
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, -6, 0],
+        "velocitySpread": 0,
+        "warmupDuration": 2
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "💧 Droplet"
+      "sprite": "💧 Droplet"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Pond",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Pond",
+  "trackedObjects": {}
 }

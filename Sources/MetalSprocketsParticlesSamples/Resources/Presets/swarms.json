@@ -1,302 +1,220 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    4,
-    6
-  ],
-  "cameraTarget" : [
-    0,
-    1.5,
-    0
-  ],
-  "colliders" : [
-  ],
-  "comment" : "Shows: local and world simulation space side by side. The gold swarm (local) travels as a tight cloud; the blue one (world) leaves a trail.",
-  "forceFields" : [
-  ],
-  "layers" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 4, 6],
+  "cameraTarget": [0, 1.5, 0],
+  "colliders": [],
+  "comment": "Shows: local and world simulation space side by side. The gold swarm (local) travels as a tight cloud; the blue one (world) leaves a trail.",
+  "forceFields": [],
+  "layers": [
     {
-      "capacity" : 1000,
-      "id" : "F2E9FA80-0691-401C-AC70-1216E59C0C7C",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Circle",
-        "offset" : [
-          -1.4,
-          1.5,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1,
-        "speed" : 1.5,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 1000,
+      "id": "F2E9FA80-0691-401C-AC70-1216E59C0C7C",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Circle",
+        "offset": [-1.4, 1.5, 0],
+        "pitch": 0,
+        "radius": 1,
+        "speed": 1.5,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Local Swarm",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 300,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Local Swarm",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 300,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                0.8,
-                0.3,
-                1
-              ]
+              "time": 0,
+              "value": [1, 0.8, 0.3, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          1.5,
-          2
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [1.5, 2],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "sphere": {
+            "radius": 0.25
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "sphere" : {
-            "radius" : 0.25
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.2,
-              "value" : 0.04
+              "time": 0.2,
+              "value": 0.04
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0,
-          0
-        ],
-        "velocitySpread" : 0.4,
-        "warmupDuration" : 2
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0.4,
+        "warmupDuration": 2
       },
-      "simulationSpace" : {
-        "local" : {
-        }
+      "simulationSpace": {
+        "local": {}
       },
-      "sprite" : "Soft Dot"
+      "sprite": "Soft Dot"
     },
     {
-      "capacity" : 1000,
-      "id" : "C9FEC005-1373-4A05-9EC1-09591039F8A1",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Circle",
-        "offset" : [
-          1.4,
-          1.5,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1,
-        "speed" : 1.5,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 1000,
+      "id": "C9FEC005-1373-4A05-9EC1-09591039F8A1",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Circle",
+        "offset": [1.4, 1.5, 0],
+        "pitch": 0,
+        "radius": 1,
+        "speed": 1.5,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "World Swarm",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 300,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "World Swarm",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 300,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.3,
-                0.7,
-                1,
-                1
-              ]
+              "time": 0,
+              "value": [0.3, 0.7, 1, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          1.5,
-          2
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [1.5, 2],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "sphere": {
+            "radius": 0.25
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "sphere" : {
-            "radius" : 0.25
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.2,
-              "value" : 0.04
+              "time": 0.2,
+              "value": 0.04
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0,
-          0
-        ],
-        "velocitySpread" : 0.4,
-        "warmupDuration" : 2
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0.4,
+        "warmupDuration": 2
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Soft Dot"
+      "sprite": "Soft Dot"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Swarms",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Swarms",
+  "trackedObjects": {}
 }

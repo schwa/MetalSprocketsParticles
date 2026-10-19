@@ -1,0 +1,7 @@
+# Build output and Xcode-managed files.
+.build/
+.swiftpm/
+DerivedData/
+*.xcassets/
+*.xcodeproj/
+*.xcworkspace/

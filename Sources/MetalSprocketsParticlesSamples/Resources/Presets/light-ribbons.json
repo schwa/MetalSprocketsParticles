@@ -1,1 +1,88 @@
-{"ambientLight":[0.25,0.25,0.25],"animatesColliders":false,"cameraEye":[0,2.4,4.4],"cameraTarget":[0,1.3,0],"colliders":[],"comment":"Shows: per-particle tapered trails (ParticleEmitter.trail) through the last 48 positions, and a vortex. Glowing particles swirl like light painting.","forceFields":[{"categoryBitMask":4294967295,"effect":{"vortex":{"center":[0,0,0],"axis":[0,1,0],"strength":1.6,"radius":0}}},{"categoryBitMask":4294967295,"effect":{"attractor":{"center":[0,1.4,0],"strength":1.8,"radius":0}}},{"categoryBitMask":4294967295,"effect":{"turbulence":{"scale":0.7,"speed":0.3,"strength":1.2}}}],"layers":[{"capacity":60,"id":"7F3A9C1E-2B5D-4E86-A0C4-9D1E6B2F8A35","isEmitting":true,"motion":{"kind":"Still","offset":[0,0,0],"pitch":0,"radius":1.5,"speed":1,"spin":0,"yaw":0},"name":"Ribbons","settings":{"angle":0,"angleVariation":0,"angularSpeed":0,"angularSpeedVariation":0,"birthDirection":0,"birthLocation":0,"birthRate":7,"birthRateVariation":0,"blendMode":1,"colorOverLife":{"keyframes":[{"time":0,"value":[0.3,0.9,1,1]},{"time":1,"value":[1,0.3,0.9,1]}]},"colorVariation":[0,0,0,0],"diesOnCollision":false,"drag":0.7,"emissionOverTime":{"keyframes":[{"time":0,"value":1}]},"friction":0.2,"frictionVariation":0,"gravity":[0,0,0],"idleDuration":0,"inheritVelocity":0,"isLit":false,"lifetime":[6,9],"loops":true,"opacityOverLife":{"keyframes":[{"time":0,"value":0},{"time":0.1,"value":1},{"time":0.85,"value":1},{"time":1,"value":0}]},"orientation":{"billboard":{}},"position":[0,1.4,0],"restitution":0.4,"restitutionVariation":0,"shape":{"torus":{"radius":1.4,"tubeRadius":0.2}},"sizeOverLife":{"keyframes":[{"time":0,"value":0.035}]},"sizeVariation":0.3,"softness":0,"sortMode":"None","speedVariation":0,"subEmitters":[],"sweepAngle":6.283185,"triggers":[],"velocity":[0,0.6,0],"velocitySpread":0.8,"warmupDuration":6,"trail":{"pointCount":48,"tapers":true,"fades":true},"categoryMask":4294967295},"simulationSpace":{"world":{}},"sprite":"Soft Dot"}],"lights":[],"name":"Light Ribbons","trackedObjects":{}}
+{
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 2.4, 4.4],
+  "cameraTarget": [0, 1.3, 0],
+  "colliders": [],
+  "comment": "Shows: per-particle tapered trails (ParticleEmitter.trail) through the last 48 positions, and a vortex. Glowing particles swirl like light painting.",
+  "forceFields": [
+    {
+      "categoryBitMask": 4294967295,
+      "effect": { "vortex": { "center": [0, 0, 0], "axis": [0, 1, 0], "strength": 1.6, "radius": 0 } }
+    },
+    {
+      "categoryBitMask": 4294967295,
+      "effect": { "attractor": { "center": [0, 1.4, 0], "strength": 1.8, "radius": 0 } }
+    },
+    { "categoryBitMask": 4294967295, "effect": { "turbulence": { "scale": 0.7, "speed": 0.3, "strength": 1.2 } } }
+  ],
+  "layers": [
+    {
+      "capacity": 60,
+      "id": "7F3A9C1E-2B5D-4E86-A0C4-9D1E6B2F8A35",
+      "isEmitting": true,
+      "motion": { "kind": "Still", "offset": [0, 0, 0], "pitch": 0, "radius": 1.5, "speed": 1, "spin": 0, "yaw": 0 },
+      "name": "Ribbons",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 7,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "colorOverLife": {
+          "keyframes": [
+            { "time": 0, "value": [0.3, 0.9, 1, 1] },
+            { "time": 1, "value": [1, 0.3, 0.9, 1] }
+          ]
+        },
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.7,
+        "emissionOverTime": { "keyframes": [{ "time": 0, "value": 1 }] },
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [6, 9],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
+            { "time": 0, "value": 0 },
+            { "time": 0.1, "value": 1 },
+            { "time": 0.85, "value": 1 },
+            { "time": 1, "value": 0 }
+          ]
+        },
+        "orientation": { "billboard": {} },
+        "position": [0, 1.4, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": { "torus": { "radius": 1.4, "tubeRadius": 0.2 } },
+        "sizeOverLife": { "keyframes": [{ "time": 0, "value": 0.035 }] },
+        "sizeVariation": 0.3,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0.6, 0],
+        "velocitySpread": 0.8,
+        "warmupDuration": 6,
+        "trail": { "pointCount": 48, "tapers": true, "fades": true },
+        "categoryMask": 4294967295
+      },
+      "simulationSpace": { "world": {} },
+      "sprite": "Soft Dot"
+    }
+  ],
+  "lights": [],
+  "name": "Light Ribbons",
+  "trackedObjects": {}
+}

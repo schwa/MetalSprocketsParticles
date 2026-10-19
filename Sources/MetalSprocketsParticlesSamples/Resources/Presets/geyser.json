@@ -1,466 +1,340 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    3,
-    8
-  ],
-  "cameraTarget" : [
-    0,
-    2.5,
-    0
-  ],
-  "colliders" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 3, 8],
+  "cameraTarget": [0, 2.5, 0],
+  "colliders": [
     {
-      "distance" : 0,
-      "kind" : "plane",
-      "normal" : [
-        0,
-        1,
-        0
-      ]
+      "distance": 0,
+      "kind": "plane",
+      "normal": [0, 1, 0]
     }
   ],
-  "comment" : "Shows: an emit/idle loop, opaque particles, screen blending, and cylinder and cone emitters. A geyser erupts water, rocks, and steam for 1.5 seconds every 4.",
-  "forceFields" : [
+  "comment": "Shows: an emit/idle loop, opaque particles, screen blending, and cylinder and cone emitters. A geyser erupts water, rocks, and steam for 1.5 seconds every 4.",
+  "forceFields": [
     {
-      "categoryBitMask" : 4294967295,
-      "effect" : {
-        "wind" : {
-          "strength" : 0.4,
-          "velocity" : [
-            0.6,
-            0,
-            0
-          ]
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "wind": {
+          "strength": 0.4,
+          "velocity": [0.6, 0, 0]
         }
       }
     }
   ],
-  "layers" : [
+  "layers": [
     {
-      "capacity" : 20000,
-      "id" : "B5362038-3213-438A-88C5-6DD196FBE523",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 20000,
+      "id": "B5362038-3213-438A-88C5-6DD196FBE523",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Water",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 8000,
-        "birthRateVariation" : 0,
-        "blendMode" : 0,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Water",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 8000,
+        "birthRateVariation": 0,
+        "blendMode": 0,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.75,
-                0.9,
-                1,
-                0.8
-              ]
+              "time": 0,
+              "value": [0.75, 0.9, 1, 0.8]
             },
             {
-              "time" : 1,
-              "value" : [
-                0.6,
-                0.8,
-                1,
-                0
-              ]
+              "time": 1,
+              "value": [0.6, 0.8, 1, 0]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.1,
-        "emissionDuration" : 1.5,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.1,
+        "emissionDuration": 1.5,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          -9.8,
-          0
-        ],
-        "idleDuration" : 2.5,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          1.5,
-          2
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, -9.8, 0],
+        "idleDuration": 2.5,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [1.5, 2],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.1,
+        "restitutionVariation": 0,
+        "shape": {
+          "cylinder": {
+            "height": 0.1,
+            "radius": 0.15
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.1,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "cylinder" : {
-            "height" : 0.1,
-            "radius" : 0.15
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.02
+              "time": 0,
+              "value": 0.02
             },
             {
-              "time" : 1,
-              "value" : 0.01
+              "time": 1,
+              "value": 0.01
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          9,
-          0
-        ],
-        "velocitySpread" : 0.8,
-        "warmupDuration" : 0
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 9, 0],
+        "velocitySpread": 0.8,
+        "warmupDuration": 0
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Soft Dot"
+      "sprite": "Soft Dot"
     },
     {
-      "capacity" : 300,
-      "id" : "C313A79C-C923-47D6-B268-EA7BBF662915",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 300,
+      "id": "C313A79C-C923-47D6-B268-EA7BBF662915",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Rocks",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 3.1415925,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 10,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 40,
-        "birthRateVariation" : 0,
-        "blendMode" : 3,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Rocks",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 3.1415925,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 10,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 40,
+        "birthRateVariation": 0,
+        "blendMode": 3,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.35,
-                0.3,
-                0.27,
-                1
-              ]
+              "time": 0,
+              "value": [0.35, 0.3, 0.27, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0.15,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.1,
-        "emissionDuration" : 1.5,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0.15, 0],
+        "diesOnCollision": false,
+        "drag": 0.1,
+        "emissionDuration": 1.5,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.8,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          -9.8,
-          0
-        ],
-        "idleDuration" : 2.5,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          3,
-          3
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.8,
+        "frictionVariation": 0,
+        "gravity": [0, -9.8, 0],
+        "idleDuration": 2.5,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [3, 3],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.3,
+        "restitutionVariation": 0,
+        "shape": {
+          "cylinder": {
+            "height": 0.1,
+            "radius": 0.2
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.3,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "cylinder" : {
-            "height" : 0.1,
-            "radius" : 0.2
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.05
+              "time": 0,
+              "value": 0.05
             }
           ]
         },
-        "sizeVariation" : 0.5,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          7,
-          0
-        ],
-        "velocitySpread" : 2,
-        "warmupDuration" : 0
+        "sizeVariation": 0.5,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 7, 0],
+        "velocitySpread": 2,
+        "warmupDuration": 0
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Triangle"
+      "sprite": "Triangle"
     },
     {
-      "capacity" : 500,
-      "id" : "E65C2C51-EA28-4867-A09D-08929F07FD9F",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 500,
+      "id": "E65C2C51-EA28-4867-A09D-08929F07FD9F",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Steam",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 3.1415925,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 40,
-        "birthRateVariation" : 0,
-        "blendMode" : 2,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Steam",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 3.1415925,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 40,
+        "birthRateVariation": 0,
+        "blendMode": 2,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.6,
-                0.65,
-                0.7,
-                1
-              ]
+              "time": 0,
+              "value": [0.6, 0.65, 0.7, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          2,
-          3
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [2, 3],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.2,
-              "value" : 0.2
+              "time": 0.2,
+              "value": 0.2
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "cone": {
+            "height": 0.6,
+            "radius": 0.5
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "cone" : {
-            "height" : 0.6,
-            "radius" : 0.5
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.2
+              "time": 0,
+              "value": 0.2
             },
             {
-              "time" : 1,
-              "value" : 0.8
+              "time": 1,
+              "value": 0.8
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          1,
-          0
-        ],
-        "velocitySpread" : 0.3,
-        "warmupDuration" : 3
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 1, 0],
+        "velocitySpread": 0.3,
+        "warmupDuration": 3
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Smoke Puff"
+      "sprite": "Smoke Puff"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Geyser",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Geyser",
+  "trackedObjects": {}
 }

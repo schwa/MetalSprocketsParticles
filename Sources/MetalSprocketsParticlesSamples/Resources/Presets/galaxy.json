@@ -1,509 +1,363 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    5,
-    4.5
-  ],
-  "cameraTarget" : [
-    0,
-    1.5,
-    0
-  ],
-  "colliders" : [
-  ],
-  "comment" : "Shows: torus emitters, a vortex force field, and an attractor. Two spiral arms of stars swirl around a bright core.",
-  "forceFields" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 5, 4.5],
+  "cameraTarget": [0, 1.5, 0],
+  "colliders": [],
+  "comment": "Shows: torus emitters, a vortex force field, and an attractor. Two spiral arms of stars swirl around a bright core.",
+  "forceFields": [
     {
-      "categoryBitMask" : 4294967295,
-      "effect" : {
-        "vortex" : {
-          "axis" : [
-            0,
-            1,
-            0
-          ],
-          "center" : [
-            0,
-            1.5,
-            0
-          ],
-          "radius" : 0,
-          "strength" : 3
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "vortex": {
+          "axis": [0, 1, 0],
+          "center": [0, 1.5, 0],
+          "radius": 0,
+          "strength": 3
         }
       }
     },
     {
-      "categoryBitMask" : 4294967295,
-      "effect" : {
-        "attractor" : {
-          "center" : [
-            0,
-            1.5,
-            0
-          ],
-          "radius" : 0,
-          "strength" : 1.2
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "attractor": {
+          "center": [0, 1.5, 0],
+          "radius": 0,
+          "strength": 1.2
         }
       }
     }
   ],
-  "layers" : [
+  "layers": [
     {
-      "capacity" : 40000,
-      "id" : "AE830274-84D7-46C3-9141-978979FE2B3D",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          1.5,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 40000,
+      "id": "AE830274-84D7-46C3-9141-978979FE2B3D",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 1.5, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Arm 1",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 4000,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Arm 1",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 4000,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.5,
-                0.6,
-                1,
-                0.8
-              ]
+              "time": 0,
+              "value": [0.5, 0.6, 1, 0.8]
             },
             {
-              "time" : 1,
-              "value" : [
-                1,
-                0.8,
-                0.6,
-                0.8
-              ]
+              "time": 1,
+              "value": [1, 0.8, 0.6, 0.8]
             }
           ]
         },
-        "colorVariation" : [
-          0.08,
-          0.3,
-          0.3,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 1.5,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0.08, 0.3, 0.3, 0],
+        "diesOnCollision": false,
+        "drag": 1.5,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          5,
-          8
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [5, 8],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "torus": {
+            "radius": 2.2,
+            "tubeRadius": 0.25
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "torus" : {
-            "radius" : 2.2,
-            "tubeRadius" : 0.25
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.1,
-              "value" : 0.012
+              "time": 0.1,
+              "value": 0.012
             },
             {
-              "time" : 0.9,
-              "value" : 0.01
+              "time": 0.9,
+              "value": 0.01
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "sizeVariation" : 0.6,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 0.9,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0,
-          0
-        ],
-        "velocitySpread" : 0.05,
-        "warmupDuration" : 6
+        "sizeVariation": 0.6,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 0.9,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0.05,
+        "warmupDuration": 6
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Soft Dot"
+      "sprite": "Soft Dot"
     },
     {
-      "capacity" : 40000,
-      "id" : "60D61EC5-D30D-4DB0-9807-3261F44483F2",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          1.5,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 3.1415925
+      "capacity": 40000,
+      "id": "60D61EC5-D30D-4DB0-9807-3261F44483F2",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 1.5, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 3.1415925
       },
-      "name" : "Arm 2",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 4000,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Arm 2",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 4000,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                0.5,
-                0.6,
-                1,
-                0.8
-              ]
+              "time": 0,
+              "value": [0.5, 0.6, 1, 0.8]
             },
             {
-              "time" : 1,
-              "value" : [
-                1,
-                0.8,
-                0.6,
-                0.8
-              ]
+              "time": 1,
+              "value": [1, 0.8, 0.6, 0.8]
             }
           ]
         },
-        "colorVariation" : [
-          0.08,
-          0.3,
-          0.3,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 1.5,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0.08, 0.3, 0.3, 0],
+        "diesOnCollision": false,
+        "drag": 1.5,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          5,
-          8
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [5, 8],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "torus": {
+            "radius": 2.2,
+            "tubeRadius": 0.25
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "torus" : {
-            "radius" : 2.2,
-            "tubeRadius" : 0.25
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.1,
-              "value" : 0.012
+              "time": 0.1,
+              "value": 0.012
             },
             {
-              "time" : 0.9,
-              "value" : 0.01
+              "time": 0.9,
+              "value": 0.01
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "sizeVariation" : 0.6,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 0.9,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0,
-          0
-        ],
-        "velocitySpread" : 0.05,
-        "warmupDuration" : 6
+        "sizeVariation": 0.6,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 0.9,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0.05,
+        "warmupDuration": 6
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Soft Dot"
+      "sprite": "Soft Dot"
     },
     {
-      "capacity" : 3000,
-      "id" : "214B33B1-5A64-4B04-9E66-0BA5ED85AF70",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          1.5,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 3000,
+      "id": "214B33B1-5A64-4B04-9E66-0BA5ED85AF70",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 1.5, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Core",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 1500,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Core",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 1500,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                0.9,
-                0.7,
-                0
-              ]
+              "time": 0,
+              "value": [1, 0.9, 0.7, 0]
             },
             {
-              "time" : 0.3,
-              "value" : [
-                1,
-                0.85,
-                0.6,
-                0.12
-              ]
+              "time": 0.3,
+              "value": [1, 0.85, 0.6, 0.12]
             },
             {
-              "time" : 1,
-              "value" : [
-                1,
-                0.8,
-                0.5,
-                0
-              ]
+              "time": 1,
+              "value": [1, 0.8, 0.5, 0]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          1,
-          2
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [1, 2],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "sphere": {
+            "radius": 0.25
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "sphere" : {
-            "radius" : 0.25
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.05
+              "time": 0,
+              "value": 0.05
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0,
-          0
-        ],
-        "velocitySpread" : 0.05,
-        "warmupDuration" : 0
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0, 0],
+        "velocitySpread": 0.05,
+        "warmupDuration": 0
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Soft Dot"
+      "sprite": "Soft Dot"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Galaxy",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Galaxy",
+  "trackedObjects": {}
 }

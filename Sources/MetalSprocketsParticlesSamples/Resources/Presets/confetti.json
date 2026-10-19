@@ -1,194 +1,143 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    3,
-    6
-  ],
-  "cameraTarget" : [
-    0,
-    1.5,
-    0
-  ],
-  "colliders" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 3, 6],
+  "cameraTarget": [0, 1.5, 0],
+  "colliders": [
     {
-      "distance" : 0,
-      "kind" : "plane",
-      "normal" : [
-        0,
-        1,
-        0
-      ]
+      "distance": 0,
+      "kind": "plane",
+      "normal": [0, 1, 0]
     }
   ],
-  "comment" : "Shows: a one-shot emitter (an emission duration that does not loop) that makes the effect finite, textured sprites with random spin, turbulence, and friction. When every piece is gone the HUD says Finished, and Restart plays it again. A party popper fires one burst of confetti.",
-  "forceFields" : [
+  "comment": "Shows: a one-shot emitter (an emission duration that does not loop) that makes the effect finite, textured sprites with random spin, turbulence, and friction. When every piece is gone the HUD says Finished, and Restart plays it again. A party popper fires one burst of confetti.",
+  "forceFields": [
     {
-      "categoryBitMask" : 4294967295,
-      "effect" : {
-        "turbulence" : {
-          "scale" : 1,
-          "speed" : 0.5,
-          "strength" : 2
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "turbulence": {
+          "scale": 1,
+          "speed": 0.5,
+          "strength": 2
         }
       }
     }
   ],
-  "layers" : [
+  "layers": [
     {
-      "capacity" : 6000,
-      "id" : "CA1CB4E0-59A1-4380-A752-33C8812CAE4F",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 6000,
+      "id": "CA1CB4E0-59A1-4380-A752-33C8812CAE4F",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Confetti",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 3.1415925,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 8,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 12000,
-        "birthRateVariation" : 0,
-        "blendMode" : 0,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Confetti",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 3.1415925,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 8,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 12000,
+        "birthRateVariation": 0,
+        "blendMode": 0,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                0.25,
-                0.3,
-                1
-              ]
+              "time": 0,
+              "value": [1, 0.25, 0.3, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0.5,
-          0.1,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 1.2,
-        "emissionDuration" : 0.35,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0.5, 0.1, 0, 0],
+        "diesOnCollision": false,
+        "drag": 1.2,
+        "emissionDuration": 0.35,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 1,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          -1.5,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          6,
-          8
-        ],
-        "loops" : false,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 1,
+        "frictionVariation": 0,
+        "gravity": [0, -1.5, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [6, 8],
+        "loops": false,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             },
             {
-              "time" : 0.8,
-              "value" : 1
+              "time": 0.8,
+              "value": 1
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0.1, 0],
+        "restitution": 0,
+        "restitutionVariation": 0,
+        "shape": {
+          "disc": {
+            "radius": 0.15
           }
         },
-        "position" : [
-          0,
-          0.1,
-          0
-        ],
-        "restitution" : 0,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "disc" : {
-            "radius" : 0.15
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.04
+              "time": 0,
+              "value": 0.04
             },
             {
-              "time" : 0.9,
-              "value" : 0.04
+              "time": 0.9,
+              "value": 0.04
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "sizeVariation" : 0.3,
-        "softness" : 0,
-        "sortMode" : "Back to Front",
-        "speedVariation" : 0.5,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          7,
-          0
-        ],
-        "velocitySpread" : 1,
-        "warmupDuration" : 0
+        "sizeVariation": 0.3,
+        "softness": 0,
+        "sortMode": "Back to Front",
+        "speedVariation": 0.5,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 7, 0],
+        "velocitySpread": 1,
+        "warmupDuration": 0
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Triangle"
+      "sprite": "Triangle"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Confetti",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Confetti",
+  "trackedObjects": {}
 }

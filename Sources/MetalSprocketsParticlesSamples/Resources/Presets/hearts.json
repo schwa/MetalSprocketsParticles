@@ -1,325 +1,239 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    3,
-    6
-  ],
-  "cameraTarget" : [
-    0,
-    1.5,
-    0
-  ],
-  "colliders" : [
-  ],
-  "comment" : "Shows: emoji sprites drawn with Core Text, tinted white so they keep their own colors. Hearts float up and wobble, with pink sparkles.",
-  "forceFields" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 3, 6],
+  "cameraTarget": [0, 1.5, 0],
+  "colliders": [],
+  "comment": "Shows: emoji sprites drawn with Core Text, tinted white so they keep their own colors. Hearts float up and wobble, with pink sparkles.",
+  "forceFields": [
     {
-      "categoryBitMask" : 4294967295,
-      "effect" : {
-        "turbulence" : {
-          "scale" : 0.8,
-          "speed" : 0.4,
-          "strength" : 0.8
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "turbulence": {
+          "scale": 0.8,
+          "speed": 0.4,
+          "strength": 0.8
         }
       }
     }
   ],
-  "layers" : [
+  "layers": [
     {
-      "capacity" : 500,
-      "id" : "0DCCADCE-D287-46DE-93DF-88D7BB138EF9",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 500,
+      "id": "0DCCADCE-D287-46DE-93DF-88D7BB138EF9",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Hearts",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0.35,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0.8,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 25,
-        "birthRateVariation" : 0,
-        "blendMode" : 0,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Hearts",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0.35,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0.8,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 25,
+        "birthRateVariation": 0,
+        "blendMode": 0,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                1,
-                1,
-                1
-              ]
+              "time": 0,
+              "value": [1, 1, 1, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.3,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.3,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          4,
-          5
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [4, 5],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             },
             {
-              "time" : 0.75,
-              "value" : 1
+              "time": 0.75,
+              "value": 1
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "disc": {
+            "radius": 1.2
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "disc" : {
-            "radius" : 1.2
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.1,
-              "value" : 0.18
+              "time": 0.1,
+              "value": 0.18
             },
             {
-              "time" : 1,
-              "value" : 0.12
+              "time": 1,
+              "value": 0.12
             }
           ]
         },
-        "sizeVariation" : 0.4,
-        "softness" : 0,
-        "sortMode" : "Back to Front",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0.9,
-          0
-        ],
-        "velocitySpread" : 0.3,
-        "warmupDuration" : 5
+        "sizeVariation": 0.4,
+        "softness": 0,
+        "sortMode": "Back to Front",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0.9, 0],
+        "velocitySpread": 0.3,
+        "warmupDuration": 5
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "❤️ Heart"
+      "sprite": "❤️ Heart"
     },
     {
-      "capacity" : 500,
-      "id" : "67BC0EA5-2163-4126-BDC7-3252C31A956D",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 500,
+      "id": "67BC0EA5-2163-4126-BDC7-3252C31A956D",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Sparkles",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 0,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 3,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 30,
-        "birthRateVariation" : 0,
-        "blendMode" : 1,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Sparkles",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 0,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 3,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 30,
+        "birthRateVariation": 0,
+        "blendMode": 1,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                0.6,
-                0.8,
-                1
-              ]
+              "time": 0,
+              "value": [1, 0.6, 0.8, 1]
             },
             {
-              "time" : 1,
-              "value" : [
-                1,
-                0.3,
-                0.5,
-                0
-              ]
+              "time": 1,
+              "value": [1, 0.3, 0.5, 0]
             }
           ]
         },
-        "colorVariation" : [
-          0,
-          0,
-          0,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.1,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0, 0, 0, 0],
+        "diesOnCollision": false,
+        "drag": 0.1,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          2,
-          3
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [2, 3],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "disc": {
+            "radius": 1.2
           }
         },
-        "position" : [
-          0,
-          0,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "disc" : {
-            "radius" : 1.2
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.06
+              "time": 0,
+              "value": 0.06
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "sizeVariation" : 0,
-        "softness" : 0,
-        "sortMode" : "None",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          0.7,
-          0
-        ],
-        "velocitySpread" : 0.5,
-        "warmupDuration" : 3
+        "sizeVariation": 0,
+        "softness": 0,
+        "sortMode": "None",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 0.7, 0],
+        "velocitySpread": 0.5,
+        "warmupDuration": 3
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Spark"
+      "sprite": "Spark"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Hearts",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Hearts",
+  "trackedObjects": {}
 }

@@ -1,184 +1,136 @@
 {
-  "ambientLight" : [
-    0.25,
-    0.25,
-    0.25
-  ],
-  "animatesColliders" : false,
-  "cameraEye" : [
-    0,
-    3,
-    6
-  ],
-  "cameraTarget" : [
-    0,
-    1.5,
-    0
-  ],
-  "colliders" : [
-  ],
-  "comment" : "Shows: back-to-front sorting of nearly opaque particles. Set Sort to None to see far puffs paint over near ones. Thick colored smoke billows up.",
-  "forceFields" : [
+  "ambientLight": [0.25, 0.25, 0.25],
+  "animatesColliders": false,
+  "cameraEye": [0, 3, 6],
+  "cameraTarget": [0, 1.5, 0],
+  "colliders": [],
+  "comment": "Shows: back-to-front sorting of nearly opaque particles. Set Sort to None to see far puffs paint over near ones. Thick colored smoke billows up.",
+  "forceFields": [
     {
-      "categoryBitMask" : 4294967295,
-      "effect" : {
-        "turbulence" : {
-          "scale" : 0.7,
-          "speed" : 0.3,
-          "strength" : 0.6
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "turbulence": {
+          "scale": 0.7,
+          "speed": 0.3,
+          "strength": 0.6
         }
       }
     }
   ],
-  "layers" : [
+  "layers": [
     {
-      "capacity" : 1000,
-      "id" : "A84A975B-F092-4DC0-A9ED-5A35072EF936",
-      "isEmitting" : true,
-      "motion" : {
-        "kind" : "Still",
-        "offset" : [
-          0,
-          0,
-          0
-        ],
-        "pitch" : 0,
-        "radius" : 1.5,
-        "speed" : 1,
-        "spin" : 0,
-        "yaw" : 0
+      "capacity": 1000,
+      "id": "A84A975B-F092-4DC0-A9ED-5A35072EF936",
+      "isEmitting": true,
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
       },
-      "name" : "Puffs",
-      "settings" : {
-        "angle" : 0,
-        "angleVariation" : 3.1415925,
-        "angularSpeed" : 0,
-        "angularSpeedVariation" : 0.6,
-        "birthDirection" : 0,
-        "birthLocation" : 0,
-        "birthRate" : 60,
-        "birthRateVariation" : 0,
-        "blendMode" : 0,
-        "categoryMask" : 4294967295,
-        "colorOverLife" : {
-          "keyframes" : [
+      "name": "Puffs",
+      "settings": {
+        "angle": 0,
+        "angleVariation": 3.1415925,
+        "angularSpeed": 0,
+        "angularSpeedVariation": 0.6,
+        "birthDirection": 0,
+        "birthLocation": 0,
+        "birthRate": 60,
+        "birthRateVariation": 0,
+        "blendMode": 0,
+        "categoryMask": 4294967295,
+        "colorOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : [
-                1,
-                0.3,
-                0.5,
-                1
-              ]
+              "time": 0,
+              "value": [1, 0.3, 0.5, 1]
             }
           ]
         },
-        "colorVariation" : [
-          0.5,
-          0.1,
-          0.1,
-          0
-        ],
-        "diesOnCollision" : false,
-        "drag" : 0.8,
-        "emissionOverTime" : {
-          "keyframes" : [
+        "colorVariation": [0.5, 0.1, 0.1, 0],
+        "diesOnCollision": false,
+        "drag": 0.8,
+        "emissionOverTime": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 1
+              "time": 0,
+              "value": 1
             }
           ]
         },
-        "friction" : 0.2,
-        "frictionVariation" : 0,
-        "gravity" : [
-          0,
-          0,
-          0
-        ],
-        "idleDuration" : 0,
-        "inheritVelocity" : 0,
-        "isLit" : false,
-        "lifetime" : [
-          3,
-          4
-        ],
-        "loops" : true,
-        "opacityOverLife" : {
-          "keyframes" : [
+        "friction": 0.2,
+        "frictionVariation": 0,
+        "gravity": [0, 0, 0],
+        "idleDuration": 0,
+        "inheritVelocity": 0,
+        "isLit": false,
+        "lifetime": [3, 4],
+        "loops": true,
+        "opacityOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0
+              "time": 0,
+              "value": 0
             },
             {
-              "time" : 0.08,
-              "value" : 0.95
+              "time": 0.08,
+              "value": 0.95
             },
             {
-              "time" : 0.7,
-              "value" : 0.9
+              "time": 0.7,
+              "value": 0.9
             },
             {
-              "time" : 1,
-              "value" : 0
+              "time": 1,
+              "value": 0
             }
           ]
         },
-        "orientation" : {
-          "billboard" : {
+        "orientation": {
+          "billboard": {}
+        },
+        "position": [0, 0.3, 0],
+        "restitution": 0.4,
+        "restitutionVariation": 0,
+        "shape": {
+          "sphere": {
+            "radius": 0.3
           }
         },
-        "position" : [
-          0,
-          0.3,
-          0
-        ],
-        "restitution" : 0.4,
-        "restitutionVariation" : 0,
-        "shape" : {
-          "sphere" : {
-            "radius" : 0.3
-          }
-        },
-        "sizeOverLife" : {
-          "keyframes" : [
+        "sizeOverLife": {
+          "keyframes": [
             {
-              "time" : 0,
-              "value" : 0.15
+              "time": 0,
+              "value": 0.15
             },
             {
-              "time" : 1,
-              "value" : 0.6
+              "time": 1,
+              "value": 0.6
             }
           ]
         },
-        "sizeVariation" : 0.3,
-        "softness" : 0,
-        "sortMode" : "Back to Front",
-        "speedVariation" : 0,
-        "subEmitters" : [
-        ],
-        "sweepAngle" : 6.283185,
-        "triggers" : [
-        ],
-        "velocity" : [
-          0,
-          1.2,
-          0
-        ],
-        "velocitySpread" : 1.2,
-        "warmupDuration" : 4
+        "sizeVariation": 0.3,
+        "softness": 0,
+        "sortMode": "Back to Front",
+        "speedVariation": 0,
+        "subEmitters": [],
+        "sweepAngle": 6.283185,
+        "triggers": [],
+        "velocity": [0, 1.2, 0],
+        "velocitySpread": 1.2,
+        "warmupDuration": 4
       },
-      "simulationSpace" : {
-        "world" : {
-        }
+      "simulationSpace": {
+        "world": {}
       },
-      "sprite" : "Smoke Puff"
+      "sprite": "Smoke Puff"
     }
   ],
-  "lights" : [
-  ],
-  "name" : "Color Smoke",
-  "trackedObjects" : {
-  }
+  "lights": [],
+  "name": "Color Smoke",
+  "trackedObjects": {}
 }
