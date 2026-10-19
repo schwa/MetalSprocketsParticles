@@ -58,6 +58,8 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Umbrella](#umbrella)
 - [Marble Run](#marble-run)
 - [Snow Globe](#snow-globe)
+- [Sand on Letters](#sand-on-letters)
+- [Inside the Teapot](#inside-the-teapot)
 
 ## Fountain
 
@@ -376,3 +378,15 @@ Shows: particles riding a curved mesh collider. Marbles roll down a helical trac
 Shows: an interactive 2D effect inside a distance field container. Snow swirls in a globe; the vortex follows the mouse.
 
 ![snow-globe](previews/snow-globe.webp)
+
+## Sand on Letters
+
+Shows: collision with an arbitrary concave mesh. Sand pours over 3D text (a SwiftMesh text extrusion baked to a distance field), drifts round the letters, and fills the hole in the D.
+
+![sand-on-letters](previews/sand-on-letters.webp)
+
+## Inside the Teapot
+
+Shows: a mesh turned inside out as a container (its baked distance field negated). Beads tumble inside a teapot as it rolls over.
+
+![inside-the-teapot](previews/inside-the-teapot.webp)

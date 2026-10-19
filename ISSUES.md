@@ -3264,3 +3264,25 @@ Spinning Teapot sometimes flings sand, notably when the app goes to the backgrou
 - `2026-10-19T21:05:21Z`: User confirmed fixed in the app.
 
 ---
+
+## 157: Fast particles sink into or slide off thin parts of distance field colliders
+
++++
+status: open
+priority: medium
+kind: bug
+labels: area:collision, effort:m
+created: 2026-10-19T21:29:36Z
+updated: 2026-10-19T21:29:36Z
++++
+
+Found while making Sand on Letters (sand on extruded 'SDF' text, 96-sample grid, letters 0.35 tall). After 5 s, of the sand that landed: about 8 000 grains rest on the letter tops, about 45 000 on the floor beside them, and about 3 400 on the floor inside a letter's footprint, inside the solid. The letters cover roughly a quarter of the pour area, so far fewer stay on top than should, and some end up inside.
+
+What I measured and tried:
+- The baked field is right (columns through letters go positive, negative, positive at the expected heights).
+- With 'METAL' at a smaller size the strokes were only about two cells wide and almost no sand stayed on top; bigger letters helped. So thin parts, relative to the grid, are part of it: normals near a thin part's top blend the top and its sides.
+- Falling grains move 3 to 4 cells per step. fieldContact pushes a particle that ends inside out along the normal at its end point; deep inside a thin part that can be a side or the far face. Responding at the entry point along the path instead (when the step started outside) doubled the grains on top (about 16 000) and cut those inside to about 1 200, but broke aSpinningFieldFlingsParticles (resting grains on a spinning collider were put back at their entry point each step). Limiting it to steps that started more than half a cell clear of the surface kept the tests but lost most of the gain. Reverted; I do not fully understand why the unconditional version helped.
+
+Ideas: entry-point response with the collider's motion accounted for (so resting contacts are not reset), smaller steps for fast particles near fields, or normals from a wider stencil near thin parts.
+
+---
