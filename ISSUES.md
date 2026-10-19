@@ -2536,15 +2536,18 @@ Each needs a setting, a curve table on the GPU, the demo's gradient editor, and 
 ## 122: More than one custom attribute per particle
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:simulation, effort:m
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:41:56Z
+closed: 2026-10-19T12:41:56Z
 +++
 
 ParticleState.custom is one float4 per particle (#110). Allow a few (for example up to 4), chosen per emitter so memory is only spent where used. Needs a per-emitter attribute count, a strided attributes buffer, and a prelude change (custom as an array or custom0...custom3).
+
+- `2026-10-19T12:41:56Z`: Done: ParticleState gains custom1, custom2, custom3 (after custom, so existing functions compile unchanged), and ParticleEmitter.customAttributeCount (1 to 4) says how many are kept between steps. The attribute buffer's stride is the largest count among emitters with functions, so systems that use one keep 16 bytes per particle; asking for more reallocates (and clears) it.
 
 ---
 

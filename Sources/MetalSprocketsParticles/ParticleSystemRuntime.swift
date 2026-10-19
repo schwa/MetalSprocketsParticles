@@ -249,6 +249,8 @@ public final class ParticleSystemRuntime {
     /// `ParticleState.custom`, one float4 per particle. Made the first time an emitter has user functions, so other
     /// systems do not pay for it; dropped when the particle buffer is rebuilt.
     private(set) var attributes: MTLBuffer?
+    /// Attribute entries per particle in `attributes`: the largest `customAttributeCount` among emitters with functions.
+    private(set) var attributeStride = 1
     /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
     var trails: MTLBuffer?
     /// Draws particles in false colors or as wireframes instead of their own colors. Simulation is unaffected.
@@ -558,14 +560,18 @@ public final class ParticleSystemRuntime {
     }
 
     private func makeAttributesIfNeeded(for plan: FramePlan) throws {
-        guard attributes == nil, plan.dispatches.contains(where: { dispatch in
+        let withFunctions = plan.dispatches.filter { dispatch in
             let uniforms = dispatch.uniforms
             return uniforms.hasUpdateFunction | uniforms.hasSpawnFunction | uniforms.hasCollisionFunction | uniforms.hasDeathFunction != 0
-        }) else {
+        }
+        let stride = withFunctions.map { Int($0.uniforms.customAttributeCount) }.max() ?? 0
+        // Made once, and again only when an emitter asks for more attributes (which clears them).
+        guard stride > 0, attributes == nil || stride > attributeStride else {
             return
         }
+        attributeStride = stride
         // New Metal buffers are zero-filled, which is what custom starts as.
-        guard let attributes = device.makeBuffer(length: buffer.length / MemoryLayout<Particle>.stride * MemoryLayout<SIMD4<Float>>.stride, options: .storageModeShared) else {
+        guard let attributes = device.makeBuffer(length: buffer.length / MemoryLayout<Particle>.stride * stride * MemoryLayout<SIMD4<Float>>.stride, options: .storageModeShared) else {
             throw CocoaError(.featureUnsupported)
         }
         attributes.label = "Particle attributes"
@@ -595,6 +601,7 @@ public final class ParticleSystemRuntime {
         // Without attributes, a count of 0 keeps the one-entry placeholder unread.
         let attributes = attributes ?? placeholderMesh.vertices
         let attributeCount = self.attributes == nil ? UInt32(0) : UInt32(buffer.length / MemoryLayout<Particle>.stride)
+        let attributeStride = UInt32(self.attributeStride)
         let functionTables = try dispatches.map(functionTables)
         let sortKernels = sortKernels
         return try ComputePass {
@@ -626,6 +633,7 @@ public final class ParticleSystemRuntime {
                 .parameter("particles", buffer: buffer)
                 .parameter("attributes", buffer: attributes)
                 .parameter("attributeCount", value: attributeCount)
+                .parameter("attributeStride", value: attributeStride)
                 .parameter("uniforms", value: dispatches[index].uniforms)
                 // Never bind an empty array; the counts in uniforms keep the padding unused.
                 .parameter("colliders", values: dispatches[index].colliders.isEmpty ? [ColliderData(.plane(normal: [0, 1, 0], distance: 0))] : dispatches[index].colliders)

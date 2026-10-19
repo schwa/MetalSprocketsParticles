@@ -628,6 +628,9 @@ struct ParticleState {
     float4 color;  // Multiplies the color over life; 1 leaves it alone. Stored as 8 bits per channel.
     float size;    // Multiplies the size over life.
     float4 custom; // Free for user code; kept between steps, zero at birth.
+    float4 custom1; // More of the same, when the emitter has customAttributeCount 2 to 4; otherwise not kept.
+    float4 custom2;
+    float4 custom3;
 };
 
 // The tint packed in properties.w as a color multiplier: 1 when there is none.
@@ -645,15 +648,39 @@ static void setParticleTint(thread Particle &p, float4 color) {
     p.properties.w = as_type<float>(tint);
 }
 
-static ParticleState makeState(Particle p, float3 position, float3 velocity, float age, float lifetime, uint id, float4 custom) {
-    return { position, velocity, age, lifetime, id, particleTint(p), p.properties.x, custom };
+// ParticleState.custom through custom3, as kept in the attribute buffer.
+struct CustomAttributes {
+    float4 values[4];
+};
+
+// The particle's `count` attributes from the buffer (stride entries per particle), zero past them.
+static CustomAttributes loadAttributes(const device float4 *attributes, uint id, uint stride, uint count, bool present) {
+    CustomAttributes custom = {};
+    for (uint i = 0; present && i < min(count, stride); i++) {
+        custom.values[i] = attributes[id * stride + i];
+    }
+    return custom;
+}
+
+static void storeAttributes(device float4 *attributes, uint id, uint stride, uint count, CustomAttributes custom) {
+    for (uint i = 0; i < min(count, stride); i++) {
+        attributes[id * stride + i] = custom.values[i];
+    }
+}
+
+static ParticleState makeState(Particle p, float3 position, float3 velocity, float age, float lifetime, uint id, CustomAttributes custom) {
+    return { position, velocity, age, lifetime, id, particleTint(p), p.properties.x,
+        custom.values[0], custom.values[1], custom.values[2], custom.values[3] };
 }
 
 // Copies back what every slot may change; callers copy age and lifetime where their slot allows it.
-static void applyState(ParticleState state, thread Particle &p, thread float3 &position, thread float3 &velocity, thread float4 &custom) {
+static void applyState(ParticleState state, thread Particle &p, thread float3 &position, thread float3 &velocity, thread CustomAttributes &custom) {
     position = state.position;
     velocity = state.velocity;
-    custom = state.custom;
+    custom.values[0] = state.custom;
+    custom.values[1] = state.custom1;
+    custom.values[2] = state.custom2;
+    custom.values[3] = state.custom3;
     p.properties.x = max(state.size, 0.0);
     if (any(state.color != particleTint(p))) {
         setParticleTint(p, state.color);
@@ -733,6 +760,7 @@ kernel void updateParticles(
     constant float4 *deathParameters [[buffer(20)]],
     device float4 *attributes [[buffer(21)]],
     constant uint &attributeCount [[buffer(22)]],
+    constant uint &attributeStride [[buffer(30)]],
     device atomic_uint *eventCursor [[buffer(23)]],
     device ParticleEventRecord *events [[buffer(24)]],
     constant float4 *pathPoints [[buffer(25)]],
@@ -751,9 +779,11 @@ kernel void updateParticles(
     uint id = spawn.sliceStart + slot;
     Particle p = particles[id];
     float dt = uniforms.deltaTime;
-    // ParticleState.custom. The buffer only covers every particle when some emitter has user functions.
+    // ParticleState.custom through custom3. The buffer only covers every particle when some emitter has user functions;
+    // each particle has attributeStride entries, of which this emitter keeps customAttributeCount.
     bool hasAttributes = id < attributeCount;
-    float4 custom = hasAttributes ? attributes[id] : float4(0);
+    uint customCount = max(uniforms.customAttributeCount, 1u);
+    CustomAttributes custom = loadAttributes(attributes, id, attributeStride, customCount, hasAttributes);
 
     if (spawn.kill != 0) {
         p.position.w = 0;
@@ -771,7 +801,7 @@ kernel void updateParticles(
         float orderedBirthAge = uniforms.ordersBirths != 0 ? 1 - (float(offset) + 0.5) / float(max(spawn.count, 1u)) : -1;
         p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge, orderedBirthAge);
         dt *= birthAge;
-        custom = float4(0);
+        custom = CustomAttributes {};
         if (uniforms.colorsByBirthPosition != 0) {
             // The position gradient, once, where the particle is born; kept in its tint for life.
             float3 born = (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz;
@@ -800,7 +830,7 @@ kernel void updateParticles(
     if (lifetime <= 0 || age >= lifetime) {
         particles[id] = p;
         if (hasAttributes) {
-            attributes[id] = custom;
+            storeAttributes(attributes, id, attributeStride, customCount, custom);
         }
         return;
     }
@@ -1022,7 +1052,7 @@ kernel void updateParticles(
                 pushTrail(trails, (sub.childSliceStart + childSlot) * childUniforms.trailStride, childUniforms.trailPointCount, child.position.xyz, true, child.position.w, 0);
             }
             if (sub.childSliceStart + childSlot < attributeCount) {
-                attributes[sub.childSliceStart + childSlot] = float4(0);
+                storeAttributes(attributes, sub.childSliceStart + childSlot, attributeStride, attributeStride, CustomAttributes {});
             }
         }
         // A transition: the parent turns into its children. On-death sub-emitters listed after this one fire too.
@@ -1041,7 +1071,7 @@ kernel void updateParticles(
         pushTrail(trails, id * uniforms.trailStride, uniforms.trailPointCount, position, born, age, uniforms.trailPointInterval);
     }
     if (hasAttributes) {
-        attributes[id] = custom;
+        storeAttributes(attributes, id, attributeStride, customCount, custom);
     }
 
     // Statistics: one atomic per SIMD group, not per particle. Particles that were already dead returned earlier.

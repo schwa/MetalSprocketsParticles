@@ -305,6 +305,8 @@ typedef struct {
     uint32_t ordersBirths;
     // Nonzero: at birth, sample the birth color curve along birthColorStart...birthColorEnd (world space) at the spawn
     // position and multiply it into the particle's tint (ParticleEmitter.colorByPositionAtBirth).
+    // ParticleState custom attributes this emitter keeps, 1 to 4.
+    uint32_t customAttributeCount;
     uint32_t colorsByBirthPosition;
     simd_float3 birthColorStart;
     simd_float3 birthColorEnd;

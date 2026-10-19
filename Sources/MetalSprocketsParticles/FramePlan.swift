@@ -249,6 +249,7 @@ extension ParticleSystemRuntime {
         uniforms.trailPointInterval = max(settings.trail?.pointInterval ?? 0, 0)
         uniforms.collisionRadius = max(settings.collisionRadius, 0)
         uniforms.ordersBirths = settings.ribbon == nil ? 0 : 1
+        uniforms.customAttributeCount = UInt32(min(max(settings.customAttributeCount, 1), ParticleFunction.maximumCustomAttributes))
         if settings.colorByPositionAtBirth, settings.colorByPosition != nil {
             uniforms.colorsByBirthPosition = 1
             uniforms.birthColorStart = settings.colorByPositionStart

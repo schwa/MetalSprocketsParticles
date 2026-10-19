@@ -86,6 +86,24 @@ struct ParticleStateAttributeTests {
         #expect(particles.allSatisfy { $0.properties.w.bitPattern == 0 })
     }
 
+    @Test func extraAttributesPersistWhenTheEmitterAsksForThem() throws {
+        // Counts steps in custom1.x and twice the steps in custom2.y, and shows them in the position.
+        let counter = function("countMore", "particle.custom1.x += 1; particle.custom2.y += 2; particle.position = float3(particle.custom1.x, particle.custom2.y, 0);")
+        let kept = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: emitter {
+            $0.updateFunction = counter
+            $0.customAttributeCount = 3
+        })
+        let particles = try run(kept, frames: 5)
+        #expect(particles.allSatisfy { $0.position.x == 5 && $0.position.y == 10 })
+        #expect(kept.attributeStride == 3)
+        #expect(try #require(kept.attributes).length == kept.capacity * 3 * 16)
+
+        // With the default of one, custom1 and custom2 start from zero every step.
+        let notKept = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: emitter { $0.updateFunction = counter })
+        #expect(try run(notKept, frames: 5).allSatisfy { $0.position.x == 1 && $0.position.y == 2 })
+        #expect(notKept.attributeStride == 1)
+    }
+
     @Test func systemsWithoutFunctionsDoNotAllocateAttributes() throws {
         let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: emitter { _ in })
         _ = try run(system, frames: 2)

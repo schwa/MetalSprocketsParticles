@@ -201,6 +201,10 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// current position. Stored at 8 bits per channel, so values above 1 are clipped. Sub-emitter children are not
     /// colored this way.
     public var colorByPositionAtBirth = false
+    /// How many of `ParticleState.custom` through `custom3` user functions keep between steps, 1 to 4. Each costs 16
+    /// bytes per particle across the system (the largest count among emitters with functions), so ask only for what
+    /// you use.
+    public var customAttributeCount = 1
 
     public init() {}
 }
@@ -281,6 +285,7 @@ extension ParticleEmitter {
         try container.update(&minimumScreenSize, .minimumScreenSize)
         try container.update(&lodScalesSize, .lodScalesSize)
         try container.update(&colorByPositionAtBirth, .colorByPositionAtBirth)
+        try container.update(&customAttributeCount, .customAttributeCount)
     }
 }
 
