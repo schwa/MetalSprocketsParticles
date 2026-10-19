@@ -41,6 +41,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Butterfly Dust](#butterfly-dust)
 - [Paint Drops](#paint-drops)
 - [Magic Loop](#magic-loop)
+- [Torch Avenue](#torch-avenue)
 
 ## Fountain
 
@@ -257,3 +258,9 @@ Paint drops fall and splatter where they land. Each landing is reported back to 
 Sparkles stream around a wavy loop, guided by a path force field: a smooth curve through a few points that carries particles along it and pulls strays back on. A little turbulence makes the stream shimmer.
 
 ![magic-loop](previews/magic-loop.webp)
+
+## Torch Avenue
+
+Two rows of torches recede into the night. Each torch uses distance LOD: it emits fully up close and a fifth as much far away, where the difference does not show, and a culling radius skips it when it is out of view.
+
+![torch-avenue](previews/torch-avenue.webp)

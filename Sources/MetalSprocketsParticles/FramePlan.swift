@@ -182,7 +182,7 @@ extension ParticleSystemRuntime {
         let deltaTime = playing ? deltaTime : 0
         // Sub-emitter instances never spawn on their own; their parents write their particles.
         let spawn = playing
-            ? emitter.spawner.advance(deltaTime: deltaTime, emitter: settings, capacity: emitter.capacity, isEmitting: emitter.isEmitting && !emitter.isSubEmitter)
+            ? emitter.spawner.advance(deltaTime: deltaTime, emitter: settings.scalingBirthRate(by: emitter.lodRateScale), capacity: emitter.capacity, isEmitting: emitter.isEmitting && !emitter.isSubEmitter)
             : Spawner.Step(cursor: emitter.spawner.cursor, count: 0, serial: emitter.spawner.serial)
         var uniforms = self.uniforms(for: emitter, deltaTime: deltaTime, motion: motion, spawn: spawn)
         uniforms.subEmitterCount = UInt32(emitter.children.count)
@@ -299,6 +299,12 @@ extension ParticleSystemRuntime {
     }
 
     private func dispatches(_ emitter: Emitter, index emitterIndex: Int, frameDeltaTime: Float, world: WorldData) -> [FramePlan.Dispatch] {
+        emitter.lodRateScale = emitter.lodRateScale(camera: cullingCamera)
+        emitter.isCulled = emitter.isOutsideView(camera: cullingCamera)
+        // A culled emitter that does not simulate is frozen: no dispatch, and its clock and spawner stand still.
+        if emitter.isCulled, !emitter.settings.simulatesWhenCulled {
+            return []
+        }
         // Filtering here keeps category masks off the GPU: unmasked emitters see exactly the full lists.
         let colliders = world.colliders.filter { $0.category & emitter.settings.collisionMask != 0 }.map(\.data)
         let forceFields = world.forceFields.filter { $0.category & emitter.settings.fieldMask != 0 }.map(\.data)

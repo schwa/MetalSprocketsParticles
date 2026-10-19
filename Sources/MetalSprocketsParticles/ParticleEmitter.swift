@@ -151,6 +151,17 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var reportsCollisions = false
     /// Reports each particle death in `ParticleSystemRuntime.recentEvents`.
     public var reportsDeaths = false
+    /// Distance LOD: emission is full up to `lodNearDistance` from the camera and falls to `lodFarRateScale` times
+    /// the birth rate at `lodFarDistance`. Off while `lodFarDistance` is not greater than `lodNearDistance`.
+    public var lodNearDistance: Float = 0
+    public var lodFarDistance: Float = 0
+    public var lodFarRateScale: Float = 0.25
+    /// A sphere around the emitter's position that holds its particles. When it is outside the view the emitter is not
+    /// drawn. 0 never culls.
+    public var cullingRadius: Float = 0
+    /// Keeps simulating while culled, so the effect is right when it comes back into view. Off saves the GPU work but
+    /// freezes the effect until it is visible again.
+    public var simulatesWhenCulled = true
 
     public init() {}
 }
@@ -210,6 +221,11 @@ extension ParticleEmitter {
         deathFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .deathFunction)
         try container.update(&reportsCollisions, .reportsCollisions)
         try container.update(&reportsDeaths, .reportsDeaths)
+        try container.update(&lodNearDistance, .lodNearDistance)
+        try container.update(&lodFarDistance, .lodFarDistance)
+        try container.update(&lodFarRateScale, .lodFarRateScale)
+        try container.update(&cullingRadius, .cullingRadius)
+        try container.update(&simulatesWhenCulled, .simulatesWhenCulled)
     }
 }
 

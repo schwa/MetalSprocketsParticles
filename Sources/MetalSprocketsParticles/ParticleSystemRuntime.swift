@@ -39,6 +39,10 @@ public final class ParticleSystemRuntime {
         public var mesh: EmitterMesh?
         /// The mesh `mesh` was made from by `ParticleSystemRuntime.apply(_:)`, to skip remaking it.
         var meshSource: Mesh?
+        /// Whether the last frame culled this emitter (its `cullingRadius` sphere was outside the view).
+        public internal(set) var isCulled = false
+        /// The last frame's distance LOD birth rate multiplier.
+        public internal(set) var lodRateScale: Float = 1
         /// The point cache `mesh` was made from by `apply(_:)`.
         var pointsSource: [EmitterPoint]? // swiftlint:disable:this discouraged_optional_collection
         /// The image `mesh` was sampled from by `apply(_:)`.
@@ -160,6 +164,8 @@ public final class ParticleSystemRuntime {
     public internal(set) var recentEvents: [ParticleEvent] = []
     /// Events lost since the system was made, because more than `ParticleEvent.capacity` happened between reads.
     public internal(set) var droppedEventCount = 0
+    /// The camera of the last `render`, for LOD and culling.
+    var cullingCamera: CullingCamera?
     /// Live-particle counts, one slot per recent frame; see `aliveParticleCount`.
     let aliveCounters: MTLBuffer
     /// Frames planned so far; picks the alive-counter slot.
@@ -629,8 +635,10 @@ public final class ParticleSystemRuntime {
     public func render(projection: simd_float4x4, view: simd_float4x4, sceneDepth: MTLTexture? = nil) throws -> some Element {
         let cameraToWorld = view.inverse
         let cameraPosition = cameraToWorld.columns.3.xyz
-        let unsorted = allEmitters.filter { $0.settings.sortMode == .none }
-        let sorted = allEmitters.filter { $0.settings.sortMode != .none }
+        cullingCamera = CullingCamera(position: cameraPosition, viewProjection: projection * view)
+        let visible = allEmitters.filter { !$0.isOutsideView(camera: cullingCamera) }
+        let unsorted = visible.filter { $0.settings.sortMode == .none }
+        let sorted = visible.filter { $0.settings.sortMode != .none }
             .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
         let placeholderSortRecords = placeholderSortRecords
         let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)))

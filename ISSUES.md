@@ -2433,15 +2433,18 @@ A force field that pulls particles along a curve: magic swirling along a path, e
 ## 117: Particle LOD and culling
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:m
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:24:14Z
+closed: 2026-10-19T02:24:14Z
 +++
 
 Spend less on effects that are far away or off screen: scale emission rate and particle size with distance from the camera, and skip simulating or drawing emitters whose bounds are outside the view (with a choice to keep simulating so they stay correct when they come back). Common in Niagara (scalability) and Unity. Needs emitter bounds.
+
+- `2026-10-19T02:24:14Z`: Done: distance LOD scales birth rate (lodNearDistance, lodFarDistance, lodFarRateScale) and a culling sphere (cullingRadius) skips drawing out-of-view emitters, and simulating too when simulatesWhenCulled is off. Uses the camera from the last render, one frame behind. Not done: scaling particle size with distance (perspective already shrinks far particles; add if a use appears).
 
 ---
 
