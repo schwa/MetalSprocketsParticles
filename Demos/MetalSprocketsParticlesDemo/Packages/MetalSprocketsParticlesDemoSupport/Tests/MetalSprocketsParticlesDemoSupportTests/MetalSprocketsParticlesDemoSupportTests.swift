@@ -64,6 +64,43 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// The Color Effects group edits color by speed, by position, alternate colors, and the color image (#160).
+    @Test func colorEffectsTurnOnAndOff() throws {
+        var emitter = ParticleEmitter()
+        emitter.hasColorBySpeed = true
+        #expect(emitter.colorBySpeed == ParticleEmitter.defaultSpeedGradient)
+        emitter.colorBySpeedMaximum = 9
+        emitter.colorBySpeedMinimum = 12
+        #expect(emitter.colorBySpeedRange == 12...12)
+        emitter.hasColorBySpeed = false
+        #expect(emitter.colorBySpeed == nil)
+
+        emitter.hasColorByPosition = true
+        #expect(emitter.colorByPosition == ParticleEmitter.defaultPositionGradient)
+        emitter.hasColorByPosition = false
+        #expect(emitter.colorByPosition == nil)
+
+        // Alternate colors start as a copy of the main gradient, so turning them on changes nothing until edited.
+        emitter.hasAlternateColors = true
+        #expect(emitter.alternateColorOverLife == emitter.colorOverLife)
+
+        // Placement edits do nothing without an image; a chosen image keeps the old placement.
+        emitter.editableColorImage.origin = [9, 9, 9]
+        #expect(emitter.colorImage == nil)
+        let png = try #require(NSImage(size: NSSize(width: 4, height: 2), flipped: false) { rect in
+            NSColor.red.setFill()
+            rect.fill()
+            return true
+        }.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0)?.representation(using: .png, properties: [:]) })
+        emitter.colorImage = try ParticleColorImage.choosing(data: png, replacing: nil)
+        emitter.editableColorImage.origin = [1, 2, 3]
+        emitter.colorImage = try ParticleColorImage.choosing(data: png, replacing: emitter.colorImage)
+        #expect(emitter.colorImage?.origin == [1, 2, 3])
+        #expect(throws: (any Error).self) { try ParticleColorImage.choosing(data: Data("not an image".utf8), replacing: nil) }
+        emitter.hasColorImage = false
+        #expect(emitter.colorImage == nil)
+    }
+
     /// The Flocking section edits ParticleEmitter.flocking (#159).
     @Test func flockingTurnsOnAndOffAndKeepsItsSettings() {
         var emitter = ParticleEmitter()

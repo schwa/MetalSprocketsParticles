@@ -424,9 +424,82 @@ struct AppearanceSectionView: View {
                     }
                 }
             }
+            DisclosureGroup("Color Effects") {
+                ColorEffectsView(settings: $emitter.settings)
+            }
             DisclosureGroup("Variation") {
                 VariationControlsView(settings: $emitter.settings)
             }
+        }
+    }
+}
+
+/// Colors on top of color over life: by speed, by position, a second gradient to blend toward, and an image.
+struct ColorEffectsView: View {
+    @Binding var settings: ParticleEmitter
+    @State private var isChoosingImage = false
+    @State private var isShowingImageError = false
+    @State private var imageError = ""
+
+    var body: some View {
+        Toggle("Color by Speed", isOn: $settings.hasColorBySpeed)
+            .help("Multiplies the color by a gradient sampled by speed: the slow end at the minimum speed and below, the fast end at the maximum and above.")
+        if settings.hasColorBySpeed {
+            ColorCurveEditorView(title: "Speed Gradient", curve: $settings.editableColorBySpeed)
+            ParameterSliderView("Slow Speed", value: $settings.colorBySpeedMinimum, in: 0...20)
+            ParameterSliderView("Fast Speed", value: $settings.colorBySpeedMaximum, in: 0...20)
+        }
+        Toggle("Color by Position", isOn: $settings.hasColorByPosition)
+            .help("Multiplies the color by a gradient across the world, from Start to End.")
+        if settings.hasColorByPosition {
+            ColorCurveEditorView(title: "Position Gradient", curve: $settings.editableColorByPosition)
+            VectorEditorView("Start", value: $settings.colorByPositionStart, in: -5...5)
+            VectorEditorView("End", value: $settings.colorByPositionEnd, in: -5...5)
+            Toggle("Sample at Birth", isOn: $settings.colorByPositionAtBirth)
+                .help("Keep the color where each particle is born, instead of changing it as the particle moves.")
+        }
+        Toggle("Alternate Colors", isOn: $settings.hasAlternateColors)
+            .help("Each particle blends between Color and this second gradient by its own random amount.")
+        if settings.hasAlternateColors {
+            ColorCurveEditorView(title: "Alternate", curve: $settings.editableAlternateColorOverLife)
+        }
+        LabeledContent("Color Image") {
+            HStack {
+                Button(settings.hasColorImage ? "Replace…" : "Choose…") { isChoosingImage = true }
+                if settings.hasColorImage {
+                    Button("Remove", role: .destructive) { settings.hasColorImage = false }
+                }
+            }
+        }
+        .help("Multiplies each particle's color by an image laid over the world, under the particle.")
+        .fileImporter(isPresented: $isChoosingImage, allowedContentTypes: [.image]) { result in
+            chooseImage(result)
+        }
+        .alert("Color Image", isPresented: $isShowingImageError) {
+            Button("OK") {}
+        } message: {
+            Text(imageError)
+        }
+        if settings.hasColorImage {
+            VectorEditorView("Origin", value: $settings.editableColorImage.origin, in: -5...5)
+            VectorEditorView("Width", value: $settings.editableColorImage.width, in: -5...5)
+            VectorEditorView("Height", value: $settings.editableColorImage.height, in: -5...5)
+        }
+    }
+
+    private func chooseImage(_ result: Result<URL, Error>) {
+        do {
+            let url = try result.get()
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+            settings.colorImage = try ParticleColorImage.choosing(data: Data(contentsOf: url), replacing: settings.colorImage)
+        } catch {
+            imageError = error.localizedDescription
+            isShowingImageError = true
         }
     }
 }

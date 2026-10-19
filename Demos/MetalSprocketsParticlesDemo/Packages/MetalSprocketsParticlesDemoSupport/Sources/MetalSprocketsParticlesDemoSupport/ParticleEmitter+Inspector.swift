@@ -1,3 +1,4 @@
+import ImageIO
 import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
 import simd
@@ -54,6 +55,75 @@ extension ParticleEmitter {
     private static func lifetimeRange(average: Float, variation: Float) -> ClosedRange<Float> {
         let lower = max(average - variation, minimumEditableLifetime)
         return lower...max(average + variation, lower)
+    }
+
+    // MARK: Color effects
+
+    /// Starting gradients when a color effect is turned on: visible at once, easy to edit from.
+    static let defaultSpeedGradient = ParticleCurve<SIMD4<Float>>.linear(from: [0.3, 0.5, 1, 1], to: [1, 0.6, 0.2, 1])
+    static let defaultPositionGradient = ParticleCurve<SIMD4<Float>>.linear(from: [1, 0.3, 0.6, 1], to: [0.3, 0.9, 1, 1])
+
+    var hasColorBySpeed: Bool {
+        get { colorBySpeed != nil }
+        set { colorBySpeed = newValue ? (colorBySpeed ?? Self.defaultSpeedGradient) : nil }
+    }
+
+    var editableColorBySpeed: ParticleCurve<SIMD4<Float>> {
+        get { colorBySpeed ?? Self.defaultSpeedGradient }
+        set { colorBySpeed = newValue }
+    }
+
+    /// The slowest end of `colorBySpeedRange`. Kept at or below the fastest.
+    var colorBySpeedMinimum: Float {
+        get { colorBySpeedRange.lowerBound }
+        set { colorBySpeedRange = max(newValue, 0)...max(newValue, colorBySpeedRange.upperBound) }
+    }
+
+    /// The fastest end of `colorBySpeedRange`. Kept at or above the slowest.
+    var colorBySpeedMaximum: Float {
+        get { colorBySpeedRange.upperBound }
+        set { colorBySpeedRange = min(colorBySpeedRange.lowerBound, max(newValue, 0))...max(newValue, 0) }
+    }
+
+    var hasAlternateColors: Bool {
+        get { alternateColorOverLife != nil }
+        set { alternateColorOverLife = newValue ? (alternateColorOverLife ?? colorOverLife) : nil }
+    }
+
+    /// The second gradient, or a copy of the first when there is none. Setting it turns alternate colors on.
+    var editableAlternateColorOverLife: ParticleCurve<SIMD4<Float>> {
+        get { alternateColorOverLife ?? colorOverLife }
+        set { alternateColorOverLife = newValue }
+    }
+
+    var hasColorByPosition: Bool {
+        get { colorByPosition != nil }
+        set { colorByPosition = newValue ? (colorByPosition ?? Self.defaultPositionGradient) : nil }
+    }
+
+    var editableColorByPosition: ParticleCurve<SIMD4<Float>> {
+        get { colorByPosition ?? Self.defaultPositionGradient }
+        set { colorByPosition = newValue }
+    }
+
+    /// Whether the emitter has a color image. Turning it off removes the image; turning it on needs one chosen.
+    var hasColorImage: Bool {
+        get { colorImage != nil }
+        set {
+            if !newValue {
+                colorImage = nil
+            }
+        }
+    }
+
+    /// The color image's placement, or a placeholder when there is none (edits then do nothing).
+    var editableColorImage: ParticleColorImage {
+        get { colorImage ?? ParticleColorImage(data: Data(), origin: .zero, width: [1, 0, 0], height: [0, 1, 0]) }
+        set {
+            if colorImage != nil {
+                colorImage = newValue
+            }
+        }
     }
 
     /// Whether the emitter flocks. Turning it on starts from the library's defaults, or the settings it had.
@@ -156,6 +226,30 @@ extension ParticleEmitter {
             default: break
             }
         }
+    }
+}
+
+// MARK: - Color image
+
+extension ParticleColorImage {
+    enum ChoiceError: LocalizedError {
+        case notAnImage
+
+        var errorDescription: String? {
+            "The file is not an image."
+        }
+    }
+
+    /// A new image's placement: where `existing` was, or upright in the XY plane at the origin, 4 units wide.
+    static func choosing(data: Data, replacing existing: ParticleColorImage?) throws -> ParticleColorImage {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceCreateImageAtIndex(source, 0, nil) != nil else {
+            throw ChoiceError.notAnImage
+        }
+        if var existing {
+            existing.data = data
+            return existing
+        }
+        return ParticleColorImage(data: data, center: [0, 1.5, 0], size: 4)
     }
 }
 

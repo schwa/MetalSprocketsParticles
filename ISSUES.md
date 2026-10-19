@@ -3345,16 +3345,20 @@ Found by an audit of every public setting in the description types against the d
 ## 160: Inspector: color by speed, by position, alternate colors, color image
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T21:37:16Z
+updated: 2026-10-19T22:00:54Z
+closed: 2026-10-19T22:00:54Z
 +++
 
 ParticleEmitter.colorBySpeed and colorBySpeedRange; colorByPosition, colorByPositionStart, colorByPositionEnd, colorByPositionAtBirth; alternateColorOverLife; colorImage (ParticleColorImage, an image picker).
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:00:54Z`: Done: a Color Effects group in Appearance. Color by Speed (switch, gradient, slow and fast speeds kept ordered), Color by Position (switch, gradient, start and end points, sample at birth), Alternate Colors (switch; starts as a copy of Color so nothing changes until edited), Color Image (Choose/Replace with a file picker, Remove, and origin, width, height; a new image is upright in XY at (0, 1.5, 0), 4 wide; a replacement keeps the old placement; non-images are rejected with an alert). Tests cover each switch and the image choice. Layout checked with an offscreen snapshot.
 
 ---
 
