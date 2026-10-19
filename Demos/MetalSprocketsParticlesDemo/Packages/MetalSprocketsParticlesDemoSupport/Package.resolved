@@ -1,5 +1,5 @@
 {
-  "originHash" : "9f8a0d759d6c85d7b53c467286f46f58e5b99a4fcca068f8d1083b6cf2938995",
+  "originHash" : "b37de2b14db63e00e9babf6a20c82a54790016d417442f4571dabbaec649d29d",
   "pins" : [
     {
       "identity" : "geometrylite2d",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/GeometryLite3D",
       "state" : {
-        "revision" : "4a1c76400e564b76140a14d14a7e6d6279908faf",
-        "version" : "0.2.4"
+        "revision" : "91407ccdf258a3f85f6dbf67f4f63f24af7257f1",
+        "version" : "0.2.5"
       }
     },
     {
@@ -43,7 +43,7 @@
       "location" : "https://github.com/schwa/MetalSprockets",
       "state" : {
         "branch" : "main",
-        "revision" : "1ee862209f23f9a1c3ce666bc45ebe477e55934c"
+        "revision" : "b1df2f853ef218ae71b61272c1ef45ad108a7a3e"
       }
     },
     {
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/SwiftMesh",
       "state" : {
-        "revision" : "72a67636ad7f088f75b4abdb7b5e8ee2cf9ee022",
-        "version" : "0.0.10"
+        "revision" : "4270c075af06d438609f61548f7d6c632d15e4da",
+        "version" : "0.0.11"
       }
     }
   ],

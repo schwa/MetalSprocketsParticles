@@ -3132,6 +3132,8 @@ Acceptance: an SDF baked from a SwiftMesh cube matches the cube's analytic dista
 
 Part of #2. Depends on the SDF collider type and SwiftMesh #180.
 
+- `2026-10-19T20:01:22Z`: Unblocked: SwiftMesh 0.0.11 has SwiftMesh #176-#180 (Mesh.bounds, TriangleBVH, closest point and distance, winding-number contains, Mesh.signedDistanceField(resolution:padding:bvh:) returning SignedDistanceField: origin, spacing, resolution, values x-fastest). The package now resolves 0.0.11.
+
 ---
 
 ## 152: Moving SDF colliders for scene-graph nodes
@@ -3213,7 +3215,6 @@ priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T19:16:26Z
-updated: 2026-10-19T19:16:26Z
 +++
 
 Particles that render like metallic foil: tumbling pieces that flash when they catch the light and shift color with viewing angle, for confetti, tinsel, and glitter.
