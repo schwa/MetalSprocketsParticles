@@ -2714,12 +2714,13 @@ Expected: contact friction slows spin as well, so a particle resting on a collid
 ## 133: Lifetime sliders are hard to use: replace Min/Max with Lifetime and Variation
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T11:43:27Z
-updated: 2026-10-19T11:43:28Z
+updated: 2026-10-19T12:05:35Z
+closed: 2026-10-19T12:05:35Z
 +++
 
 The inspector shows lifetime as two sliders, Lifetime Min and Lifetime Max (0.1...10 s; sub-emitters 0.05...5 s). To make particles live longer you must raise Max and then Min, and dragging either one past the other drags the other along (ParticleEmitter+Inspector.swift lifetimeMinimum/lifetimeMaximum). It does not match the rest of the inspector, which uses a value plus a variation (birth rate, size, speed, angle).

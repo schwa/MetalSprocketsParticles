@@ -10,14 +10,34 @@ import SwiftUI
 // MARK: - ParticleEmitter
 
 extension ParticleEmitter {
-    var lifetimeMinimum: Float {
-        get { lifetime.lowerBound }
-        set { lifetime = newValue...max(newValue, lifetime.upperBound) }
+    /// Shortest lifetime the inspector allows, so particles always live a little.
+    static let minimumEditableLifetime: Float = 0.01
+
+    /// The middle of the lifetime range. Changing it keeps the variation, narrowing it only when the shortest life
+    /// would drop below `minimumEditableLifetime`.
+    var lifetimeAverage: Float {
+        get { (lifetime.lowerBound + lifetime.upperBound) / 2 }
+        set {
+            let average = max(newValue, Self.minimumEditableLifetime)
+            let variation = min(lifetimeVariation, average - Self.minimumEditableLifetime)
+            lifetime = Self.lifetimeRange(average: average, variation: variation)
+        }
     }
 
-    var lifetimeMaximum: Float {
-        get { lifetime.upperBound }
-        set { lifetime = min(lifetime.lowerBound, newValue)...newValue }
+    /// Plus or minus seconds around `lifetimeAverage`.
+    var lifetimeVariation: Float {
+        get { (lifetime.upperBound - lifetime.lowerBound) / 2 }
+        set {
+            let average = lifetimeAverage
+            let variation = min(max(newValue, 0), average - Self.minimumEditableLifetime)
+            lifetime = Self.lifetimeRange(average: average, variation: variation)
+        }
+    }
+
+    /// Clamped so float rounding cannot put the shortest life just under the minimum.
+    private static func lifetimeRange(average: Float, variation: Float) -> ClosedRange<Float> {
+        let lower = max(average - variation, minimumEditableLifetime)
+        return lower...max(average + variation, lower)
     }
 
     var hasLimitedEmission: Bool {

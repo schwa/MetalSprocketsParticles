@@ -289,8 +289,10 @@ struct EmissionSectionView: View {
     var body: some View {
         Section("Emission") {
             ParameterSliderView("Birth Rate", value: $settings.birthRate, in: 0...100_000, format: .number.precision(.fractionLength(0)))
-            ParameterSliderView("Lifetime Min", value: $settings.lifetimeMinimum, in: 0.1...10)
-            ParameterSliderView("Lifetime Max", value: $settings.lifetimeMaximum, in: 0.1...10)
+            ParameterSliderView("Lifetime", value: $settings.lifetimeAverage, in: 0.1...30)
+                .help("Seconds each particle lives, on average. Type a value for longer lives.")
+            ParameterSliderView("Lifetime Variation", value: $settings.lifetimeVariation, in: 0...15)
+                .help("Each particle lives this many seconds more or less than Lifetime, at random.")
             DisclosureGroup("Timing") {
                 ParameterSliderView("Rate Variation", value: $settings.birthRateVariation, in: 0...50_000, format: .number.precision(.fractionLength(0)))
                 ParameterSliderView("Warmup", value: $settings.warmupDuration, in: 0...5)
@@ -475,8 +477,8 @@ struct SubEmitterEditorView: View {
             KindPicker("Sprite", selection: $subEmitter.sprite)
             Stepper("Per Event: \(subEmitter.countPerEvent)", value: $subEmitter.countPerEvent, in: 1...1_000, step: 10)
             ParameterSliderView("Inherit Velocity", value: $subEmitter.velocityFactor, in: 0...1)
-            ParameterSliderView("Lifetime Min", value: $subEmitter.settings.lifetimeMinimum, in: 0.05...5)
-            ParameterSliderView("Lifetime Max", value: $subEmitter.settings.lifetimeMaximum, in: 0.05...5)
+            ParameterSliderView("Lifetime", value: $subEmitter.settings.lifetimeAverage, in: 0.05...10)
+            ParameterSliderView("Lifetime Variation", value: $subEmitter.settings.lifetimeVariation, in: 0...5)
             VectorEditorView("Velocity", value: $subEmitter.settings.velocity, in: -10...10)
             ParameterSliderView("Spread", value: $subEmitter.settings.velocitySpread, in: 0...10)
             VectorEditorView("Gravity", value: $subEmitter.settings.gravity, in: -20...20)

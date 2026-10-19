@@ -17,13 +17,29 @@ struct ColorPipelineTests {
 }
 
 struct EmitterAdapterTests {
-    @Test func lifetimeBoundsStayOrdered() {
+    @Test func lifetimeSlidersMoveTheRangeAndKeepTheSpread() {
         var emitter = ParticleEmitter()
         emitter.lifetime = 1...2
-        emitter.lifetimeMinimum = 3
-        #expect(emitter.lifetime == 3...3)
-        emitter.lifetimeMaximum = 0.5
-        #expect(emitter.lifetime == 0.5...0.5)
+        #expect(emitter.lifetimeAverage == 1.5)
+        #expect(emitter.lifetimeVariation == 0.5)
+        // One slider makes particles live longer, and the spread stays.
+        emitter.lifetimeAverage = 10
+        #expect(emitter.lifetime == 9.5...10.5)
+        emitter.lifetimeVariation = 2
+        #expect(emitter.lifetime == 8...12)
+    }
+
+    @Test func lifetimesNeverGoBelowTheMinimum() {
+        var emitter = ParticleEmitter()
+        emitter.lifetime = 1...3
+        // Shorter than the spread allows: the spread narrows instead of going below the minimum.
+        emitter.lifetimeAverage = 0.5
+        #expect(emitter.lifetime.lowerBound >= ParticleEmitter.minimumEditableLifetime)
+        #expect(abs(emitter.lifetimeAverage - 0.5) < 1e-6)
+        emitter.lifetimeVariation = 100
+        #expect(emitter.lifetime.lowerBound >= ParticleEmitter.minimumEditableLifetime - 1e-6)
+        emitter.lifetimeAverage = -1
+        #expect(emitter.lifetime == ParticleEmitter.minimumEditableLifetime...ParticleEmitter.minimumEditableLifetime)
     }
 
     @Test func limitedEmissionToggle() {

@@ -20,9 +20,11 @@ struct ParameterSliderView: View {
         LabeledContent {
             HStack {
                 Slider(value: $value, in: range)
-                Text(value, format: format)
+                // Typed values may go beyond the slider's range.
+                TextField("", value: $value, format: format)
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 64)
             }
         } label: {
             Text(title)
