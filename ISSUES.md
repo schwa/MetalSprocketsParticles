@@ -3182,3 +3182,20 @@ Fix: give the values labels (for example collider(index:), burst(count:), event(
 - `2026-10-19T16:13:02Z`: Fixed: PointerBinding writes { "index": n }, EmissionTrigger.Action.burst writes { "count": n }, and EmissionTrigger.Condition.event writes { "name": s }, through per-case CodingKeys; the Swift API is unchanged (.collider(3), .burst(150)). Hand-written decoders read both the new names and the old "_0", so saved effects still load. The three affected presets (Pointer Stir, Dunk, Bumper) were migrated with jq and Prettier; goldens unchanged. EnumKeyTests checks the names, round trips every case, reads old files, and fails if any sample preset (file or re-encoded) contains "_0".
 
 ---
+
+## 154: 2D mode shows nothing for scenes not made in points
+
++++
+status: open
+priority: high
+kind: bug
+labels: area:rendering, effort:s
+created: 2026-10-19T16:29:31Z
+updated: 2026-10-19T16:29:31Z
++++
+
+Turning on 2D (ParticleSystem.is2D) for a normal 3D scene makes everything vanish. The .system camera becomes the overlay camera (one unit is one point, origin top left, y down), so a scene a few units across is a speck in the top-left corner and its gravity carries particles off the top. particles-render and video export use .lookAt, so they still show the 3D perspective view: the app and the CLI disagree.
+
+Fix (agreed with the user): in 2D, the scene cameras (.system and .lookAt) become a flat front-on orthographic view fitted to the scene: centered on the camera target, looking along -z, y up, showing what the 3D camera shows at the target distance. .overlay stays as it is, for effects over an app's UI in points. The demo's 2D toggle uses the fitted view, and the CLI follows the same rule.
+
+---
