@@ -3405,16 +3405,20 @@ Found by an audit of every public setting in the description types against the d
 ## 163: Inspector: collision extras and particle events
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T21:37:17Z
+updated: 2026-10-19T22:04:44Z
+closed: 2026-10-19T22:04:44Z
 +++
 
 ParticleEmitter.collisionRadius, collidesWithSceneDepth, softness, reportsCollisions, reportsDeaths.
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:04:44Z`: Done: Collision section gains Radius (collisionRadius), Collide with Scene Depth, Report Collisions, Report Deaths; Appearance gains Softness. Each has help text. No new test: the controls bind straight to stored settings with no adapter logic; the library tests cover collision radius, scene depth collision, soft particles, and events. Demo tests, build, and lint pass.
 
 ---
 

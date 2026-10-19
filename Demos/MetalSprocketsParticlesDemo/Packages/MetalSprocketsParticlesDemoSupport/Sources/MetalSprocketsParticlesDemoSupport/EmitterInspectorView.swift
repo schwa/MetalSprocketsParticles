@@ -405,6 +405,8 @@ struct AppearanceSectionView: View {
             KindPicker("Sort", selection: $emitter.settings.sortMode)
             KindPicker("Orientation", selection: $emitter.settings.orientation.kind)
             Toggle("Lit", isOn: $emitter.settings.isLit)
+            ParameterSliderView("Softness", value: $emitter.settings.softness, in: 0...1)
+                .help("Soft particles: fade out over this distance in front of solid colliders instead of clipping hard. 0 turns it off.")
             if emitter.settings.orientation.kind == .velocityAligned {
                 ParameterSliderView("Stretch", value: $emitter.settings.velocityStretch, in: 0...2)
             }
@@ -570,6 +572,14 @@ struct CollisionSectionView: View {
             ParameterSliderView("Bounce", value: $settings.restitution, in: 0...1.5)
             ParameterSliderView("Friction", value: $settings.friction, in: 0...1)
             Toggle("Die on Collision", isOn: $settings.diesOnCollision)
+            ParameterSliderView("Radius", value: $settings.collisionRadius, in: 0...0.5, format: .number.precision(.fractionLength(3)))
+                .help("Particles collide as spheres of this radius instead of points, so large sprites and mesh particles rest on colliders instead of sinking in.")
+            Toggle("Collide with Scene Depth", isOn: $settings.collidesWithSceneDepth)
+                .help("Bounce off whatever was drawn into the scene depth last frame (here, solid colliders). Only works on screen.")
+            Toggle("Report Collisions", isOn: $settings.reportsCollisions)
+                .help("Report each collider hit to the app (ParticleSystemRuntime.recentEvents), for sounds, decals, or event bursts.")
+            Toggle("Report Deaths", isOn: $settings.reportsDeaths)
+                .help("Report each particle death to the app (ParticleSystemRuntime.recentEvents).")
             CategoryMaskView(
                 "Categories",
                 mask: $settings.categoryMask,
