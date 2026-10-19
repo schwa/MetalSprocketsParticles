@@ -16,7 +16,6 @@
     0
   ],
   "colliders" : [
-
   ],
   "comment" : "Shows: torus emitters, a vortex force field, and an attractor. Two spiral arms of stars swirl around a bright core.",
   "forceFields" : [
@@ -83,7 +82,7 @@
         "birthRate" : 4000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -122,7 +121,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -148,7 +146,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -189,11 +186,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 0.9,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -205,7 +200,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -238,7 +232,7 @@
         "birthRate" : 4000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -277,7 +271,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -303,7 +296,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -344,11 +336,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 0.9,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -360,7 +350,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -393,7 +382,7 @@
         "birthRate" : 1500,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -441,7 +430,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -467,7 +455,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -495,11 +482,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -511,17 +496,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Galaxy",
   "trackedObjects" : {
-
   }
 }

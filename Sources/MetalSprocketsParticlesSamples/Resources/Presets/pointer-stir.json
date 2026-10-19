@@ -16,7 +16,6 @@
     0
   ],
   "colliderSpins" : [
-
   ],
   "colliders" : [
     {
@@ -81,7 +80,7 @@
         "birthRate" : 5000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -120,7 +119,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0,
         "frictionVariation" : 0,
         "gravity" : [
@@ -158,7 +156,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -190,11 +187,9 @@
         "sortMode" : "None",
         "speedVariation" : 0.5,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -206,14 +201,12 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Pointer Stir",
   "pointerBindings" : [
@@ -242,6 +235,5 @@
     "yaw" : 0
   },
   "trackedObjects" : {
-
   }
 }

@@ -28,7 +28,6 @@
   ],
   "comment" : "Shows: tangential birth direction and a spinning emitter whose births spread along its rotation. A ring of fire throws sparks off its rim like a Catherine wheel.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -59,7 +58,7 @@
         "birthRate" : 12000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -98,7 +97,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -124,7 +122,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -156,11 +153,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -172,7 +167,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -205,7 +199,7 @@
         "birthRate" : 5000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -253,7 +247,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -311,11 +304,9 @@
         "sortMode" : "None",
         "speedVariation" : 1.5,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -327,7 +318,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -360,7 +350,7 @@
         "birthRate" : 2500,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -399,7 +389,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -453,11 +442,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -469,17 +456,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Portal",
   "trackedObjects" : {
-
   }
 }

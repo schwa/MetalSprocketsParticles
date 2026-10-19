@@ -16,7 +16,6 @@
     0
   ],
   "colliders" : [
-
   ],
   "comment" : "Shows: a sprite-sheet flipbook with random start frames. Emoji moons orbit and cycle through the moon phases.",
   "forceFields" : [
@@ -69,7 +68,7 @@
         "birthRate" : 12,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -99,7 +98,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -135,7 +133,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -176,11 +173,9 @@
         "sortMode" : "Back to Front",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -192,7 +187,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "🌑…🌘 Moon Phases 2×4"
@@ -225,7 +219,7 @@
         "birthRate" : 150,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -255,7 +249,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -281,7 +274,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -317,11 +309,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -333,17 +323,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Moon Phases",
   "trackedObjects" : {
-
   }
 }

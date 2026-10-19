@@ -49,7 +49,7 @@
   "comment" : "Shows: category masks, where each emitter chooses which colliders and fields affect it. Rain falls through an awning in the wind; grinder sparks land on it.",
   "forceFields" : [
     {
-      "categoryBitMask" : 1,
+      "categoryBitMask" : 4,
       "effect" : {
         "wind" : {
           "strength" : 3,
@@ -91,7 +91,7 @@
         "birthRate" : 1500,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 1,
+        "categoryMask" : 5,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -121,7 +121,6 @@
             }
           ]
         },
-        "fieldMask" : 1,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -182,7 +181,6 @@
             "countPerEvent" : 2,
             "occasion" : {
               "onCollision" : {
-
               }
             },
             "settings" : {
@@ -195,7 +193,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 0,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -234,7 +232,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -260,7 +257,6 @@
               },
               "orientation" : {
                 "billboard" : {
-
                 }
               },
               "position" : [
@@ -272,7 +268,6 @@
               "restitutionVariation" : 0,
               "shape" : {
                 "point" : {
-
                 }
               },
               "sizeOverLife" : {
@@ -292,11 +287,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -311,7 +304,6 @@
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -323,7 +315,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -356,7 +347,7 @@
         "birthRate" : 900,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 3,
+        "categoryMask" : 3,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -395,7 +386,6 @@
             }
           ]
         },
-        "fieldMask" : 2,
         "friction" : 0.1,
         "frictionVariation" : 0,
         "gravity" : [
@@ -433,7 +423,6 @@
         "restitutionVariation" : 0,
         "shape" : {
           "point" : {
-
           }
         },
         "sizeOverLife" : {
@@ -453,11 +442,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -469,17 +456,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Spark"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Awning",
   "trackedObjects" : {
-
   }
 }

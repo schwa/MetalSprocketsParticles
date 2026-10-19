@@ -10,7 +10,7 @@ import Testing
 @Suite(.serialized, .requiresMetal4)
 struct SceneDepthCollisionTests {
     /// Drops particles onto a sphere of radius 0.5 at the origin that the emitter does not collide with directly
-    /// (collisionMask 0); the sphere is only in the scene depth. Returns the particles' final positions.
+    /// (categoryMask 0); the sphere is only in the scene depth. Returns the particles' final positions.
     func drop(collidesWithSceneDepth: Bool, frames: Int = 90) throws -> [SIMD3<Float>] {
         var emitter = ParticleEmitter()
         emitter.shape = .disc(radius: 0.1)
@@ -22,7 +22,7 @@ struct SceneDepthCollisionTests {
         emitter.birthRate = 0
         emitter.restitution = 0
         emitter.friction = 1
-        emitter.collisionMask = 0
+        emitter.categoryMask = 0
         emitter.collidesWithSceneDepth = collidesWithSceneDepth
         var system = ParticleSystem("Depth", layers: [EmitterDescription("Drops", settings: emitter, capacity: 32)])
         system.colliders = [.sphere(center: .zero, radius: 0.5)]

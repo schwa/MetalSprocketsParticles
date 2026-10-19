@@ -65,7 +65,6 @@
   ],
   "comment" : "Shows: a box emitter, collisions, and soft, sorted mist. Water pours over a ledge, hits rocks, and throws up mist.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -96,7 +95,7 @@
         "birthRate" : 35000,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -135,7 +134,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -193,11 +191,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -209,7 +205,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -242,7 +237,7 @@
         "birthRate" : 150,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -290,7 +285,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -316,7 +310,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -352,11 +345,9 @@
         "sortMode" : "Back to Front",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -368,17 +359,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Smoke Puff"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Waterfall",
   "trackedObjects" : {
-
   }
 }

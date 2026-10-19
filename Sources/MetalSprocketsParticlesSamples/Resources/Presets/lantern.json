@@ -16,7 +16,6 @@
     0
   ],
   "colliders" : [
-
   ],
   "comment" : "Shows: particle lighting with point and directional lights over low ambient light. Smoke and dust lit by a lantern and moonlight.",
   "forceFields" : [
@@ -60,7 +59,7 @@
         "birthRate" : 30,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -90,7 +89,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -124,7 +122,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -156,11 +153,9 @@
         "sortMode" : "Back to Front",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -172,7 +167,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Smoke Puff"
@@ -205,7 +199,7 @@
         "birthRate" : 120,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -235,7 +229,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -261,7 +254,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -297,11 +289,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -313,7 +303,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -346,7 +335,7 @@
         "birthRate" : 20,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -376,7 +365,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -402,7 +390,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -414,7 +401,6 @@
         "restitutionVariation" : 0,
         "shape" : {
           "point" : {
-
           }
         },
         "sizeOverLife" : {
@@ -430,11 +416,9 @@
         "sortMode" : "Back to Front",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -446,7 +430,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -487,6 +470,5 @@
   ],
   "name" : "Lantern",
   "trackedObjects" : {
-
   }
 }

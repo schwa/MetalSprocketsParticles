@@ -122,10 +122,9 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
 
     /// Reactions to events, timers, volumes, and collider hits.
     public var triggers: [EmissionTrigger] = []
-    /// Colliders apply when their `categoryBitMask` shares a bit with this. All bits by default.
-    public var collisionMask: UInt32 = .max
-    /// Force fields apply when their `categoryBitMask` shares a bit with this. All bits by default.
-    public var fieldMask: UInt32 = .max
+    /// Colliders and force fields apply when their `categoryBitMask` shares a bit with this. All bits by default. Give
+    /// colliders and fields different bits to let an emitter feel one but not the other.
+    public var categoryMask: UInt32 = .max
     /// Shades particles with `ParticleSystemRuntime.lights` and `ambientLight`. Off by default: particles keep their colors.
     public var isLit = false
     /// Soft particles: fade out over this many world units in front of the scene depth passed to
@@ -212,6 +211,11 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public init() {}
 }
 
+/// Keys of the two masks that `categoryMask` replaced, read from older effect files.
+private enum LegacyMaskKeys: String, CodingKey {
+    case collisionMask, fieldMask
+}
+
 extension ParticleEmitter {
     /// A starting point for 2D effects (`ParticleSystem.is2D`), in points: a fountain shooting up the screen at a few
     /// hundred points a second, with spread and speed variation in points too, falling back down (+y), 8 points across.
@@ -272,8 +276,15 @@ extension ParticleEmitter {
         try container.update(&warmupDuration, .warmupDuration)
         try container.update(&subEmitters, .subEmitters)
         try container.update(&triggers, .triggers)
-        try container.update(&collisionMask, .collisionMask)
-        try container.update(&fieldMask, .fieldMask)
+        if container.contains(.categoryMask) {
+            try container.update(&categoryMask, .categoryMask)
+        } else {
+            // Files from before one mask had collisionMask and fieldMask: equal ones carry over; different ones combine.
+            let legacy = try decoder.container(keyedBy: LegacyMaskKeys.self)
+            let collision = try legacy.decodeIfPresent(UInt32.self, forKey: .collisionMask) ?? .max
+            let field = try legacy.decodeIfPresent(UInt32.self, forKey: .fieldMask) ?? .max
+            categoryMask = collision | field
+        }
         try container.update(&emissionOverTime, .emissionOverTime)
         try container.update(&isLit, .isLit)
         try container.update(&softness, .softness)

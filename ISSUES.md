@@ -2859,12 +2859,13 @@ Ideas: named categories per scene (for example Floor, Walls, Wind) stored with t
 ## 138: One mask per emitter instead of collisionMask and fieldMask
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: area:simulation, effort:s
 created: 2026-10-19T11:46:26Z
-updated: 2026-10-19T13:08:36Z
+updated: 2026-10-19T13:38:33Z
+closed: 2026-10-19T13:38:33Z
 +++
 
 An emitter has two masks, collisionMask (matched against Collider.categoryBitMask) and fieldMask (matched against ForceField.categoryBitMask), both UInt32. A single UInt32 would do the same job if colliders and fields use different bits: an emitter that should bounce off the floor but ignore the wind keeps the floor's bit and drops the wind's.
@@ -2872,6 +2873,7 @@ Trade-off: with one mask, colliders and fields share one 32-bit category space, 
 Decide whether to merge. If yes: add ParticleEmitter.categoryMask, decode old files by combining (an emitter matches a collider when collisionMask matches, and a field when fieldMask matches, so map carefully or keep reading the old keys), update docs, the inspector, and CategoryMaskTests.
 
 - `2026-10-19T13:08:36Z`: Decision (user): merge into one categoryMask. Users keep collider and field bits apart; 32 bits is plenty. Old files: combine collisionMask and fieldMask when reading.
+- `2026-10-19T13:38:33Z`: Done: ParticleEmitter.categoryMask replaces collisionMask and fieldMask; colliders and fields both match against it. Old files: equal masks carry over, different ones combine (OR). Two presets used them differently and were remapped by hand so they behave the same (goldens unchanged): Awning (its wind field moved to category 4; Rain 5, Sparks 3) and Sand on Shapes (mask 0: depth collision only). The other presets were migrated by one jq pass, keeping JSONEncoder's formatting. The demo inspector shows one Categories mask that says how many colliders and fields it matches.
 
 ---
 

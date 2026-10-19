@@ -116,11 +116,11 @@ struct FramePlanTests {
 
     @Test func categoryMasksFilterEachDispatch() throws {
         let system = try ParticleSystemRuntime(device: device, emitters: [
-            emitter { $0.collisionMask = 0b10; $0.fieldMask = 0b01 },
+            emitter { $0.categoryMask = 0b10 },
             emitter(),
         ], capacity: 10)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0, categoryBitMask: 0b01), .sphere(center: .zero, radius: 1, categoryBitMask: 0b10)]
-        system.forceFields = [.wind(velocity: [1, 0, 0], strength: 1, categoryBitMask: 0b10)]
+        system.forceFields = [.wind(velocity: [1, 0, 0], strength: 1, categoryBitMask: 0b100)]
         let plan = try system.planFrame(deltaTime: deltaTime)
         let masked = plan.dispatches[0]
         #expect(masked.uniforms.colliderCount == 1 && masked.uniforms.forceFieldCount == 0)

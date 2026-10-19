@@ -330,8 +330,8 @@ extension ParticleSystemRuntime {
             return []
         }
         // Filtering here keeps category masks off the GPU: unmasked emitters see exactly the full lists.
-        let colliders = world.colliders.filter { $0.category & emitter.settings.collisionMask != 0 }.map(\.data)
-        let forceFields = world.forceFields.filter { $0.category & emitter.settings.fieldMask != 0 }.map(\.data)
+        let colliders = world.colliders.filter { $0.category & emitter.settings.categoryMask != 0 }.map(\.data)
+        let forceFields = world.forceFields.filter { $0.category & emitter.settings.categoryMask != 0 }.map(\.data)
         // In local space the emitter is the origin of its own space and never moves.
         let spawnTransform = emitter.simulationSpace == .world ? emitter.transform : matrix_identity_float4x4
         let origin = spawnTransform.columns.3.xyz

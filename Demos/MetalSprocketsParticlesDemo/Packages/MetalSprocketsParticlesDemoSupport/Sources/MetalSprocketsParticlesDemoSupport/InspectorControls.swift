@@ -222,8 +222,13 @@ struct CategoryMaskView: View {
 
 /// "Matches 2 of 3 colliders": how many of `categories` share a bit with `mask`. `noun` is singular.
 func categoryMatchSummary(_ mask: UInt32, categories: [UInt32], noun: String) -> String {
+    "Matches \(categoryMatchCount(mask, categories: categories, noun: noun))"
+}
+
+/// "2 of 3 colliders", for combining several kinds in one summary.
+func categoryMatchCount(_ mask: UInt32, categories: [UInt32], noun: String) -> String {
     let matched = categories.filter { $0 & mask != 0 }.count
-    return "Matches \(matched) of \(categories.count) \(categories.count == 1 ? noun : noun + "s")"
+    return "\(matched) of \(categories.count) \(categories.count == 1 ? noun : noun + "s")"
 }
 
 #Preview("Slider") {

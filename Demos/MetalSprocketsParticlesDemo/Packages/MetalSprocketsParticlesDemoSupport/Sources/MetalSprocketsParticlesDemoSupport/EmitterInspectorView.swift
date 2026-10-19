@@ -449,15 +449,12 @@ struct CollisionSectionView: View {
             ParameterSliderView("Friction", value: $settings.friction, in: 0...1)
             Toggle("Die on Collision", isOn: $settings.diesOnCollision)
             CategoryMaskView(
-                "Collides With",
-                mask: $settings.collisionMask,
-                detail: categoryMatchSummary(settings.collisionMask, categories: model.colliders.map(\.collider.categoryBitMask), noun: "collider")
+                "Categories",
+                mask: $settings.categoryMask,
+                detail: "Matches \(categoryMatchCount(settings.categoryMask, categories: model.colliders.map(\.collider.categoryBitMask), noun: "collider")) and "
+                    + categoryMatchCount(settings.categoryMask, categories: model.forceFields.map(\.field.categoryBitMask), noun: "field")
             )
-            CategoryMaskView(
-                "Feels Fields",
-                mask: $settings.fieldMask,
-                detail: categoryMatchSummary(settings.fieldMask, categories: model.forceFields.map(\.field.categoryBitMask), noun: "field")
-            )
+            .help("Colliders and force fields apply when they share a category with the emitter. Give them different categories to feel one but not the other.")
         }
     }
 }

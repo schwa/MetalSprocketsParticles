@@ -34,7 +34,6 @@
   "comment" : "Shows: a deforming mesh emitter (meshDeformation), with births on its moving surface. A flag of sparks waves from a pole.",
   "drawsColliders" : true,
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -5311,7 +5310,7 @@
         "birthRate" : 12000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -5350,7 +5349,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 1,
         "frictionVariation" : 0,
         "gravity" : [
@@ -5388,7 +5386,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -5400,7 +5397,6 @@
         "restitutionVariation" : 0,
         "shape" : {
           "mesh" : {
-
           }
         },
         "sizeOverLife" : {
@@ -5420,11 +5416,9 @@
         "sortMode" : "None",
         "speedVariation" : 0.5,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0.15,
@@ -5436,17 +5430,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Flag",
   "trackedObjects" : {
-
   }
 }

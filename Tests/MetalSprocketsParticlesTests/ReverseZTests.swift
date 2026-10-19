@@ -91,7 +91,7 @@ struct ReverseZTests {
         emitter.birthRate = 0
         emitter.restitution = 0
         emitter.friction = 1
-        emitter.collisionMask = 0
+        emitter.categoryMask = 0
         emitter.collidesWithSceneDepth = true
         var system = ParticleSystem("Depth", layers: [EmitterDescription("Drops", settings: emitter, capacity: 16)])
         system.colliders = [.sphere(center: .zero, radius: 0.5)]

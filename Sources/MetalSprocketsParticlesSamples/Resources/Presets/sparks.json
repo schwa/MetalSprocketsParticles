@@ -47,7 +47,6 @@
   ],
   "comment" : "Shows: velocity-aligned stretching, bounce with per-particle variation, and friction. Grinder sparks streak across the floor and bounce off a wall.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -78,7 +77,7 @@
         "birthRate" : 2500,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -126,7 +125,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.3,
         "frictionVariation" : 0,
         "gravity" : [
@@ -164,7 +162,6 @@
         "restitutionVariation" : 0.15,
         "shape" : {
           "point" : {
-
           }
         },
         "sizeOverLife" : {
@@ -184,11 +181,9 @@
         "sortMode" : "None",
         "speedVariation" : 1.5,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           3.5,
@@ -200,17 +195,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Sparks",
   "trackedObjects" : {
-
   }
 }

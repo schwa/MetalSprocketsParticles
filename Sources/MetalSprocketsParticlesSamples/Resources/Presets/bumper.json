@@ -37,7 +37,6 @@
   ],
   "comment" : "Shows: emission triggers (collider hit, particles entering a volume, a timer, and a named event 'boom'). Balls drop onto a bumper and set off sparks, stars, rings, and confetti.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -68,7 +67,7 @@
         "birthRate" : 6,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -98,7 +97,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -124,7 +122,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -136,7 +133,6 @@
         "restitutionVariation" : 0,
         "shape" : {
           "point" : {
-
           }
         },
         "sizeOverLife" : {
@@ -152,11 +148,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -168,7 +162,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -201,7 +194,7 @@
         "birthRate" : 0,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -240,7 +233,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -266,7 +258,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -298,7 +289,6 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
@@ -326,7 +316,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Spark"
@@ -359,7 +348,7 @@
         "birthRate" : 0,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -389,7 +378,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -415,7 +403,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -447,7 +434,6 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
@@ -488,7 +474,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Star"
@@ -521,7 +506,7 @@
         "birthRate" : 0,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -551,7 +536,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -597,7 +581,6 @@
         "restitutionVariation" : 0,
         "shape" : {
           "point" : {
-
           }
         },
         "sizeOverLife" : {
@@ -617,7 +600,6 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
@@ -644,7 +626,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Ring"
@@ -677,7 +658,7 @@
         "birthRate" : 0,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -707,7 +688,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 1,
         "frictionVariation" : 0,
         "gravity" : [
@@ -733,7 +713,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -761,7 +740,6 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
@@ -788,17 +766,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Triangle"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Bumper",
   "trackedObjects" : {
-
   }
 }

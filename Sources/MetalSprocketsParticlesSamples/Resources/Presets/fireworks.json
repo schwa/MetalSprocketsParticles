@@ -16,11 +16,9 @@
     0
   ],
   "colliders" : [
-
   ],
   "comment" : "Shows: sub-emitters, with a while-alive trail and an on-death burst. Rockets climb, leave sparkle trails, and burst into shells of stars.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -51,7 +49,7 @@
         "birthRate" : 0.7,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -81,7 +79,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -107,7 +104,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -152,7 +148,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 1,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -191,7 +187,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -217,7 +212,6 @@
               },
               "orientation" : {
                 "billboard" : {
-
                 }
               },
               "position" : [
@@ -229,7 +223,6 @@
               "restitutionVariation" : 0,
               "shape" : {
                 "point" : {
-
                 }
               },
               "sizeOverLife" : {
@@ -249,11 +242,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -269,7 +260,6 @@
             "countPerEvent" : 500,
             "occasion" : {
               "onDeath" : {
-
               }
             },
             "settings" : {
@@ -282,7 +272,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 1,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -330,7 +320,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -388,11 +377,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -407,7 +394,6 @@
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -419,7 +405,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -452,7 +437,7 @@
         "birthRate" : 0.6,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -482,7 +467,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -508,7 +492,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -553,7 +536,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 1,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -592,7 +575,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -618,7 +600,6 @@
               },
               "orientation" : {
                 "billboard" : {
-
                 }
               },
               "position" : [
@@ -630,7 +611,6 @@
               "restitutionVariation" : 0,
               "shape" : {
                 "point" : {
-
                 }
               },
               "sizeOverLife" : {
@@ -650,11 +630,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -670,7 +648,6 @@
             "countPerEvent" : 500,
             "occasion" : {
               "onDeath" : {
-
               }
             },
             "settings" : {
@@ -683,7 +660,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 1,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -731,7 +708,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -789,11 +765,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -808,7 +782,6 @@
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -820,7 +793,6 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -853,7 +825,7 @@
         "birthRate" : 0.8,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -883,7 +855,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -909,7 +880,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -954,7 +924,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 1,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -993,7 +963,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -1019,7 +988,6 @@
               },
               "orientation" : {
                 "billboard" : {
-
                 }
               },
               "position" : [
@@ -1031,7 +999,6 @@
               "restitutionVariation" : 0,
               "shape" : {
                 "point" : {
-
                 }
               },
               "sizeOverLife" : {
@@ -1051,11 +1018,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -1071,7 +1036,6 @@
             "countPerEvent" : 500,
             "occasion" : {
               "onDeath" : {
-
               }
             },
             "settings" : {
@@ -1084,7 +1048,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 1,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -1132,7 +1096,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -1190,11 +1153,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -1209,7 +1170,6 @@
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -1221,17 +1181,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Fireworks",
   "trackedObjects" : {
-
   }
 }

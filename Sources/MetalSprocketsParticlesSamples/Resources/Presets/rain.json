@@ -47,7 +47,6 @@
   ],
   "comment" : "Shows: velocity stretching, die-on-collision, and an on-collision sub-emitter. Rain falls on the ground and a tilted slab and splashes where it lands.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -78,7 +77,7 @@
         "birthRate" : 12000,
         "birthRateVariation" : 0,
         "blendMode" : 0,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -108,7 +107,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -169,7 +167,6 @@
             "countPerEvent" : 3,
             "occasion" : {
               "onCollision" : {
-
               }
             },
             "settings" : {
@@ -182,7 +179,7 @@
               "birthRate" : 1000,
               "birthRateVariation" : 0,
               "blendMode" : 0,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -221,7 +218,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 0.2,
               "frictionVariation" : 0,
               "gravity" : [
@@ -247,7 +243,6 @@
               },
               "orientation" : {
                 "billboard" : {
-
                 }
               },
               "position" : [
@@ -259,7 +254,6 @@
               "restitutionVariation" : 0,
               "shape" : {
                 "point" : {
-
                 }
               },
               "sizeOverLife" : {
@@ -279,11 +273,9 @@
               "sortMode" : "None",
               "speedVariation" : 0,
               "subEmitters" : [
-
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -298,7 +290,6 @@
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0.6,
@@ -310,17 +301,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Rain",
   "trackedObjects" : {
-
   }
 }

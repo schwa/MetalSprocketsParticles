@@ -16,7 +16,6 @@
     0
   ],
   "colliderSpins" : [
-
   ],
   "colliders" : [
     {
@@ -72,7 +71,7 @@
         "birthRate" : 600,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -111,7 +110,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -184,7 +182,7 @@
               "birthRate" : 20000,
               "birthRateVariation" : 0,
               "blendMode" : 0,
-              "collisionMask" : 4294967295,
+              "categoryMask" : 4294967295,
               "colorOverLife" : {
                 "keyframes" : [
                   {
@@ -223,7 +221,6 @@
                   }
                 ]
               },
-              "fieldMask" : 4294967295,
               "friction" : 1,
               "frictionVariation" : 0,
               "gravity" : [
@@ -257,7 +254,6 @@
               },
               "orientation" : {
                 "billboard" : {
-
                 }
               },
               "position" : [
@@ -269,7 +265,6 @@
               "restitutionVariation" : 0,
               "shape" : {
                 "point" : {
-
                 }
               },
               "sizeOverLife" : {
@@ -290,7 +285,6 @@
                   "countPerEvent" : 1,
                   "occasion" : {
                     "onCollision" : {
-
                     }
                   },
                   "replacesParent" : true,
@@ -304,7 +298,7 @@
                     "birthRate" : 20000,
                     "birthRateVariation" : 0,
                     "blendMode" : 0,
-                    "collisionMask" : 4294967295,
+                    "categoryMask" : 4294967295,
                     "colorOverLife" : {
                       "keyframes" : [
                         {
@@ -334,7 +328,6 @@
                         }
                       ]
                     },
-                    "fieldMask" : 4294967295,
                     "friction" : 1,
                     "frictionVariation" : 0,
                     "gravity" : [
@@ -364,7 +357,6 @@
                     },
                     "orientation" : {
                       "billboard" : {
-
                       }
                     },
                     "position" : [
@@ -376,7 +368,6 @@
                     "restitutionVariation" : 0,
                     "shape" : {
                       "point" : {
-
                       }
                     },
                     "sizeOverLife" : {
@@ -396,11 +387,9 @@
                     "sortMode" : "None",
                     "speedVariation" : 0,
                     "subEmitters" : [
-
                     ],
                     "sweepAngle" : 6.283185,
                     "triggers" : [
-
                     ],
                     "velocity" : [
                       0,
@@ -416,7 +405,6 @@
               ],
               "sweepAngle" : 6.283185,
               "triggers" : [
-
               ],
               "velocity" : [
                 0,
@@ -432,7 +420,6 @@
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -444,18 +431,15 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Spark"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Embers to Ash",
   "pointerBindings" : [
-
   ],
   "pointerMotion" : {
     "kind" : "Still",
@@ -471,6 +455,5 @@
     "yaw" : 0
   },
   "trackedObjects" : {
-
   }
 }

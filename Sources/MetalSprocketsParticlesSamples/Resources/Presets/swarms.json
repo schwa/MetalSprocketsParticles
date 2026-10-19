@@ -16,11 +16,9 @@
     0
   ],
   "colliders" : [
-
   ],
   "comment" : "Shows: local and world simulation space side by side. The gold swarm (local) travels as a tight cloud; the blue one (world) leaves a trail.",
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -51,7 +49,7 @@
         "birthRate" : 300,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -81,7 +79,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -107,7 +104,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -143,11 +139,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -159,7 +153,6 @@
       },
       "simulationSpace" : {
         "local" : {
-
         }
       },
       "sprite" : "Soft Dot"
@@ -192,7 +185,7 @@
         "birthRate" : 300,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -222,7 +215,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -248,7 +240,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -284,11 +275,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "velocity" : [
           0,
@@ -300,17 +289,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Swarms",
   "trackedObjects" : {
-
   }
 }

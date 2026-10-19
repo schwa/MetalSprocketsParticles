@@ -16,15 +16,12 @@
     0
   ],
   "colliderSpins" : [
-
   ],
   "colliders" : [
-
   ],
   "comment" : "Shows: a user Metal function (updateFunction) that sets each particle's velocity every step. Particles trace the Lorenz attractor.",
   "drawsColliders" : false,
   "forceFields" : [
-
   ],
   "layers" : [
     {
@@ -55,7 +52,7 @@
         "birthRate" : 4000,
         "birthRateVariation" : 0,
         "blendMode" : 1,
-        "collisionMask" : 4294967295,
+        "categoryMask" : 4294967295,
         "colorOverLife" : {
           "keyframes" : [
             {
@@ -103,7 +100,6 @@
             }
           ]
         },
-        "fieldMask" : 4294967295,
         "friction" : 0.2,
         "frictionVariation" : 0,
         "gravity" : [
@@ -141,7 +137,6 @@
         },
         "orientation" : {
           "billboard" : {
-
           }
         },
         "position" : [
@@ -169,11 +164,9 @@
         "sortMode" : "None",
         "speedVariation" : 0,
         "subEmitters" : [
-
         ],
         "sweepAngle" : 6.283185,
         "triggers" : [
-
         ],
         "updateFunction" : {
           "name" : "lorenz",
@@ -191,7 +184,7 @@
               0.9
             ]
           ],
-          "source" : "\/\/ Lorenz attractor. parameters[0] = (sigma, rho, beta, world units per Lorenz unit);\n\/\/ parameters[1] = (center x, y, z, time scale). Lorenz z is world up.\n[[visible]] void lorenz(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    float4 shape = parameters[0];\n    float4 frame = parameters[1];\n    float3 local = (particle.position - frame.xyz) \/ shape.w;\n    float3 p = float3(local.x, local.z, local.y + shape.y - 1.0);\n    float3 derivative = float3(\n        shape.x * (p.y - p.x),\n        p.x * (shape.y - p.z) - p.y,\n        p.x * p.y - shape.z * p.z\n    );\n    particle.velocity = float3(derivative.x, derivative.z, derivative.y) * shape.w * frame.w;\n}\n"
+          "source" : "// Lorenz attractor. parameters[0] = (sigma, rho, beta, world units per Lorenz unit);\n// parameters[1] = (center x, y, z, time scale). Lorenz z is world up.\n[[visible]] void lorenz(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {\n    float4 shape = parameters[0];\n    float4 frame = parameters[1];\n    float3 local = (particle.position - frame.xyz) / shape.w;\n    float3 p = float3(local.x, local.z, local.y + shape.y - 1.0);\n    float3 derivative = float3(\n        shape.x * (p.y - p.x),\n        p.x * (shape.y - p.z) - p.y,\n        p.x * p.y - shape.z * p.z\n    );\n    particle.velocity = float3(derivative.x, derivative.z, derivative.y) * shape.w * frame.w;\n}\n"
         },
         "velocity" : [
           0,
@@ -203,17 +196,14 @@
       },
       "simulationSpace" : {
         "world" : {
-
         }
       },
       "sprite" : "Soft Dot"
     }
   ],
   "lights" : [
-
   ],
   "name" : "Strange Attractor",
   "trackedObjects" : {
-
   }
 }
