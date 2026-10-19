@@ -10,13 +10,11 @@ import SwiftUI
 // MARK: - ParticleEmitter
 
 extension EmitterDescription {
-    /// Capacities the inspector allows.
-    static let editableCapacityRange = 100...2_000_000
-
-    /// `capacity`, kept in `editableCapacityRange`.
+    /// `capacity`, at least 1. There is no upper limit here: the GPU's largest buffer is the real one, and the model
+    /// reports a capacity it cannot allocate and puts the last one back.
     var editableCapacity: Int {
         get { capacity }
-        set { capacity = min(max(newValue, Self.editableCapacityRange.lowerBound), Self.editableCapacityRange.upperBound) }
+        set { capacity = max(newValue, 1) }
     }
 }
 

@@ -284,6 +284,7 @@ struct EmitterSectionView: View {
 // MARK: - Selected emitter
 
 struct EmissionSectionView: View {
+    @Environment(ParticlesDemoModel.self) private var model
     @Binding var settings: ParticleEmitter
     /// The emitter's capacity. Changing it rebuilds the particle buffer and restarts the effect, so it applies when the
     /// field is committed, not per keystroke.
@@ -298,7 +299,12 @@ struct EmissionSectionView: View {
                     .monospacedDigit()
                     .frame(width: 110)
             }
-            .help("Particles this emitter can have alive at once, \(EmitterDescription.editableCapacityRange.lowerBound.formatted()) to \(EmitterDescription.editableCapacityRange.upperBound.formatted()). Changing it restarts the effect.")
+            .help("Particles this emitter can have alive at once. Changing it restarts the effect. The limit is the GPU's largest buffer (80 bytes a particle).")
+            if let capacityError = model.capacityError {
+                Label(capacityError, systemImage: "xmark.octagon")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
             if let needed = settings.particlesNeeded(capacity: capacity) {
                 Label("Needs about \(needed.formatted()) at this rate and lifetime; newest particles replace the oldest early.", systemImage: "exclamationmark.triangle")
                     .font(.caption)

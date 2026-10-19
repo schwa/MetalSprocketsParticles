@@ -158,6 +158,10 @@ final class ParticlesDemoModel {
     var colliderSpins: [ColliderSpin] = []
 
     @ObservationIgnored private var cachedPlayer: ParticlePlayer?
+    /// Why the last capacity edit could not be applied (more particles than one GPU buffer holds); nil once one is.
+    private(set) var capacityError: String?
+    /// Emitter capacities that last applied, to put back when a new one cannot be allocated.
+    @ObservationIgnored private var appliedCapacities: [UUID: Int] = [:]
 
     /// Plays the system for the viewport. Each frame it gets the scene as edited (`currentEffect`), so animation,
     /// spinning colliders, pointer bindings, and tracked objects follow the inspector, and the mouse as its pointer.
@@ -169,15 +173,37 @@ final class ParticlesDemoModel {
         let player: ParticlePlayer
         if let cachedPlayer, cachedPlayer.runtime === system {
             player = cachedPlayer
-            try player.update(currentEffect)
+            do {
+                try player.update(currentEffect)
+                recordAppliedCapacities()
+            } catch let error as ParticleSystemRuntimeError {
+                // The runtime keeps its old buffer when a new one fails, so put the old capacities back (instead of
+                // retrying a huge allocation every frame) and say why.
+                capacityError = error.localizedDescription
+                for index in emitters.indices {
+                    if let capacity = appliedCapacities[emitters[index].id] {
+                        emitters[index].capacity = capacity
+                    }
+                }
+                try player.update(currentEffect)
+            }
         } else {
             player = ParticlePlayer(runtime: system, system: currentEffect)
             cachedPlayer = player
+            recordAppliedCapacities()
         }
         player.pointer = pointerPosition(projection: projection, cameraToWorld: cameraToWorld)
         player.runtime.debugView = debugView
         player.runtime.reverseZ = reverseZ
         return player
+    }
+
+    private func recordAppliedCapacities() {
+        let capacities = Dictionary(uniqueKeysWithValues: emitters.map { ($0.id, $0.capacity) })
+        if capacities != appliedCapacities {
+            appliedCapacities = capacities
+            capacityError = nil
+        }
     }
 
     /// The event name the inspector's Send button fires.

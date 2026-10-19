@@ -54,14 +54,32 @@ struct EmitterAdapterTests {
         #expect(categoryMatchSummary(0, categories: [.max], noun: "field") == "Matches 0 of 1 field")
     }
 
-    @Test func capacityStaysInItsRange() {
+    @Test func capacityHasAFloorButNoCeiling() {
         var description = EmitterDescription("Dots", settings: ParticleEmitter(), capacity: 1_000)
         description.editableCapacity = 5_000
         #expect(description.capacity == 5_000)
         description.editableCapacity = 0
-        #expect(description.capacity == EmitterDescription.editableCapacityRange.lowerBound)
+        #expect(description.capacity == 1)
         description.editableCapacity = 50_000_000
-        #expect(description.capacity == EmitterDescription.editableCapacityRange.upperBound)
+        #expect(description.capacity == 50_000_000)
+    }
+
+    /// More particles than one GPU buffer holds: the model puts the last capacity back and says why.
+    @MainActor
+    @Test func impossibleCapacitiesAreReportedAndUndone() throws {
+        let model = ParticlesDemoModel()
+        model.presetName = "Fountain"
+        _ = try model.player(projection: matrix_identity_float4x4, cameraToWorld: matrix_identity_float4x4)
+        let before = model.selectedEmitter.capacity
+        model.selectedEmitter.editableCapacity = Int(UInt32.max) + 1
+        let player = try #require(try model.player(projection: matrix_identity_float4x4, cameraToWorld: matrix_identity_float4x4))
+        #expect(model.selectedEmitter.capacity == before)
+        #expect(model.capacityError != nil)
+        #expect(player.runtime.emitters.contains { $0.capacity == before })
+        // A good capacity applies and clears the message.
+        model.selectedEmitter.editableCapacity = 2_000
+        _ = try model.player(projection: matrix_identity_float4x4, cameraToWorld: matrix_identity_float4x4)
+        #expect(model.capacityError == nil)
     }
 
     @Test func warnsWhenRateAndLifetimeNeedMoreParticles() {
