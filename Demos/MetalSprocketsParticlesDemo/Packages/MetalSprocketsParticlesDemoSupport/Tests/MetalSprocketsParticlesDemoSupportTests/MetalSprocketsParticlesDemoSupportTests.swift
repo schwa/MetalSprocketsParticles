@@ -65,6 +65,38 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// User functions in the inspector (#167): every slot's template compiles and runs.
+    @Test func userFunctionTemplatesCompileAndRun() throws {
+        var settings = ParticleEmitter()
+        for slot in UserFunctionSlot.allCases {
+            try slot.template.validate(device: ParticleSystemRuntime.defaultDevice())
+            settings[hasFunction: slot] = true
+        }
+        let runtime = try ParticleSystemRuntime(capacity: 1)
+        try runtime.apply(ParticleSystem("Functions", layers: [EmitterDescription("All Slots", settings: settings, capacity: 100)]), rebuild: true)
+        let runner = try Runner()
+        for _ in 0..<5 {
+            try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))
+        }
+    }
+
+    @Test func userFunctionSlotsTurnOnAndOff() {
+        var settings = ParticleEmitter()
+        settings[hasFunction: .collision] = true
+        #expect(settings.collisionFunction == UserFunctionSlot.collision.template)
+        settings[editableFunction: .collision].parameters.append([1, 2, 3, 4])
+        #expect(settings.collisionFunction?.parameters.count == 2)
+        settings[hasFunction: .collision] = false
+        #expect(settings.collisionFunction == nil)
+        settings.editableCustomAttributeCount = 9
+        #expect(settings.customAttributeCount == ParticleFunction.maximumCustomAttributes)
+        settings.editableCustomAttributeCount = 0
+        #expect(settings.customAttributeCount == 1)
+        // Bad code is caught before it reaches the runtime.
+        let broken = ParticleFunction(source: "not metal", name: "x")
+        #expect(throws: (any Error).self) { try broken.validate(device: ParticleSystemRuntime.defaultDevice()) }
+    }
+
     /// Distance field colliders in the collider editor (#166).
     @Test func switchingToADistanceFieldBakesATeapotInPlace() {
         var collider = Collider.sphere(center: [1, 2, 3], radius: 0.5)

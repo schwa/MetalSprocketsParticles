@@ -29,6 +29,9 @@ struct EmitterInspectorView: View {
                 CollisionSectionView(settings: $model.selectedEmitter.settings)
                 FlockingSectionView(settings: $model.selectedEmitter.settings)
                 LevelOfDetailSectionView(settings: $model.selectedEmitter.settings)
+                UserFunctionsSectionView(settings: $model.selectedEmitter.settings)
+                    // Fresh drafts when another emitter is selected.
+                    .id(model.selectedEmitter.id)
             case let .subEmitter(_, index):
                 if index < model.selectedEmitter.settings.subEmitters.count {
                     Section {

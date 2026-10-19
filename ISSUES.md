@@ -3486,17 +3486,20 @@ Found by an audit of every public setting in the description types against the d
 ## 167: Inspector: user functions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T21:37:17Z
-updated: 2026-10-19T21:37:18Z
+updated: 2026-10-19T22:21:49Z
+closed: 2026-10-19T22:21:49Z
 +++
 
 ParticleEmitter.updateFunction, spawnFunction, collisionFunction, deathFunction (ParticleFunction: source, parameters) and customAttributeCount: a source editor per slot with compile errors (ParticleFunction.errorDescription) and parameter fields.
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:21:49Z`: Done: a User Functions section after Level of Detail. Per slot (update, spawn, collision, death) a disclosure (marked with a dot when set): Enabled switch (starts from a template that compiles, with a commented example using parameters[0].x), function name and a monospaced source editor kept as drafts, Compile & Apply (checks with ParticleFunction.validate on the device first; the compiler's message shows in red and nothing is applied on failure) and Revert, and parameters (four numbers each, add and remove; apply at once). Custom Attributes 1-4. Drafts reset when another emitter is selected. Tests: every template compiles and runs in a runtime for a few frames; slot switches; attribute count limits; bad code is caught. Snapshot only checked the collapsed row (the disclosure did not expand offscreen), so the expanded editor's layout is unchecked; worth a look in the app.
 
 ---
 
