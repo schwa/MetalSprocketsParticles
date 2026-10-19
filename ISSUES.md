@@ -27,9 +27,10 @@ Planes, spheres and boxes affect particles but are invisible. Particles are also
 status: open
 priority: medium
 kind: feature
-labels: effort:xl, area:collision, deferred
+labels: effort:xl, area:collision, has-subtasks
+depends: 149, 150, 151, 152
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-18T13:33:59Z
+updated: 2026-10-19T15:24:49Z
 +++
 
 Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes need collision with mesh geometry, e.g. via a baked SDF volume or the scene depth buffer.
@@ -42,6 +43,8 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 - `2026-10-17T21:05:19Z`: Related: #38 (SwiftMesh input for EmitterMesh); share the conversion.
 - `2026-10-18T13:33:59Z`: Decision (user): skip for now.
 - `2026-10-19T00:16:31Z`: Related: #120 (screen-space collision with the scene depth buffer covers on-screen geometry cheaply; mesh/SDF colliders cover the rest).
+- `2026-10-19T15:23:09Z`: Un-deferred (user). The CPU geometry goes in SwiftMesh: #176 public Mesh bounds, #177 BVH, #178 closest point and distance, #179 winding-number inside test, #180 signed distance and baking an SDF grid. This issue keeps the GPU side: an SDF collider (3D texture, bounds, transform), sampling in the kernel, baking from a SwiftMesh mesh through #180, and per-frame transforms for scene-graph nodes.
+- `2026-10-19T15:24:49Z`: Split into subtasks, in order: #149 SDF collider type, #150 collision in the kernel, #151 baking from SwiftMesh meshes (also needs SwiftMesh #180), #152 moving SDF colliders for scene-graph nodes.
 
 ---
 
@@ -1200,12 +1203,13 @@ ParticlesView has a large computed 'private var viewport: some View' (render clo
 ## 60: Add previews for demo leaf views
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:s, area:demo, deferred
 created: 2026-10-18T12:36:57Z
-updated: 2026-10-18T12:37:34Z
+updated: 2026-10-19T15:20:18Z
+closed: 2026-10-19T15:20:18Z
 +++
 
 Leaf views without #Preview: KindPicker, ColliderEditorView, ForceFieldEditorView, TriggerEditorView, SubEmitterEditorView, OutlineView. Each needs only a line or two of fixture state. ParticlesView needs Metal and can stay without one. Source: SwiftUI review.
@@ -3041,5 +3045,133 @@ The particle count overlay at the top of the viewport (ParticleCountView in Part
 Likely cause: the texts take only the width of their current digits. monospacedDigit() makes each digit the same width, but the number of digits (and the thousands separators) still changes, e.g. 9,980 vs 10,012, and 0/s vs 1,200/s.
 
 Possible fixes: give each number a fixed width sized for its largest expected value (a hidden template like Text("0,000,000").hidden() in an overlay or a ZStack), or align the panel to a leading edge so changes grow to one side only. Rounding the rates (for example to tens) would also make them change less often. Related: #139 (hide overlays).
+
+---
+
+## 148: Max Particles field refreshes the UI on every edit, so it is hard to type into
+
++++
+status: open
+priority: medium
+kind: bug
+labels: area:editor, effort:s
+created: 2026-10-19T15:21:46Z
++++
+
+Typing in the inspector's Max Particles field (EmissionSectionView, bound to EmitterDescription.editableCapacity) refreshes the UI on each edit, which makes it hard to enter a number.
+
+Not investigated yet. Things to check first:
+- Whether TextField(value:format:) writes the binding per keystroke here (on macOS it usually writes on commit), so each digit becomes a new capacity.
+- Each new capacity changes the emitter layout, so the runtime rebuilds its buffer and the effect restarts; capacityError and the model's emitters also change, re-rendering the inspector, which may reset the field's focus or text.
+- The warning label appearing and disappearing under the field shifts the layout as the value changes.
+
+Expected: type a whole number, press Return (or leave the field), then one rebuild. Fix likely: edit a local @State draft and write the capacity only on submit/focus loss. Related: the Max Particles commits (f0b8e34c, 6b17e95f).
+
+---
+
+## 149: SDF collider type
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:collision, effort:m, subtask
+created: 2026-10-19T15:24:48Z
+updated: 2026-10-19T15:24:49Z
++++
+
+Add a Collider case for a baked signed distance field: a distance grid (resolution, origin, spacing, distances as Float, negative inside) plus a transform, uploaded once as a 3D texture (r32Float or r16Float) and cached per grid. Saved in effect files (the grid as data). No collision yet; drawn as its bounds box in debug wireframes.
+
+Acceptance: a grid round-trips through Codable; the runtime makes and reuses one texture per grid; the wireframe shows the bounds.
+
+Part of #2.
+
+---
+
+## 150: Particles collide with SDF colliders
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:collision, effort:m, subtask
+depends: 149
+created: 2026-10-19T15:24:48Z
+updated: 2026-10-19T15:24:49Z
++++
+
+In the simulation kernel, sample each SDF collider's texture (trilinear, in the collider's local space) and push particles with negative distance out along the gradient normal, with the emitter's restitution and friction, like the analytic colliders. Fast particles that cross the surface within a step are caught by checking the start and end of the step (or a few steps along it). Category masks and collisionRadius (inflate by subtracting it from the distance) apply.
+
+Acceptance: particles dropped on an SDF sphere rest on its surface (within a cell); fast particles do not pass through a thin SDF wall; masks and radius behave as with other colliders.
+
+Part of #2. Depends on the SDF collider type.
+
+---
+
+## 151: Bake SDF colliders from SwiftMesh meshes
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:collision, effort:s, subtask
+depends: 149
+created: 2026-10-19T15:24:48Z
+updated: 2026-10-19T15:24:49Z
++++
+
+Add Collider.sdf(mesh:resolution:padding:) that bakes a SwiftMesh mesh with SwiftMesh's signed distance baking (SwiftMesh #180) and wraps the grid in the SDF collider. CPU bake, once per mesh.
+
+Acceptance: an SDF baked from a SwiftMesh cube matches the cube's analytic distance within a cell; particles collide with a baked teapot (golden image).
+
+Part of #2. Depends on the SDF collider type and SwiftMesh #180.
+
+---
+
+## 152: Moving SDF colliders for scene-graph nodes
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:collision, effort:s, subtask
+depends: 150
+created: 2026-10-19T15:24:48Z
+updated: 2026-10-19T15:24:49Z
++++
+
+Let SDF colliders take a new transform each frame (translation and rotation), with velocity and angular velocity from the motion between frames, so moving and spinning meshes push particles like the other colliders. This is the path MetalSprocketsSceneGraph needs for node geometry. Add a sample preset with a moving mesh collider.
+
+Acceptance: a moving SDF collider carries resting particles along; a spinning one flings them; the preset has a preview and golden image.
+
+Part of #2. Depends on particles colliding with SDF colliders.
+
+---
+
+## 153: Effect files show "_0" keys for enum cases with unlabeled values
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:simulation, effort:s
+created: 2026-10-19T15:47:44Z
+updated: 2026-10-19T15:47:44Z
++++
+
+Swift's synthesized Codable writes an enum case's unlabeled associated value under the key "_0", so effect files contain blobs like:
+
+    "collider": { "_0": 0 }
+    "burst": { "_0": 150 }
+    "event": { "_0": "boom" }
+
+They are hard to read and to hand-edit, and the key name is an implementation detail.
+
+Cases that do it today:
+- PointerBinding: collider(Int), forceField(Int), emitter(Int) (PointerBinding.swift)
+- EmissionTrigger.Condition.event(String) and EmissionTrigger.Action.burst(Int) (EmissionTrigger.swift)
+Seen in the sample presets Pointer Stir, Dunk, and Bumper.
+
+Fix: give the values labels (for example collider(index:), burst(count:), event(name:)), so they encode as { "index": 0 }, or write custom Codable for a shorter form like "collider": 0. Keep reading the old "_0" form so saved effects still load, and migrate the sample presets. A test (or DecodingCoverageTests) could fail on any "_0" key in encoded effects so it does not come back.
 
 ---
