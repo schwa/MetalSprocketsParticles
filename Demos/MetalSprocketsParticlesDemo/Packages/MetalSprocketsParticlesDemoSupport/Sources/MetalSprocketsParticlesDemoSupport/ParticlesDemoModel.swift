@@ -150,6 +150,8 @@ final class ParticlesDemoModel {
     var showColliders = false
     /// Draws particles in false colors or as wireframes (see ParticleDebugView).
     var debugView: ParticleDebugView = .none
+    /// Reverse Z for the viewport and the player (see ParticleSystemRuntime.reverseZ).
+    var reverseZ = false
     /// Draws colliders as solids and gives soft particles their depth.
     var drawColliders = false
     /// The preset's spinning colliders, by index.
@@ -174,6 +176,7 @@ final class ParticlesDemoModel {
         }
         player.pointer = pointerPosition(projection: projection, cameraToWorld: cameraToWorld)
         player.runtime.debugView = debugView
+        player.runtime.reverseZ = reverseZ
         return player
     }
 

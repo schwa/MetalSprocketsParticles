@@ -20,7 +20,7 @@ public struct ParticlesView: View {
         } detail: {
             ParticleViewportView()
                 .inspector(isPresented: $isInspectorPresented) {
-                    EmitterInspectorView()
+                    SidebarTabsView()
                         .inspectorColumnWidth(min: 300, ideal: 340)
                 }
                 .toolbar {
@@ -125,6 +125,10 @@ struct ParticleViewportView: View {
 
     @Environment(ParticlesDemoModel.self) private var model
     @AppStorage(showsOverlaysKey) private var showsOverlays = true
+    @AppStorage(RenderingDefaults.colorFormat) private var colorFormat: ViewportColorFormat = .srgb8
+    @AppStorage(RenderingDefaults.framebufferOnly) private var framebufferOnly = true
+    @AppStorage(RenderingDefaults.framesPerSecond) private var framesPerSecond = 120
+    @AppStorage(RenderingDefaults.extendedDynamicRange) private var extendedDynamicRange = false
     @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
     @State private var frameTiming: FrameTimingStatistics?
     @State private var aliveParticles = 0
@@ -138,12 +142,13 @@ struct ParticleViewportView: View {
 
     var body: some View {
         if let system = model.system {
-            RenderView(colorPixelFormat: Self.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
+            RenderView(colorPixelFormat: colorFormat.pixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 // The demo owns its 3D camera (the orbit controls); in 2D the overlay camera maps one unit to one point of
                 // the view. Either way it passes matrices to the player.
                 let overlay = ParticleCamera.overlay.matrices(for: model.currentEffect, size: viewSize)
-                let projection = model.is2D ? overlay.projection : simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
+                let plainProjection = model.is2D ? overlay.projection : simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
+                let projection = model.reverseZ ? ParticleSystemRuntime.reversingDepth(plainProjection) : plainProjection
                 let cameraToWorld = model.is2D ? overlay.cameraToWorld : cameraMatrix
                 if let player = try model.player(projection: projection, cameraToWorld: cameraToWorld) {
                     try player.frame(
@@ -156,6 +161,13 @@ struct ParticleViewportView: View {
                     .gpuTimed("Render")
                 }
             }
+            .metalFramebufferOnly(framebufferOnly)
+            .metalPreferredFramesPerSecond(framesPerSecond)
+            .metalWantsExtendedDynamicRangeContent(colorFormat.supportsExtendedDynamicRange && extendedDynamicRange)
+            // Reverse Z clears depth to the far plane, 0.
+            .metalClearDepth(model.reverseZ ? 0 : 1)
+            // A new pixel format or depth convention needs new pipelines and drawables.
+            .id("\(colorFormat.rawValue)-\(model.reverseZ)")
             .background(.black)
             .onFrameTimingChange { statistics in
                 frameTiming = statistics

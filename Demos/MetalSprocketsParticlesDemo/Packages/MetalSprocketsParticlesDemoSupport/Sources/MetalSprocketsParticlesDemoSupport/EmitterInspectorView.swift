@@ -563,16 +563,9 @@ struct WorldSectionView: View {
                 Toggle("Animate Colliders", isOn: $model.animateColliders)
                 Toggle("Solid Colliders", isOn: $model.drawColliders)
                     .help("Draw colliders as solids. Emitters with Softness fade where they meet them.")
-                Toggle("Wireframes", isOn: $model.showColliders)
             }
             Toggle("2D", isOn: $model.is2D)
                 .help("Overlay camera (one unit is one point, y down) and every emitter kept on its plane. Author 2D effects in points; new emitters start from 2D defaults.")
-            Picker("Debug View", selection: $model.debugView) {
-                ForEach(ParticleDebugView.allCases, id: \.self) { view in
-                    Text(view.name).tag(view)
-                }
-            }
-            .help("Draw particles in false colors or as wireframes instead of their own colors.")
         }
     }
 }
