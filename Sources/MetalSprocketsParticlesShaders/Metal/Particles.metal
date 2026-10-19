@@ -725,6 +725,7 @@ kernel void updateParticles(
     constant DepthCollisionData &depthCollision [[buffer(26)]],
     texture2d<float, access::read> sceneDepth [[texture(0)]],
     device float4 *trails [[buffer(27)]],
+    const device float4 *steering [[buffer(28)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -792,6 +793,14 @@ kernel void updateParticles(
         acceleration += fieldAcceleration(forceFields[i], pathPoints, position, velocity, uniforms.time);
     }
     velocity += acceleration * dt;
+    if (uniforms.flocks != 0) {
+        velocity += (uniforms.simulationToWorld * float4(steering[id].xyz, 0)).xyz * dt;
+        float speed = length(velocity);
+        float2 range = uniforms.flockSpeedRange;
+        if (speed > 1e-5) {
+            velocity *= clamp(speed, range.x, range.y) / speed;
+        }
+    }
     velocity *= max(0.0, 1.0 - uniforms.drag * dt);
     position += velocity * dt;
     if (uniforms.hasUpdateFunction != 0) {

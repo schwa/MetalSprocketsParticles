@@ -274,7 +274,28 @@ typedef struct {
     // 0 for emitters without trails.
     uint32_t trailPointCount;
     uint32_t trailStride;
+    // Flocking: add steering[id].xyz (from the flocking pass) to velocity, then keep speed in flockSpeedRange.
+    uint32_t flocks;
+    simd_float2 flockSpeedRange;
 } SimulationUniforms;
+
+/// Cells in the flocking spatial hash. Neighbor cells that hash to the same entry are searched once.
+#define PARTICLE_FLOCK_TABLE_SIZE 16384
+
+/// One emitter's flocking pass: its live window (windowCount ring slots from windowStart, wrapping at capacity),
+/// neighbor radius (also the grid cell size), and the boids weights.
+typedef struct {
+    uint32_t sliceStart;
+    uint32_t capacity;
+    uint32_t windowStart;
+    uint32_t windowCount;
+    float radius;
+    float separationRadius;
+    float separation;
+    float alignment;
+    float cohesion;
+    uint32_t maxNeighbors;
+} FlockData;
 
 /// The scene depth the simulation collides with: last frame's SceneDepth texture and the camera that drew it.
 typedef struct {

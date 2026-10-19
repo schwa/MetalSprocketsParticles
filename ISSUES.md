@@ -2335,15 +2335,18 @@ User Metal functions (#86-89) see only position, velocity, age, lifetime, and id
 ## 111: Flocking: neighbor-aware simulation
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:l
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T03:09:38Z
+closed: 2026-10-19T03:09:38Z
 +++
 
 Boids-style separation, alignment, and cohesion, and other effects that need nearby particles (simple fluids, crowd avoidance). Needs a spatial grid built each frame on the GPU (count, prefix sum, scatter, which the sort code partly has) and an extra simulation pass that reads it. Could be the first 'simulation stage' (Niagara) that user functions can also use later. Impressive at a million particles.
+
+- `2026-10-19T03:09:38Z`: Done: ParticleEmitter.flocking (ParticleFlocking: radius, separationRadius, separation, alignment, cohesion, speedRange, maxNeighbors). Each frame, before the update, a GPU pass per flocking emitter builds a spatial hash grid of its live particles (clear, count, one-thread scan, scatter, per-cell sort for determinism) and a steering kernel sums boids forces over the 27 neighboring cells into a steering buffer; the update kernel adds it and clamps speed. Determinism: the atomic scatter made neighbor order vary and the Murmuration golden mismatch between runs; sorting each cell by slot fixed it (flockingIsDeterministic). Not done: a general 'simulation stage' for user functions to read neighbors, and a parallel scan (the scan is one thread over 16384 cells, which is fine at these sizes). Murmuration's preview is about 1 MB: thousands of moving dots compress poorly.
 
 ---
 

@@ -183,6 +183,8 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var colorByPositionEnd: SIMD3<Float> = [0, 1, 0]
     /// Draws particles as ribbons through their recent positions instead of sprites.
     public var trail: ParticleTrail?
+    /// Boids: particles steer by their neighbors.
+    public var flocking: ParticleFlocking?
 
     public init() {}
 }
@@ -257,6 +259,7 @@ extension ParticleEmitter {
         try container.update(&colorByPositionStart, .colorByPositionStart)
         try container.update(&colorByPositionEnd, .colorByPositionEnd)
         trail = try container.decodeIfPresent(ParticleTrail.self, forKey: .trail)
+        flocking = try container.decodeIfPresent(ParticleFlocking.self, forKey: .flocking)
     }
 }
 

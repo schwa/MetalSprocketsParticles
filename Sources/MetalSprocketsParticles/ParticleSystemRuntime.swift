@@ -240,6 +240,9 @@ public final class ParticleSystemRuntime {
     private(set) var attributes: MTLBuffer?
     /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
     var trails: MTLBuffer?
+    /// For `ParticleEmitter.flocking`, made when an emitter flocks.
+    var flockingBuffers: FlockingBuffers?
+    var flocks: [FlockData] = []
     let library: ShaderLibrary
     private let sampler: MTLSamplerState
     /// Bound in place of a missing texture; the shader ignores it.
@@ -530,6 +533,7 @@ public final class ParticleSystemRuntime {
             }
         }
         self.trailStride = Int(trailStride)
+        flocks = try planFlocking()
         try makeAttributesIfNeeded(for: plan)
         planParticleLights()
         return try encode(plan, sorts: try sorts(view: view))
@@ -561,6 +565,9 @@ public final class ParticleSystemRuntime {
         let gatherKernel = try library.gatherParticleLights as ComputeKernel
         let depthCollision = collisionDepth?.data ?? DepthCollisionData()
         let trailBuffer = trails ?? placeholderMesh.vertices
+        let flocks = flocks
+        let flockingBuffers = flockingBuffers
+        let steeringBuffer = flockingBuffers?.steering ?? placeholderMesh.vertices
         let depthTexture = collisionDepth?.depth.texture ?? placeholderTexture
         let eventRecords = eventRecords
         let aliveCounters = aliveCounters
@@ -575,6 +582,11 @@ public final class ParticleSystemRuntime {
         return try ComputePass {
             // Previous frame's vertex stage reads the buffer we are about to write.
             QueueBarrier(after: .vertex, before: .dispatch)
+            if let flockingBuffers, !flocks.isEmpty {
+                try flockingPasses(flocks, buffers: flockingBuffers, particles: buffer)
+                // The update reads the steering.
+                EncoderBarrier(after: .dispatch, before: .dispatch)
+            }
             ForEach(Array(dispatches.indices), id: \.self) { index in
                 // Slices are disjoint, so only consecutive steps of one emitter depend on each other.
                 if dispatches[index].followsSameEmitter {
@@ -614,6 +626,7 @@ public final class ParticleSystemRuntime {
                 .parameter("depthCollision", value: depthCollision)
                 .parameter("sceneDepth", texture: depthTexture)
                 .parameter("trails", buffer: trailBuffer)
+                .parameter("steering", buffer: steeringBuffer)
                 .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }

@@ -47,6 +47,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Sand on Shapes](#sand-on-shapes)
 - [Spark Spectrum](#spark-spectrum)
 - [Light Ribbons](#light-ribbons)
+- [Murmuration](#murmuration)
 
 ## Fountain
 
@@ -299,3 +300,9 @@ A fountain of sparks colored three ways at once: white-hot while fast and deep r
 Glowing particles swirl around a vortex, each drawing a long tapered ribbon through its last 48 positions (ParticleEmitter.trail), like light painting.
 
 ![light-ribbons](previews/light-ribbons.webp)
+
+## Murmuration
+
+Twelve thousand starlings wheel as one. Each bird steers by its neighbors only: away from the closest, along with the local average heading, and toward the local center (ParticleEmitter.flocking), using a spatial grid rebuilt on the GPU every frame. A gentle attractor keeps the flock in view.
+
+![murmuration](previews/murmuration.webp)
