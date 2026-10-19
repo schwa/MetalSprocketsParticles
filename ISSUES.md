@@ -3506,3 +3506,21 @@ Replace these with references to files. A reference is either:
 Move the existing blobs out to files (e.g. raw float32 `.bin` for fields, `.png` for images) and update the presets. Consider doing the same for inline mesh arrays (`meshPositions`/`meshTriangles`), which make inside-the-teapot.json ~9800 lines.
 
 ---
+
+## 170: Emitter meshes as file references (OBJ/PLY) instead of inline JSON arrays
+
++++
+status: new
+priority: medium
+kind: enhancement
+depends: 169
+created: 2026-10-19T21:51:47Z
++++
+
+Emitter meshes are saved inline in effect JSON as `meshPositions` and `meshTriangles` number arrays (see `EmitterDescription` Codable). This makes presets huge: inside-the-teapot.json is ~9800 lines, mostly the teapot.
+
+Store the mesh as a file reference instead, using the same reference scheme as #169: a name (next to the JSON or in the bundle) or a URL. Load OBJ and PLY (e.g. via ModelIO `MDLAsset`, or SwiftMesh if it has loaders).
+
+Move the existing inline meshes in the presets out to files. Decide whether to keep reading the inline arrays for old files.
+
+---
