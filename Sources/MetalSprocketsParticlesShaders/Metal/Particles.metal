@@ -904,6 +904,10 @@ kernel void updateParticles(
         }
     }
 
+    // Contact friction slows spin like it slows sliding, so particles resting on a collider stop turning.
+    if (hit) {
+        p.rotation.y *= 1.0 - friction;
+    }
     if (hit && uniforms.reportsCollisions != 0) {
         writeEvent(eventCursor, events, ParticleEventKindCollision, position, velocity, uniforms.time, uniforms.eventEmitterIndex, firstHitCollider);
     }

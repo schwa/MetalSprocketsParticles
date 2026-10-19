@@ -2693,11 +2693,13 @@ Nothing catches performance regressions: Sand on Shapes dropped to 80 fps unnoti
 ## 132: Particles keep spinning after they come to rest on a collider
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:collision, effort:s
 created: 2026-10-19T11:42:29Z
+updated: 2026-10-19T11:59:41Z
+closed: 2026-10-19T11:59:41Z
 +++
 
 In Coin Shower, coins stop sliding on the floor but keep rotating in place. Collisions damp linear velocity (restitution and friction) but never touch angular velocity (Particle.rotation.y), so spin set by angularSpeedVariation runs for the particle's whole life. Most visible with mesh particles (#119), also true for spinning sprites.
