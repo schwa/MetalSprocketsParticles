@@ -495,12 +495,137 @@ extension ForceField.Effect {
     }
 }
 
+// MARK: - Lights
+
+extension ParticleEmitter {
+    var emitsLight: Bool {
+        get { light != nil }
+        set { light = newValue ? (light ?? ParticleLightEmission()) : nil }
+    }
+
+    /// The particle lights, or the defaults when there are none. Setting them turns particle lights on.
+    var editableLight: ParticleLightEmission {
+        get { light ?? ParticleLightEmission() }
+        set { light = newValue }
+    }
+}
+
+extension ParticleLightEmission {
+    /// `count` as a slider value, at least 1.
+    var editableCount: Float {
+        get { Float(count) }
+        set { count = max(Int(newValue.rounded()), 1) }
+    }
+}
+
+extension ParticleLight {
+    /// Point (true) or directional (false). Switching keeps color and intensity.
+    var isPoint: Bool {
+        get {
+            if case .point = self {
+                return true
+            }
+            return false
+        }
+        set {
+            guard newValue != isPoint else {
+                return
+            }
+            self = newValue ? .point(position: [0, 2, 0], color: color, intensity: intensity, range: 6) : .directional(direction: [0, -1, 0], color: color, intensity: intensity)
+        }
+    }
+
+    var color: SIMD3<Float> {
+        get {
+            switch self {
+            case let .directional(_, color, _), let .point(_, color, _, _): color
+            }
+        }
+        set {
+            switch self {
+            case let .directional(direction, _, intensity): self = .directional(direction: direction, color: newValue, intensity: intensity)
+            case let .point(position, _, intensity, range): self = .point(position: position, color: newValue, intensity: intensity, range: range)
+            }
+        }
+    }
+
+    var intensity: Float {
+        get {
+            switch self {
+            case let .directional(_, _, intensity), let .point(_, _, intensity, _): intensity
+            }
+        }
+        set {
+            switch self {
+            case let .directional(direction, color, _): self = .directional(direction: direction, color: color, intensity: newValue)
+            case let .point(position, color, _, range): self = .point(position: position, color: color, intensity: newValue, range: range)
+            }
+        }
+    }
+
+    /// The direction light travels; setting it on a point light does nothing.
+    var direction: SIMD3<Float> {
+        get {
+            if case let .directional(direction, _, _) = self {
+                return direction
+            }
+            return [0, -1, 0]
+        }
+        set {
+            if case let .directional(_, color, intensity) = self {
+                self = .directional(direction: newValue, color: color, intensity: intensity)
+            }
+        }
+    }
+
+    /// Where a point light is; setting it on a directional light does nothing.
+    var position: SIMD3<Float> {
+        get {
+            if case let .point(position, _, _, _) = self {
+                return position
+            }
+            return .zero
+        }
+        set {
+            if case let .point(_, color, intensity, range) = self {
+                self = .point(position: newValue, color: color, intensity: intensity, range: range)
+            }
+        }
+    }
+
+    /// A point light's falloff distance (0 for none); setting it on a directional light does nothing.
+    var range: Float {
+        get {
+            if case let .point(_, _, _, range) = self {
+                return range
+            }
+            return 0
+        }
+        set {
+            if case let .point(position, color, intensity, _) = self {
+                self = .point(position: position, color: color, intensity: intensity, range: newValue)
+            }
+        }
+    }
+}
+
 // MARK: - Colors
 
 extension ParticleCurve.Keyframe where Value == SIMD4<Float> {
     var color: Color {
         get { Color(value) }
         set { value = newValue.simd }
+    }
+}
+
+extension SIMD3 where Scalar == Float {
+    /// Linear sRGB as a color, for color pickers. Values above 1 are clipped by the picker.
+    var color: Color {
+        get { Color(SIMD4(self, 1)) }
+        set {
+            let value = newValue.simd
+            self = [value.x, value.y, value.z]
+        }
     }
 }
 

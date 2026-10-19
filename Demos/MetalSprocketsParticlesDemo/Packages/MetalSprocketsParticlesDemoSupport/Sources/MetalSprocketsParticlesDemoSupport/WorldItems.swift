@@ -10,6 +10,12 @@ struct ColliderItem: Identifiable, Equatable {
     var followsPointer = false
 }
 
+/// A scene light with an identity, so the list can add and remove lights without index-based identity.
+struct LightItem: Identifiable, Equatable {
+    let id = UUID()
+    var light: ParticleLight
+}
+
 struct ForceFieldItem: Identifiable, Equatable {
     let id = UUID()
     var field: ForceField

@@ -3425,16 +3425,20 @@ Found by an audit of every public setting in the description types against the d
 ## 164: Inspector: particle lights and scene lighting
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T21:37:17Z
+updated: 2026-10-19T22:08:43Z
+closed: 2026-10-19T22:08:43Z
 +++
 
 ParticleEmitter.light (ParticleLight: intensity, picksBrightest, on/off); the scene's lights (ParticleSystem.lights: add, remove, edit) and ambientLight.
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:08:43Z`: Done. Emitter: a Particle Lights group in Appearance (Emit Light switch; lights count, color, intensity, range, brightest particles). Scene: a Lighting section after World (ambient color; each light in a disclosure with kind directional/point, color, intensity, position and range or direction, and Remove; Add Light up to PARTICLE_MAX_LIGHTS). The model now owns lights (as LightItems with ids, like colliders) and ambientLight and applies them to the runtime on change; before, it wrote them straight into the runtime, where the UI could not see them. Colors are linear sRGB via a Color view of SIMD3<Float>; values above 1 are clipped by the picker (use intensity for brighter). Tests: particle light switch and count floor, light accessors keep the other fields and ignore the other kind's, scene lights and ambient reach the saved effect; every preset still round-trips.
 
 ---
 

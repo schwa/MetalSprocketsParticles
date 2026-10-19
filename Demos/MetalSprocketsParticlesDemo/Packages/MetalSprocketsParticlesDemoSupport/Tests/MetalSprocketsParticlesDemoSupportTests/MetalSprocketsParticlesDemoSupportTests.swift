@@ -64,6 +64,42 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// Particle lights and the scene's lights and ambient light (#164).
+    @Test func particleLightsTurnOnAndOff() {
+        var emitter = ParticleEmitter()
+        emitter.emitsLight = true
+        #expect(emitter.light == ParticleLightEmission())
+        emitter.editableLight.editableCount = 0
+        #expect(emitter.light?.count == 1)
+        emitter.emitsLight = false
+        #expect(emitter.light == nil)
+    }
+
+    @Test func lightAccessorsKeepTheOtherFields() {
+        var light = ParticleLight.point(position: [1, 2, 3], color: [1, 0, 0], intensity: 2, range: 4)
+        light.range = 5
+        light.position = [0, 1, 0]
+        #expect(light == .point(position: [0, 1, 0], color: [1, 0, 0], intensity: 2, range: 5))
+        // Switching kind keeps color and intensity; fields of the other kind are ignored.
+        light.isPoint = false
+        light.range = 99
+        #expect(light.color == [1, 0, 0] && light.intensity == 2)
+        light.direction = [1, 0, 0]
+        #expect(light == .directional(direction: [1, 0, 0], color: [1, 0, 0], intensity: 2))
+    }
+
+    @MainActor
+    @Test func sceneLightsReachTheSavedEffect() {
+        let model = ParticlesDemoModel()
+        model.lights = []
+        model.addLight()
+        model.ambientLight = [0.1, 0.2, 0.3]
+        #expect(model.currentEffect.lights.count == 1)
+        #expect(model.currentEffect.ambientLight == [0.1, 0.2, 0.3])
+        model.lights.removeAll()
+        #expect(model.currentEffect.lights.isEmpty)
+    }
+
     /// The Trails and Ribbons group edits ParticleEmitter.trail and ribbon (#161).
     @Test func trailsAndRibbonsTurnOnAndOff() {
         var emitter = ParticleEmitter()

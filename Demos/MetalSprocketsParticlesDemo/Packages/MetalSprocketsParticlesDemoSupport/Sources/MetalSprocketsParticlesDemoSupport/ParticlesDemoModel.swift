@@ -133,6 +133,20 @@ final class ParticlesDemoModel {
         didSet { applyToRuntime() }
     }
 
+    /// Lights for emitters with Lit on.
+    var lights: [LightItem] = [] {
+        didSet { applyToRuntime() }
+    }
+
+    /// Light lit particles get from every direction.
+    var ambientLight: SIMD3<Float> = [0.25, 0.25, 0.25] {
+        didSet { applyToRuntime() }
+    }
+
+    func addLight() {
+        lights.append(LightItem(light: .point(position: cameraTarget + [0, 1.5, 0], color: [1, 0.9, 0.7], intensity: 2, range: 6)))
+    }
+
     /// Sends the edited scene to the runtime in one step (`ParticleSystemRuntime.apply`), keeping the particles unless
     /// the emitter layout changed.
     private func applyToRuntime() {
@@ -255,8 +269,8 @@ final class ParticlesDemoModel {
             colliders: colliders.map(\.collider),
             animatesColliders: animateColliders,
             forceFields: forceFields.map(\.field),
-            lights: system?.lights ?? [],
-            ambientLight: system?.ambientLight ?? [0.25, 0.25, 0.25],
+            lights: lights.map(\.light),
+            ambientLight: ambientLight,
             trackedObjects: trackedObjects,
             cameraEye: cameraEye,
             cameraTarget: cameraTarget
@@ -324,8 +338,8 @@ final class ParticlesDemoModel {
         animateColliders = preset.animatesColliders
         drawColliders = preset.drawsColliders
         colliderSpins = preset.colliderSpins
-        system?.lights = preset.lights
-        system?.ambientLight = preset.ambientLight
+        lights = preset.lights.map { LightItem(light: $0) }
+        ambientLight = preset.ambientLight
         trackedObjects = preset.trackedObjects
         presetComment = preset.comment
         cameraEye = preset.cameraEye

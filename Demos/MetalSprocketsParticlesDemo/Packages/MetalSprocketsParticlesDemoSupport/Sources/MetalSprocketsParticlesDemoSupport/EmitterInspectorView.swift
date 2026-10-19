@@ -427,6 +427,9 @@ struct AppearanceSectionView: View {
                     }
                 }
             }
+            DisclosureGroup("Particle Lights") {
+                ParticleLightsView(settings: $emitter.settings)
+            }
             DisclosureGroup("Trails and Ribbons") {
                 TrailsAndRibbonsView(settings: $emitter.settings)
             }
@@ -436,6 +439,25 @@ struct AppearanceSectionView: View {
             DisclosureGroup("Variation") {
                 VariationControlsView(settings: $emitter.settings)
             }
+        }
+    }
+}
+
+/// Some of the emitter's particles light the scene (and other emitters' lit particles).
+struct ParticleLightsView: View {
+    @Binding var settings: ParticleEmitter
+
+    var body: some View {
+        Toggle("Emit Light", isOn: $settings.emitsLight)
+            .help("Turns some of this emitter's particles into point lights each frame: sparks lighting smoke, fireflies on leaves.")
+        if settings.emitsLight {
+            ParameterSliderView("Lights", value: $settings.editableLight.editableCount, in: 1...32, format: .number.precision(.fractionLength(0)))
+                .help("How many particles become lights, picked evenly across the emitter.")
+            ColorPicker("Color", selection: $settings.editableLight.color.color, supportsOpacity: false)
+            ParameterSliderView("Intensity", value: $settings.editableLight.intensity, in: 0...10)
+            ParameterSliderView("Range", value: $settings.editableLight.range, in: 0...10)
+            Toggle("Brightest Particles", isOn: $settings.editableLight.picksBrightest)
+                .help("Each light takes the brightest particle in its share, so lights sit on the hottest sparks. Off is cheaper.")
         }
     }
 }
@@ -730,6 +752,51 @@ struct WorldSectionView: View {
                 Toggle("Solid Colliders", isOn: $model.drawColliders)
                     .help("Draw colliders as solids. Emitters with Softness fade where they meet them.")
             }
+        }
+        LightingSectionView()
+    }
+}
+
+/// The scene's lights and ambient light, for emitters with Lit on.
+struct LightingSectionView: View {
+    @Environment(ParticlesDemoModel.self) private var model
+
+    var body: some View {
+        @Bindable var model = model
+        Section("Lighting") {
+            ColorPicker("Ambient", selection: $model.ambientLight.color, supportsOpacity: false)
+                .help("Light lit particles get from every direction.")
+            ForEach($model.lights) { $item in
+                LightEditorView(light: $item.light) {
+                    model.lights.removeAll { $0.id == item.id }
+                }
+            }
+            Button("Add Light", systemImage: "plus") { model.addLight() }
+                .disabled(model.lights.count >= Int(PARTICLE_MAX_LIGHTS))
+        }
+    }
+}
+
+struct LightEditorView: View {
+    @Binding var light: ParticleLight
+    let remove: () -> Void
+
+    var body: some View {
+        DisclosureGroup(light.isPoint ? "Point Light" : "Directional Light") {
+            Picker("Kind", selection: $light.isPoint) {
+                Text("Directional").tag(false)
+                Text("Point").tag(true)
+            }
+            ColorPicker("Color", selection: $light.color.color, supportsOpacity: false)
+            ParameterSliderView("Intensity", value: $light.intensity, in: 0...10)
+            if light.isPoint {
+                VectorEditorView("Position", value: $light.position, in: -10...10)
+                ParameterSliderView("Range", value: $light.range, in: 0...20)
+                    .help("Light fades to zero at this distance. 0 means no falloff.")
+            } else {
+                VectorEditorView("Direction", value: $light.direction, in: -1...1)
+            }
+            Button("Remove Light", systemImage: "trash", role: .destructive, action: remove)
         }
     }
 }
