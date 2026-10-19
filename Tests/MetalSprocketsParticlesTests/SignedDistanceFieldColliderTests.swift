@@ -117,6 +117,41 @@ struct SignedDistanceFieldColliderTests {
         #expect(positions.allSatisfy { abs($0.y - 0.05) < cell && abs(simd_length(SIMD2($0.x, $0.z)) - 0.4) < 0.05 })
     }
 
+    /// Uneven frames (a short one after a long one, as after the app comes back from the background) must not make a
+    /// spun collider seem faster. The player used to place colliders before moving its clock, so each step got the
+    /// previous frame's motion divided by this frame's deltaTime: 0.03 s of turn over 0.004 s is 7.5 times the spin.
+    /// Sand riding a slab at 0.5 rad/s, 0.4 from the axis, moves at 0.2 m/s; with the bug it reached about 1.5.
+    @Test func unevenFramesDoNotSpeedUpSpunColliders() throws {
+        var sand = ParticleEmitter()
+        sand.shape = .point
+        sand.position = [0.4, 0.3, 0]
+        sand.velocity = .zero
+        sand.velocitySpread = 0
+        sand.gravity = [0, -9.8, 0]
+        sand.lifetime = 100...100
+        sand.birthRate = 0
+        sand.restitution = 0
+        sand.friction = 1
+        var system = ParticleSystem("Turntable", layers: [EmitterDescription("Sand", settings: sand, capacity: 4)], colliders: [.signedDistanceField(slab)])
+        system.colliderSpins = [ColliderSpin(collider: 0, axis: [0, 1, 0], speed: 0.5)]
+        let size = CGSize(width: 64, height: 64)
+        let renderer = try OffscreenRenderer(size: size)
+        let player = try ParticlePlayer(system: system, device: renderer.device)
+        player.runtime.burst(4)
+        for _ in 0..<60 {
+            _ = try renderer.render(try player.frame(deltaTime: 1.0 / 60.0, size: size))
+        }
+        var fastest: Float = 0
+        for frame in 0..<60 {
+            _ = try renderer.render(try player.frame(deltaTime: frame.isMultiple(of: 2) ? 0.03 : 0.004, size: size))
+            let pointer = player.runtime.buffer.contents().bindMemory(to: Particle.self, capacity: 4)
+            for index in 0..<4 {
+                fastest = max(fastest, simd_length(SIMD2(pointer[index].velocity.x, pointer[index].velocity.z)))
+            }
+        }
+        #expect(fastest < 0.3)
+    }
+
     /// A node's world matrix gives the center and rotation; scale is dropped, since baked distances do not scale.
     @Test func placedByTakesTranslationAndRotation() {
         let rotation = simd_quatf(angle: 0.7, axis: simd_normalize([1, 2, 3]))

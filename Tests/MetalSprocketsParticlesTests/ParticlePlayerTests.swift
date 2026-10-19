@@ -62,7 +62,8 @@ struct ParticlePlayerTests {
         try manual.load(system)
         let view = simd_float4x4(lookingFrom: system.cameraEye, at: system.cameraTarget).inverse
         for frame in 0..<60 {
-            let time = Float(frame) * deltaTime
+            // Animated state at the end of each step, so collider motion over the step matches its deltaTime.
+            let time = Float(frame + 1) * deltaTime
             manual.forceFields = system.forceFields(at: time)
             manual.trackedObjects = system.trackedObjectPositions(at: time)
             _ = try renderer.render(try manual.simulate(deltaTime: deltaTime, colliders: system.colliders(at: time, pointer: nil), transforms: system.transforms(at: time, pointer: nil), view: view))

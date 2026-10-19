@@ -76,16 +76,13 @@ public final class ParticlePlayer {
         sceneDepth: SceneDepth? = nil,
         wireframes: Bool = false
     ) throws -> some Element {
-        let pointer = self.pointer
-        runtime.forceFields = system.forceFields(at: time, pointer: pointer)
-        runtime.trackedObjects = system.trackedObjectPositions(at: time)
-        let colliders = system.colliders(at: time, pointer: pointer)
-        let transforms = system.transforms(at: time, pointer: pointer)
-        runtime.applyEventBursts(system.eventBursts)
+        // The clock moves first, so what this step is given (colliders above all) is where it is at the step's end. The
+        // runtime turns the change since the last step into velocity and spin using this step's deltaTime; positions
+        // from before the step would be one frame behind, and with uneven frames (a short one after a long one) the
+        // spin would come out several times too fast and fling particles. The step is the simulation's capped one, so
+        // a long frame does not move colliders ahead of the particles either.
         switch runtime.state {
         case .playing:
-            // The simulation's capped step: a whole long frame here would turn spun colliders ahead of the particles
-            // in one jump, and their spin over the capped step would fling them.
             time += min(deltaTime, ParticleSystemRuntime.maximumStep) * max(runtime.speedFactor, 0)
         case .stopped:
             // Play after stop restarts the emitters; the clock starts over with them.
@@ -93,6 +90,12 @@ public final class ParticlePlayer {
         default:
             break
         }
+        let pointer = self.pointer
+        runtime.forceFields = system.forceFields(at: time, pointer: pointer)
+        runtime.trackedObjects = system.trackedObjectPositions(at: time)
+        let colliders = system.colliders(at: time, pointer: pointer)
+        let transforms = system.transforms(at: time, pointer: pointer)
+        runtime.applyEventBursts(system.eventBursts)
         return try Group {
             try runtime.simulate(deltaTime: deltaTime, colliders: colliders, transforms: transforms, view: view)
             try runtime.renderScene(projection: projection, view: view, sceneDepth: sceneDepth, wireframes: wireframes)
