@@ -3365,16 +3365,20 @@ Found by an audit of every public setting in the description types against the d
 ## 161: Inspector: trails and ribbons
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T21:37:16Z
+updated: 2026-10-19T22:02:27Z
+closed: 2026-10-19T22:02:27Z
 +++
 
 ParticleEmitter.trail (ParticleTrail: pointCount, pointInterval, fades, tapers) and ribbon (ParticleRibbon: tapers), each with an on/off switch.
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:02:27Z`: Done: a Trails and Ribbons group in Appearance. Trail (switch; points 2-64, point interval, tapers, fades) and Ribbon (switch; tapers), with help noting the ribbon takes the place of trails and mesh particles. Test covers both switches and the point-count limits. Same pattern as #159/#160, so no new snapshot.
 
 ---
 

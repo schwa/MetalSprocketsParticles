@@ -424,12 +424,38 @@ struct AppearanceSectionView: View {
                     }
                 }
             }
+            DisclosureGroup("Trails and Ribbons") {
+                TrailsAndRibbonsView(settings: $emitter.settings)
+            }
             DisclosureGroup("Color Effects") {
                 ColorEffectsView(settings: $emitter.settings)
             }
             DisclosureGroup("Variation") {
                 VariationControlsView(settings: $emitter.settings)
             }
+        }
+    }
+}
+
+/// Draw particles as ribbons: each through its own recent positions (a trail), or all joined in birth order (a ribbon).
+struct TrailsAndRibbonsView: View {
+    @Binding var settings: ParticleEmitter
+
+    var body: some View {
+        Toggle("Trail", isOn: $settings.hasTrail)
+            .help("Each particle draws as a ribbon through its recent positions instead of a sprite.")
+        if settings.hasTrail {
+            ParameterSliderView("Points", value: $settings.editableTrail.editablePointCount, in: 2...64, format: .number.precision(.fractionLength(0)))
+                .help("Positions kept per particle. Memory is 16 bytes per point per particle of every emitter.")
+            ParameterSliderView("Point Interval", value: $settings.editableTrail.pointInterval, in: 0...0.2, format: .number.precision(.fractionLength(3)))
+                .help("Seconds between recorded points, so trails cover the same time at any frame rate. 0 records one every step.")
+            Toggle("Trail Tapers", isOn: $settings.editableTrail.tapers)
+            Toggle("Trail Fades", isOn: $settings.editableTrail.fades)
+        }
+        Toggle("Ribbon", isOn: $settings.hasRibbon)
+            .help("Joins the live particles into one ribbon in birth order. Takes the place of trails and mesh particles.")
+        if settings.hasRibbon {
+            Toggle("Ribbon Tapers", isOn: $settings.editableRibbon.tapers)
         }
     }
 }

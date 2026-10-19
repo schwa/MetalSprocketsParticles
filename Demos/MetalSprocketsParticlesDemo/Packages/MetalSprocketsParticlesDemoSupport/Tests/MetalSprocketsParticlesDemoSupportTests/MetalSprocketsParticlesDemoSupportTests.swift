@@ -64,6 +64,25 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// The Trails and Ribbons group edits ParticleEmitter.trail and ribbon (#161).
+    @Test func trailsAndRibbonsTurnOnAndOff() {
+        var emitter = ParticleEmitter()
+        emitter.hasTrail = true
+        #expect(emitter.trail == ParticleTrail())
+        emitter.editableTrail.editablePointCount = 100
+        #expect(emitter.trail?.pointCount == 64)
+        emitter.editableTrail.editablePointCount = 0
+        #expect(emitter.trail?.pointCount == 2)
+        emitter.editableTrail.fades = false
+        emitter.hasTrail = false
+        #expect(emitter.trail == nil)
+        emitter.hasRibbon = true
+        emitter.editableRibbon.tapers = false
+        #expect(emitter.ribbon == ParticleRibbon(tapers: false))
+        emitter.hasRibbon = false
+        #expect(emitter.ribbon == nil)
+    }
+
     /// The Color Effects group edits color by speed, by position, alternate colors, and the color image (#160).
     @Test func colorEffectsTurnOnAndOff() throws {
         var emitter = ParticleEmitter()

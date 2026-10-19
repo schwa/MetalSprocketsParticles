@@ -57,6 +57,29 @@ extension ParticleEmitter {
         return lower...max(average + variation, lower)
     }
 
+    // MARK: Trails and ribbons
+
+    var hasTrail: Bool {
+        get { trail != nil }
+        set { trail = newValue ? (trail ?? ParticleTrail()) : nil }
+    }
+
+    /// The trail, or the defaults when there is none. Setting it turns the trail on.
+    var editableTrail: ParticleTrail {
+        get { trail ?? ParticleTrail() }
+        set { trail = newValue }
+    }
+
+    var hasRibbon: Bool {
+        get { ribbon != nil }
+        set { ribbon = newValue ? (ribbon ?? ParticleRibbon()) : nil }
+    }
+
+    var editableRibbon: ParticleRibbon {
+        get { ribbon ?? ParticleRibbon() }
+        set { ribbon = newValue }
+    }
+
     // MARK: Color effects
 
     /// Starting gradients when a color effect is turned on: visible at once, easy to edit from.
@@ -226,6 +249,16 @@ extension ParticleEmitter {
             default: break
             }
         }
+    }
+}
+
+// MARK: - Trails
+
+extension ParticleTrail {
+    /// `pointCount` as a slider value, kept to 2...64 (the most the library records).
+    var editablePointCount: Float {
+        get { Float(pointCount) }
+        set { pointCount = min(max(Int(newValue.rounded()), 2), 64) }
     }
 }
 
