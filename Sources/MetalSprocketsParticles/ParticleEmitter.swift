@@ -185,6 +185,9 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var trail: ParticleTrail?
     /// Boids: particles steer by their neighbors.
     public var flocking: ParticleFlocking?
+    /// Particles collide as spheres of this radius instead of points, so large sprites and mesh particles rest on
+    /// colliders instead of sinking into them. With scene depth collision, particles are kept this far off the surface.
+    public var collisionRadius: Float = 0
 
     public init() {}
 }
@@ -260,6 +263,7 @@ extension ParticleEmitter {
         try container.update(&colorByPositionEnd, .colorByPositionEnd)
         trail = try container.decodeIfPresent(ParticleTrail.self, forKey: .trail)
         flocking = try container.decodeIfPresent(ParticleFlocking.self, forKey: .flocking)
+        try container.update(&collisionRadius, .collisionRadius)
     }
 }
 

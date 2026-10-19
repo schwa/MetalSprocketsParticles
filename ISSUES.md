@@ -2596,17 +2596,19 @@ ParticleEmitter.light (#118) takes one live particle from each stretch of the li
 ## 126: Collision radius for particles
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:collision, effort:m
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:11:16Z
+closed: 2026-10-19T12:11:16Z
 +++
 
 Collisions treat particles as points, so mesh particles (#119) and large sprites sink into colliders by up to their size (visible in Coin Shower). Add a per-emitter collision radius (or use the particle's size) that offsets every collider test: planes by distance, spheres and capsules by radius, boxes by half extents, and scene depth.
 
 - `2026-10-19T11:47:47Z`: Related: #132 (spin should also stop on contact).
+- `2026-10-19T12:11:16Z`: Done: ParticleEmitter.collisionRadius. When above 0, each collider is inflated by it for that emitter (planes moved out, sphere and capsule radii grown, box half extents grown), so all tests and sweeps treat particles as spheres; scene depth contacts keep particles that far off the surface. At 0 the code path is unchanged, so goldens hold. Coin Shower uses 0.05: far fewer coins sink into the floor; steeply tilted coins can still clip a little, since a sphere only approximates a coin. Not done: using each particle's own size as its radius.
 
 ---
 

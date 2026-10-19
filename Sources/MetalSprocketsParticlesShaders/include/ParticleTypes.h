@@ -277,6 +277,8 @@ typedef struct {
     // Flocking: add steering[id].xyz (from the flocking pass) to velocity, then keep speed in flockSpeedRange.
     uint32_t flocks;
     simd_float2 flockSpeedRange;
+    // Particles collide as spheres of this radius: colliders are inflated by it. 0 keeps them points.
+    float collisionRadius;
 } SimulationUniforms;
 
 /// Cells in the flocking spatial hash. Neighbor cells that hash to the same entry are searched once.

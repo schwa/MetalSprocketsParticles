@@ -822,6 +822,13 @@ kernel void updateParticles(
         bool hitBefore = hit;
         hit = false;
         ColliderData c = colliders[i];
+        if (uniforms.collisionRadius > 0) {
+            // Particles as spheres: grow the collider instead, so every test below (and the sweeps) stays the same.
+            float r = uniforms.collisionRadius;
+            c.distance += r;
+            c.radius += r;
+            c.halfExtents += r;
+        }
         if (c.kind == ParticleColliderKindPlane) {
             float distance = dot(position, c.normal) - c.distance;
             if (distance < 0) { collide(position, velocity, c, c.normal, -distance, restitution, friction, hit); }
@@ -884,7 +891,7 @@ kernel void updateParticles(
         if (sceneDepthContact(depthCollision, sceneDepth, position, surface, normal)) {
             bool depthHit = false;
             ColliderData still = {};
-            position = surface + normal * 1e-3;
+            position = surface + normal * (1e-3 + uniforms.collisionRadius);
             collide(position, velocity, still, normal, 0, restitution, friction, depthHit);
             if (firstHitCollider == 0xFFFFFFFFu) {
                 firstHitCollider = PARTICLE_EVENT_SCENE_DEPTH_COLLIDER;
