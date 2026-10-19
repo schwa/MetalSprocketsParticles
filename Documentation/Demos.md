@@ -36,6 +36,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Lantern](#lantern)
 - [Dunk](#dunk)
 - [Flare](#flare)
+- [Point Cloud](#point-cloud)
 
 ## Fountain
 
@@ -222,3 +223,9 @@ A ball bounces through a pool, and every time it enters the water a splash burst
 A road flare that ignites, burns, and dies out: sparks and pink smoke whose emission ramps up over half a second, burns for three, and fades out by five seconds. Shows emission over time and a finite effect: once every particle has died the system reports it is finished (the HUD says Finished; Restart plays it again).
 
 ![flare](previews/flare.webp)
+
+## Point Cloud
+
+The word PARTICLES, baked as 1,500 colored points, shimmers and drifts toward the camera. Shows emitting from a point cache with per-point colors.
+
+![point-cloud](previews/point-cloud.webp)
