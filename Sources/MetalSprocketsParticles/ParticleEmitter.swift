@@ -205,6 +205,9 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// bytes per particle across the system (the largest count among emitters with functions), so ask only for what
     /// you use.
     public var customAttributeCount = 1
+    /// Multiplies each particle's color by an image laid over the world, under the particle's current position, so
+    /// particles change color as they move across it.
+    public var colorImage: ParticleColorImage?
 
     public init() {}
 }
@@ -286,6 +289,7 @@ extension ParticleEmitter {
         try container.update(&lodScalesSize, .lodScalesSize)
         try container.update(&colorByPositionAtBirth, .colorByPositionAtBirth)
         try container.update(&customAttributeCount, .customAttributeCount)
+        colorImage = try container.decodeIfPresent(ParticleColorImage.self, forKey: .colorImage)
     }
 }
 

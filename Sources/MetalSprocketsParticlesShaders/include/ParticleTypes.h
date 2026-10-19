@@ -518,6 +518,12 @@ typedef struct {
     float sizeScale;
     float minimumScreenSize;
     float projectionScaleY;
+    // ParticleEmitter.colorImage: multiply color by the image under the particle. The image covers the rectangle from
+    // colorImageOrigin (its bottom left) along colorImageU (its width) and colorImageV (its height), world space.
+    uint32_t hasColorImage;
+    simd_float3 colorImageOrigin;
+    simd_float3 colorImageU;
+    simd_float3 colorImageV;
 } RenderUniforms;
 
 typedef struct {

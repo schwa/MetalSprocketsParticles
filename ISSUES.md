@@ -2554,15 +2554,18 @@ ParticleState.custom is one float4 per particle (#110). Allow a few (for example
 ## 123: Color particles from a texture as they move
 
 +++
-status: open
+status: closed
 priority: low
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:52:07Z
+closed: 2026-10-19T12:52:07Z
 +++
 
 EmitterImage (#113) colors particles at birth only. Add sampling a texture each frame by position, projected onto a plane or by screen position, so particles change color as they move over an image. Could be a render-time lookup, like colorByPosition (#121), with a texture instead of a gradient.
+
+- `2026-10-19T12:52:07Z`: Done: ParticleEmitter.colorImage (ParticleColorImage: image data and a world-space rectangle, origin plus width and height edge vectors, or centered in the XY plane with its aspect ratio) multiplies each particle's color by the image under its current position, every frame, for sprites, meshes, trails, and ribbons. Particles off the image take the nearest edge color; transparent edges make them invisible. Saved in effect files as image data; textures are cached per image. Demo: Living Picture (preview about 710 KB: dense moving dots compress poorly). Not done: projecting the image from the camera (screen space) instead of a world rectangle.
 
 ---
 

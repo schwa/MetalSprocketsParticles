@@ -49,6 +49,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Light Ribbons](#light-ribbons)
 - [Murmuration](#murmuration)
 - [Streamers](#streamers)
+- [Living Picture](#living-picture)
 
 ## Fountain
 
@@ -313,3 +314,9 @@ Twelve thousand starlings wheel as one. Each bird steers by its neighbors only: 
 Two glowing emitters fly a figure eight and a circle, each leaving one continuous ribbon through its particles in birth order (ParticleEmitter.ribbon). Size and color over life shape the ribbon from head to tail.
 
 ![streamers](previews/streamers.webp)
+
+## Living Picture
+
+A sunset painted with drifting particles. They start white and take their color from a picture laid over the scene, wherever they are (ParticleEmitter.colorImage), so the picture shimmers through the moving particles.
+
+![living-picture](previews/living-picture.webp)

@@ -212,6 +212,8 @@ public final class ParticleSystemRuntime {
     var appliedLayout: [AppliedEmitter] = []
     /// Sprite textures made by `apply(_:)`.
     var spriteTextures: [ParticleSprite: MTLTexture] = [:]
+    /// Textures for `ParticleEmitter.colorImage`, made once per image.
+    var colorImageTextures: [Data: MTLTexture] = [:]
     /// User functions compiled by `visibleFunction(for:)`.
     var compiledFunctions: [FunctionKey: VisibleFunction] = [:]
 
@@ -744,6 +746,13 @@ public final class ParticleSystemRuntime {
                 // Solid shapes: the fragment shader's procedural dot is fully covered at the center.
                 draw.uniforms.hasTexture = 0
             }
+            if let image = emitter.settings.colorImage, let texture = colorImageTexture(for: image) {
+                draw.colorImage = texture
+                draw.uniforms.hasColorImage = 1
+                draw.uniforms.colorImageOrigin = image.origin
+                draw.uniforms.colorImageU = image.width
+                draw.uniforms.colorImageV = image.height
+            }
             if debugView != .none {
                 draw.uniforms.debugMode = debugView.gpuMode
                 draw.uniforms.debugEmitterIndex = UInt32(allEmitters.firstIndex { $0 === emitter } ?? 0)
@@ -795,6 +804,7 @@ public final class ParticleSystemRuntime {
                         }
                     }
                 }
+                .parameter("colorImage", texture: draw.colorImage ?? placeholderTexture)
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: draw.uniforms)
                 .parameter("colorCurve", values: draw.colorCurve)
@@ -820,6 +830,7 @@ public final class ParticleSystemRuntime {
                     }
                 }
                 .parameter("meshVertices", buffer: mesh.buffer)
+                .parameter("colorImage", texture: draw.colorImage ?? placeholderTexture)
                 .parameter("extraColorCurves", values: draw.extraColorCurves)
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: draw.uniforms)
@@ -854,6 +865,7 @@ public final class ParticleSystemRuntime {
                     }
                 }
                 .parameter("trails", buffer: trailBuffer)
+                .parameter("colorImage", texture: draw.colorImage ?? placeholderTexture)
                 .parameter("particles", buffer: buffer)
                 .parameter("uniforms", value: draw.uniforms)
                 .parameter("colorCurve", values: draw.colorCurve)
@@ -880,6 +892,7 @@ public final class ParticleSystemRuntime {
                 }
             }
             .parameter("particles", buffer: buffer)
+            .parameter("colorImage", texture: draw.colorImage ?? placeholderTexture)
             .parameter("uniforms", value: draw.uniforms)
             .parameter("colorCurve", values: draw.colorCurve)
             .parameter("sizeCurve", values: draw.sizeCurve)
@@ -914,6 +927,8 @@ private struct EmitterDraw {
     var sortRecords: MTLBuffer?
     /// By speed, alternate over life (with opacity, like `colorCurve`), and by position; white where unused.
     var extraColorCurves: [SIMD4<Float>]
+    /// `ParticleEmitter.colorImage`'s texture.
+    var colorImage: MTLTexture?
     /// `ParticleEmitter.ribbon`: one strip through the live window, drawn instead of anything else.
     var isRibbon = false
     /// Draws triangles as lines (`ParticleDebugView.wireframe`).
@@ -1007,7 +1022,12 @@ private struct EmitterDraw {
             ribbonTapers: 0,
             sizeScale: settings.lodScalesSize && emitter.lodRateScale > 0 ? 1 / emitter.lodRateScale.squareRoot() : 1,
             minimumScreenSize: max(settings.minimumScreenSize, 0),
-            projectionScaleY: projection.columns.1.y
+            projectionScaleY: projection.columns.1.y,
+            // Set by render when the emitter has a color image.
+            hasColorImage: 0,
+            colorImageOrigin: .zero,
+            colorImageU: .zero,
+            colorImageV: .zero
         )
     }
 }

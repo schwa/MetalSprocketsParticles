@@ -1233,7 +1233,7 @@ static uint sequenceFrame(float initialFrame, float frameRate, float age, uint f
     }
 }
 
-static float4 particleBaseColor(constant RenderUniforms &uniforms, constant float4 *colorCurve, constant float4 *extraColorCurves, Particle p, uint index, float t, float3 center);
+static float4 particleBaseColor(constant RenderUniforms &uniforms, constant float4 *colorCurve, constant float4 *extraColorCurves, texture2d<float> colorImage, Particle p, uint index, float t, float3 center);
 
 // Blue, cyan, green, yellow, red for 0...1.
 static float3 heatColor(float t) {
@@ -1281,7 +1281,8 @@ vertex VertexOut particleTrailVertex(
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
     constant float4 *extraColorCurves [[buffer(8)]],
-    const device float4 *trails [[buffer(9)]]
+    const device float4 *trails [[buffer(9)]],
+    texture2d<float> colorImage [[texture(2)]]
 ) {
     uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
     Particle p = particles[index];
@@ -1312,7 +1313,7 @@ vertex VertexOut particleTrailVertex(
     float width = sampleCurve(sizeCurve, t) * p.properties.x * (uniforms.trailTapers != 0 ? 1 - along : 1);
     float3 world = here + across * side * width;
     out.position = uniforms.viewProjection * float4(world, 1);
-    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, here), p.color);
+    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, here), p.color);
     uint tint = as_type<uint>(p.properties.w);
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
@@ -1359,7 +1360,8 @@ vertex VertexOut particleRibbonVertex(
     constant float *sizeCurve [[buffer(3)]],
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
-    constant float4 *extraColorCurves [[buffer(8)]]
+    constant float4 *extraColorCurves [[buffer(8)]],
+    texture2d<float> colorImage [[texture(2)]]
 ) {
     uint count = uniforms.ribbonWindowCount;
     uint offset = min(vertexID / 2, max(count, 1u) - 1);
@@ -1410,7 +1412,7 @@ vertex VertexOut particleRibbonVertex(
     float width = sampleCurve(sizeCurve, t) * p.properties.x * (uniforms.ribbonTapers != 0 ? along : 1);
     float3 world = here + across * side * width;
     out.position = uniforms.viewProjection * float4(world, 1);
-    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, here), p.color);
+    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, here), p.color);
     uint tint = as_type<uint>(p.properties.w);
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
@@ -1425,8 +1427,17 @@ vertex VertexOut particleRibbonVertex(
 }
 
 // The color over life, with the extra gradients applied. `center` is the particle's world position; `index` its slot.
-static float4 particleBaseColor(constant RenderUniforms &uniforms, constant float4 *colorCurve, constant float4 *extraColorCurves, Particle p, uint index, float t, float3 center) {
+static float4 particleBaseColor(constant RenderUniforms &uniforms, constant float4 *colorCurve, constant float4 *extraColorCurves, texture2d<float> colorImage, Particle p, uint index, float t, float3 center) {
     float4 color = sampleCurve(colorCurve, t);
+    if (uniforms.hasColorImage != 0) {
+        // The image under the particle now: its position in the image rectangle, with v running down the image.
+        constexpr sampler imageSampler(filter::linear, address::clamp_to_edge);
+        float3 offset = center - uniforms.colorImageOrigin;
+        float3 u = uniforms.colorImageU;
+        float3 v = uniforms.colorImageV;
+        float2 uv = float2(dot(offset, u) / max(dot(u, u), 1e-10), 1 - dot(offset, v) / max(dot(v, v), 1e-10));
+        color *= colorImage.sample(imageSampler, uv, level(0));
+    }
     if (uniforms.hasAlternateColor != 0) {
         float pick = float(hash(index * 7u + 5u)) / 4294967295.0;
         color = mix(color, sampleCurve(extraColorCurves + PARTICLE_CURVE_SAMPLES, t), pick);
@@ -1454,7 +1465,8 @@ vertex VertexOut particleVertex(
     const device uint2 *sortRecords [[buffer(4)]],
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
-    constant float4 *extraColorCurves [[buffer(8)]]
+    constant float4 *extraColorCurves [[buffer(8)]],
+    texture2d<float> colorImage [[texture(2)]]
 ) {
     const float2 corners[4] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(1, 1) };
     // Sorted emitters draw instance i as the i-th farthest particle.
@@ -1521,7 +1533,7 @@ vertex VertexOut particleVertex(
     float2 offset = float2(c * stretched.x - s * stretched.y, s * stretched.x + c * stretched.y);
     float3 world = center + (right * offset.x + up * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
-    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, center), p.color);
+    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, center), p.color);
     uint tint = as_type<uint>(p.properties.w);
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
@@ -1607,7 +1619,8 @@ vertex VertexOut particleMeshVertex(
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
     const device float4 *meshVertices [[buffer(7)]],
-    constant float4 *extraColorCurves [[buffer(8)]]
+    constant float4 *extraColorCurves [[buffer(8)]],
+    texture2d<float> colorImage [[texture(2)]]
 ) {
     uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
     Particle p = particles[index];
@@ -1635,7 +1648,7 @@ vertex VertexOut particleMeshVertex(
     float3 normal = rotateAbout(meshVertices[vertexID * 2 + 1].xyz, axis, p.rotation.x);
     float3 world = center + local;
     out.position = uniforms.viewProjection * float4(world, 1);
-    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, center), p.color);
+    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, center), p.color);
     uint tint = as_type<uint>(p.properties.w);
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
