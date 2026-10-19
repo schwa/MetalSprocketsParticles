@@ -157,27 +157,73 @@ extension UInt32 {
     }
 }
 
-/// Category bits 1 to 8 as toggle buttons. A collider or field applies to an emitter when they share a bit; bits above 8
-/// are left as they are.
+extension UInt32 {
+    /// Categories the inspector lists one by one; the rest (9 to 32) are one switch.
+    static let namedCategoryCount = 8
+    static let upperCategories: UInt32 = ~0 << UInt32(namedCategoryCount)
+
+    /// Whether all of categories 9 to 32 are set; setting it sets or clears them together.
+    var hasUpperCategories: Bool {
+        get { self & Self.upperCategories == Self.upperCategories }
+        set { self = newValue ? self | Self.upperCategories : self & ~Self.upperCategories }
+    }
+
+    /// "All", "None", or the categories set, such as "1, 3" or "2 + 9–32" (or "+ some of 9–32").
+    var categorySummary: String {
+        if self == .max {
+            return "All"
+        }
+        if self == 0 {
+            return "None"
+        }
+        var parts = (0..<Self.namedCategoryCount).filter { self[bit: $0] }.map { String($0 + 1) }.joined(separator: ", ")
+        let upper = self & Self.upperCategories
+        if upper != 0 {
+            let rest = upper == Self.upperCategories ? "9–32" : "some of 9–32"
+            parts = parts.isEmpty ? rest : "\(parts) + \(rest)"
+        }
+        return parts
+    }
+}
+
+/// A category mask as a menu: a summary of the categories set, with All, None, categories 1 to 8, and 9 to 32 as one
+/// item. A collider or field applies to an emitter when they share a category. `detail` says what the mask matches.
 struct CategoryMaskView: View {
     let title: LocalizedStringKey
     @Binding var mask: UInt32
+    let detail: String?
 
-    init(_ title: LocalizedStringKey, mask: Binding<UInt32>) {
+    init(_ title: LocalizedStringKey, mask: Binding<UInt32>, detail: String? = nil) {
         self.title = title
         _mask = mask
+        self.detail = detail
     }
 
     var body: some View {
-        LabeledContent(title) {
-            HStack {
-                ForEach(0..<8, id: \.self) { bit in
-                    Toggle("\(bit + 1)", isOn: $mask[bit: bit])
-                        .toggleStyle(.button)
+        LabeledContent {
+            Menu(mask.categorySummary) {
+                Button("All") { mask = .max }
+                Button("None") { mask = 0 }
+                Divider()
+                ForEach(0..<UInt32.namedCategoryCount, id: \.self) { bit in
+                    Toggle("Category \(bit + 1)", isOn: $mask[bit: bit])
                 }
+                Toggle("Categories 9–32", isOn: $mask.hasUpperCategories)
+            }
+            .fixedSize()
+        } label: {
+            Text(title)
+            if let detail {
+                Text(detail)
             }
         }
     }
+}
+
+/// "Matches 2 of 3 colliders": how many of `categories` share a bit with `mask`. `noun` is singular.
+func categoryMatchSummary(_ mask: UInt32, categories: [UInt32], noun: String) -> String {
+    let matched = categories.filter { $0 & mask != 0 }.count
+    return "Matches \(matched) of \(categories.count) \(categories.count == 1 ? noun : noun + "s")"
 }
 
 #Preview("Slider") {

@@ -29,6 +29,29 @@ struct EmitterAdapterTests {
         #expect(emitter.lifetime == 8...12)
     }
 
+    @Test func categorySummariesShowEveryBit() {
+        #expect(UInt32.max.categorySummary == "All")
+        #expect(UInt32(0).categorySummary == "None")
+        #expect(UInt32(0b101).categorySummary == "1, 3")
+        // Bits above 8 are no longer invisible.
+        #expect((UInt32(0b10) | UInt32.upperCategories).categorySummary == "2 + 9–32")
+        #expect((UInt32(1) << 20).categorySummary == "some of 9–32")
+    }
+
+    @Test func upperCategoriesToggleTogether() {
+        var mask: UInt32 = 0b1
+        mask.hasUpperCategories = true
+        #expect(mask == 0b1 | UInt32.upperCategories)
+        #expect(mask.hasUpperCategories)
+        mask.hasUpperCategories = false
+        #expect(mask == 0b1)
+    }
+
+    @Test func matchSummariesCountSharedBits() {
+        #expect(categoryMatchSummary(0b1, categories: [0b1, 0b10, .max], noun: "collider") == "Matches 2 of 3 colliders")
+        #expect(categoryMatchSummary(0, categories: [.max], noun: "field") == "Matches 0 of 1 field")
+    }
+
     @Test func lifetimesNeverGoBelowTheMinimum() {
         var emitter = ParticleEmitter()
         emitter.lifetime = 1...3

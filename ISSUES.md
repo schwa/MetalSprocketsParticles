@@ -2802,12 +2802,13 @@ Fix: keep eventBursts in the model on load and set it in currentEffect. Test: fo
 ## 137: Category mask UI is confusing
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T11:46:26Z
-updated: 2026-10-19T11:46:27Z
+updated: 2026-10-19T12:07:36Z
+closed: 2026-10-19T12:07:36Z
 +++
 
 CategoryMaskView (InspectorControls.swift) shows a row of eight toggle buttons numbered 1-8 for each mask (Collides With, Feels Fields, and Categories on colliders and fields). Problems:
@@ -2817,6 +2818,7 @@ CategoryMaskView (InspectorControls.swift) shows a row of eight toggle buttons n
 Ideas: named categories per scene (for example Floor, Walls, Wind) stored with the effect; a menu or popover of checkboxes with All and None; show the colliders and fields an emitter matches (or highlight them in the viewport). Related: the next issue on having one mask instead of two.
 
 - `2026-10-19T11:47:47Z`: Related: #138 (merging the two emitter masks would simplify this UI).
+- `2026-10-19T12:07:36Z`: Done: masks are now a menu with a summary (All, None, '1, 3', '2 + 9–32'), All and None items, categories 1-8 as checkmarks, and 9-32 as one item, so no set bit is hidden. Emitter masks show what they match ('Matches 2 of 3 colliders'). Not done (needs a design decision): named categories stored with the scene, and highlighting matched colliders in the viewport. #138 (one mask) would simplify this further.
 
 ---
 

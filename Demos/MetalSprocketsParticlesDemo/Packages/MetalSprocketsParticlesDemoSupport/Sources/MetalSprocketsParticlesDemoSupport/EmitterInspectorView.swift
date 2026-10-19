@@ -441,14 +441,23 @@ struct VariationControlsView: View {
 
 struct CollisionSectionView: View {
     @Binding var settings: ParticleEmitter
+    @Environment(ParticlesDemoModel.self) private var model
 
     var body: some View {
         Section("Collision") {
             ParameterSliderView("Bounce", value: $settings.restitution, in: 0...1.5)
             ParameterSliderView("Friction", value: $settings.friction, in: 0...1)
             Toggle("Die on Collision", isOn: $settings.diesOnCollision)
-            CategoryMaskView("Collides With", mask: $settings.collisionMask)
-            CategoryMaskView("Feels Fields", mask: $settings.fieldMask)
+            CategoryMaskView(
+                "Collides With",
+                mask: $settings.collisionMask,
+                detail: categoryMatchSummary(settings.collisionMask, categories: model.colliders.map(\.collider.categoryBitMask), noun: "collider")
+            )
+            CategoryMaskView(
+                "Feels Fields",
+                mask: $settings.fieldMask,
+                detail: categoryMatchSummary(settings.fieldMask, categories: model.forceFields.map(\.field.categoryBitMask), noun: "field")
+            )
         }
     }
 }
