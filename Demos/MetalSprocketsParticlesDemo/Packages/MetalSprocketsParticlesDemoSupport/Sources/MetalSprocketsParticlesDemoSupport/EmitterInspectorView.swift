@@ -24,6 +24,7 @@ struct EmitterInspectorView: View {
                 AppearanceSectionView(emitter: $model.selectedEmitter)
                 CollisionSectionView(settings: $model.selectedEmitter.settings)
                 FlockingSectionView(settings: $model.selectedEmitter.settings)
+                LevelOfDetailSectionView(settings: $model.selectedEmitter.settings)
             case let .subEmitter(_, index):
                 if index < model.selectedEmitter.settings.subEmitters.count {
                     Section {
@@ -576,6 +577,32 @@ struct CollisionSectionView: View {
                     + categoryMatchCount(settings.categoryMask, categories: model.forceFields.map(\.field.categoryBitMask), noun: "field")
             )
             .help("Colliders and force fields apply when they share a category with the emitter. Give them different categories to feel one but not the other.")
+        }
+    }
+}
+
+/// Fewer or no particles where they matter less: distance LOD, culling, and a floor on on-screen size.
+struct LevelOfDetailSectionView: View {
+    @Binding var settings: ParticleEmitter
+
+    var body: some View {
+        Section("Level of Detail") {
+            ParameterSliderView("Full Rate Within", value: $settings.lodNearDistance, in: 0...50)
+                .help("Distance from the camera within which the emitter emits at its full rate.")
+            ParameterSliderView("Reduced Rate At", value: $settings.lodFarDistance, in: 0...100)
+                .help("Distance at which emission falls to the far rate. LOD is off unless this is farther than Full Rate Within.")
+            ParameterSliderView("Far Rate", value: $settings.lodFarRateScale, in: 0...1)
+                .help("Birth rate at the far distance, as a fraction of the full rate.")
+            Toggle("Grow When Thinned", isOn: $settings.lodScalesSize)
+                .help("Grows particles as LOD thins them, so the effect covers about the same area with fewer particles.")
+            ParameterSliderView("Minimum Screen Size", value: $settings.minimumScreenSize, in: 0...0.02, format: .number.precision(.fractionLength(4)))
+                .help("Far particles never draw smaller than this: half their size as a fraction of the view height (0.002 is about two pixels at 1080p). 0 lets them shrink.")
+            ParameterSliderView("Culling Radius", value: $settings.cullingRadius, in: 0...20)
+                .help("A sphere around the emitter that holds its particles; when it is out of view the emitter is not drawn. 0 never culls.")
+            if settings.cullingRadius > 0 {
+                Toggle("Simulate When Culled", isOn: $settings.simulatesWhenCulled)
+                    .help("Keep simulating out of view, so the effect is right when it comes back. Off saves the work but freezes it.")
+            }
         }
     }
 }

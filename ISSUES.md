@@ -3385,17 +3385,20 @@ Found by an audit of every public setting in the description types against the d
 ## 162: Inspector: LOD and culling
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T21:37:16Z
-updated: 2026-10-19T21:37:17Z
+updated: 2026-10-19T22:03:36Z
+closed: 2026-10-19T22:03:36Z
 +++
 
 ParticleEmitter.cullingRadius, simulatesWhenCulled, lodNearDistance, lodFarDistance, lodFarRateScale, lodScalesSize, minimumScreenSize.
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:03:36Z`: Done: a Level of Detail section after Flocking: full rate within, reduced rate at, far rate, grow when thinned, minimum screen size, culling radius, and simulate when culled (shown when the culling radius is above 0), each with help text. No new test: the controls bind straight to stored settings with no adapter logic to test; the library's LOD and culling tests cover the behavior. Demo tests, build, and lint pass.
 
 ---
 
