@@ -9,7 +9,6 @@ public struct ParticlesView: View {
     @State private var model = ParticlesDemoModel()
     @State private var isInspectorPresented = true
     @AppStorage(ParticleViewportView.showsOverlaysKey) private var showsOverlays = true
-    @Environment(\.openWindow) private var openWindow
 
     public init() {}
 
@@ -26,10 +25,8 @@ public struct ParticlesView: View {
                 .toolbar {
                     SceneToolbarContent()
                     ToolbarItem {
-                        Button("2D Overlay", systemImage: "square.on.square") {
-                            openWindow(id: OverlayDemoView.windowID)
-                        }
-                        .help("Open the 2D overlay demo")
+                        Toggle("2D", systemImage: "square.on.square", isOn: $model.is2D)
+                            .help("2D mode: the overlay camera (one unit is one point, y down) and every emitter kept on its plane. New emitters start from 2D defaults.")
                     }
                     ToolbarItem {
                         Toggle("Overlays", systemImage: "square.text.square", isOn: $showsOverlays)

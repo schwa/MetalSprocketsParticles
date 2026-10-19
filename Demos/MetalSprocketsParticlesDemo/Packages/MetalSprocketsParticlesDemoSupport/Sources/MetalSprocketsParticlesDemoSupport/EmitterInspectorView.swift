@@ -568,8 +568,6 @@ struct WorldSectionView: View {
                 Toggle("Solid Colliders", isOn: $model.drawColliders)
                     .help("Draw colliders as solids. Emitters with Softness fade where they meet them.")
             }
-            Toggle("2D", isOn: $model.is2D)
-                .help("Overlay camera (one unit is one point, y down) and every emitter kept on its plane. Author 2D effects in points; new emitters start from 2D defaults.")
         }
     }
 }

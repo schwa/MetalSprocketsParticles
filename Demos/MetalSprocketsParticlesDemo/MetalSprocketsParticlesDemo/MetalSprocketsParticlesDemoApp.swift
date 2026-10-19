@@ -14,9 +14,5 @@ struct MetalSprocketsParticlesDemoApp: App {
         WindowGroup {
             ContentView()
         }
-        Window("2D Overlay", id: OverlayDemoView.windowID) {
-            OverlayDemoView()
-                .frame(minWidth: 500, minHeight: 400)
-        }
     }
 }
