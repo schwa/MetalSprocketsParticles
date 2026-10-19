@@ -26,7 +26,7 @@
       ]
     }
   ],
-  "comment" : "A road flare that ignites, burns, and dies out: sparks and pink smoke whose emission ramps up over half a second, burns for three, and fades out by five seconds. Shows emission over time and a finite effect: once every particle has died the system reports it is finished (the HUD says Finished; Restart plays it again).",
+  "comment" : "Shows: emission over time (ramp up, sustain, fade out) and a finite effect that reports when it is finished. The HUD says Finished; Restart plays it again. A road flare ignites, burns, and dies out.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

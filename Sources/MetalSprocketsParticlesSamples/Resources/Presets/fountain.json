@@ -73,7 +73,7 @@
       ]
     }
   ],
-  "comment" : "A water fountain sprays up and falls back onto the ground and a few colliders that move around. Shows gravity, bouncing, and colliders that push and carry particles as they move.",
+  "comment" : "Shows: gravity, bounce, and moving colliders that push and carry particles. A fountain sprays onto the ground and a few moving colliders.",
   "forceFields" : [
 
   ],

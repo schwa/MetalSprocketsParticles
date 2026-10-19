@@ -31,7 +31,7 @@
       ]
     }
   ],
-  "comment" : "A flag of glowing sparks waves from a pole. The flag is a mesh that the system deforms every frame, and the sparks are born on its moving surface. Shows a deforming mesh emitter (meshDeformation).",
+  "comment" : "Shows: a deforming mesh emitter (meshDeformation), with births on its moving surface. A flag of sparks waves from a pole.",
   "drawsColliders" : true,
   "forceFields" : [
 

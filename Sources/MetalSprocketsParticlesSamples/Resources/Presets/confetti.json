@@ -26,7 +26,7 @@
       ]
     }
   ],
-  "comment" : "A party popper fires one burst of confetti, which flutters down, settles on the ground, and fades. Shows a one-shot emitter (an emission duration that does not loop), which makes the effect finite: when every piece is gone the HUD says Finished, and Restart in the toolbar plays it again. Also shows textured sprites with random spin, turbulence, and friction.",
+  "comment" : "Shows: a one-shot emitter (an emission duration that does not loop) that makes the effect finite, textured sprites with random spin, turbulence, and friction. When every piece is gone the HUD says Finished, and Restart plays it again. A party popper fires one burst of confetti.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

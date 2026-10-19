@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Thick, nearly opaque colored smoke billows up and out. Every puff overlaps others, so drawing back to front matters: set Sort to None to see far puffs paint over near ones.",
+  "comment" : "Shows: back-to-front sorting of nearly opaque particles. Set Sort to None to see far puffs paint over near ones. Thick colored smoke billows up.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "A ring of emoji flames seen from above. The flames are Y-aligned: they stay upright and turn only around Y, instead of tipping toward the camera like billboards.",
+  "comment" : "Shows: Y-aligned orientation, which keeps particles upright and turns them only around Y. A ring of emoji flames seen from above.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

@@ -35,7 +35,7 @@
       "radius" : 1
     }
   ],
-  "comment" : "Snowflakes drift down through gentle turbulence and settle on the ground and on a sphere. Shows plane emission over a large area, turbulence, and particles that come to rest on colliders.",
+  "comment" : "Shows: plane emission over a large area, turbulence, and particles that come to rest on colliders. Snow drifts down onto the ground and a sphere.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

@@ -45,7 +45,7 @@
       ]
     }
   ],
-  "comment" : "Grinder sparks streak across the floor and bounce off a wall. Shows velocity-aligned stretching, bounce with per-particle variation, and friction.",
+  "comment" : "Shows: velocity-aligned stretching, bounce with per-particle variation, and friction. Grinder sparks streak across the floor and bounce off a wall.",
   "forceFields" : [
 
   ],

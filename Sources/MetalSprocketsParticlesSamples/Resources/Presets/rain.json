@@ -45,7 +45,7 @@
       ]
     }
   ],
-  "comment" : "Rain falls onto the ground and a tilted slab. Each drop dies when it hits and splashes where it lands. Shows velocity stretching, die-on-collision, and an on-collision sub-emitter.",
+  "comment" : "Shows: velocity stretching, die-on-collision, and an on-collision sub-emitter. Rain falls on the ground and a tilted slab and splashes where it lands.",
   "forceFields" : [
 
   ],

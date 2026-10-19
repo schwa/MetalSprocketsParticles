@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Emoji hearts float up and wobble, with pink sparkles. Shows emoji sprites drawn with Core Text: tint them white so they keep their own colors.",
+  "comment" : "Shows: emoji sprites drawn with Core Text, tinted white so they keep their own colors. Hearts float up and wobble, with pink sparkles.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

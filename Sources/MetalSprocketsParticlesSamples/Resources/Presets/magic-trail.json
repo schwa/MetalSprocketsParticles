@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "A wand of stars traces a figure eight, leaving a continuous trail and drifting dust. Shows a moving emitter, births spread along its path, and inherited velocity.",
+  "comment" : "Shows: a moving emitter, births spread along its path, and inherited velocity. A wand of stars traces a figure eight.",
   "forceFields" : [
 
   ],

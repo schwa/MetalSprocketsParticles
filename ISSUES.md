@@ -2997,3 +2997,21 @@ updated: 2026-10-19T13:07:05Z
 Documentation/Methodology.md should say more about the issues subsystem (how issues were filed, triaged, and closed during development) and the CLI rendering tool we used (what it does and how it fit into the workflow).
 
 ---
+
+## 146: Demo descriptions should lead with the features and techniques shown
+
++++
+status: closed
+priority: medium
+kind: documentation
+labels: area:demo, effort:s
+created: 2026-10-19T13:21:53Z
+updated: 2026-10-19T13:23:07Z
+closed: 2026-10-19T13:23:07Z
++++
+
+Preset comments (the source of Documentation/Demos.md) mostly describe the scene. Readers want to know which library features and techniques each demo shows off. Rewrite every preset comment to lead with the features shown (with API names), and keep the scene to a short sentence.
+
+- `2026-10-19T13:23:07Z`: Rewrote every preset comment to lead with the features shown; regenerated Demos.md.
+
+---

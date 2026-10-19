@@ -29,7 +29,7 @@
       ]
     }
   ],
-  "comment" : "Glowing embers rise from a fire. After 1.4 seconds each one turns into a gray flake of ash that drifts down, and when the ash lands it turns into a small puff of dust. Shows chained transitions: sub-emitters that replace their parent (SubEmitter.transition), at an age and then on a collision, each with its own sprite and settings.",
+  "comment" : "Shows: chained transitions (SubEmitter.transition), at an age and on a collision, each with its own sprite and settings. Embers turn into ash, and ash turns into dust when it lands.",
   "drawsColliders" : false,
   "forceFields" : [
     {

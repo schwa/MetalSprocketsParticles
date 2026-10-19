@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Two spiral arms of stars swirl around a bright core. Shows torus emitters, a vortex force field, and an attractor.",
+  "comment" : "Shows: torus emitters, a vortex force field, and an attractor. Two spiral arms of stars swirl around a bright core.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

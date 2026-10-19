@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "A ball bounces through a pool, and every time it enters the water a splash bursts up. Shows a tracked object and an object-enters trigger.",
+  "comment" : "Shows: a tracked object and an object-enters trigger. A ball bounces through a pool and splashes each time it enters the water.",
   "forceFields" : [
 
   ],

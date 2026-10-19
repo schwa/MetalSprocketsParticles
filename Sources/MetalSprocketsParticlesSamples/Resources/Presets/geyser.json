@@ -26,7 +26,7 @@
       ]
     }
   ],
-  "comment" : "A geyser erupts for 1.5 seconds every 4: water shoots from a cylinder, rocks tumble out and bounce, and steam rises from a cone. Shows the emit\/idle loop, opaque particles, and screen blending.",
+  "comment" : "Shows: an emit/idle loop, opaque particles, screen blending, and cylinder and cone emitters. A geyser erupts water, rocks, and steam for 1.5 seconds every 4.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

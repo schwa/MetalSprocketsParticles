@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Emoji moons orbit slowly, each cycling through the moon phases from its own starting phase. Shows a sprite-sheet flipbook with random start frames.",
+  "comment" : "Shows: a sprite-sheet flipbook with random start frames. Emoji moons orbit and cycle through the moon phases.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

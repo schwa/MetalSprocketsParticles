@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Two identical firefly swarms circle side by side. The gold one simulates in local space and travels as a tight cloud; the blue one simulates in world space and leaves a trail.",
+  "comment" : "Shows: local and world simulation space side by side. The gold swarm (local) travels as a tight cloud; the blue one (world) leaves a trail.",
   "forceFields" : [
 
   ],

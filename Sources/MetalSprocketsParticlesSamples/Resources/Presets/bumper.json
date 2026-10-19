@@ -35,7 +35,7 @@
       "radius" : 0.4
     }
   ],
-  "comment" : "Balls drop onto a bumper. Each hit bursts sparks, balls that bounce into the goal burst stars, a ring pulses every 2 seconds, and sending the event 'boom' fires confetti. Shows the emission triggers.",
+  "comment" : "Shows: emission triggers (collider hit, particles entering a volume, a timer, and a named event 'boom'). Balls drop onto a bumper and set off sparks, stars, rings, and confetti.",
   "forceFields" : [
 
   ],

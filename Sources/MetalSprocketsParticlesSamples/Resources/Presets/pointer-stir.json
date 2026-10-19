@@ -29,7 +29,7 @@
       "radius" : 0.25
     }
   ],
-  "comment" : "Glowing dust hangs in the air. Move the mouse over the view: a vortex and a ball follow the pointer, stirring the dust and pushing it aside. Shows pointer bindings (pointerBindings); without a mouse, the pointer traces a figure eight (pointerMotion).",
+  "comment" : "Shows: pointer bindings (pointerBindings) that move a force field and a collider, and pointerMotion as a fallback without a mouse. Move the mouse to stir glowing dust.",
   "drawsColliders" : true,
   "forceFields" : [
     {

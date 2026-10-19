@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Rockets climb from the ground, leave sparkle trails, and burst into shells of stars when they burn out. Shows sub-emitters: a while-alive trail and an on-death burst.",
+  "comment" : "Shows: sub-emitters, with a while-alive trail and an on-death burst. Rockets climb, leave sparkle trails, and burst into shells of stars.",
   "forceFields" : [
 
   ],

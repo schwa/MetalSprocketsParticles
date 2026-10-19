@@ -21,7 +21,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Glowing particles trace the Lorenz attractor. A user Metal function (updateFunction) sets each particle's velocity from the Lorenz equations every step; nothing in the built-in settings moves them.",
+  "comment" : "Shows: a user Metal function (updateFunction) that sets each particle's velocity every step. Particles trace the Lorenz attractor.",
   "drawsColliders" : false,
   "forceFields" : [
 

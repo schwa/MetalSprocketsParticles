@@ -26,7 +26,7 @@
       ]
     }
   ],
-  "comment" : "Raindrops fall into a pond, and each one spreads a ripple that lies flat on the water. Shows fixed (flat) orientation and emoji droplet sprites.",
+  "comment" : "Shows: fixed (flat) orientation and emoji sprites. Raindrops fall into a pond and spread ripples that lie flat on the water.",
   "forceFields" : [
 
   ],

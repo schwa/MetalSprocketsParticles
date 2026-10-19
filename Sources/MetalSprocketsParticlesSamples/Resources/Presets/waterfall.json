@@ -63,7 +63,7 @@
       ]
     }
   ],
-  "comment" : "A sheet of water pours over a ledge, hits rocks, and throws up mist. Shows a box emitter, collisions, and soft sorted mist.",
+  "comment" : "Shows: a box emitter, collisions, and soft, sorted mist. Water pours over a ledge, hits rocks, and throws up mist.",
   "forceFields" : [
 
   ],

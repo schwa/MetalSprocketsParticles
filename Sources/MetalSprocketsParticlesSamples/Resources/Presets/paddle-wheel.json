@@ -84,7 +84,7 @@
       ]
     }
   ],
-  "comment" : "Sand pours onto a spinning paddle wheel, which flings it across the ground. The two blades are box colliders that turn at a steady rate (colliderSpins); their spin throws the sand that hits them, and fast blades do not tunnel through it.",
+  "comment" : "Shows: spinning colliders (colliderSpins) that throw particles and do not tunnel at high speed. Sand pours onto a spinning paddle wheel.",
   "drawsColliders" : true,
   "forceFields" : [
 

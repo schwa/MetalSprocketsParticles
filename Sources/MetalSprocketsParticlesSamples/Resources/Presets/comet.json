@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "A comet circles overhead with a long glowing tail and a bright core. Shows a fast-moving emitter that still leaves a smooth trail.",
+  "comment" : "Shows: a fast-moving emitter that still leaves a smooth trail. A comet circles overhead with a long tail and a bright core.",
   "forceFields" : [
 
   ],

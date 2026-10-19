@@ -54,7 +54,7 @@
       ]
     }
   ],
-  "comment" : "Flames, rising smoke, and embers over two logs. The flames are additive smoke puffs, the smoke is alpha-blended and sorted back to front, the embers are velocity-stretched sparks, and turbulence makes everything flicker. The logs are rotated capsule colliders.",
+  "comment" : "Shows: additive and alpha blending in one effect, back-to-front sorting, velocity-stretched sparks, turbulence, and rotated capsule colliders. Flames, smoke, and embers over two logs.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,

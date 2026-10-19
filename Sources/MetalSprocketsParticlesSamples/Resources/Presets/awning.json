@@ -46,7 +46,7 @@
       ]
     }
   ],
-  "comment" : "Rain falls straight through an awning and slants in the wind, while sparks from a grinder land on the awning and slide off. Shows category masks: each emitter chooses which colliders and fields affect it.",
+  "comment" : "Shows: category masks, where each emitter chooses which colliders and fields affect it. Rain falls through an awning in the wind; grinder sparks land on it.",
   "forceFields" : [
     {
       "categoryBitMask" : 1,

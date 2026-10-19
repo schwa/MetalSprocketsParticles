@@ -18,7 +18,7 @@
   "colliders" : [
 
   ],
-  "comment" : "Smoke and dust lit by a warm lantern and cool moonlight. Shows particle lighting: point and directional lights over low ambient light.",
+  "comment" : "Shows: particle lighting with point and directional lights over low ambient light. Smoke and dust lit by a lantern and moonlight.",
   "forceFields" : [
     {
       "categoryBitMask" : 4294967295,
