@@ -2108,6 +2108,7 @@ Sub-issues: #108 stable ids, #109 app and package skeleton, #110 document and un
 Related: #97 (ParticleView), #101 (rename, done), #103, #104, #105.
 
 - `2026-10-18T21:58:31Z`: Deferred (user).
+- `2026-10-19T21:40:28Z`: Related: #159-#168 add inspector controls for settings the demo cannot edit yet, one area at a time; they are steps toward this editor, not a replacement.
 
 ---
 
@@ -3284,6 +3285,8 @@ What I measured and tried:
 
 Ideas: entry-point response with the collider's motion accounted for (so resting contacts are not reset), smaller steps for fast particles near fields, or normals from a wider stencil near thin parts.
 
+- `2026-10-19T21:40:28Z`: Related: #166 (distance field colliders in the inspector): its bake resolution setting is one of the levers here.
+
 ---
 
 ## 158: Inside the Teapot drops below 60 fps: flocking is slow in dense piles
@@ -3308,6 +3311,8 @@ The beads use flocking with separation only, as a stand-in for particle-particle
 
 Fix ideas: stop the neighbor search once maxNeighbors are found, or cap the particles visited per cell; or give the preset a cheaper stand-in for separation.
 
+- `2026-10-19T21:40:28Z`: Related: #159 (flocking in the inspector) would let the preset's flocking be turned off or tuned from the UI.
+
 ---
 
 ## 159: Inspector: flocking
@@ -3323,6 +3328,8 @@ created: 2026-10-19T21:37:16Z
 ParticleEmitter.flocking (ParticleFlocking): an on/off switch plus radius, separationRadius, separation, alignment, cohesion, speedRange, maxNeighbors. Murmuration and Inside the Teapot use it and cannot be changed or turned off (see #158).
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T21:40:28Z`: Related: #158 (Inside the Teapot's flocking is slow in dense piles).
 
 ---
 
@@ -3437,6 +3444,8 @@ Distance field colliders (Collider.Shape.signedDistanceField) are not in the col
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
 
+- `2026-10-19T21:40:28Z`: Related: #157: thin parts need several grid cells across, so the bake UI should make the resolution and cell size visible.
+
 ---
 
 ## 167: Inspector: user functions
@@ -3464,7 +3473,6 @@ priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T21:37:18Z
-updated: 2026-10-19T21:37:18Z
 +++
 
 ParticleSystem.colliderSpins (spin per collider: axis, speed), eventBursts (EventBurst: sourceLayer, targetLayer, and the rest; the model keeps them but notes there is no editor), trackedObjects (name and motion), and pointerMotion (the scripted pointer path used when the mouse is away).
