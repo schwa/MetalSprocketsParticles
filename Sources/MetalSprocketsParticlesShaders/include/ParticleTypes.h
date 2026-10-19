@@ -270,6 +270,10 @@ typedef struct {
     uint32_t eventEmitterIndex;
     // Nonzero to collide with the scene depth texture (DepthCollisionData).
     uint32_t collidesWithSceneDepth;
+    // Trails: keep the last trailPointCount positions (simulation space) of each particle at trails[id * trailStride].
+    // 0 for emitters without trails.
+    uint32_t trailPointCount;
+    uint32_t trailStride;
 } SimulationUniforms;
 
 /// The scene depth the simulation collides with: last frame's SceneDepth texture and the camera that drew it.
@@ -432,6 +436,12 @@ typedef struct {
     simd_float2 speedColorRange;
     simd_float3 positionColorStart;
     simd_float3 positionColorEnd;
+    // Ribbons (ParticleEmitter.trail): points per trail, the stride between particles' trails, and whether width
+    // tapers and opacity fades toward the tail.
+    uint32_t trailPointCount;
+    uint32_t trailStride;
+    uint32_t trailTapers;
+    uint32_t trailFades;
 } RenderUniforms;
 
 typedef struct {

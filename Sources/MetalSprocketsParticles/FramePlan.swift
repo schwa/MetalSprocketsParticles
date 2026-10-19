@@ -235,6 +235,8 @@ extension ParticleSystemRuntime {
         uniforms.restitution = settings.restitution
         uniforms.friction = settings.friction
         uniforms.diesOnCollision = settings.diesOnCollision ? 1 : 0
+        // The stride is filled in once the trail buffer is sized, after planning.
+        uniforms.trailPointCount = UInt32(settings.trail?.clampedPointCount ?? 0)
         uniforms.countsColliderHits = countsColliderHits ? 1 : 0
         uniforms.angle = settings.angle
         uniforms.angularSpeed = settings.angularSpeed

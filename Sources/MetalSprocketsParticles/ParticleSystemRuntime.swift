@@ -170,6 +170,8 @@ public final class ParticleSystemRuntime {
     public let particleLightBuffer: MTLBuffer
     public internal(set) var particleLightCount = 0
     var particleLightGathers: [ParticleLightGatherData] = []
+    /// Points between particles' trails in `trails`; 0 without trails.
+    var trailStride = 0
     /// Vertex buffers for `ParticleEmitter.particleMesh`, made once per shape.
     var particleMeshBuffers: [ParticleMesh: (buffer: MTLBuffer, vertexCount: Int)] = [:]
     /// The scene depth `collidesWithSceneDepth` emitters bounce off. `renderSceneDepth(into:projection:view:)` sets it
@@ -236,6 +238,8 @@ public final class ParticleSystemRuntime {
     /// `ParticleState.custom`, one float4 per particle. Made the first time an emitter has user functions, so other
     /// systems do not pay for it; dropped when the particle buffer is rebuilt.
     private(set) var attributes: MTLBuffer?
+    /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
+    var trails: MTLBuffer?
     let library: ShaderLibrary
     private let sampler: MTLSamplerState
     /// Bound in place of a missing texture; the shader ignores it.
@@ -517,7 +521,15 @@ public final class ParticleSystemRuntime {
     ) throws -> some Element {
         // swiftlint:enable discouraged_optional_collection
         readEvents()
-        let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
+        var plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
+        let trailStride = UInt32(try makeTrailsIfNeeded())
+        for index in plan.dispatches.indices {
+            plan.dispatches[index].uniforms.trailStride = trailStride
+            for child in plan.dispatches[index].subEmitterUniforms.indices {
+                plan.dispatches[index].subEmitterUniforms[child].trailStride = trailStride
+            }
+        }
+        self.trailStride = Int(trailStride)
         try makeAttributesIfNeeded(for: plan)
         planParticleLights()
         return try encode(plan, sorts: try sorts(view: view))
@@ -548,6 +560,7 @@ public final class ParticleSystemRuntime {
         let particleLightBuffer = particleLightBuffer
         let gatherKernel = try library.gatherParticleLights as ComputeKernel
         let depthCollision = collisionDepth?.data ?? DepthCollisionData()
+        let trailBuffer = trails ?? placeholderMesh.vertices
         let depthTexture = collisionDepth?.depth.texture ?? placeholderTexture
         let eventRecords = eventRecords
         let aliveCounters = aliveCounters
@@ -600,6 +613,7 @@ public final class ParticleSystemRuntime {
                 .parameter("pathPoints", values: plan.pathPoints)
                 .parameter("depthCollision", value: depthCollision)
                 .parameter("sceneDepth", texture: depthTexture)
+                .parameter("trails", buffer: trailBuffer)
                 .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }
@@ -686,9 +700,17 @@ public final class ParticleSystemRuntime {
                 // Solid shapes: the fragment shader's procedural dot is fully covered at the center.
                 draw.uniforms.hasTexture = 0
             }
+            if let trail = emitter.settings.trail, trails != nil, trailStride > 0 {
+                draw.uniforms.trailPointCount = UInt32(min(trail.clampedPointCount, trailStride))
+                draw.uniforms.trailStride = UInt32(trailStride)
+                draw.uniforms.trailTapers = trail.tapers ? 1 : 0
+                draw.uniforms.trailFades = trail.fades ? 1 : 0
+            }
             return draw
         }
         let meshVertexShader = try library.particleMeshVertex as VertexShader
+        let trailVertexShader = try library.particleTrailVertex as VertexShader
+        let trailBuffer = trails ?? placeholderMesh.vertices
         let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
         let buffer = buffer
         let vertexShader = try library.particleVertex as VertexShader
@@ -719,6 +741,37 @@ public final class ParticleSystemRuntime {
                 .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
                 // Shapes hide each other; only opaque ones write depth, so blended ones still show what is behind.
                 .depthCompare(function: .less, writes: draw.blendMode == .opaque)
+                .renderPipelineDescriptorTransformer { descriptor in
+                    if let attachment = descriptor.colorAttachments[0] {
+                        draw.blendMode.configure(attachment)
+                    }
+                }
+            } else if draw.uniforms.trailPointCount > 1 {
+                try RenderPipeline(vertexShader: trailVertexShader, fragmentShader: fragmentShader) {
+                    Draw { encoder in
+                        for segment in draw.segments where segment.count > 0 {
+                            encoder.drawPrimitives(
+                                primitiveType: .triangleStrip,
+                                vertexStart: 0,
+                                vertexCount: Int(draw.uniforms.trailPointCount) * 2,
+                                instanceCount: segment.count,
+                                baseInstance: segment.start
+                            )
+                        }
+                    }
+                }
+                .parameter("trails", buffer: trailBuffer)
+                .parameter("particles", buffer: buffer)
+                .parameter("uniforms", value: draw.uniforms)
+                .parameter("colorCurve", values: draw.colorCurve)
+                .parameter("sizeCurve", values: draw.sizeCurve)
+                .parameter("extraColorCurves", values: draw.extraColorCurves)
+                .parameter("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
+                .parameter("sprite", texture: draw.texture ?? placeholderTexture)
+                .parameter("spriteSampler", samplerState: sampler)
+                .parameter("lights", values: lightData.isEmpty ? [ParticleLightData()] : lightData)
+                .parameter("particleLights", buffer: particleLightBuffer)
+                .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
                 .renderPipelineDescriptorTransformer { descriptor in
                     if let attachment = descriptor.colorAttachments[0] {
                         draw.blendMode.configure(attachment)
@@ -835,7 +888,12 @@ private struct EmitterDraw {
             hasPositionColor: settings.colorByPosition == nil ? 0 : 1,
             speedColorRange: [settings.colorBySpeedRange.lowerBound, settings.colorBySpeedRange.upperBound],
             positionColorStart: settings.colorByPositionStart,
-            positionColorEnd: settings.colorByPositionEnd
+            positionColorEnd: settings.colorByPositionEnd,
+            // Set by render once the trail buffer is known.
+            trailPointCount: 0,
+            trailStride: 0,
+            trailTapers: 0,
+            trailFades: 0
         )
     }
 }

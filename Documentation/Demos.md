@@ -46,6 +46,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Coin Shower](#coin-shower)
 - [Sand on Shapes](#sand-on-shapes)
 - [Spark Spectrum](#spark-spectrum)
+- [Light Ribbons](#light-ribbons)
 
 ## Fountain
 
@@ -292,3 +293,9 @@ Sand pours onto a box, a sphere, a capsule, and the floor. The sand ignores the 
 A fountain of sparks colored three ways at once: white-hot while fast and deep red as they slow (colorBySpeed), each spark leaning toward a gold or a magenta palette (alternateColorOverLife), and a cool blue wash toward the top of the arc (colorByPosition).
 
 ![spark-spectrum](previews/spark-spectrum.webp)
+
+## Light Ribbons
+
+Glowing particles swirl around a vortex, each drawing a long tapered ribbon through its last 48 positions (ParticleEmitter.trail), like light painting.
+
+![light-ribbons](previews/light-ribbons.webp)

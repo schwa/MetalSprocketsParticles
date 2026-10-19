@@ -181,6 +181,8 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var colorByPosition: ParticleCurve<SIMD4<Float>>?
     public var colorByPositionStart: SIMD3<Float> = [0, 0, 0]
     public var colorByPositionEnd: SIMD3<Float> = [0, 1, 0]
+    /// Draws particles as ribbons through their recent positions instead of sprites.
+    public var trail: ParticleTrail?
 
     public init() {}
 }
@@ -254,6 +256,7 @@ extension ParticleEmitter {
         colorByPosition = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .colorByPosition)
         try container.update(&colorByPositionStart, .colorByPositionStart)
         try container.update(&colorByPositionEnd, .colorByPositionEnd)
+        trail = try container.decodeIfPresent(ParticleTrail.self, forKey: .trail)
     }
 }
 

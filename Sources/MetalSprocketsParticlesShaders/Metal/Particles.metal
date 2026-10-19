@@ -669,6 +669,20 @@ static void constrainToPlane(thread float3 &position, thread float3 &velocity, c
     velocity -= normal * dot(velocity, normal);
 }
 
+// Shifts the trail one point toward the tail and puts `position` at the head; `reset` fills it with `position`.
+static void pushTrail(device float4 *trails, uint base, uint count, float3 position, bool reset) {
+    if (reset) {
+        for (uint i = 0; i < count; i++) {
+            trails[base + i] = float4(position, 1);
+        }
+        return;
+    }
+    for (uint i = count - 1; i > 0; i--) {
+        trails[base + i] = trails[base + i - 1];
+    }
+    trails[base] = float4(position, 1);
+}
+
 static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *events, ParticleEventKind kind, float3 position, float3 velocity, float time, uint emitterIndex, uint colliderIndex) {
     uint sequence = atomic_fetch_add_explicit(cursor, 1u, memory_order_relaxed) + 1;
     device ParticleEventRecord &record = events[(sequence - 1) % PARTICLE_EVENT_CAPACITY];
@@ -710,6 +724,7 @@ kernel void updateParticles(
     constant float4 *pathPoints [[buffer(25)]],
     constant DepthCollisionData &depthCollision [[buffer(26)]],
     texture2d<float, access::read> sceneDepth [[texture(0)]],
+    device float4 *trails [[buffer(27)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -955,6 +970,10 @@ kernel void updateParticles(
                 child.velocity.w = lifetime;
             }
             particles[sub.childSliceStart + childSlot] = child;
+            SimulationUniforms childUniforms = subEmitterUniforms[i];
+            if (childUniforms.trailPointCount > 1 && childUniforms.trailStride > 0) {
+                pushTrail(trails, (sub.childSliceStart + childSlot) * childUniforms.trailStride, childUniforms.trailPointCount, child.position.xyz, true);
+            }
             if (sub.childSliceStart + childSlot < attributeCount) {
                 attributes[sub.childSliceStart + childSlot] = float4(0);
             }
@@ -970,6 +989,10 @@ kernel void updateParticles(
     p.position = float4(position, age);
     p.velocity = float4(velocity, lifetime);
     particles[id] = p;
+    if (uniforms.trailPointCount > 1 && uniforms.trailStride > 0) {
+        // New particles start with the whole trail at their position, so they do not streak from the slot's last one.
+        pushTrail(trails, id * uniforms.trailStride, uniforms.trailPointCount, position, born);
+    }
     if (hasAttributes) {
         attributes[id] = custom;
     }
@@ -1106,6 +1129,69 @@ static uint sequenceFrame(float initialFrame, float frameRate, float age, uint f
     default:
         return uint(((frame % count) + count) % count);
     }
+}
+
+static float4 particleBaseColor(constant RenderUniforms &uniforms, constant float4 *colorCurve, constant float4 *extraColorCurves, Particle p, uint index, float t, float3 center);
+
+// ParticleEmitter.trail: each particle's recent positions as a camera-facing ribbon, two vertices per point, head first.
+vertex VertexOut particleTrailVertex(
+    uint vertexID [[vertex_id]],
+    uint instanceID [[instance_id]],
+    const device Particle *particles [[buffer(0)]],
+    constant RenderUniforms &uniforms [[buffer(1)]],
+    constant float4 *colorCurve [[buffer(2)]],
+    constant float *sizeCurve [[buffer(3)]],
+    const device uint2 *sortRecords [[buffer(4)]],
+    constant ParticleLightData *lights [[buffer(5)]],
+    const device ParticleLightData *particleLights [[buffer(6)]],
+    constant float4 *extraColorCurves [[buffer(8)]],
+    const device float4 *trails [[buffer(9)]]
+) {
+    uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
+    Particle p = particles[index];
+    VertexOut out;
+    float age = p.position.w;
+    float lifetime = p.velocity.w;
+    uint count = uniforms.trailPointCount;
+    if (lifetime <= 0 || age >= lifetime || count < 2) {
+        out.position = float4(0);
+        out.color = 0;
+        out.uv = 0;
+        out.texcoord = 0;
+        out.viewDepth = 0;
+        return out;
+    }
+    uint point = min(vertexID / 2, count - 1);
+    float side = (vertexID & 1) != 0 ? 1.0 : -1.0;
+    uint base = index * uniforms.trailStride;
+    float3 here = (uniforms.model * float4(trails[base + point].xyz, 1)).xyz;
+    float3 toward = (uniforms.model * float4(trails[base + (point > 0 ? point - 1 : point)].xyz, 1)).xyz;
+    float3 away = (uniforms.model * float4(trails[base + min(point + 1, count - 1)].xyz, 1)).xyz;
+    float3 tangent = toward - away;
+    float3 toCamera = uniforms.cameraPosition - here;
+    float3 across = cross(tangent, toCamera);
+    across = length_squared(across) > 1e-12 ? normalize(across) : uniforms.cameraRight;
+    float t = saturate(age / lifetime);
+    float along = float(point) / float(count - 1);
+    float width = sampleCurve(sizeCurve, t) * p.properties.x * (uniforms.trailTapers != 0 ? 1 - along : 1);
+    float3 world = here + across * side * width;
+    out.position = uniforms.viewProjection * float4(world, 1);
+    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, here), p.color);
+    uint tint = as_type<uint>(p.properties.w);
+    if (tint != 0) {
+        out.color *= unpack_unorm4x8_to_float(tint);
+    }
+    if (uniforms.trailFades != 0) {
+        out.color *= 1 - along;
+    }
+    if (uniforms.isLit != 0) {
+        out.color.rgb *= particleLight(uniforms, lights, particleLights, here, float3(0));
+    }
+    out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
+    // Soft edges across the ribbon; textures run along it.
+    out.uv = float2(0, side);
+    out.texcoord = float2(along, side * 0.5 + 0.5);
+    return out;
 }
 
 // The color over life, with the extra gradients applied. `center` is the particle's world position; `index` its slot.

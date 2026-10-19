@@ -2299,15 +2299,18 @@ Tests: old files load with fresh ids; ids round-trip; index-form pointer binding
 ## 109: Ribbons and trails
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:l
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:57:49Z
+closed: 2026-10-19T02:57:49Z
 +++
 
 Draw particles as connected strips instead of separate sprites: trails behind sparks and comets, swooshes, lightning, sword arcs. Like Niagara ribbons and Unity VFX Graph strips. Options: a per-particle history ring (last N positions) drawn as a strip, or strips that link particles born in sequence from one emitter. Needs width and color over the strip's length, UVs along it for textures, and facing the camera. Today the closest is a while-alive sub-emitter trail of separate dots.
+
+- `2026-10-19T02:57:49Z`: Done as a per-particle history: ParticleEmitter.trail (ParticleTrail: pointCount 2...64, tapers, fades) keeps each particle's last positions, one per simulation step, in a trail buffer made only when an emitter has a trail (16 bytes per point per particle, at the largest pointCount in the system). Births and sub-emitter children start with a collapsed trail, so reused slots do not streak. Drawn as camera-facing triangle strips with soft edges across, texture coordinates along, width from size over life, color from all the color settings. Not done: ribbons that link particles born in sequence (one ribbon per emitter), and time-based point spacing (points are per step, so trail length in time depends on the frame rate).
 
 ---
 
