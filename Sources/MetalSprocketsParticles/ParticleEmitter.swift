@@ -162,6 +162,8 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Keeps simulating while culled, so the effect is right when it comes back into view. Off saves the GPU work but
     /// freezes the effect until it is visible again.
     public var simulatesWhenCulled = true
+    /// Makes some of this emitter's particles light the scene.
+    public var light: ParticleLightEmission?
 
     public init() {}
 }
@@ -226,6 +228,7 @@ extension ParticleEmitter {
         try container.update(&lodFarRateScale, .lodFarRateScale)
         try container.update(&cullingRadius, .cullingRadius)
         try container.update(&simulatesWhenCulled, .simulatesWhenCulled)
+        light = try container.decodeIfPresent(ParticleLightEmission.self, forKey: .light)
     }
 }
 

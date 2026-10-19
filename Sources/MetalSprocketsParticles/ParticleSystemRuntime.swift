@@ -164,6 +164,12 @@ public final class ParticleSystemRuntime {
     public internal(set) var recentEvents: [ParticleEvent] = []
     /// Events lost since the system was made, because more than `ParticleEvent.capacity` happened between reads.
     public internal(set) var droppedEventCount = 0
+    /// Lights gathered from emitting particles (`ParticleEmitter.light`) by the last `simulate`: `particleLightCount`
+    /// `ParticleLightData` values, in world space. The GPU writes it during the simulation, so read it on the GPU after
+    /// the simulation, or on the CPU once that frame has finished (see `emittedLights()`).
+    public let particleLightBuffer: MTLBuffer
+    public internal(set) var particleLightCount = 0
+    var particleLightGathers: [ParticleLightGatherData] = []
     /// The camera of the last `render`, for LOD and culling.
     var cullingCamera: CullingCamera?
     /// Live-particle counts, one slot per recent frame; see `aliveParticleCount`.
@@ -301,6 +307,11 @@ public final class ParticleSystemRuntime {
         eventRecords.label = "Particle events"
         self.eventCursor = eventCursor
         self.eventRecords = eventRecords
+        guard let particleLightBuffer = device.makeBuffer(length: MemoryLayout<ParticleLightData>.stride * Int(PARTICLE_MAX_PARTICLE_LIGHTS), options: .storageModeShared) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        particleLightBuffer.label = "Particle lights"
+        self.particleLightBuffer = particleLightBuffer
         let aliveLength = Int(PARTICLE_ALIVE_COUNTER_SLOTS) * MemoryLayout<UInt32>.stride
         guard let aliveCounters = device.makeBuffer(length: aliveLength, options: .storageModeShared) else {
             throw CocoaError(.featureUnsupported)
@@ -503,6 +514,7 @@ public final class ParticleSystemRuntime {
         readEvents()
         let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
         try makeAttributesIfNeeded(for: plan)
+        planParticleLights()
         return try encode(plan, sorts: try sorts(view: view))
     }
 
@@ -527,6 +539,9 @@ public final class ParticleSystemRuntime {
         let volumeData = plan.triggerVolumes
         let triggerCounters = triggerCounters
         let eventCursor = eventCursor
+        let particleLightGathers = particleLightGathers
+        let particleLightBuffer = particleLightBuffer
+        let gatherKernel = try library.gatherParticleLights as ComputeKernel
         let eventRecords = eventRecords
         let aliveCounters = aliveCounters
         let placeholderMesh = placeholderMesh
@@ -578,6 +593,18 @@ public final class ParticleSystemRuntime {
                 .parameter("pathPoints", values: plan.pathPoints)
                 .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
+            }
+            if !particleLightGathers.isEmpty {
+                // Lights come from the particles the simulation just wrote.
+                EncoderBarrier(after: .dispatch, before: .dispatch)
+                ForEach(Array(particleLightGathers.indices), id: \.self) { index in
+                    try ComputePipeline(computeKernel: gatherKernel) {
+                        try ComputeDispatch(threadsPerGrid: MTLSize(width: Int(particleLightGathers[index].count), height: 1, depth: 1))
+                    }
+                    .parameter("particles", buffer: buffer)
+                    .parameter("gather", value: particleLightGathers[index])
+                    .parameter("particleLights", buffer: particleLightBuffer)
+                }
             }
             if !sorts.isEmpty {
                 // Sorting reads the particles the simulation just wrote.
@@ -641,7 +668,8 @@ public final class ParticleSystemRuntime {
         let sorted = visible.filter { $0.settings.sortMode != .none }
             .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
         let placeholderSortRecords = placeholderSortRecords
-        let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)))
+        let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)), particleLightCount: particleLightCount)
+        let particleLightBuffer = particleLightBuffer
         let draws = (unsorted + sorted).map { emitter in
             EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: sceneDepth != nil)
         }
@@ -669,6 +697,7 @@ public final class ParticleSystemRuntime {
             .parameter("spriteSampler", samplerState: sampler)
             // Never bind an empty array; lightCount keeps the padding unused.
             .parameter("lights", values: lightData.isEmpty ? [ParticleLightData()] : lightData)
+            .parameter("particleLights", buffer: particleLightBuffer)
             .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
             .renderPipelineDescriptorTransformer { descriptor in
                 if let attachment = descriptor.colorAttachments[0] {
@@ -694,6 +723,7 @@ private struct EmitterDraw {
     struct Lighting {
         var ambient: SIMD3<Float>
         var lightCount: Int
+        var particleLightCount: Int
     }
 
     init(emitter: ParticleSystemRuntime.Emitter, projection: simd_float4x4, view: simd_float4x4, lighting: Lighting, hasSceneDepth: Bool) {
@@ -740,6 +770,7 @@ private struct EmitterDraw {
             ambientLight: lighting.ambient,
             isLit: settings.isLit ? 1 : 0,
             lightCount: UInt32(lighting.lightCount),
+            particleLightCount: UInt32(lighting.particleLightCount),
             softness: max(settings.softness, 0),
             hasSceneDepth: hasSceneDepth ? 1 : 0,
             // Clip z = a * zView + b and clip w = c * zView, so depth d = (a * zView + b) / (c * zView).

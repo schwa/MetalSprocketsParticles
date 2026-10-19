@@ -289,6 +289,24 @@ typedef struct {
     uint32_t sequence;
 } ParticleEventRecord;
 
+/// Most lights gathered from particles (ParticleEmitter.light) across the whole system.
+#define PARTICLE_MAX_PARTICLE_LIGHTS 16
+
+/// One emitter's light gathering: `count` lights, each from the first live particle in its stretch of the live window
+/// (`windowCount` ring slots from `windowStart`, wrapping at `capacity`), written from `firstLight` in the particle
+/// light buffer.
+typedef struct {
+    uint32_t sliceStart;
+    uint32_t capacity;
+    uint32_t windowStart;
+    uint32_t windowCount;
+    uint32_t count;
+    uint32_t firstLight;
+    simd_float3 color; // Color times intensity, at full remaining life.
+    float range;
+    simd_float4x4 simulationToWorld;
+} ParticleLightGatherData;
+
 /// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.
 #define PARTICLE_ALIVE_COUNTER_SLOTS 5
 
@@ -383,6 +401,7 @@ typedef struct {
     simd_float3 ambientLight;
     uint32_t isLit;
     uint32_t lightCount;
+    uint32_t particleLightCount; // Lights gathered from emitting particles, after the scene lights.
     // Soft particles, when softness > 0 and hasSceneDepth is nonzero: fade out over `softness` world units in front of
     // the scene depth. depthUnproject (a, b, c) turns a depth-buffer value d into view distance: -b / (d * c - a).
     float softness;

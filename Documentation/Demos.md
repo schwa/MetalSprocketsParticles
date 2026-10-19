@@ -42,6 +42,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Paint Drops](#paint-drops)
 - [Magic Loop](#magic-loop)
 - [Torch Avenue](#torch-avenue)
+- [Ember Glow](#ember-glow)
 
 ## Fountain
 
@@ -264,3 +265,9 @@ Sparkles stream around a wavy loop, guided by a path force field: a smooth curve
 Two rows of torches recede into the night. Each torch uses distance LOD: it emits fully up close and a fifth as much far away, where the difference does not show, and a culling radius skips it when it is out of view.
 
 ![torch-avenue](previews/torch-avenue.webp)
+
+## Ember Glow
+
+Smoke rises in the dark, lit only by the embers drifting through it. Twelve embers become point lights each frame (ParticleEmitter.light), and the lit smoke picks up their orange glow where they pass.
+
+![ember-glow](previews/ember-glow.webp)

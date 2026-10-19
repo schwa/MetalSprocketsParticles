@@ -2451,14 +2451,18 @@ Spend less on effects that are far away or off screen: scale emission rate and p
 ## 118: Particles that light the scene
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:32:33Z
+closed: 2026-10-19T02:32:33Z
 +++
 
 Let particles emit light onto other particles and, through the host, onto scene geometry: sparks lighting the ground, fireflies glowing. Niagara has a light renderer that turns some particles into lights. Pick the brightest or a sample of particles each frame (GPU reduction), expose them as lights for the host renderer, and light lit particles with them.
+
+- `2026-10-19T02:32:33Z`: Done: ParticleEmitter.light (ParticleLightEmission: count, color, intensity, range) turns live particles into point lights each frame, gathered on the GPU after the simulation (one live particle per stretch of the emitter's live window, dimming with age), at most 16 per system. They light lit particles of every emitter. The host gets particleLightBuffer (GPU) and emittedLights() (CPU, last finished frame) for its own geometry. Picking the brightest particles (a GPU reduction) is not done; even sampling over the live window was enough for the demo.
 
 ---
 

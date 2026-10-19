@@ -960,13 +960,8 @@ struct VertexOut {
 
 // Diffuse light at a quad corner. The quad is shaded like a small sphere: the normal leans from the camera direction
 // toward the corner, so lit particles get a soft gradient instead of a flat tint.
-static float3 particleLight(constant RenderUniforms &uniforms, constant ParticleLightData *lights, float3 center, float3 cornerDirection) {
-    float3 toCamera = normalize(uniforms.cameraPosition - center);
-    float3 normal = normalize(cornerDirection + toCamera);
-    float3 light = uniforms.ambientLight;
-    for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
-        ParticleLightData source = lights[i];
-        float3 toLight;
+static float3 diffuseLight(ParticleLightData source, float3 center, float3 normal) {
+    float3 toLight;
         float attenuation = 1;
         if (source.kind == ParticleLightKindPoint) {
             float3 offset = source.position - center;
@@ -979,9 +974,52 @@ static float3 particleLight(constant RenderUniforms &uniforms, constant Particle
         } else {
             toLight = -source.direction;
         }
-        light += source.color * max(0.0, dot(normal, toLight)) * attenuation;
+    return source.color * max(0.0, dot(normal, toLight)) * attenuation;
+}
+
+static float3 particleLight(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 center, float3 cornerDirection) {
+    float3 toCamera = normalize(uniforms.cameraPosition - center);
+    float3 normal = normalize(cornerDirection + toCamera);
+    float3 light = uniforms.ambientLight;
+    for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
+        light += diffuseLight(lights[i], center, normal);
+    }
+    for (uint i = 0; i < min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS)); i++) {
+        light += diffuseLight(particleLights[i], center, normal);
     }
     return light;
+}
+
+// One thread per light: the first live particle in this light's stretch of the slice becomes a point light, dimming
+// as it ages. No live particle there means a black light.
+kernel void gatherParticleLights(
+    const device Particle *particles [[buffer(0)]],
+    constant ParticleLightGatherData &gather [[buffer(1)]],
+    device ParticleLightData *particleLights [[buffer(2)]],
+    uint index [[thread_position_in_grid]]
+) {
+    if (index >= gather.count) {
+        return;
+    }
+    // Stretches cover the live window, where the live particles are, not the whole ring.
+    // Proportional split, so every stretch is nonempty whenever the window has at least as many slots as lights.
+    uint first = index * gather.windowCount / gather.count;
+    uint last = (index + 1) * gather.windowCount / gather.count;
+    ParticleLightData light;
+    light.kind = ParticleLightKindPoint;
+    light.range = gather.range;
+    light.direction = float3(0, -1, 0);
+    light.position = float3(0);
+    light.color = float3(0);
+    for (uint offset = first; offset < last; offset++) {
+        Particle p = particles[gather.sliceStart + (gather.windowStart + offset) % gather.capacity];
+        if (p.velocity.w > 0 && p.position.w < p.velocity.w) {
+            light.position = (gather.simulationToWorld * float4(p.position.xyz, 1)).xyz;
+            light.color = gather.color * (1 - p.position.w / p.velocity.w);
+            break;
+        }
+    }
+    particleLights[gather.firstLight + index] = light;
 }
 
 // Frame index for a particle `age` seconds old.
@@ -1012,7 +1050,8 @@ vertex VertexOut particleVertex(
     constant float4 *colorCurve [[buffer(2)]],
     constant float *sizeCurve [[buffer(3)]],
     const device uint2 *sortRecords [[buffer(4)]],
-    constant ParticleLightData *lights [[buffer(5)]]
+    constant ParticleLightData *lights [[buffer(5)]],
+    const device ParticleLightData *particleLights [[buffer(6)]]
 ) {
     const float2 corners[4] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(1, 1) };
     // Sorted emitters draw instance i as the i-th farthest particle.
@@ -1083,7 +1122,7 @@ vertex VertexOut particleVertex(
         out.color *= unpack_unorm4x8_to_float(tint);
     }
     if (uniforms.isLit != 0) {
-        out.color.rgb *= particleLight(uniforms, lights, center, right * offset.x + up * offset.y);
+        out.color.rgb *= particleLight(uniforms, lights, particleLights, center, right * offset.x + up * offset.y);
     }
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     out.uv = corner;
