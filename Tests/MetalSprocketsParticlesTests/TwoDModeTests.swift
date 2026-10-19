@@ -17,16 +17,33 @@ struct TwoDModeTests {
         return system
     }
 
-    @Test func systemCameraBecomesTheOverlayIn2D() {
+    /// In 2D the scene cameras show the scene flat, in its own units, framed like the 3D view at the target; they used to
+    /// switch to the overlay camera in points, which left a normal scene as a speck in the corner (#154).
+    @Test func sceneCamerasShowAFlatFrontViewIn2D() {
         let size = CGSize(width: 800, height: 600)
-        let flat = system(is2D: true)
+        var flat = system(is2D: true)
+        flat.cameraEye = [1, 2, 6]
+        flat.cameraTarget = [1, 2, 0]
         let camera = ParticleCamera.system.matrices(for: flat, size: size)
+        func project(_ point: SIMD3<Float>) -> SIMD2<Float> {
+            let clip = camera.projection * camera.cameraToWorld.inverse * SIMD4(point, 1)
+            return SIMD2(clip.x, clip.y) / clip.w
+        }
+        // The target is centered; y is up; one unit at the target matches the perspective view's scale there.
+        #expect(simd_length(project(flat.cameraTarget)) < 1e-5)
+        #expect(project([1, 3, 0]).y > 0)
+        let halfHeight = 6 * tan(Float.pi / 8)
+        #expect(abs(project([1, 2 + halfHeight, 0]).y - 1) < 1e-4)
+        // Orthographic: depth does not move points across the screen.
+        #expect(simd_distance(project([1.5, 2.5, 0]), project([1.5, 2.5, -3])) < 1e-5)
+        // .lookAt follows the same rule; .overlay stays in points.
+        let lookAt = ParticleCamera.lookAt(eye: flat.cameraEye, target: flat.cameraTarget).matrices(for: flat, size: size)
+        #expect(lookAt.projection == camera.projection)
         let overlay = ParticleCamera.overlay.matrices(for: flat, size: size)
-        #expect(camera.projection == overlay.projection)
-        #expect(camera.cameraToWorld == overlay.cameraToWorld)
+        #expect(overlay.projection != camera.projection)
         // In 3D the system's own perspective camera stays.
         let deep = ParticleCamera.system.matrices(for: system(is2D: false), size: size)
-        #expect(deep.projection != overlay.projection)
+        #expect(deep.projection != camera.projection)
     }
 
     @Test func emittersRunOnTheirPlaneButKeepTheirOwnSetting() throws {

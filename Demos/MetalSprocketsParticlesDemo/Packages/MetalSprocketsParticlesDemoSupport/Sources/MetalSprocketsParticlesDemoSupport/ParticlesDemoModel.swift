@@ -122,7 +122,7 @@ final class ParticlesDemoModel {
     var pointerMotion = EmitterMotion()
     /// Reactions to particle events (no editor yet; kept so presets and saved effects play and save as authored).
     var eventBursts: [EventBurst] = []
-    /// 2D mode (`ParticleSystem.is2D`): the viewport uses the overlay camera and emitters stay on their plane.
+    /// 2D mode (`ParticleSystem.is2D`): the viewport shows the scene flat from the front and emitters stay on their plane.
     var is2D = false
     /// The mouse location as a fraction of the view (0...1, origin top left), or nil when it is outside. Not observed:
     /// it changes on every mouse move and is only read while rendering.
@@ -338,10 +338,9 @@ final class ParticlesDemoModel {
     // MARK: Emitters
 
     func addEmitter() {
-        var settings = is2D ? ParticleEmitter.default2D : ParticleEmitter()
-        if !is2D {
-            settings.birthRate = 2_000
-        }
+        // 2D shows the scene in its own units, so new emitters are the same in both modes; 2D keeps them on the plane.
+        var settings = ParticleEmitter()
+        settings.birthRate = 2_000
         let emitter = EmitterDescription("Emitter \(emitters.count + 1)", settings: settings)
         emitters.append(emitter)
         selection = .emitter(emitter.id)

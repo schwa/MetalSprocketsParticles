@@ -6,17 +6,19 @@ import Testing
 
 @Suite(.requiresMetal4)
 struct TwoDModeTests {
-    /// In 2D, new emitters start from the 2D defaults (points), and the scene saves as 2D (#141).
+    /// 2D saves with the scene (#141). The view is in the scene's own units (#154), so new emitters are the same in
+    /// both modes, not the points-based 2D defaults.
     @MainActor
-    @Test func twoDModeAddsTwoDEmittersAndSaves() {
+    @Test func twoDModeSavesAndAddsSceneEmitters() {
         let model = ParticlesDemoModel()
         model.is2D = true
         model.addEmitter()
-        #expect(model.emitters.last?.settings == ParticleEmitter.default2D)
+        let flatEmitter = model.emitters.last?.settings
+        #expect(flatEmitter != ParticleEmitter.default2D)
         #expect(model.currentEffect.is2D)
         model.is2D = false
         model.addEmitter()
-        #expect(model.emitters.last?.settings != ParticleEmitter.default2D)
+        #expect(model.emitters.last?.settings == flatEmitter)
         #expect(!model.currentEffect.is2D)
     }
 

@@ -36,9 +36,9 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     public var cameraTarget: SIMD3<Float>
     /// Reactions to particle events that `ParticlePlayer` carries out on the CPU, a frame or two after they happen.
     public var eventBursts: [EventBurst] = []
-    /// 2D: the `.system` camera becomes the overlay camera (one unit is one point, y down) and every emitter is kept on
-    /// its plane. The 3D camera and each emitter's own `constrainsToPlane` are kept, so turning it off restores them.
-    /// Author 2D effects in points; see `ParticleEmitter.default2D`.
+    /// 2D: the scene cameras (`.system`, `.lookAt`) become a flat front view of the z = 0 plane, y up, and every emitter
+    /// is kept on its plane. The 3D camera and each emitter's own `constrainsToPlane` are kept, so turning it off
+    /// restores them. For effects over an app's UI in points, use the `.overlay` camera and `ParticleEmitter.default2D`.
     public var is2D = false
 
     public var id: String { name }

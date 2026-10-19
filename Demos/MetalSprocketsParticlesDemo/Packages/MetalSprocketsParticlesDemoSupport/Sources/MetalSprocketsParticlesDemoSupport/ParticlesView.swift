@@ -26,7 +26,7 @@ public struct ParticlesView: View {
                     SceneToolbarContent()
                     ToolbarItem {
                         Toggle("2D", systemImage: "square.on.square", isOn: $model.is2D)
-                            .help("2D mode: the overlay camera (one unit is one point, y down) and every emitter kept on its plane. New emitters start from 2D defaults.")
+                            .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
                     }
                     ToolbarItem {
                         Toggle("Overlays", systemImage: "square.text.square", isOn: $showsOverlays)
@@ -141,12 +141,12 @@ struct ParticleViewportView: View {
         if let system = model.system {
             RenderView(colorPixelFormat: colorFormat.pixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
-                // The demo owns its 3D camera (the orbit controls); in 2D the overlay camera maps one unit to one point of
-                // the view. Either way it passes matrices to the player.
-                let overlay = ParticleCamera.overlay.matrices(for: model.currentEffect, size: viewSize)
-                let plainProjection = model.is2D ? overlay.projection : simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
+                // The demo owns its 3D camera (the orbit controls); in 2D it shows the scene flat from the front, framed
+                // like the 3D view at the target. Either way it passes matrices to the player.
+                let flat = ParticleCamera.lookAt(eye: cameraMatrix.columns.3.xyz, target: model.cameraTarget).matrices(for: model.currentEffect, size: size)
+                let plainProjection = model.is2D ? flat.projection : simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
                 let projection = model.reverseZ ? ParticleSystemRuntime.reversingDepth(plainProjection) : plainProjection
-                let cameraToWorld = model.is2D ? overlay.cameraToWorld : cameraMatrix
+                let cameraToWorld = model.is2D ? flat.cameraToWorld : cameraMatrix
                 if let player = try model.player(projection: projection, cameraToWorld: cameraToWorld) {
                     try player.frame(
                         deltaTime: context.frameUniforms.deltaTime,
