@@ -86,6 +86,53 @@ struct FoilTests {
         #expect(spread > 0.15, "balances \(balances)")
     }
 
+    /// The fraction of a tumbling foil card's pixels near white, at the angle where it glints most. Crinkled foil
+    /// sparkles in points across the card instead of flashing as a whole (the whole card went white before).
+    @Test func foilSpritesSparkleInPoints() throws {
+        func render(angle: Float) throws -> [SIMD3<Float>] {
+            var card = ParticleEmitter()
+            card.shape = .point
+            card.velocity = .zero
+            card.velocitySpread = 0
+            card.gravity = .zero
+            card.birthRate = 0
+            card.lifetime = 10...10
+            card.angle = angle
+            card.orientation = .tumbling
+            card.sizeOverLife = .constant(0.9)
+            card.colorOverLife = .constant([0.3, 0.25, 0.12, 1])
+            card.blendMode = .opaque
+            card.foil = ParticleFoil(glint: 3, shininess: 48, iridescence: 0.6)
+            let system = ParticleSystem(
+                "Card", layers: [EmitterDescription("Card", settings: card, sprite: .confetti, capacity: 1)],
+                lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
+            )
+            let size = CGSize(width: 96, height: 96)
+            let renderer = try OffscreenRenderer(size: size)
+            let player = try ParticlePlayer(system: system, device: renderer.device)
+            player.runtime.burst(1)
+            var rendering: OffscreenRenderer.Rendering?
+            for _ in 0..<3 {
+                rendering = try renderer.render(try player.frame(deltaTime: 1.0 / 60.0, size: size))
+            }
+            let image = try #require(rendering).cgImage
+            let context = try #require(CGContext(
+                data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            let pixels = try #require(context.data).bindMemory(to: UInt8.self, capacity: image.width * image.height * 4)
+            return (0..<(image.width * image.height)).map { SIMD3(Float(pixels[$0 * 4]), Float(pixels[$0 * 4 + 1]), Float(pixels[$0 * 4 + 2])) / 255 }
+        }
+        let renders = try (0..<36).map { try render(angle: Float($0) / 36 * 2 * .pi) }
+        let brightest = try #require(renders.max { $0.map(brightness).reduce(0, +) < $1.map(brightness).reduce(0, +) })
+        let card = brightest.filter { brightness($0) > 0.02 }
+        let sparkling = card.filter { brightness($0) > 0.85 }
+        let fraction = Float(sparkling.count) / Float(max(card.count, 1))
+        #expect(sparkling.count > 3, "\(sparkling.count) bright pixels")
+        #expect(fraction < 0.6, "\(fraction) of the card is bright")
+    }
+
     /// Sparkles: an `.onGlint` sub-emitter fires as a spinning foil card flashes (#171), and only then.
     @Test func glintSubEmittersFireWhenPiecesFlash() throws {
         func children(spin: Float, withView: Bool) throws -> Int {

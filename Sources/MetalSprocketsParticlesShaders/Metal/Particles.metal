@@ -827,7 +827,15 @@ static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *e
 }
 
 static float3 rotateAbout(float3 v, float3 axis, float angle);
-static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base);
+static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base, bool includesGlint);
+
+// Toward foil's light for a sprite's per-pixel glint: the first scene light, or foil's fixed light when there are none.
+static float3 foilLightDirection(constant RenderUniforms &uniforms, constant ParticleLightData *lights, float3 position) {
+    if (uniforms.lightCount == 0) {
+        return normalize(float3(0.3, 1, 0.6));
+    }
+    return lights[0].kind == ParticleLightKindPoint ? normalize(lights[0].position - position) : -lights[0].direction;
+}
 
 // A particle's own tumble axis, the same one mesh particles turn about.
 static float3 tumbleAxis(uint index) {
@@ -1261,6 +1269,13 @@ struct VertexOut {
     float2 uv;       // Quad corner space, -1...1. Drives the procedural dot.
     float2 texcoord; // Sprite sheet cell coordinates.
     float viewDepth; // Distance in front of the camera, for soft particles.
+    // Per-pixel foil glint on sprites (zero elsewhere): the card's normal and in-plane axes, the half vector toward the
+    // first light (or foil's fixed light), and a per-particle seed for its crinkle.
+    float3 foilNormal;
+    float3 foilRight;
+    float3 foilUp;
+    float3 foilHalfway;
+    uint foilSeed [[flat]];
 };
 
 // Diffuse light at a quad corner. The quad is shaded like a small sphere: the normal leans from the camera direction
@@ -1414,7 +1429,7 @@ vertex VertexOut particleTrailVertex(
 ) {
     uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
     Particle p = particles[index];
-    VertexOut out;
+    VertexOut out = {};
     float age = p.position.w;
     float lifetime = p.velocity.w;
     uint count = uniforms.trailPointCount;
@@ -1499,7 +1514,7 @@ vertex VertexOut particleRibbonVertex(
     };
     uint index = slotIndex(offset);
     Particle p = particles[index];
-    VertexOut out;
+    VertexOut out = {};
     out.uv = float2(0, side);
     out.texcoord = 0;
     // Neighbors along the ribbon, skipping dead ones a few slots each way.
@@ -1600,7 +1615,7 @@ vertex VertexOut particleVertex(
     // Sorted emitters draw instance i as the i-th farthest particle.
     uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
     Particle p = particles[index];
-    VertexOut out;
+    VertexOut out = {};
     float age = p.position.w;
     float lifetime = p.velocity.w;
     if (lifetime <= 0 || age >= lifetime) {
@@ -1675,9 +1690,16 @@ vertex VertexOut particleVertex(
         out.color *= unpack_unorm4x8_to_float(tint);
     }
     if (uniforms.foilGlint > 0 || uniforms.foilIridescence > 0) {
-        // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one.
+        // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one. Color shift and edge
+        // darkening per vertex; the glint per pixel, in the fragment shader, so it sparkles across the card.
         float3 normal = normalize(cross(right, up));
-        out.color.rgb = foilColor(uniforms, lights, particleLights, center, normal, normalize(toCamera), out.color.rgb);
+        float3 viewDirection = normalize(toCamera);
+        out.color.rgb = foilColor(uniforms, lights, particleLights, center, normal, viewDirection, out.color.rgb, false);
+        out.foilNormal = dot(normal, viewDirection) < 0 ? -normal : normal;
+        out.foilRight = right;
+        out.foilUp = up;
+        out.foilHalfway = normalize(foilLightDirection(uniforms, lights, center) + viewDirection);
+        out.foilSeed = hash(index * 7u + 11u);
     } else if (uniforms.isLit != 0) {
         out.color.rgb *= particleLight(uniforms, lights, particleLights, center, right * offset.x + up * offset.y);
     }
@@ -1751,12 +1773,15 @@ static float3 rotateAbout(float3 v, float3 axis, float angle) {
 // Metallic foil (ParticleEmitter.foil). Two-sided: the face toward the camera counts. The color shifts with the viewing
 // angle like a thin film, darkens edge-on, and gets a Blinn-Phong glint from each light, or from a fixed light above and
 // in front when there are none. Per vertex, so a flat piece flashes as a whole.
-static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base) {
+static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base, bool includesGlint) {
     float facing = dot(normal, toCamera);
     float3 n = facing < 0 ? -normal : normal;
     float cosine = abs(facing);
     float3 film = 0.5 + 0.5 * cos(6.2831853 * ((1 - cosine) * 1.5 + float3(0, 0.33, 0.67)));
     float3 color = base * mix(float3(1), film, saturate(uniforms.foilIridescence)) * mix(0.2, 1.0, cosine);
+    if (!includesGlint) {
+        return color;
+    }
     float glint = 0;
     uint lightCount = min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS));
     uint particleLightCount = min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS));
@@ -1791,7 +1816,7 @@ vertex VertexOut particleMeshVertex(
 ) {
     uint index = uniforms.readsSortRecords != 0 ? sortRecords[instanceID].y : instanceID;
     Particle p = particles[index];
-    VertexOut out;
+    VertexOut out = {};
     out.uv = 0;
     out.texcoord = 0;
     float age = p.position.w;
@@ -1822,7 +1847,7 @@ vertex VertexOut particleMeshVertex(
     }
     float3 toCamera = normalize(uniforms.cameraPosition - world);
     if (uniforms.foilGlint > 0 || uniforms.foilIridescence > 0) {
-        out.color.rgb = foilColor(uniforms, lights, particleLights, world, normal, toCamera, out.color.rgb);
+        out.color.rgb = foilColor(uniforms, lights, particleLights, world, normal, toCamera, out.color.rgb, true);
     } else if (uniforms.isLit != 0) {
         float3 light = uniforms.ambientLight;
         for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
@@ -1872,13 +1897,24 @@ fragment float4 particleFragment(
     if (uniforms.debugMode == ParticleDebugModeWireframe) {
         base = float4(1);
     }
+    // Foil sprites: crinkled foil is a grid of tiny facets, each tilted its own way, so as the card turns different
+    // facets catch the light and it sparkles across instead of flashing as a whole.
+    float3 glint = 0;
+    if (uniforms.foilGlint > 0 && length_squared(in.foilNormal) > 0) {
+        // Small facets, widely tilted, each with a tight highlight: a few bright points at a time.
+        float2 facet = floor((in.uv * 0.5 + 0.5) * float2(18, 18));
+        uint h = hash(in.foilSeed ^ (uint(facet.x) * 73856093u) ^ (uint(facet.y) * 19349663u));
+        float2 tilt = (float2(h & 0xFFFFu, h >> 16) / 65535.0 - 0.5) * 0.9;
+        float3 n = normalize(in.foilNormal + normalize(in.foilRight) * tilt.x + normalize(in.foilUp) * tilt.y);
+        glint = pow(max(dot(n, normalize(in.foilHalfway)), 0.0), uniforms.foilShininess * 2) * uniforms.foilGlint * 1.5;
+    }
     float alpha = base.a * color.a;
     if (uniforms.blendMode == ParticleBlendModeOpaque) {
         if (alpha < 0.5) {
             discard_fragment();
         }
         float3 unpremultiplied = base.a > 0 ? base.rgb / base.a : base.rgb;
-        return float4(unpremultiplied * color.rgb, 1);
+        return float4(unpremultiplied * color.rgb + glint, 1);
     }
-    return float4(base.rgb * color.rgb * color.a, alpha);
+    return float4(base.rgb * color.rgb * color.a + glint * alpha, alpha);
 }
