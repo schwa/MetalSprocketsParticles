@@ -2657,11 +2657,13 @@ Trail points (#109) are recorded once per simulation step, so a trail covers les
 ## 130: Sand on Shapes runs at 80 fps instead of 120
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:performance, effort:m
 created: 2026-10-19T11:42:02Z
+updated: 2026-10-19T12:03:27Z
+closed: 2026-10-19T12:03:27Z
 +++
 
 Reported in the demo app: Sand on Shapes (scene depth collision, #120) is the slowest demo, about 80 fps where others hold 120 on the M5 Max. Cause not measured yet. Candidates to check with a GPU capture or particles-bench:
@@ -2673,6 +2675,7 @@ Fix whatever dominates; compare against Rain (similar count, analytic colliders)
 
 - `2026-10-19T11:42:11Z`: Correction to the description: the shader does no matrix inversion; each contact does five depth reads and five matrix-vector multiplies by the precomputed inverse view-projection.
 - `2026-10-19T11:47:47Z`: Related: #131 (benchmark to catch regressions like this).
+- `2026-10-19T12:03:27Z`: Measured (debug build, 1920x1080, frame build vs whole frame): Sand on Shapes 9.84 / 11.45 ms, Fog 9.78 / 13.25 ms; with drawsColliders off both build in about 0.15 ms. Depth collision cost nothing (11.44 vs 11.48 ms). The cost was CPU: renderSceneDepth and renderColliderSolids each re-tessellated the colliders (sphere 6144, capsule 12672 vertices; 4.7 ms per set) every frame. Now cached until the colliders change: Sand on Shapes 0.18 / 1.37 ms, Fog 0.21 / 2.22 ms. Still re-tessellates when colliders move each frame (Pointer Stir's sphere while the pointer moves, about 1.5 ms in debug); tessellating shapes once in local space and transforming would fix that if needed.
 
 ---
 

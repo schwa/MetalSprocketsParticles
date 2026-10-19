@@ -240,6 +240,8 @@ public final class ParticleSystemRuntime {
     private(set) var attributes: MTLBuffer?
     /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
     var trails: MTLBuffer?
+    /// See `colliderSolidVertices(planeExtent:)`.
+    var solidVertexCache: (colliders: [Collider], planeExtent: Float, vertices: [SIMD4<Float>])?
     /// For `ParticleEmitter.flocking`, made when an emitter flocks.
     var flockingBuffers: FlockingBuffers?
     var flocks: [FlockData] = []

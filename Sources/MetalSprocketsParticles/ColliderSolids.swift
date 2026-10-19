@@ -61,12 +61,25 @@ public struct SceneDepthCollision {
     }
 }
 
+extension ParticleSystemRuntime {
+    /// The colliders' solid triangles, made again only when the colliders change. Tessellating spheres and capsules
+    /// is too slow to do for every pass of every frame (#130).
+    func colliderSolidVertices(planeExtent: Float) -> [SIMD4<Float>] {
+        if let cached = solidVertexCache, cached.colliders == colliders, cached.planeExtent == planeExtent {
+            return cached.vertices
+        }
+        let vertices = colliders.flatMap { $0.solidVertices(planeExtent: planeExtent) }
+        solidVertexCache = (colliders, planeExtent, vertices)
+        return vertices
+    }
+}
+
 public extension ParticleSystemRuntime {
     /// Draws the colliders as shaded solids, depth-tested and writing depth. Place inside a `RenderPass` that has a
     /// depth attachment, before `render`. Planes are drawn as squares `planeExtent` units from their closest point to
     /// the origin.
     func renderColliderSolids(projection: simd_float4x4, view: simd_float4x4, color: SIMD3<Float> = [0.1, 0.11, 0.13], planeExtent: Float = 6) throws -> some Element {
-        let vertices = colliders.flatMap { $0.solidVertices(planeExtent: planeExtent) }
+        let vertices = colliderSolidVertices(planeExtent: planeExtent)
         return try solids(vertices, fragmentShader: library.solidFragment, uniforms: WireframeUniforms(viewProjection: projection * view, color: SIMD4(color, 1)))
             .depthCompare(function: .less, writes: true)
     }
@@ -95,7 +108,7 @@ public extension ParticleSystemRuntime {
     func renderSceneDepth(into sceneDepth: SceneDepth, projection: simd_float4x4, view: simd_float4x4, planeExtent: Float = 6) throws -> some Element {
         // The next simulate collides with this depth (one frame late).
         collisionDepth = SceneDepthCollision(depth: sceneDepth, projection: projection, view: view, thickness: collisionDepth?.thickness ?? 0.5)
-        let vertices = colliders.flatMap { $0.solidVertices(planeExtent: planeExtent) }
+        let vertices = colliderSolidVertices(planeExtent: planeExtent)
         let uniforms = WireframeUniforms(viewProjection: projection * view, color: .one)
         return try RenderPass(label: "Scene Depth") {
             try solids(vertices, fragmentShader: library.solidDepthFragment, uniforms: uniforms)
