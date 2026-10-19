@@ -3648,3 +3648,30 @@ A fragment-stage variant of the shading function (#172): the same ShadingInput i
 Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex stays the default and unchanged.
 
 ---
+
+## 175: Foil should look like reflective metal, not a matte card with white highlights
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:rendering, effort:m
+created: 2026-10-19T23:59:01Z
+updated: 2026-10-19T23:59:01Z
++++
+
+Foil (ParticleFoil, #155/#171) shades a card with its own matte color, darkens it edge-on, and adds a Blinn-Phong glint from one light. On tumbling confetti that reads as colored rectangles that turn white (per-vertex glint) or get white dots (per-pixel crinkled glint, uncommitted experiment) instead of foil. User: 'that's just white dots on the foil'.
+
+What real foil does, and the model to build:
+- Reflection takes the metal's color, not white: gold foil flashes bright gold, pink foil bright pink; white only at the hottest core.
+- No matte color of its own: dark when it reflects nothing, bright and saturated when it does. The contrast is most of what reads as shiny.
+- It reflects its surroundings, not one light: reflect the view direction off each facet's normal and sample a procedural environment (bright sky band, dark floor, a few soft bright patches), so a tumbling card's brightness shimmers continuously.
+- Crinkle (a grid of tilted facets, per pixel) breaks the reflection into a mosaic of brighter and darker patches of the same tint: that is the sparkle, not added white points.
+- Iridescence stays as a hue shift with angle, applied to the reflection.
+- Sprites per pixel (crinkle); mesh particles the same model per vertex.
+
+Acceptance: Foil Confetti reads as metallic foil in renders and in motion (cards go from near-black to bright tint as they turn, with patchy facet variation), reviewed by the user; FoilTests updated (brightness swings with angle, highlight hue follows the base color rather than white, crinkle varies brightness across a card).
+
+Related: #172 (pluggable shading; foil could become a built-in shading model there), #174 (per-pixel shading).
+
+---
