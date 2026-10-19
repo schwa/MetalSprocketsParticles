@@ -298,6 +298,9 @@ typedef struct {
     simd_float2 flockSpeedRange;
     // Particles collide as spheres of this radius: colliders are inflated by it. 0 keeps them points.
     float collisionRadius;
+    // Nonzero: particles born in one step get birth ages in slot order, not at random, so slot order matches order along
+    // the emitter's path (ribbons join particles in slot order).
+    uint32_t ordersBirths;
 } SimulationUniforms;
 
 /// Cells in the flocking spatial hash. Neighbor cells that hash to the same entry are searched once.
@@ -491,6 +494,12 @@ typedef struct {
     uint32_t debugSliceStart;
     uint32_t debugCapacity;
     simd_float2 debugRange;
+    // Emitter ribbons (ParticleEmitter.ribbon): the live window, oldest first, as ring slots of the emitter's slice.
+    uint32_t ribbonSliceStart;
+    uint32_t ribbonCapacity;
+    uint32_t ribbonWindowStart;
+    uint32_t ribbonWindowCount;
+    uint32_t ribbonTapers;
 } RenderUniforms;
 
 typedef struct {

@@ -731,6 +731,15 @@ public final class ParticleSystemRuntime {
                 }
                 draw.wireframe = debugView == .wireframe
             }
+            if let ribbon = emitter.settings.ribbon {
+                let window = emitter.liveWindow
+                draw.uniforms.ribbonSliceStart = UInt32(emitter.range.lowerBound)
+                draw.uniforms.ribbonCapacity = UInt32(emitter.capacity)
+                draw.uniforms.ribbonWindowStart = UInt32(window.start)
+                draw.uniforms.ribbonWindowCount = UInt32(window.count)
+                draw.uniforms.ribbonTapers = ribbon.tapers ? 1 : 0
+                draw.isRibbon = true
+            }
             if let trail = emitter.settings.trail, trails != nil, trailStride > 0 {
                 draw.uniforms.trailPointCount = UInt32(min(trail.clampedPointCount, trailStride))
                 draw.uniforms.trailStride = UInt32(trailStride)
@@ -741,6 +750,7 @@ public final class ParticleSystemRuntime {
         }
         let meshVertexShader = try library.particleMeshVertex as VertexShader
         let trailVertexShader = try library.particleTrailVertex as VertexShader
+        let ribbonVertexShader = try library.particleRibbonVertex as VertexShader
         let trailBuffer = trails ?? placeholderMesh.vertices
         let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
         let buffer = buffer
@@ -750,7 +760,32 @@ public final class ParticleSystemRuntime {
         let sampler = sampler
         return ForEach(Array(draws.indices), id: \.self) { index in
             let draw = draws[index]
-            if let mesh = draw.mesh {
+            if draw.isRibbon {
+                try RenderPipeline(vertexShader: ribbonVertexShader, fragmentShader: fragmentShader) {
+                    Draw { encoder in
+                        encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
+                        let count = Int(draw.uniforms.ribbonWindowCount)
+                        if count > 1 {
+                            encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: count * 2, instanceCount: 1, baseInstance: 0)
+                        }
+                    }
+                }
+                .parameter("particles", buffer: buffer)
+                .parameter("uniforms", value: draw.uniforms)
+                .parameter("colorCurve", values: draw.colorCurve)
+                .parameter("sizeCurve", values: draw.sizeCurve)
+                .parameter("extraColorCurves", values: draw.extraColorCurves)
+                .parameter("sprite", texture: draw.texture ?? placeholderTexture)
+                .parameter("spriteSampler", samplerState: sampler)
+                .parameter("lights", values: lightData.isEmpty ? [ParticleLightData()] : lightData)
+                .parameter("particleLights", buffer: particleLightBuffer)
+                .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
+                .renderPipelineDescriptorTransformer { descriptor in
+                    if let attachment = descriptor.colorAttachments[0] {
+                        draw.blendMode.configure(attachment)
+                    }
+                }
+            } else if let mesh = draw.mesh {
                 try RenderPipeline(vertexShader: meshVertexShader, fragmentShader: fragmentShader) {
                     Draw { encoder in
                         encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
@@ -854,6 +889,8 @@ private struct EmitterDraw {
     var sortRecords: MTLBuffer?
     /// By speed, alternate over life (with opacity, like `colorCurve`), and by position; white where unused.
     var extraColorCurves: [SIMD4<Float>]
+    /// `ParticleEmitter.ribbon`: one strip through the live window, drawn instead of anything else.
+    var isRibbon = false
     /// Draws triangles as lines (`ParticleDebugView.wireframe`).
     var wireframe = false
     /// `ParticleEmitter.particleMesh`'s vertices, drawn instead of a quad.
@@ -935,7 +972,13 @@ private struct EmitterDraw {
             debugEmitterIndex: 0,
             debugSliceStart: 0,
             debugCapacity: 0,
-            debugRange: .zero
+            debugRange: .zero,
+            // Set by render for ribbons.
+            ribbonSliceStart: 0,
+            ribbonCapacity: 0,
+            ribbonWindowStart: 0,
+            ribbonWindowCount: 0,
+            ribbonTapers: 0
         )
     }
 }

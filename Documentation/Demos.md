@@ -48,6 +48,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Spark Spectrum](#spark-spectrum)
 - [Light Ribbons](#light-ribbons)
 - [Murmuration](#murmuration)
+- [Streamers](#streamers)
 
 ## Fountain
 
@@ -306,3 +307,9 @@ Glowing particles swirl around a vortex, each drawing a long tapered ribbon thro
 Twelve thousand starlings wheel as one. Each bird steers by its neighbors only: away from the closest, along with the local average heading, and toward the local center (ParticleEmitter.flocking), using a spatial grid rebuilt on the GPU every frame. A gentle attractor keeps the flock in view.
 
 ![murmuration](previews/murmuration.webp)
+
+## Streamers
+
+Two glowing emitters fly a figure eight and a circle, each leaving one continuous ribbon through its particles in birth order (ParticleEmitter.ribbon). Size and color over life shape the ribbon from head to tail.
+
+![streamers](previews/streamers.webp)

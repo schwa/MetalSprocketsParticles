@@ -238,6 +238,7 @@ extension ParticleSystemRuntime {
         // The stride is filled in once the trail buffer is sized, after planning.
         uniforms.trailPointCount = UInt32(settings.trail?.clampedPointCount ?? 0)
         uniforms.collisionRadius = max(settings.collisionRadius, 0)
+        uniforms.ordersBirths = settings.ribbon == nil ? 0 : 1
         if let flocking = settings.flocking {
             uniforms.flocks = 1
             uniforms.flockSpeedRange = [flocking.speedRange.lowerBound, flocking.speedRange.upperBound]

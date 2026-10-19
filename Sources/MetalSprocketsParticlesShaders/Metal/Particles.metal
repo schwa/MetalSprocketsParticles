@@ -533,7 +533,8 @@ static Particle spawnParticle(
     EmitterMeshInput mesh,
     float3 origin,
     float3 extraVelocity,
-    thread float &birthAge
+    thread float &birthAge,
+    float orderedBirthAge = -1
 ) {
     Particle p;
     {
@@ -568,6 +569,10 @@ static Particle spawnParticle(
         float lifetime = mix(uniforms.lifetimeMinimum, uniforms.lifetimeMaximum, rng.next());
         // Spread births across the step so particles born in the same step do not move as one sheet.
         birthAge = rng.next();
+        // Drawn either way, so later draws are the same; ribbon emitters replace it to keep births in slot order.
+        if (orderedBirthAge >= 0) {
+            birthAge = orderedBirthAge;
+        }
         // New draws go after existing ones, so adding a property does not change earlier random streams.
         ParticleVariationData variation = uniforms.variation;
         float angle = uniforms.angle + (rng.next() * 2 - 1) * variation.angle;
@@ -752,7 +757,9 @@ kernel void updateParticles(
     if (born) {
         Random rng { hash(hash(spawn.serial + offset) ^ spawn.seed) };
         float birthAge;
-        p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge);
+        // Later slots are born later in the step, so they live less of it and start nearer the emitter.
+        float orderedBirthAge = uniforms.ordersBirths != 0 ? 1 - (float(offset) + 0.5) / float(max(spawn.count, 1u)) : -1;
+        p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge, orderedBirthAge);
         dt *= birthAge;
         custom = float4(0);
         if (uniforms.hasSpawnFunction != 0) {
@@ -1245,6 +1252,86 @@ vertex VertexOut particleTrailVertex(
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     // Soft edges across the ribbon; textures run along it.
     out.uv = float2(0, side);
+    out.texcoord = float2(along, side * 0.5 + 0.5);
+    return out;
+}
+
+static bool isLive(Particle p) {
+    return p.velocity.w > 0 && p.position.w < p.velocity.w;
+}
+
+// ParticleEmitter.ribbon: one camera-facing strip through the emitter's live particles in birth order (its live window,
+// oldest first), two vertices per particle. Width is each particle's size and color its own color. A dead particle in
+// the window becomes a zero-width, transparent point, so the ribbon breaks there instead of reaching to a stale spot.
+vertex VertexOut particleRibbonVertex(
+    uint vertexID [[vertex_id]],
+    const device Particle *particles [[buffer(0)]],
+    constant RenderUniforms &uniforms [[buffer(1)]],
+    constant float4 *colorCurve [[buffer(2)]],
+    constant float *sizeCurve [[buffer(3)]],
+    constant ParticleLightData *lights [[buffer(5)]],
+    const device ParticleLightData *particleLights [[buffer(6)]],
+    constant float4 *extraColorCurves [[buffer(8)]]
+) {
+    uint count = uniforms.ribbonWindowCount;
+    uint offset = min(vertexID / 2, max(count, 1u) - 1);
+    float side = (vertexID & 1) != 0 ? 1.0 : -1.0;
+    auto slotIndex = [&](uint o) {
+        return uniforms.ribbonSliceStart + (uniforms.ribbonWindowStart + o) % max(uniforms.ribbonCapacity, 1u);
+    };
+    uint index = slotIndex(offset);
+    Particle p = particles[index];
+    VertexOut out;
+    out.uv = float2(0, side);
+    out.texcoord = 0;
+    // Neighbors along the ribbon, skipping dead ones a few slots each way.
+    uint olderOffset = offset;
+    for (uint i = 1; i <= 4 && offset >= i; i++) {
+        if (isLive(particles[slotIndex(offset - i)])) {
+            olderOffset = offset - i;
+            break;
+        }
+    }
+    uint newerOffset = offset;
+    for (uint i = 1; i <= 4 && offset + i < count; i++) {
+        if (isLive(particles[slotIndex(offset + i)])) {
+            newerOffset = offset + i;
+            break;
+        }
+    }
+    if (!isLive(p)) {
+        // Sit on a live neighbor with no width or color, so the gap closes cleanly.
+        uint neighbor = olderOffset != offset ? olderOffset : newerOffset;
+        Particle other = particles[slotIndex(neighbor)];
+        float3 at = (uniforms.model * float4(other.position.xyz, 1)).xyz;
+        out.position = isLive(other) ? uniforms.viewProjection * float4(at, 1) : float4(0);
+        out.color = 0;
+        out.viewDepth = dot(at - uniforms.cameraPosition, uniforms.cameraForward);
+        return out;
+    }
+    float3 here = (uniforms.model * float4(p.position.xyz, 1)).xyz;
+    float3 older = (uniforms.model * float4(particles[slotIndex(olderOffset)].position.xyz, 1)).xyz;
+    float3 newer = (uniforms.model * float4(particles[slotIndex(newerOffset)].position.xyz, 1)).xyz;
+    float3 tangent = newer - older;
+    float3 toCamera = uniforms.cameraPosition - here;
+    float3 across = cross(tangent, toCamera);
+    across = length_squared(across) > 1e-12 ? normalize(across) : uniforms.cameraRight;
+    float t = saturate(p.position.w / p.velocity.w);
+    // 0 at the oldest (tail), 1 at the newest (head).
+    float along = count > 1 ? float(offset) / float(count - 1) : 1;
+    float width = sampleCurve(sizeCurve, t) * p.properties.x * (uniforms.ribbonTapers != 0 ? along : 1);
+    float3 world = here + across * side * width;
+    out.position = uniforms.viewProjection * float4(world, 1);
+    out.color = applyColorVariation(particleBaseColor(uniforms, colorCurve, extraColorCurves, p, index, t, here), p.color);
+    uint tint = as_type<uint>(p.properties.w);
+    if (tint != 0) {
+        out.color *= unpack_unorm4x8_to_float(tint);
+    }
+    if (uniforms.isLit != 0) {
+        out.color.rgb *= particleLight(uniforms, lights, particleLights, here, float3(0));
+    }
+    out.color = debugColor(uniforms, out.color, p, index, t);
+    out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
     out.texcoord = float2(along, side * 0.5 + 0.5);
     return out;
 }

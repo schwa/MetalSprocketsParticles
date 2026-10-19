@@ -2630,15 +2630,18 @@ colorByPosition (#121) uses the current position. Add an option to sample it onc
 ## 128: Ribbons that join an emitter's particles in birth order
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:l
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:24:30Z
+closed: 2026-10-19T12:24:30Z
 +++
 
 Trails (#109) are per particle. Add a mode that draws one ribbon through all of an emitter's live particles in birth order, as Niagara and VFX Graph strips do: a stream from a moving emitter, a sword arc, a lightning bolt. Needs the live window in spawn order (it already is, as a ring) and handling of dead gaps.
+
+- `2026-10-19T12:24:30Z`: Done: ParticleEmitter.ribbon (ParticleRibbon: tapers) draws one camera-facing strip through the emitter's live window in birth order; width is each particle's size, color its own color. Dead particles inside the window break the ribbon cleanly (zero width, no color). Ribbon emitters give births in one step ordered birth ages (the random draw is kept, so other draws do not change), so slot order matches path order; without it fast emitters zigzag (ribbonEmittersBirthInSlotOrderAlongTheirPath fails). Demo: Streamers. Not done: ribbons across several emitters, or one ribbon per sub-emitter parent.
 
 ---
 
