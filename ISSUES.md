@@ -2785,11 +2785,13 @@ Debug views ignore blend mode and textures (opaque or additive heat map as fits)
 ## 135: Show particles born and died per frame in the stats overlay
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:demo, effort:s
 created: 2026-10-19T11:44:07Z
+updated: 2026-10-19T12:39:00Z
+closed: 2026-10-19T12:39:00Z
 +++
 
 The demo's stats overlay (StatsView in ParticlesView.swift) shows the live particle count (aliveParticleCount). Add how many particles were born and how many died over the last N frames (shown as per-second rates, or per-frame averages), per emitter if room.
@@ -2798,6 +2800,7 @@ Born is known on the CPU (the spawner's count per step, plus bursts and sub-emit
 
 - `2026-10-19T11:44:22Z`: Correction: the overlay is ParticleCountView in ParticlesView.swift (alive count and capacity), not StatsView.
 - `2026-10-19T11:47:47Z`: Related: #139 (toggle to hide overlays).
+- `2026-10-19T12:39:00Z`: Done: the GPU counts births (spawns and sub-emitter children written) and deaths per step into the same per-frame slots as the live count (one atomic per SIMD group); the runtime exposes bornParticleCount and diedParticleCount (one recent frame, read a few frames late) and birthsPerSecond / deathsPerSecond over the last 30 frames. The demo overlay shows '+N/s -M/s' next to the live count. Not done: per-emitter rates, and a counter for births that overwrite live particles when the ring is full.
 
 ---
 

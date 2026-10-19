@@ -189,6 +189,17 @@ public final class ParticleSystemRuntime {
     /// Live particles, counted on the GPU a few frames ago (the latest count that is surely finished). For statistics
     /// displays; 0 until enough frames have run.
     public internal(set) var aliveParticleCount = 0
+    /// Particles born (spawned or written as sub-emitter children) and particles that died in one recent frame, read a
+    /// few frames late like `aliveParticleCount`.
+    public internal(set) var bornParticleCount = 0
+    public internal(set) var diedParticleCount = 0
+    /// Births and deaths per second over the last `particleRateWindow` frames, for statistics displays.
+    public var birthsPerSecond: Double { particleRates.births }
+    public var deathsPerSecond: Double { particleRates.deaths }
+    /// Frames the per-second rates average over.
+    public static let particleRateWindow = 30
+    /// Recent frames' (seconds, births, deaths), newest last.
+    var recentParticleCounts: [(seconds: Float, born: Int, died: Int)] = []
 
     /// Fires `EmissionTrigger.Condition.event(name)` triggers at the start of the next `simulate`.
     public func send(event name: String) {
@@ -330,7 +341,8 @@ public final class ParticleSystemRuntime {
         }
         particleLightBuffer.label = "Particle lights"
         self.particleLightBuffer = particleLightBuffer
-        let aliveLength = Int(PARTICLE_ALIVE_COUNTER_SLOTS) * MemoryLayout<UInt32>.stride
+        // Live, born, and died counts, one run of slots each.
+        let aliveLength = 3 * Int(PARTICLE_ALIVE_COUNTER_SLOTS) * MemoryLayout<UInt32>.stride
         guard let aliveCounters = device.makeBuffer(length: aliveLength, options: .storageModeShared) else {
             throw CocoaError(.featureUnsupported)
         }

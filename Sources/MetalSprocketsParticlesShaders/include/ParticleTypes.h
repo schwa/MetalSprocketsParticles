@@ -379,7 +379,8 @@ typedef struct {
     simd_float4x4 simulationToWorld;
 } ParticleLightGatherData;
 
-/// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.
+/// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight. The
+/// counter buffer holds three runs of slots: live particles, then births, then deaths.
 #define PARTICLE_ALIVE_COUNTER_SLOTS 5
 
 /// Mirrored by the Swift Collider.

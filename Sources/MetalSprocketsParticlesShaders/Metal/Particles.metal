@@ -968,6 +968,8 @@ kernel void updateParticles(
 
     // Sub-emitters: on an event, write children into the slots this particle owns in each child slice. Children live in
     // world space, so they start at this particle's world position.
+    // Sub-emitter children this particle writes, for the birth statistics.
+    uint childrenWritten = 0;
     for (uint i = 0; i < uniforms.subEmitterCount; i++) {
         SubEmitterData sub = subEmitters[i];
         uint childrenPerEvent = sub.countPerEvent;
@@ -1002,6 +1004,7 @@ kernel void updateParticles(
         default:
             break;
         }
+        childrenWritten += count;
         for (uint k = 0; k < count; k++) {
             uint childSlot = slot * childrenPerEvent + (first + k) % childrenPerEvent;
             // Keyed by parent slot, child slot, and parent age, so results do not depend on thread order.
@@ -1046,6 +1049,17 @@ kernel void updateParticles(
         uint alive = simd_sum(age < lifetime ? 1u : 0u);
         if (simd_is_first()) {
             atomic_fetch_add_explicit(&aliveCounters[uniforms.aliveCounterSlot], alive, memory_order_relaxed);
+        }
+    }
+    // Births (spawned here, or children written by this particle) and deaths this step, after the live counts.
+    uint births = simd_sum((born ? 1u : 0u) + childrenWritten);
+    uint deaths = simd_sum(age >= lifetime && previousAge < lifetime ? 1u : 0u);
+    if (simd_is_first()) {
+        if (births > 0) {
+            atomic_fetch_add_explicit(&aliveCounters[PARTICLE_ALIVE_COUNTER_SLOTS + uniforms.aliveCounterSlot], births, memory_order_relaxed);
+        }
+        if (deaths > 0) {
+            atomic_fetch_add_explicit(&aliveCounters[2 * PARTICLE_ALIVE_COUNTER_SLOTS + uniforms.aliveCounterSlot], deaths, memory_order_relaxed);
         }
     }
 }

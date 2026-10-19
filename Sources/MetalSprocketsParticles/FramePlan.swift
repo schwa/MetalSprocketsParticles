@@ -71,12 +71,19 @@ extension ParticleSystemRuntime {
         // Live-particle statistics: read the oldest slot (its frame has surely finished, with at most a few frames in
         // flight), then clear it for this frame to fill.
         let slots = Int(PARTICLE_ALIVE_COUNTER_SLOTS)
-        let counters = aliveCounters.contents().bindMemory(to: UInt32.self, capacity: slots)
+        let counters = aliveCounters.contents().bindMemory(to: UInt32.self, capacity: 3 * slots)
         aliveCounterSlot = UInt32(frameIndex % slots)
+        let slot = Int(aliveCounterSlot)
         if frameIndex >= slots {
-            aliveParticleCount = Int(counters[Int(aliveCounterSlot)])
+            aliveParticleCount = Int(counters[slot])
+            bornParticleCount = Int(counters[slots + slot])
+            diedParticleCount = Int(counters[2 * slots + slot])
+            // Counts lag a few frames; the frame times they belong to are close enough for a rate.
+            recordParticleCounts(seconds: frameDeltaTime)
         }
-        counters[Int(aliveCounterSlot)] = 0
+        counters[slot] = 0
+        counters[slots + slot] = 0
+        counters[2 * slots + slot] = 0
         frameIndex += 1
         evaluateTriggers(deltaTime: state == .playing ? frameDeltaTime : 0)
         for child in subEmitterInstances {

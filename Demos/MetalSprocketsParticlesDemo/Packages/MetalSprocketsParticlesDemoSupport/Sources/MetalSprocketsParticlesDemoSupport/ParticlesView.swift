@@ -51,6 +51,9 @@ public struct ParticlesView: View {
 struct ParticleCountView: View {
     let alive: Int
     let capacity: Int
+    /// Births and deaths per second (`ParticleSystemRuntime.birthsPerSecond` and `deathsPerSecond`).
+    var birthsPerSecond: Double = 0
+    var deathsPerSecond: Double = 0
     /// A finite effect has ended (see `ParticleSystemRuntime.isFinished`); Restart plays it again.
     var isFinished = false
 
@@ -61,6 +64,10 @@ struct ParticleCountView: View {
             Text("/ \(capacity, format: .number) particles")
                 .font(.title3)
                 .foregroundStyle(.secondary)
+            Text("+\(birthsPerSecond, format: .number.precision(.fractionLength(0)))/s −\(deathsPerSecond, format: .number.precision(.fractionLength(0)))/s")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .help("Particles born and died per second, over the last half second")
             if isFinished {
                 Text("Finished")
                     .font(.title3.bold())
@@ -73,7 +80,7 @@ struct ParticleCountView: View {
         .background(.black.opacity(0.6), in: .rect(cornerRadius: 12))
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(alive) of \(capacity) particles")
+        .accessibilityLabel("\(alive) of \(capacity) particles, \(Int(birthsPerSecond)) born and \(Int(deathsPerSecond)) died per second")
     }
 }
 
@@ -93,6 +100,8 @@ struct ParticleViewportView: View {
     @State private var cameraMatrix = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0])
     @State private var frameTiming: FrameTimingStatistics?
     @State private var aliveParticles = 0
+    @State private var birthsPerSecond: Double = 0
+    @State private var deathsPerSecond: Double = 0
     @State private var isFinished = false
     @State private var viewSize: CGSize = .zero
 
@@ -120,6 +129,8 @@ struct ParticleViewportView: View {
             .onFrameTimingChange { statistics in
                 frameTiming = statistics
                 aliveParticles = system.aliveParticleCount
+                birthsPerSecond = system.birthsPerSecond
+                deathsPerSecond = system.deathsPerSecond
                 isFinished = system.isFinished
             }
             .interactiveCamera(cameraMatrix: $cameraMatrix, target: model.cameraTarget)
@@ -147,7 +158,13 @@ struct ParticleViewportView: View {
             }
             .overlay(alignment: .top) {
                 if showsOverlays {
-                    ParticleCountView(alive: aliveParticles, capacity: system.capacity, isFinished: isFinished)
+                    ParticleCountView(
+                        alive: aliveParticles,
+                        capacity: system.capacity,
+                        birthsPerSecond: birthsPerSecond,
+                        deathsPerSecond: deathsPerSecond,
+                        isFinished: isFinished
+                    )
                         .padding()
                 }
             }
