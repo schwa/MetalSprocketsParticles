@@ -166,6 +166,9 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     public var light: ParticleLightEmission?
     /// Draws each particle as this 3D shape instead of a sprite; `orientation` and the sprite are then ignored.
     public var particleMesh: ParticleMesh?
+    /// Bounces particles off whatever the host drew into the scene depth last frame (`ParticleSystemRuntime.collisionDepth`),
+    /// so they hit arbitrary geometry without colliders. Only works on screen; use colliders for the rest.
+    public var collidesWithSceneDepth = false
 
     public init() {}
 }
@@ -232,6 +235,7 @@ extension ParticleEmitter {
         try container.update(&simulatesWhenCulled, .simulatesWhenCulled)
         light = try container.decodeIfPresent(ParticleLightEmission.self, forKey: .light)
         particleMesh = try container.decodeIfPresent(ParticleMesh.self, forKey: .particleMesh)
+        try container.update(&collidesWithSceneDepth, .collidesWithSceneDepth)
     }
 }
 

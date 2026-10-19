@@ -268,7 +268,23 @@ typedef struct {
     uint32_t reportsCollisions;
     uint32_t reportsDeaths;
     uint32_t eventEmitterIndex;
+    // Nonzero to collide with the scene depth texture (DepthCollisionData).
+    uint32_t collidesWithSceneDepth;
 } SimulationUniforms;
+
+/// The scene depth the simulation collides with: last frame's SceneDepth texture and the camera that drew it.
+typedef struct {
+    simd_float4x4 viewProjection;
+    simd_float4x4 inverseViewProjection;
+    simd_float3 cameraPosition;
+    simd_uint2 size;
+    // Particles more than this far behind the surface are taken to be behind the object, not inside it.
+    float thickness;
+    uint32_t enabled;
+} DepthCollisionData;
+
+/// ParticleEventRecord.colliderIndex for hits on the scene depth.
+#define PARTICLE_EVENT_SCENE_DEPTH_COLLIDER 0xFFFFFFFEu
 
 /// Records kept in the event ring; older ones are overwritten if the CPU falls behind.
 #define PARTICLE_EVENT_CAPACITY 4096

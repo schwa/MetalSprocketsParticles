@@ -2488,14 +2488,18 @@ Draw each particle as a small 3D mesh instead of a sprite: debris, rocks, leaves
 ## 120: Collide with the scene depth buffer
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:collision, effort:m
 created: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:45:00Z
+closed: 2026-10-19T02:45:00Z
 +++
 
 Collide particles against whatever the host renders, using the depth buffer (screen-space collision, as Unreal and Unity GPU particles do), so effects hit arbitrary scene geometry without colliders. Uses the SceneDepth path from soft particles: project each particle, compare with the stored depth, and bounce off a normal rebuilt from neighboring depths. Only works for what is on screen; pairs with real colliders for the rest. Related: #2.
+
+- `2026-10-19T02:45:00Z`: Done: ParticleEmitter.collidesWithSceneDepth bounces particles off the SceneDepth texture of the previous frame (ParticleSystemRuntime.collisionDepth, set automatically by renderSceneDepth or by the host). A particle just behind the stored surface (within thickness) is put back on it and bounced with the emitter's restitution and friction, using a normal rebuilt from neighboring depth samples. Hits report as events with colliderIndex -1. Limits as expected for screen-space collision: only on-screen, unoccluded surfaces; particles behind objects fall through. Uses the r32Float SceneDepth texture, not a raw depth32Float attachment.
 
 ---
 

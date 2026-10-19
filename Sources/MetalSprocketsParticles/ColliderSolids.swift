@@ -32,6 +32,35 @@ public final class SceneDepth {
     }
 }
 
+/// A scene depth and the camera that drew it, for `ParticleEmitter.collidesWithSceneDepth`.
+public struct SceneDepthCollision {
+    public var depth: SceneDepth
+    public var projection: simd_float4x4
+    public var view: simd_float4x4
+    /// Particles more than this far behind a surface count as behind the object, not inside it. Thinner than your
+    /// thinnest object, thicker than particles move in a step.
+    public var thickness: Float
+
+    public init(depth: SceneDepth, projection: simd_float4x4, view: simd_float4x4, thickness: Float = 0.5) {
+        self.depth = depth
+        self.projection = projection
+        self.view = view
+        self.thickness = thickness
+    }
+
+    var data: DepthCollisionData {
+        let viewProjection = projection * view
+        return DepthCollisionData(
+            viewProjection: viewProjection,
+            inverseViewProjection: viewProjection.inverse,
+            cameraPosition: view.inverse.columns.3.xyz,
+            size: [UInt32(depth.width), UInt32(depth.height)],
+            thickness: max(thickness, 0),
+            enabled: 1
+        )
+    }
+}
+
 public extension ParticleSystemRuntime {
     /// Draws the colliders as shaded solids, depth-tested and writing depth. Place inside a `RenderPass` that has a
     /// depth attachment, before `render`. Planes are drawn as squares `planeExtent` units from their closest point to
@@ -64,6 +93,8 @@ public extension ParticleSystemRuntime {
     /// A complete render pass that draws the colliders' depth into `sceneDepth`. Run it before the pass that draws the
     /// particles, with the same `projection` and `view`.
     func renderSceneDepth(into sceneDepth: SceneDepth, projection: simd_float4x4, view: simd_float4x4, planeExtent: Float = 6) throws -> some Element {
+        // The next simulate collides with this depth (one frame late).
+        collisionDepth = SceneDepthCollision(depth: sceneDepth, projection: projection, view: view, thickness: collisionDepth?.thickness ?? 0.5)
         let vertices = colliders.flatMap { $0.solidVertices(planeExtent: planeExtent) }
         let uniforms = WireframeUniforms(viewProjection: projection * view, color: .one)
         return try RenderPass(label: "Scene Depth") {

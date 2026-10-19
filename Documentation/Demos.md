@@ -44,6 +44,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Torch Avenue](#torch-avenue)
 - [Ember Glow](#ember-glow)
 - [Coin Shower](#coin-shower)
+- [Sand on Shapes](#sand-on-shapes)
 
 ## Fountain
 
@@ -278,3 +279,9 @@ Smoke rises in the dark, lit only by the embers drifting through it. Twelve embe
 Gold coins rain down, tumble, and bounce on the floor. Each particle is drawn as a small 3D coin (ParticleEmitter.particleMesh), lit with real normals, so the faces flash as they turn.
 
 ![coin-shower](previews/coin-shower.webp)
+
+## Sand on Shapes
+
+Sand pours onto a box, a sphere, a capsule, and the floor. The sand ignores the colliders: it bounces off the scene depth (collidesWithSceneDepth), the same way it would land on any geometry an app draws.
+
+![sand-on-shapes](previews/sand-on-shapes.webp)

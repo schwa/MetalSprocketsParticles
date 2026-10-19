@@ -172,6 +172,9 @@ public final class ParticleSystemRuntime {
     var particleLightGathers: [ParticleLightGatherData] = []
     /// Vertex buffers for `ParticleEmitter.particleMesh`, made once per shape.
     var particleMeshBuffers: [ParticleMesh: (buffer: MTLBuffer, vertexCount: Int)] = [:]
+    /// The scene depth `collidesWithSceneDepth` emitters bounce off. `renderSceneDepth(into:projection:view:)` sets it
+    /// each frame, so the simulation uses the depth of the frame before. Set it yourself to use your own depth.
+    public var collisionDepth: SceneDepthCollision?
     /// The camera of the last `render`, for LOD and culling.
     var cullingCamera: CullingCamera?
     /// Live-particle counts, one slot per recent frame; see `aliveParticleCount`.
@@ -544,6 +547,8 @@ public final class ParticleSystemRuntime {
         let particleLightGathers = particleLightGathers
         let particleLightBuffer = particleLightBuffer
         let gatherKernel = try library.gatherParticleLights as ComputeKernel
+        let depthCollision = collisionDepth?.data ?? DepthCollisionData()
+        let depthTexture = collisionDepth?.depth.texture ?? placeholderTexture
         let eventRecords = eventRecords
         let aliveCounters = aliveCounters
         let placeholderMesh = placeholderMesh
@@ -593,6 +598,8 @@ public final class ParticleSystemRuntime {
                 .parameter("eventCursor", buffer: eventCursor)
                 .parameter("events", buffer: eventRecords)
                 .parameter("pathPoints", values: plan.pathPoints)
+                .parameter("depthCollision", value: depthCollision)
+                .parameter("sceneDepth", texture: depthTexture)
                 .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }

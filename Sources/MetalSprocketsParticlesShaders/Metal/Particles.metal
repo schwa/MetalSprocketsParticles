@@ -346,6 +346,55 @@ static ShapeSample sampleShape(
     }
 }
 
+// World position of the scene depth at `pixel`.
+static float3 depthWorldPosition(DepthCollisionData d, texture2d<float, access::read> depth, uint2 pixel) {
+    float value = depth.read(pixel).r;
+    float2 ndc = (float2(pixel) + 0.5) / float2(d.size) * float2(2, -2) + float2(-1, 1);
+    float4 world = d.inverseViewProjection * float4(ndc, value, 1);
+    return world.xyz / world.w;
+}
+
+// Whether `position` is just behind the scene depth (within thickness of the surface there), and if so the surface
+// point and its normal, rebuilt from neighboring depth samples and facing the camera.
+static bool sceneDepthContact(DepthCollisionData d, texture2d<float, access::read> depth, float3 position, thread float3 &surface, thread float3 &normal) {
+    float4 clip = d.viewProjection * float4(position, 1);
+    if (clip.w <= 1e-5) {
+        return false;
+    }
+    float3 ndc = clip.xyz / clip.w;
+    if (any(abs(ndc.xy) >= 1)) {
+        return false;
+    }
+    uint2 pixel = min(uint2((ndc.xy * float2(0.5, -0.5) + 0.5) * float2(d.size)), d.size - 1);
+    float sceneValue = depth.read(pixel).r;
+    // Depth 1 is the far plane: nothing drawn there.
+    if (sceneValue >= 1 || ndc.z <= sceneValue) {
+        return false;
+    }
+    surface = depthWorldPosition(d, depth, pixel);
+    if (distance(position, surface) > d.thickness) {
+        return false;
+    }
+    // Neighbors on the side that stays on the same surface (the closer one), so edges do not tilt the normal.
+    uint2 right = uint2(min(pixel.x + 1, d.size.x - 1), pixel.y);
+    uint2 left = uint2(pixel.x > 0 ? pixel.x - 1 : 0, pixel.y);
+    uint2 down = uint2(pixel.x, min(pixel.y + 1, d.size.y - 1));
+    uint2 up = uint2(pixel.x, pixel.y > 0 ? pixel.y - 1 : 0);
+    float3 r = depthWorldPosition(d, depth, right) - surface;
+    float3 l = surface - depthWorldPosition(d, depth, left);
+    float3 dn = depthWorldPosition(d, depth, down) - surface;
+    float3 u = surface - depthWorldPosition(d, depth, up);
+    float3 dx = length_squared(r) < length_squared(l) ? r : l;
+    float3 dy = length_squared(dn) < length_squared(u) ? dn : u;
+    float3 toCamera = d.cameraPosition - surface;
+    float3 n = cross(dx, dy);
+    normal = length_squared(n) > 1e-12 ? normalize(n) : normalize(toCamera);
+    if (dot(normal, toCamera) < 0) {
+        normal = -normal;
+    }
+    return true;
+}
+
 // Rotates `v` by unit quaternion `q` (xyz = imaginary, w = real).
 static float3 rotate(float4 q, float3 v) {
     float3 t = 2 * cross(q.xyz, v);
@@ -659,6 +708,8 @@ kernel void updateParticles(
     device atomic_uint *eventCursor [[buffer(23)]],
     device ParticleEventRecord *events [[buffer(24)]],
     constant float4 *pathPoints [[buffer(25)]],
+    constant DepthCollisionData &depthCollision [[buffer(26)]],
+    texture2d<float, access::read> sceneDepth [[texture(0)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -801,6 +852,21 @@ kernel void updateParticles(
             atomic_fetch_add_explicit(&triggerCounters[c.triggerIndex], 1u, memory_order_relaxed);
         }
         hit = hit || hitBefore;
+    }
+    // The scene depth: whatever the host drew last frame, as a surface particles bounce off.
+    if (uniforms.collidesWithSceneDepth != 0 && depthCollision.enabled != 0) {
+        float3 surface;
+        float3 normal;
+        if (sceneDepthContact(depthCollision, sceneDepth, position, surface, normal)) {
+            bool depthHit = false;
+            ColliderData still = {};
+            position = surface + normal * 1e-3;
+            collide(position, velocity, still, normal, 0, restitution, friction, depthHit);
+            if (firstHitCollider == 0xFFFFFFFFu) {
+                firstHitCollider = PARTICLE_EVENT_SCENE_DEPTH_COLLIDER;
+            }
+            hit = true;
+        }
     }
     // Again after collisions: a curved collider can push a particle off the plane.
     constrainToPlane(position, velocity, uniforms);

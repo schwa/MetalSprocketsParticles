@@ -6,7 +6,7 @@ import simd
 /// `ParticleEmitter.reportsCollisions`, `ParticleEmitter.reportsDeaths`, and `ParticleSystemRuntime.recentEvents`.
 public struct ParticleEvent: Sendable, Equatable {
     public enum Kind: Sendable, Equatable {
-        /// Hit the collider at this index in `ParticleSystemRuntime.colliders`.
+        /// Hit the collider at this index in `ParticleSystemRuntime.colliders`; -1 for the scene depth.
         case collision(colliderIndex: Int)
         case death
     }
@@ -64,7 +64,9 @@ extension ParticleSystemRuntime {
 extension ParticleEvent {
     init(_ record: ParticleEventRecord) {
         self.init(
-            kind: record.kind == .collision ? .collision(colliderIndex: Int(record.colliderIndex)) : .death,
+            kind: record.kind == .collision
+                ? .collision(colliderIndex: record.colliderIndex == PARTICLE_EVENT_SCENE_DEPTH_COLLIDER ? -1 : Int(record.colliderIndex))
+                : .death,
             position: SIMD3(record.position.x, record.position.y, record.position.z),
             velocity: SIMD3(record.velocity.x, record.velocity.y, record.velocity.z),
             time: record.position.w,

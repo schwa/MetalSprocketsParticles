@@ -365,6 +365,7 @@ extension ParticleSystemRuntime {
             uniforms.reportsCollisions = emitter.settings.reportsCollisions ? 1 : 0
             uniforms.reportsDeaths = emitter.settings.reportsDeaths ? 1 : 0
             uniforms.eventEmitterIndex = UInt32(emitterIndex)
+            uniforms.collidesWithSceneDepth = emitter.settings.collidesWithSceneDepth ? 1 : 0
             return FramePlan.Dispatch(
                 uniforms: uniforms,
                 threadCount: step.threadCount,
