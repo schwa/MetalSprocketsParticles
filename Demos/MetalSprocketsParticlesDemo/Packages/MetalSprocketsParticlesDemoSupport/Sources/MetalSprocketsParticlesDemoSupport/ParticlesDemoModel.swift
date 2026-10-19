@@ -123,6 +123,7 @@ final class ParticlesDemoModel {
     /// Reactions to particle events (no editor yet; kept so presets and saved effects play and save as authored).
     var eventBursts: [EventBurst] = []
     /// 2D mode (`ParticleSystem.is2D`): the viewport shows the scene flat from the front and emitters stay on their plane.
+    /// Kept when another preset or effect loads, for the session only.
     var is2D = false
     /// The mouse location as a fraction of the view (0...1, origin top left), or nil when it is outside. Not observed:
     /// it changes on every mouse move and is only read while rendering.
@@ -316,7 +317,7 @@ final class ParticlesDemoModel {
         pointerEmitterIDs = Set(emitters.indices.filter { preset.pointerBindings.contains(.emitter($0)) }.map { emitters[$0].id })
         pointerMotion = preset.pointerMotion
         eventBursts = preset.eventBursts
-        is2D = preset.is2D
+        // is2D is left alone: 2D is a viewing choice that stays as the user set it across presets.
         animateColliders = preset.animatesColliders
         drawColliders = preset.drawsColliders
         colliderSpins = preset.colliderSpins

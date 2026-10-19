@@ -22,6 +22,22 @@ struct TwoDModeTests {
         #expect(!model.currentEffect.is2D)
     }
 
+    /// The 2D toggle stays as the user set it when presets change, whatever the preset was saved with.
+    @MainActor
+    @Test func twoDModeSurvivesPresetChanges() throws {
+        let model = ParticlesDemoModel()
+        let flatPreset = try #require(model.presets.first(where: \.is2D))
+        let deepPreset = try #require(model.presets.first { !$0.is2D })
+        model.is2D = true
+        model.presetName = deepPreset.name
+        #expect(model.is2D)
+        model.is2D = false
+        model.presetName = flatPreset.name
+        #expect(!model.is2D)
+        model.stepPreset(by: 1)
+        #expect(!model.is2D)
+    }
+
     /// The count overlay is centered, so its width must not follow the numbers, or the panel jumps around (#147).
     @MainActor
     @Test func particleCountOverlayKeepsItsWidth() {

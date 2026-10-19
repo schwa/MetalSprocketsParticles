@@ -260,6 +260,8 @@ struct ModelTests {
         }
         let model = ParticlesDemoModel()
         for preset in ParticleSystem.all {
+            // 2D is the user's toggle, kept across presets and saved as shown; match it to the preset for the comparison.
+            model.is2D = preset.is2D
             model.presetName = preset.name
             let expected = try normalized(preset)
             let actual = try normalized(model.currentEffect)
