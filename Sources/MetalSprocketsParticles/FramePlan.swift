@@ -30,6 +30,8 @@ struct FramePlan {
     /// Every collider and force field, before filtering by category.
     var colliders: [ColliderData]
     var forceFields: [ForceFieldData]
+    /// Polylines of path fields, which index into it. Never empty.
+    var pathPoints: [SIMD4<Float>]
     /// At most `PARTICLE_TRIGGER_MAX_VOLUMES`.
     var triggerVolumes: [TriggerVolumeData]
     /// Seconds simulated this frame, after clamping and `speedFactor`; 0 when not playing.
@@ -87,7 +89,17 @@ extension ParticleSystemRuntime {
             try emitter.mesh?.applyDeformation(emitter.meshDeformation, time: emitter.spawner.time)
         }
         let colliderData = colliderData(deltaTime: state == .playing ? frameDeltaTime : 0)
-        let forceFieldData = forceFields.map(ForceFieldData.init)
+        var pathPoints: [SIMD4<Float>] = []
+        let forceFieldData = forceFields.map { field in
+            var data = ForceFieldData(field)
+            let polyline = field.pathPolyline
+            if !polyline.isEmpty {
+                data.pathStart = UInt32(pathPoints.count)
+                data.pathCount = UInt32(polyline.count)
+                pathPoints += polyline.map { SIMD4($0, 0) }
+            }
+            return data
+        }
         let world = WorldData(
             colliders: Array(zip(self.colliders.map(\.categoryBitMask), colliderData)),
             forceFields: Array(zip(forceFields.map(\.categoryBitMask), forceFieldData))
@@ -98,6 +110,7 @@ extension ParticleSystemRuntime {
             },
             colliders: colliderData,
             forceFields: forceFieldData,
+            pathPoints: pathPoints.isEmpty ? [.zero] : pathPoints,
             triggerVolumes: triggerVolumes.prefix(Int(PARTICLE_TRIGGER_MAX_VOLUMES)).map(\.data),
             deltaTime: state == .playing ? frameDeltaTime : 0
         )

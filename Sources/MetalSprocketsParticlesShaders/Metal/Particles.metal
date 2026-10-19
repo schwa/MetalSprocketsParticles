@@ -87,8 +87,41 @@ static float fieldFalloff(float distance, float radius) {
     return radius > 0 ? 1 - smoothstep(radius * 0.5, radius, distance) : 1;
 }
 
-static float3 fieldAcceleration(ForceFieldData field, float3 position, float3 velocity, float time) {
+// Steers toward moving along the path at field.speed, pulled onto it at field.strength per second.
+static float3 pathAcceleration(ForceFieldData field, constant float4 *pathPoints, float3 position, float3 velocity) {
+    uint count = field.pathCount;
+    if (count < 2) {
+        return float3(0);
+    }
+    uint segments = field.pathClosed != 0 ? count : count - 1;
+    float bestDistanceSquared = INFINITY;
+    float3 closest = 0;
+    float3 tangent = float3(0, 1, 0);
+    for (uint i = 0; i < segments; i++) {
+        float3 a = pathPoints[field.pathStart + i].xyz;
+        float3 b = pathPoints[field.pathStart + (i + 1) % count].xyz;
+        float3 ab = b - a;
+        float lengthSquared = dot(ab, ab);
+        float t = lengthSquared > 0 ? saturate(dot(position - a, ab) / lengthSquared) : 0;
+        float3 point = a + ab * t;
+        float3 offset = position - point;
+        float distanceSquared = dot(offset, offset);
+        if (distanceSquared < bestDistanceSquared && lengthSquared > 0) {
+            bestDistanceSquared = distanceSquared;
+            closest = point;
+            tangent = ab * rsqrt(lengthSquared);
+        }
+    }
+    float falloff = fieldFalloff(sqrt(bestDistanceSquared), field.radius);
+    float3 target = tangent * field.speed + (closest - position) * field.strength;
+    // Catch up with the target velocity within about a quarter second.
+    return (target - velocity) * 4.0 * falloff;
+}
+
+static float3 fieldAcceleration(ForceFieldData field, constant float4 *pathPoints, float3 position, float3 velocity, float time) {
     switch (field.kind) {
+    case ParticleForceFieldKindPath:
+        return pathAcceleration(field, pathPoints, position, velocity);
     case ParticleForceFieldKindWind:
         return (field.velocity - velocity) * field.strength;
     case ParticleForceFieldKindAttractor: {
@@ -625,6 +658,7 @@ kernel void updateParticles(
     constant uint &attributeCount [[buffer(22)]],
     device atomic_uint *eventCursor [[buffer(23)]],
     device ParticleEventRecord *events [[buffer(24)]],
+    constant float4 *pathPoints [[buffer(25)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -689,7 +723,7 @@ kernel void updateParticles(
     velocity += uniforms.gravity * dt;
     float3 acceleration = 0;
     for (uint i = 0; i < uniforms.forceFieldCount; i++) {
-        acceleration += fieldAcceleration(forceFields[i], position, velocity, uniforms.time);
+        acceleration += fieldAcceleration(forceFields[i], pathPoints, position, velocity, uniforms.time);
     }
     velocity += acceleration * dt;
     velocity *= max(0.0, 1.0 - uniforms.drag * dt);

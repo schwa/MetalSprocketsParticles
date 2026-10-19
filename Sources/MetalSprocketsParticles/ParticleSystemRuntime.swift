@@ -569,6 +569,7 @@ public final class ParticleSystemRuntime {
                 .parameter("triggerCounters", buffer: triggerCounters)
                 .parameter("eventCursor", buffer: eventCursor)
                 .parameter("events", buffer: eventRecords)
+                .parameter("pathPoints", values: plan.pathPoints)
                 .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }

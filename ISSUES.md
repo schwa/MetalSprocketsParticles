@@ -2415,15 +2415,18 @@ Emit from a list of baked points (a scanned model, a logo outline, an SVG path s
 ## 116: Follow a path: spline force field
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:m
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:20:10Z
+closed: 2026-10-19T02:20:10Z
 +++
 
 A force field that pulls particles along a curve: magic swirling along a path, energy flowing through a pipe, particles orbiting a spline. Houdini, Niagara, and PopcornFX have curve forces. Defined by control points with a radius of influence, strength toward the curve, and speed along it. Shows as a wireframe.
+
+- `2026-10-19T02:20:10Z`: Done as ForceField.Effect.path(points:speed:strength:radius:closed:): a Catmull-Rom curve through the points, tessellated on the CPU (12 samples per span, at most 512 points) into a shared path point buffer; the GPU finds the closest segment and steers toward speed along the tangent plus a pull of strength per second onto the curve. Draws as a wireframe with flow arrows. Demo: Magic Loop.
 
 ---
 

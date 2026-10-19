@@ -246,13 +246,14 @@ public extension Collider.Shape {
 }
 
 extension ParticleForceFieldKind: @retroactive CaseIterable, @retroactive Identifiable, ParticleKind {
-    public static var allCases: [ParticleForceFieldKind] { [.wind, .attractor, .vortex, .turbulence] }
+    public static var allCases: [ParticleForceFieldKind] { [.wind, .attractor, .vortex, .turbulence, .path] }
 
     public var name: String {
         switch self {
         case .attractor: "Attractor"
         case .vortex: "Vortex"
         case .turbulence: "Turbulence"
+        case .path: "Path"
         default: "Wind"
         }
     }
@@ -275,6 +276,7 @@ public extension ForceField.Effect {
             case .attractor: .attractor
             case .vortex: .vortex
             case .turbulence: .turbulence
+            case .path: .path
             }
         }
         set {
@@ -285,6 +287,7 @@ public extension ForceField.Effect {
             case .attractor: .attractor(center: [0, 1.5, 0], strength: 5, radius: 0)
             case .vortex: .vortex(center: .zero, strength: 5, radius: 2.5)
             case .turbulence: .turbulence(strength: 3, scale: 1.2, speed: 0.5)
+            case .path: .path(points: [[-2, 0.5, 0], [-1, 2, 0], [1, 1, 0], [2, 2.5, 0]], speed: 2, strength: 4, radius: 1)
             default: .wind(velocity: [2, 0, 0], strength: 1)
             }
         }

@@ -53,7 +53,7 @@ public extension [ForceField] {
                 fields[index].effect = .attractor(center: pointer, strength: strength, radius: radius)
             case let .vortex(_, axis, strength, radius):
                 fields[index].effect = .vortex(center: pointer, axis: axis, strength: strength, radius: radius)
-            case .wind, .turbulence:
+            case .wind, .turbulence, .path:
                 break
             }
         }

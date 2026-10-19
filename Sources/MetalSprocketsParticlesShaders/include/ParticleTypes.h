@@ -324,6 +324,7 @@ typedef MS_ENUM(uint32_t, ParticleForceFieldKind) {
     ParticleForceFieldKindAttractor = 2,
     ParticleForceFieldKindVortex = 3,
     ParticleForceFieldKindTurbulence = 4,
+    ParticleForceFieldKindPath = 5,
 };
 
 // World space. Fields a kind does not use are zero.
@@ -336,6 +337,11 @@ typedef struct {
     simd_float3 velocity; // Wind.
     simd_float3 center;   // Attractor, vortex.
     simd_float3 axis;     // Vortex, unit length.
+    // Path: a polyline of pathCount points from pathStart in the path point buffer; closed loops back to the start.
+    // speed is along the path, strength pulls onto it (per second), radius limits the range.
+    uint32_t pathStart;
+    uint32_t pathCount;
+    uint32_t pathClosed;
 } ForceFieldData;
 
 /// Lights for emitters with lighting on. Mirrored by the Swift ParticleLight.

@@ -40,6 +40,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Fireflies](#fireflies)
 - [Butterfly Dust](#butterfly-dust)
 - [Paint Drops](#paint-drops)
+- [Magic Loop](#magic-loop)
 
 ## Fountain
 
@@ -250,3 +251,9 @@ A butterfly emoji dissolves into colored dust that drifts away on the breeze. Sh
 Paint drops fall and splatter where they land. Each landing is reported back to the app as an event with its position (reportsCollisions), and the app bursts the splatter layer there (eventBursts).
 
 ![paint-drops](previews/paint-drops.webp)
+
+## Magic Loop
+
+Sparkles stream around a wavy loop, guided by a path force field: a smooth curve through a few points that carries particles along it and pulls strays back on. A little turbulence makes the stream shimmer.
+
+![magic-loop](previews/magic-loop.webp)

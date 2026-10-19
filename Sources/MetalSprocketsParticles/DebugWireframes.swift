@@ -71,7 +71,8 @@ struct WireframeBuilder {
 
 extension ForceField {
     /// Wind: an arrow along the wind above the origin. Attractor: a cross at the center and its radius. Vortex: rings
-    /// around the axis with arrows showing the direction of spin. Turbulence fills all space and draws nothing.
+    /// around the axis with arrows showing the direction of spin. Path: the smoothed curve with arrows along it.
+    /// Turbulence fills all space and draws nothing.
     func addWireframe(to builder: inout WireframeBuilder) {
         switch effect {
         case let .wind(velocity, _):
@@ -106,6 +107,24 @@ extension ForceField {
             }
         case .turbulence:
             break
+        case let .path(_, speed, _, _, closed):
+            let polyline = pathPolyline
+            for (a, b) in zip(polyline, polyline.dropFirst()) {
+                builder.line(a, b)
+            }
+            if closed, let first = polyline.first, let last = polyline.last {
+                builder.line(last, first)
+            }
+            // Arrows every few samples, pointing the way particles flow.
+            for index in stride(from: 0, to: polyline.count - 1, by: Self.pathSamplesPerSpan) {
+                let a = polyline[index]
+                let b = polyline[index + 1]
+                guard simd_length(b - a) > 0 else {
+                    continue
+                }
+                let direction = simd_normalize(b - a) * (speed >= 0 ? 1 : -1)
+                builder.arrow(a, a + direction * 0.25)
+            }
         }
     }
 }

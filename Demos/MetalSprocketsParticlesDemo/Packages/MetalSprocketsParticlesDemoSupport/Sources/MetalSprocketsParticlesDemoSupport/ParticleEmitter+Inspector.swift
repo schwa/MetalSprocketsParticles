@@ -205,7 +205,8 @@ extension ForceField.Effect {
     var strength: Float {
         get {
             switch self {
-            case let .wind(_, strength), let .attractor(_, strength, _), let .vortex(_, _, strength, _), let .turbulence(strength, _, _): strength
+            case let .wind(_, strength), let .attractor(_, strength, _), let .vortex(_, _, strength, _), let .turbulence(strength, _, _),
+                 let .path(_, _, strength, _, _): strength
             }
         }
         set {
@@ -214,6 +215,7 @@ extension ForceField.Effect {
             case let .attractor(center, _, radius): self = .attractor(center: center, strength: newValue, radius: radius)
             case let .vortex(center, axis, _, radius): self = .vortex(center: center, axis: axis, strength: newValue, radius: radius)
             case let .turbulence(_, scale, speed): self = .turbulence(strength: newValue, scale: scale, speed: speed)
+            case let .path(points, speed, _, radius, closed): self = .path(points: points, speed: speed, strength: newValue, radius: radius, closed: closed)
             }
         }
     }
