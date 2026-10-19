@@ -930,10 +930,128 @@ struct ColliderEditorView: View {
                 VectorEditorView("Center", value: $collider.shape.center, in: -5...5)
                 ParameterSliderView("Length", value: $collider.shape.length, in: 0...5)
                 ParameterSliderView("Radius", value: $collider.shape.radius, in: 0.05...2)
+            case .signedDistanceField:
+                VectorEditorView("Center", value: $collider.shape.center, in: -5...5)
+                ParameterSliderView("Turn", value: $collider.shape.turn, in: -.pi ... .pi)
+                DistanceFieldBakeView(collider: $collider)
             default:
                 EmptyView()
             }
             CategoryMaskView("Categories", mask: $collider.categoryBitMask)
+        }
+    }
+}
+
+/// Bakes a distance field collider from a mesh: built in, extruded text, or a model file. The field has no surface to
+/// draw, so the collider shows as its grid's bounds in wireframes.
+struct DistanceFieldBakeView: View {
+    @Binding var collider: Collider
+    @State private var source = DistanceFieldSource.teapot
+    @State private var text = "SDF"
+    @State private var resolution: Float = 48
+    @State private var padding: Float = 2
+    @State private var insideOut = false
+    @State private var isBaking = false
+    @State private var bakeTime: Duration?
+    @State private var isImporting = false
+    @State private var isShowingError = false
+    @State private var errorMessage = ""
+
+    var body: some View {
+        if case let .signedDistanceField(field, _, _) = collider.shape {
+            LabeledContent("Grid", value: "\(field.resolution.x) × \(field.resolution.y) × \(field.resolution.z), cells \(field.spacing.max().formatted(.number.precision(.fractionLength(3))))")
+                .help("Parts thinner than a couple of cells are blurred; bake at a higher resolution for them.")
+        }
+        DisclosureGroup("Bake") {
+            LabeledContent("From") {
+                Menu(sourceName) {
+                    ForEach(DemoMesh.allCases) { choice in
+                        Button(choice.rawValue) { source = .builtIn(choice) }
+                    }
+                    Button("Text") { source = .text(text) }
+                    Divider()
+                    Button("Model File…") { isImporting = true }
+                }
+                .fixedSize()
+            }
+            if case .text = source {
+                TextField("Text", text: $text)
+                    .onSubmit { source = .text(text) }
+            }
+            ParameterSliderView("Resolution", value: $resolution, in: 16...128, format: .number.precision(.fractionLength(0)))
+                .help("Samples along the mesh's longest side. Memory and bake time grow with its cube.")
+            ParameterSliderView("Padding", value: $padding, in: 0...8, format: .number.precision(.fractionLength(0)))
+                .help("Cells of room around the mesh. More keeps containers (Inside Out) from leaking at the edge.")
+            Toggle("Inside Out", isOn: $insideOut)
+                .help("Negate the field, so the mesh's inside is a container particles stay in.")
+            HStack {
+                Button(isBaking ? "Baking…" : "Bake") { bake() }
+                    .disabled(isBaking)
+                if let bakeTime {
+                    Text(bakeTime.formatted(.units(allowed: [.seconds, .milliseconds], width: .narrow)))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+            }
+        }
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: [.threeDContent]) { result in
+            do {
+                let url = try result.get()
+                let accessing = url.startAccessingSecurityScopedResource()
+                defer {
+                    if accessing {
+                        url.stopAccessingSecurityScopedResource()
+                    }
+                }
+                source = .file(try Mesh.loadingFirstMesh(from: url, device: ParticleSystemRuntime.defaultDevice()))
+            } catch {
+                errorMessage = error.localizedDescription
+                isShowingError = true
+            }
+        }
+        .alert("Distance Field", isPresented: $isShowingError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+
+    private var sourceName: String {
+        switch source {
+        case let .builtIn(choice): choice.rawValue
+        case .text: "Text"
+        case .file: "Model File"
+        }
+    }
+
+    /// Bakes off the main thread (a detailed mesh at a high resolution takes a moment), then replaces the field,
+    /// keeping the collider's place and turn.
+    private func bake() {
+        if case .text = source {
+            source = .text(text)
+        }
+        guard case let .signedDistanceField(_, center, rotation) = collider.shape else {
+            return
+        }
+        let source = source
+        let resolution = Int(resolution)
+        let padding = Int(padding)
+        let insideOut = insideOut
+        isBaking = true
+        Task {
+            let clock = ContinuousClock()
+            let start = clock.now
+            let shape = await Task.detached {
+                source.shape(resolution: resolution, padding: padding, insideOut: insideOut, center: center, rotation: rotation)
+            }.value
+            bakeTime = clock.now - start
+            isBaking = false
+            if let shape {
+                collider.shape = shape
+            } else {
+                errorMessage = "The mesh has no triangles to bake."
+                isShowingError = true
+            }
         }
     }
 }

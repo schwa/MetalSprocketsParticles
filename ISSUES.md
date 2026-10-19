@@ -3465,11 +3465,13 @@ Found by an audit of every public setting in the description types against the d
 ## 166: Inspector: distance field colliders
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T21:37:17Z
+updated: 2026-10-19T22:17:33Z
+closed: 2026-10-19T22:17:33Z
 +++
 
 Distance field colliders (Collider.Shape.signedDistanceField) are not in the collider kind picker, and there is no way to bake one in the demo. Offer baking from a SwiftMesh primitive, the teapot, extruded text, or an OBJ file, with resolution and padding; show the grid size and bake time.
@@ -3477,6 +3479,7 @@ Distance field colliders (Collider.Shape.signedDistanceField) are not in the col
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
 
 - `2026-10-19T21:40:28Z`: Related: #157: thin parts need several grid cells across, so the bake UI should make the resolution and cell size visible.
+- `2026-10-19T22:17:33Z`: Done. Distance Field is in the collider kind picker; choosing it bakes a small teapot (32 samples) at the collider's center. The editor shows center, turn (about +Y), the grid's samples and cell size (with a note that parts thinner than a couple of cells blur, see #157), and a Bake group: from a SwiftMesh teapot, sphere, torus, cube, or cylinder, extruded text, or a model file; resolution 16-128, padding 0-8 cells, Inside Out (negated, a container); Bake runs off the main thread and shows how long it took, keeping the collider's place and turn. Tests: switching kind bakes in place, each source bakes (positive at the padded corner), Inside Out flips it, turn about Y. Layout checked with an offscreen snapshot.
 
 ---
 

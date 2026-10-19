@@ -4,6 +4,7 @@ import Metal
 import MetalKit
 import MetalSprocketsParticles
 import ModelIO
+import simd
 import SwiftMesh
 
 /// What particles are drawn as: a sprite or one of the built-in meshes. `custom` is a triangle mesh from a saved effect;
@@ -59,6 +60,48 @@ enum DemoMesh: String, CaseIterable, Identifiable {
         case .cube: .box(extents: [1.5, 1.5, 1.5])
         case .cylinder: .cylinder(height: 2, radius: 0.6)
         }
+    }
+}
+
+/// What a distance field collider is baked from in the demo.
+enum DistanceFieldSource: Equatable, Sendable {
+    case builtIn(DemoMesh)
+    case text(String)
+    case file(Mesh)
+
+    static let teapot = Self.builtIn(.teapot)
+
+    var mesh: Mesh {
+        switch self {
+        case let .builtIn(choice): choice.mesh
+        case let .text(string): Self.centeredFlat(.extrudedText(string.isEmpty ? " " : string, fontName: "Helvetica-Bold", size: 1.2, depth: 0.3))
+        case let .file(mesh): mesh
+        }
+    }
+
+    /// Extruded text centered, lying flat with its depth up, like Sand on Letters.
+    private static func centeredFlat(_ mesh: Mesh) -> Mesh {
+        guard let bounds = mesh.bounds else {
+            return mesh
+        }
+        var mesh = mesh
+        let middle = (bounds.min + bounds.max) / 2
+        let flat = simd_quatf(angle: -.pi / 2, axis: [1, 0, 0])
+        mesh.positions = mesh.positions.map { flat.act(SIMD3($0.x - middle.x, $0.y - middle.y, $0.z - bounds.min.z)) }
+        return mesh
+    }
+
+    /// The baked collider shape, or nil for a mesh with no triangles. `insideOut` negates the field, so the mesh's
+    /// inside is a container.
+    func shape(resolution: Int, padding: Int, insideOut: Bool, center: SIMD3<Float>, rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1)) -> Collider.Shape? {
+        guard let baked = Collider.signedDistanceField(mesh: mesh, resolution: resolution, padding: padding),
+              case var .signedDistanceField(field, _, _) = baked.shape else {
+            return nil
+        }
+        if insideOut {
+            field.values = field.values.map { -$0 }
+        }
+        return .signedDistanceField(field, center: center, rotation: rotation)
     }
 }
 

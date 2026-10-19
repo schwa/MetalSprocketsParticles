@@ -379,6 +379,22 @@ extension Collider.Shape {
         }
     }
 
+    /// A distance field's turn about +Y (meshes are usually turned about the vertical); setting it replaces any other
+    /// rotation. Other shapes ignore it.
+    var turn: Float {
+        get {
+            if case let .signedDistanceField(_, _, rotation) = self {
+                return rotation.angle * (rotation.axis.y < 0 ? -1 : 1)
+            }
+            return 0
+        }
+        set {
+            if case let .signedDistanceField(field, center, _) = self {
+                self = .signedDistanceField(field, center: center, rotation: simd_quatf(angle: newValue, axis: [0, 1, 0]))
+            }
+        }
+    }
+
     /// Capsule length along its current direction.
     var length: Float {
         get {

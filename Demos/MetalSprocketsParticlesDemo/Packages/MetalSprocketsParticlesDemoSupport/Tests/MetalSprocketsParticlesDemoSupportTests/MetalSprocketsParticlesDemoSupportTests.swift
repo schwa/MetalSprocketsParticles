@@ -65,6 +65,45 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// Distance field colliders in the collider editor (#166).
+    @Test func switchingToADistanceFieldBakesATeapotInPlace() {
+        var collider = Collider.sphere(center: [1, 2, 3], radius: 0.5)
+        collider.kind = .signedDistanceField
+        guard case let .signedDistanceField(field, center, _) = collider.shape else {
+            Issue.record("Not a distance field")
+            return
+        }
+        #expect(center == [1, 2, 3])
+        #expect(field.values.contains { $0 < 0 })
+    }
+
+    @Test func distanceFieldSourcesBake() throws {
+        for source in [DistanceFieldSource.builtIn(.torus), .text("Hi")] {
+            let shape = try #require(source.shape(resolution: 24, padding: 2, insideOut: false, center: .zero))
+            guard case let .signedDistanceField(field, _, _) = shape else {
+                Issue.record("Not a distance field")
+                continue
+            }
+            #expect(field.values.contains { $0 < 0 })
+            #expect(field.values[0] > 0) // The padded corner is outside.
+        }
+        // Inside out: the corner is now inside the collider, the mesh's inside free.
+        let inverted = try #require(DistanceFieldSource.builtIn(.sphere).shape(resolution: 24, padding: 2, insideOut: true, center: .zero))
+        guard case let .signedDistanceField(field, _, _) = inverted else {
+            Issue.record("Not a distance field")
+            return
+        }
+        #expect(field.values[0] < 0)
+    }
+
+    @Test func distanceFieldTurnIsAboutY() throws {
+        var shape = try #require(DistanceFieldSource.builtIn(.cube).shape(resolution: 16, padding: 1, insideOut: false, center: .zero))
+        shape.turn = 0.7
+        #expect(abs(shape.turn - 0.7) < 1e-5)
+        shape.turn = -0.4
+        #expect(abs(shape.turn + 0.4) < 1e-5)
+    }
+
     /// Draw As, shape meshes, point sources, and the sprite sheet's start frame (#165).
     @Test func drawAsMapsToParticleMeshes() {
         var emitter = ParticleEmitter()

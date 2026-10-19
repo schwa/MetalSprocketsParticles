@@ -195,7 +195,7 @@ public extension ParticleOrientation {
 // MARK: - Colliders and force fields
 
 extension ParticleColliderKind: @retroactive CaseIterable, @retroactive Identifiable, ParticleKind {
-    public static var allCases: [ParticleColliderKind] { [.plane, .sphere, .box, .capsule] }
+    public static var allCases: [ParticleColliderKind] { [.plane, .sphere, .box, .capsule, .signedDistanceField] }
 
     public var name: String {
         switch self {
@@ -241,6 +241,7 @@ public extension Collider.Shape {
             case .sphere: .sphere(center: center, radius: 0.5)
             case .box: .box(center: center, halfExtents: [0.4, 0.4, 0.4])
             case .capsule: .capsule(start: center - [0.6, 0, 0], end: center + [0.6, 0, 0], radius: 0.25)
+            case .signedDistanceField: DistanceFieldSource.teapot.shape(resolution: 32, padding: 2, insideOut: false, center: center) ?? self
             default: .plane(normal: [0, 1, 0], distance: center.y)
             }
         }
