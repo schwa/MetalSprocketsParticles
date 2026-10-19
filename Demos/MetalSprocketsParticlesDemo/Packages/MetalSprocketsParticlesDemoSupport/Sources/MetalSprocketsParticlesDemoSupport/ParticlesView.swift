@@ -111,6 +111,19 @@ struct FixedWidthText: View {
         .background(.orange)
 }
 
+/// Marks the viewport as showing 2D mode: the scene flat from the front, emitters kept on their plane.
+struct TwoDBadgeView: View {
+    var body: some View {
+        Label("2D", systemImage: "square.on.square")
+            .font(.headline)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.regularMaterial, in: .capsule)
+            .environment(\.colorScheme, .dark)
+            .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
+    }
+}
+
 /// The 3D view: simulates and draws the model's particle system each frame, with an orbit camera and frame timing.
 struct ParticleViewportView: View {
     /// The user default for showing the frame timing and particle count, shared with the toolbar toggle.
@@ -201,6 +214,12 @@ struct ParticleViewportView: View {
                         deathsPerSecond: deathsPerSecond,
                         isFinished: isFinished
                     )
+                        .padding()
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if showsOverlays && model.is2D {
+                    TwoDBadgeView()
                         .padding()
                 }
             }

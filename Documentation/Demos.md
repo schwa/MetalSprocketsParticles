@@ -51,6 +51,9 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Streamers](#streamers)
 - [Living Picture](#living-picture)
 - [Stress Test](#stress-test)
+- [Pachinko](#pachinko)
+- [Whirlpool](#whirlpool)
+- [Sand Funnel](#sand-funnel)
 
 ## Fountain
 
@@ -327,3 +330,21 @@ Shows: color from a screen-space image (ParticleEmitter.colorImage), so each par
 Shows: scale and throughput: two million live particles, a million born every second, moved by curl noise. Use it for profiling and with particles-bench --presets.
 
 ![stress-test](previews/stress-test.webp)
+
+## Pachinko
+
+Shows: 2D mode with colliders seen edge-on. Balls drop from the top and bounce down through rows of pegs between two walls.
+
+![pachinko](previews/pachinko.webp)
+
+## Whirlpool
+
+Shows: 2D mode with force fields in the plane. A vortex and an attractor wind two streams of particles into spiral arms that drain at the center.
+
+![whirlpool](previews/whirlpool.webp)
+
+## Sand Funnel
+
+Shows: 2D mode with rotated box colliders. Sand pours into a funnel, slides down its sides, and trickles through the gap in a thin stream.
+
+![sand-funnel](previews/sand-funnel.webp)
