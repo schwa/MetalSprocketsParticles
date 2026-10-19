@@ -9,7 +9,25 @@ import SwiftUI
 
 // MARK: - ParticleEmitter
 
+extension EmitterDescription {
+    /// Capacities the inspector allows.
+    static let editableCapacityRange = 100...2_000_000
+
+    /// `capacity`, kept in `editableCapacityRange`.
+    var editableCapacity: Int {
+        get { capacity }
+        set { capacity = min(max(newValue, Self.editableCapacityRange.lowerBound), Self.editableCapacityRange.upperBound) }
+    }
+}
+
 extension ParticleEmitter {
+    /// Live particles the birth rate and longest lifetime call for, when more than `capacity`; nil when they fit. Bursts
+    /// and emission limits are not counted.
+    func particlesNeeded(capacity: Int) -> Int? {
+        let needed = Int(((birthRate + max(birthRateVariation, 0)) * lifetime.upperBound).rounded(.up))
+        return needed > capacity ? needed : nil
+    }
+
     /// Shortest lifetime the inspector allows, so particles always live a little.
     static let minimumEditableLifetime: Float = 0.01
 

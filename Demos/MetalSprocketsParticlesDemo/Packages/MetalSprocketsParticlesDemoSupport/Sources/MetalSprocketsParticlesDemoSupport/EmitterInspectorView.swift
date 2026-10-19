@@ -18,7 +18,7 @@ struct EmitterInspectorView: View {
                 SendEventSectionView()
             case .emitter:
                 EmitterSectionView()
-                EmissionSectionView(settings: $model.selectedEmitter.settings)
+                EmissionSectionView(settings: $model.selectedEmitter.settings, capacity: $model.selectedEmitter.editableCapacity)
                 ShapeSectionView(settings: $model.selectedEmitter.settings)
                 MotionSectionView(emitter: $model.selectedEmitter)
                 AppearanceSectionView(emitter: $model.selectedEmitter)
@@ -285,9 +285,25 @@ struct EmitterSectionView: View {
 
 struct EmissionSectionView: View {
     @Binding var settings: ParticleEmitter
+    /// The emitter's capacity. Changing it rebuilds the particle buffer and restarts the effect, so it applies when the
+    /// field is committed, not per keystroke.
+    @Binding var capacity: Int
 
     var body: some View {
         Section("Emission") {
+            LabeledContent("Max Particles") {
+                TextField("Max Particles", value: $capacity, format: .number)
+                    .labelsHidden()
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+                    .frame(width: 110)
+            }
+            .help("Particles this emitter can have alive at once, \(EmitterDescription.editableCapacityRange.lowerBound.formatted()) to \(EmitterDescription.editableCapacityRange.upperBound.formatted()). Changing it restarts the effect.")
+            if let needed = settings.particlesNeeded(capacity: capacity) {
+                Label("Needs about \(needed.formatted()) at this rate and lifetime; newest particles replace the oldest early.", systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
             ParameterSliderView("Birth Rate", value: $settings.birthRate, in: 0...100_000, format: .number.precision(.fractionLength(0)))
             ParameterSliderView("Lifetime", value: $settings.lifetimeAverage, in: 0.1...30)
                 .help("Seconds each particle lives, on average. Type a value for longer lives.")

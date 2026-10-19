@@ -54,6 +54,38 @@ struct EmitterAdapterTests {
         #expect(categoryMatchSummary(0, categories: [.max], noun: "field") == "Matches 0 of 1 field")
     }
 
+    @Test func capacityStaysInItsRange() {
+        var description = EmitterDescription("Dots", settings: ParticleEmitter(), capacity: 1_000)
+        description.editableCapacity = 5_000
+        #expect(description.capacity == 5_000)
+        description.editableCapacity = 0
+        #expect(description.capacity == EmitterDescription.editableCapacityRange.lowerBound)
+        description.editableCapacity = 50_000_000
+        #expect(description.capacity == EmitterDescription.editableCapacityRange.upperBound)
+    }
+
+    @Test func warnsWhenRateAndLifetimeNeedMoreParticles() {
+        var emitter = ParticleEmitter()
+        emitter.birthRate = 1_000
+        emitter.birthRateVariation = 0
+        emitter.lifetime = 1...2
+        // 1,000 a second for up to 2 seconds: 2,000 alive at most.
+        #expect(emitter.particlesNeeded(capacity: 2_000) == nil)
+        #expect(emitter.particlesNeeded(capacity: 1_500) == 2_000)
+        emitter.birthRateVariation = 500
+        #expect(emitter.particlesNeeded(capacity: 2_000) == 3_000)
+    }
+
+    @MainActor
+    @Test func editedCapacityReachesTheRunningSystem() throws {
+        let model = ParticlesDemoModel()
+        model.presetName = "Fountain"
+        model.selectedEmitter.editableCapacity = 12_345
+        #expect(model.currentEffect.layers.first { $0.id == model.selectedEmitter.id }?.capacity == 12_345)
+        let player = try #require(try model.player(projection: matrix_identity_float4x4, cameraToWorld: matrix_identity_float4x4))
+        #expect(player.runtime.emitters.contains { $0.capacity == 12_345 })
+    }
+
     @Test func lifetimesNeverGoBelowTheMinimum() {
         var emitter = ParticleEmitter()
         emitter.lifetime = 1...3
