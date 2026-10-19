@@ -11,6 +11,8 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
     case smoke = "Smoke Puff"
     case ring = "Ring"
     case triangle = "Triangle"
+    /// A flat rectangle, twice as wide as tall: confetti, with `ParticleOrientation.tumbling`.
+    case confetti = "Confetti"
     case colorSheet = "Color Sheet 2×2"
     case heart = "❤️ Heart"
     case fire = "🔥 Fire"
@@ -120,6 +122,9 @@ public enum ParticleSprite: String, CaseIterable, Identifiable, Sendable, Codabl
             context.setStrokeColor(white)
             context.setLineWidth(rect.width * 0.08)
             context.strokeEllipse(in: rect.insetBy(dx: rect.width * 0.12, dy: rect.height * 0.12))
+        case .confetti:
+            context.setFillColor(white)
+            context.fill(CGRect(x: rect.minX + 2, y: center.y - rect.height / 4, width: rect.width - 4, height: rect.height / 2))
         case .triangle:
             context.move(to: CGPoint(x: center.x, y: rect.minY + 4))
             context.addLine(to: CGPoint(x: rect.maxX - 8, y: rect.maxY - 4))

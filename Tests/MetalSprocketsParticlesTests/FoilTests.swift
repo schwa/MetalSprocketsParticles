@@ -8,8 +8,15 @@ import Testing
 /// `ParticleEmitter.foil`: mesh particles glint when they turn to catch the light and shift color with angle (#155).
 @Suite(.serialized, .requiresMetal4)
 struct FoilTests {
-    /// The color at the middle of the view for one large coin turned to `angle`.
-    func centerColor(angle: Float, foil: ParticleFoil?) throws -> SIMD3<Float> {
+    /// What the piece is: a mesh particle, or a sprite card oriented some way.
+    enum Piece {
+        case coin
+        case tumblingCard
+        case billboard
+    }
+
+    /// The color at the middle of the view for one large piece turned to `angle`.
+    func centerColor(angle: Float, foil: ParticleFoil?, piece: Piece = .coin) throws -> SIMD3<Float> {
         var coin = ParticleEmitter()
         coin.shape = .point
         coin.position = [0, 0, 0]
@@ -19,15 +26,24 @@ struct FoilTests {
         coin.birthRate = 0
         coin.lifetime = 10...10
         coin.angle = angle
-        coin.particleMesh = .coin
+        switch piece {
+        case .coin:
+            coin.particleMesh = .coin
+        case .tumblingCard:
+            coin.orientation = .tumbling
+        case .billboard:
+            coin.orientation = .billboard
+        }
         coin.sizeOverLife = .constant(0.8)
         // Dark, so the glint stands out instead of clipping at white with the base color.
         coin.colorOverLife = .constant([0.3, 0.25, 0.12, 1])
         coin.blendMode = .opaque
         coin.foil = foil
         // Light from behind the camera: the glint peaks when the coin faces the camera.
+        // A plain square card (the procedural dot fades toward its edges and would hide the glint's extent).
+        let sprite: ParticleSprite = piece == .coin ? .softDot : .confetti
         let system = ParticleSystem(
-            "Coin", layers: [EmitterDescription("Coin", settings: coin, capacity: 1)], lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
+            "Coin", layers: [EmitterDescription("Coin", settings: coin, sprite: sprite, capacity: 1)], lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
         )
         let size = CGSize(width: 64, height: 64)
         let renderer = try OffscreenRenderer(size: size)
@@ -51,10 +67,12 @@ struct FoilTests {
         color.max()
     }
 
-    @Test func foilGlintsAtSomeAnglesAndShiftsColor() throws {
+    /// A mesh particle and a tumbling sprite card both glint as they turn (#155, #171).
+    @Test(arguments: [Piece.coin, .tumblingCard])
+    func foilGlintsAtSomeAnglesAndShiftsColor(piece: Piece) throws {
         let angles = (0..<36).map { Float($0) / 36 * 2 * .pi }
-        let foil = try angles.map { try centerColor(angle: $0, foil: ParticleFoil(glint: 3, shininess: 48, iridescence: 0.6)) }
-        let plain = try angles.map { try centerColor(angle: $0, foil: nil) }
+        let foil = try angles.map { try centerColor(angle: $0, foil: ParticleFoil(glint: 3, shininess: 48, iridescence: 0.6), piece: piece) }
+        let plain = try angles.map { try centerColor(angle: $0, foil: nil, piece: piece) }
         let foilBrightness = foil.map(brightness).sorted()
         let plainBrightness = plain.map(brightness).sorted()
         // A glint: the brightest angle far above the typical one, much more than plain shading varies.
@@ -66,6 +84,20 @@ struct FoilTests {
         let balances = foil.filter { brightness($0) > 0.05 }.map { $0 / brightness($0) }
         let spread = zip(balances, balances.dropFirst()).map { simd_distance($0, $1) }.max() ?? 0
         #expect(spread > 0.15, "balances \(balances)")
+    }
+
+    /// A billboard always faces the camera, so turning it (in its plane) does not make it glint: why foil needs tumbling.
+    @Test func foilBillboardsDoNotGlint() throws {
+        let angles = (0..<12).map { Float($0) / 12 * 2 * .pi }
+        let colors = try angles.map { try centerColor(angle: $0, foil: ParticleFoil(glint: 3, shininess: 48, iridescence: 0.6), piece: .billboard) }
+        let brightness = colors.map(brightness)
+        #expect((brightness.max() ?? 0) - (brightness.min() ?? 0) < 0.05, "\(brightness)")
+    }
+
+    @Test func tumblingRoundTripsThroughEffectFiles() throws {
+        var emitter = ParticleEmitter()
+        emitter.orientation = .tumbling
+        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).orientation == .tumbling)
     }
 
     @Test func foilRoundTripsThroughEffectFiles() throws {

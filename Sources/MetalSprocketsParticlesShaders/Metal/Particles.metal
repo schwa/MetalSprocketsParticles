@@ -1555,6 +1555,15 @@ static float4 particleBaseColor(constant RenderUniforms &uniforms, constant floa
     return color;
 }
 
+static float3 rotateAbout(float3 v, float3 axis, float angle);
+static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base);
+
+// A particle's own tumble axis, the same one mesh particles turn about.
+static float3 tumbleAxis(uint index) {
+    float3 axis = float3(hash(index * 3u + 1u), hash(index * 3u + 2u), hash(index * 3u + 3u)) / 4294967295.0 * 2 - 1;
+    return length_squared(axis) > 1e-6 ? normalize(axis) : float3(0, 1, 0);
+}
+
 vertex VertexOut particleVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
@@ -1622,13 +1631,21 @@ vertex VertexOut particleVertex(
         up = cross(normal, right);
         break;
     }
+    case ParticleOrientationModeTumbling: {
+        // A world-space card turned about the particle's own axis; the spin is the tumble, not an in-plane turn.
+        float3 axis = tumbleAxis(index);
+        right = rotateAbout(float3(1, 0, 0), axis, p.rotation.x);
+        up = rotateAbout(float3(0, 1, 0), axis, p.rotation.x);
+        break;
+    }
     default:
         break;
     }
 
-    // Rotate the quad, not the UVs, so textures spin with it.
-    float s = sin(p.rotation.x);
-    float c = cos(p.rotation.x);
+    // Rotate the quad, not the UVs, so textures spin with it. Tumbling cards already turned.
+    float spin = uniforms.orientationMode == ParticleOrientationModeTumbling ? 0 : p.rotation.x;
+    float s = sin(spin);
+    float c = cos(spin);
     float2 stretched = float2(corner.x, corner.y * stretch);
     float2 offset = float2(c * stretched.x - s * stretched.y, s * stretched.x + c * stretched.y);
     float3 world = center + (right * offset.x + up * offset.y) * size;
@@ -1638,7 +1655,11 @@ vertex VertexOut particleVertex(
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
     }
-    if (uniforms.isLit != 0) {
+    if (uniforms.foilGlint > 0 || uniforms.foilIridescence > 0) {
+        // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one.
+        float3 normal = normalize(cross(right, up));
+        out.color.rgb = foilColor(uniforms, lights, particleLights, center, normal, normalize(toCamera), out.color.rgb);
+    } else if (uniforms.isLit != 0) {
         out.color.rgb *= particleLight(uniforms, lights, particleLights, center, right * offset.x + up * offset.y);
     }
     out.color = debugColor(uniforms, out.color, p, index, t);

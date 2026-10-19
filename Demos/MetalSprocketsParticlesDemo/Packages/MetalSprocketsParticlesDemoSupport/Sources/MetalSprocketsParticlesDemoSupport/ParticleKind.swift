@@ -155,13 +155,14 @@ public extension EmitterShape {
 // MARK: - Orientation
 
 extension ParticleOrientationMode: @retroactive CaseIterable, @retroactive Identifiable, ParticleKind {
-    public static var allCases: [ParticleOrientationMode] { [.billboard, .yAligned, .velocityAligned, .fixed] }
+    public static var allCases: [ParticleOrientationMode] { [.billboard, .yAligned, .velocityAligned, .fixed, .tumbling] }
 
     public var name: String {
         switch self {
         case .yAligned: "Y-Aligned"
         case .velocityAligned: "Velocity"
         case .fixed: "Flat"
+        case .tumbling: "Tumbling"
         default: "Billboard"
         }
     }
@@ -176,6 +177,7 @@ public extension ParticleOrientation {
             case .yAligned: .yAligned
             case .velocityAligned: .velocityAligned
             case .fixed: .fixed
+            case .tumbling: .tumbling
             }
         }
         set {
@@ -186,6 +188,7 @@ public extension ParticleOrientation {
             case .yAligned: .yAligned
             case .velocityAligned: .velocityAligned(stretch: 0)
             case .fixed: .fixed(normal: [0, 1, 0])
+            case .tumbling: .tumbling
             default: .billboard
             }
         }

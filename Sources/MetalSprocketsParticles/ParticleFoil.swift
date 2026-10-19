@@ -1,7 +1,7 @@
-/// Shades mesh particles (`ParticleEmitter.particleMesh`) like metallic foil: each piece flashes when it turns to
-/// catch a light toward the camera, shifts color with the viewing angle, and darkens edge-on. For confetti, tinsel, and
-/// glitter. Lights are the scene's lights and particle lights; with none, a fixed light from above and in front. Mesh
-/// particles only, since they have a facing direction; sprites always face the camera.
+/// Shades particles like metallic foil: each piece flashes when it turns to catch a light toward the camera, shifts
+/// color with the viewing angle, and darkens edge-on. For confetti, tinsel, and glitter. Lights are the scene's lights
+/// and particle lights; with none, a fixed light from above and in front. Use it with pieces that turn: sprites with
+/// `ParticleOrientation.tumbling`, or mesh particles. A billboard always faces the camera, so its glint stays put.
 public struct ParticleFoil: Sendable, Equatable, Codable {
     /// How bright the glint is, added on top of the color. 0 turns it off.
     public var glint: Float

@@ -3585,6 +3585,7 @@ Follow-up to #155, which added foil (ParticleEmitter.foil) for mesh particles on
 Workaround today: use mesh particles (Draw As Coin) for foil confetti, as the Foil Confetti presets do.
 
 - `2026-10-19T22:40:04Z`: Related: #172 makes shading pluggable; foil for sprites becomes giving sprites a real tumbling normal in ShadingInput, and foil itself becomes a built-in shading model.
+- `2026-10-19T23:01:44Z`: Sprites done (first half): ParticleOrientation.tumbling makes each sprite a world-space card turned about its own random axis (the same per-particle axis mesh particles use) by its spin angle, so it has a real facing normal. The sprite vertex shader now applies foil with the quad's own plane normal in every orientation (a tumbling card flashes; a billboard faces the camera, so its glint stays put). New Confetti sprite (a flat rectangle). Foil Confetti and Foil Confetti 2D now use tumbling confetti sprites, no coins. Inspector: Tumbling in the orientation picker; the Foil switch shows for sprites too. Tests: a tumbling card glints and shifts color like a mesh particle; a foil billboard does not glint; tumbling round-trips. Other goldens unchanged. Sparkles on glints next.
 
 ---
 

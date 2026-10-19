@@ -10,7 +10,7 @@
       "normal": [0, 1, 0]
     }
   ],
-  "comment": "Shows: foil shading on mesh particles. Discs of confetti flutter down, flashing as they turn to catch the lights and shifting color with the angle.",
+  "comment": "Shows: foil shading on tumbling sprites. Confetti cards flutter down, flashing as they turn to catch the lights and shifting color with the angle.",
   "forceFields": [],
   "layers": [
     {
@@ -73,7 +73,7 @@
           ]
         },
         "orientation": {
-          "billboard": {}
+          "tumbling": {}
         },
         "position": [0, 3.2, 0],
         "restitution": 0.1,
@@ -101,9 +101,6 @@
         "velocity": [0, -0.3, 0],
         "velocitySpread": 0.5,
         "warmupDuration": 3,
-        "particleMesh": {
-          "coin": {}
-        },
         "collisionRadius": 0.05,
         "categoryMask": 4294967295,
         "foil": {
@@ -115,7 +112,7 @@
       "simulationSpace": {
         "world": {}
       },
-      "sprite": "Soft Dot"
+      "sprite": "Confetti"
     }
   ],
   "lights": [

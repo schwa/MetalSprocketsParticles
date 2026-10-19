@@ -10,7 +10,7 @@
       "normal": [0, 1, 0]
     }
   ],
-  "comment": "Shows: foil shading in 2D mode. The same confetti seen flat from the front; the discs still tumble, so they still glint.",
+  "comment": "Shows: foil shading in 2D mode. The same confetti seen flat from the front; the cards still tumble, so they still glint.",
   "forceFields": [],
   "layers": [
     {
@@ -73,7 +73,7 @@
           ]
         },
         "orientation": {
-          "billboard": {}
+          "tumbling": {}
         },
         "position": [0, 3.2, 0],
         "restitution": 0.1,
@@ -101,9 +101,6 @@
         "velocity": [0, -0.3, 0],
         "velocitySpread": 0.5,
         "warmupDuration": 3,
-        "particleMesh": {
-          "coin": {}
-        },
         "collisionRadius": 0.05,
         "categoryMask": 4294967295,
         "foil": {
@@ -115,7 +112,7 @@
       "simulationSpace": {
         "world": {}
       },
-      "sprite": "Soft Dot"
+      "sprite": "Confetti"
     }
   ],
   "lights": [

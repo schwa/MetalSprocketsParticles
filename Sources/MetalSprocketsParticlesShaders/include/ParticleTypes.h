@@ -8,6 +8,7 @@ typedef MS_ENUM(uint32_t, ParticleOrientationMode) {
     ParticleOrientationModeYAligned = 1,
     ParticleOrientationModeVelocityAligned = 2,
     ParticleOrientationModeFixed = 3,
+    ParticleOrientationModeTumbling = 4,
 };
 
 typedef MS_ENUM(uint32_t, ParticleEmitterShapeKind) {
