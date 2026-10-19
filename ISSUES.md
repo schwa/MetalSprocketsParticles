@@ -3483,3 +3483,26 @@ ParticleSystem.colliderSpins (spin per collider: axis, speed), eventBursts (Even
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
 
 ---
+
+## 169: No base64 blobs in effect JSON; reference external files
+
++++
+status: new
+priority: medium
+kind: enhancement
+created: 2026-10-19T21:50:25Z
++++
+
+Effect JSON embeds large binary data as base64 strings:
+
+- Signed distance field `values` (float32): inside-the-teapot, spinning-teapot, marble-run, sand-on-letters, snow-globe, umbrella.
+- PNG `data`: butterfly-dust (`image`), living-picture (`colorImage`).
+
+Replace these with references to files. A reference is either:
+
+- a name, resolved next to the JSON file or through the bundle, or
+- a URL.
+
+Move the existing blobs out to files (e.g. raw float32 `.bin` for fields, `.png` for images) and update the presets. Consider doing the same for inline mesh arrays (`meshPositions`/`meshTriangles`), which make inside-the-teapot.json ~9800 lines.
+
+---
