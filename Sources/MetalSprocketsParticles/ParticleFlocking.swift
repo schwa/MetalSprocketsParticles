@@ -44,6 +44,8 @@ final class FlockingBuffers {
     let cellCounts: MTLBuffer
     let cellStarts: MTLBuffer
     let particleCells: MTLBuffer
+    /// Each cell's particles in the order the scatter put them; `sortedOffsets` holds them in slot order.
+    let scatteredOffsets: MTLBuffer
     let sortedOffsets: MTLBuffer
     /// Steering for every particle in the system, indexed like the particle buffer.
     let steering: MTLBuffer
@@ -62,6 +64,7 @@ final class FlockingBuffers {
         cellCounts = try make(table, "Flock cell counts")
         cellStarts = try make(table, "Flock cell starts")
         particleCells = try make(capacity * MemoryLayout<UInt32>.stride, "Flock particle cells")
+        scatteredOffsets = try make(capacity * MemoryLayout<UInt32>.stride, "Flock scattered particles")
         sortedOffsets = try make(capacity * MemoryLayout<UInt32>.stride, "Flock sorted particles")
         steering = try make(particleCount * MemoryLayout<SIMD4<Float>>.stride, "Flock steering")
         self.capacity = capacity
@@ -142,13 +145,16 @@ extension ParticleSystemRuntime {
             .parameter("flock", value: flock)
             .parameter("cellCursors", buffer: buffers.cellCounts)
             .parameter("particleCells", buffer: buffers.particleCells)
-            .parameter("sortedOffsets", buffer: buffers.sortedOffsets)
+            .parameter("scatteredOffsets", buffer: buffers.scatteredOffsets)
             EncoderBarrier(after: .dispatch, before: .dispatch)
             try ComputePipeline(computeKernel: sortCells) {
-                try ComputeDispatch(threadsPerGrid: MTLSize(width: table, height: 1, depth: 1))
+                try ComputeDispatch(threadsPerGrid: MTLSize(width: threads, height: 1, depth: 1))
             }
+            .parameter("flock", value: flock)
             .parameter("cellStarts", buffer: buffers.cellStarts)
             .parameter("cellEnds", buffer: buffers.cellCounts)
+            .parameter("particleCells", buffer: buffers.particleCells)
+            .parameter("scatteredOffsets", buffer: buffers.scatteredOffsets)
             .parameter("sortedOffsets", buffer: buffers.sortedOffsets)
             EncoderBarrier(after: .dispatch, before: .dispatch)
             try ComputePipeline(computeKernel: steer) {

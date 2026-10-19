@@ -73,38 +73,41 @@ kernel void flockScatter(
     constant FlockData &flock [[buffer(0)]],
     device atomic_uint *cellCursors [[buffer(1)]],
     const device uint *particleCells [[buffer(2)]],
-    device uint *sortedOffsets [[buffer(3)]],
+    device uint *scatteredOffsets [[buffer(3)]],
     uint offset [[thread_position_in_grid]]
 ) {
     if (offset >= flock.windowCount || particleCells[offset] == 0xFFFFFFFFu) {
         return;
     }
     uint position = atomic_fetch_add_explicit(&cellCursors[particleCells[offset]], 1, memory_order_relaxed);
-    sortedOffsets[position] = offset;
+    scatteredOffsets[position] = offset;
 }
 
-// One thread per cell: sorts the cell's particles by slot. The scatter fills cells in whatever order the atomics run;
-// sorting makes neighbor order, and so the neighbor cap and every sum, the same on every run.
+// One thread per particle: puts it in its cell in slot order, at the cell's start plus the number of the cell's
+// particles before it. The scatter fills cells in whatever order the atomics run; this makes neighbor order, and so
+// the neighbor cap and every sum, the same on every run. It used to be an insertion sort with one thread per cell,
+// which in a dense pile (most particles in a few cells) took milliseconds on a single thread (#158); this spreads the
+// same work over the cell's particles.
 kernel void flockSortCells(
-    const device uint *cellStarts [[buffer(0)]],
-    const device uint *cellEnds [[buffer(1)]],
-    device uint *sortedOffsets [[buffer(2)]],
-    uint cell [[thread_position_in_grid]]
+    constant FlockData &flock [[buffer(0)]],
+    const device uint *cellStarts [[buffer(1)]],
+    const device uint *cellEnds [[buffer(2)]],
+    const device uint *particleCells [[buffer(3)]],
+    const device uint *scatteredOffsets [[buffer(4)]],
+    device uint *sortedOffsets [[buffer(5)]],
+    uint offset [[thread_position_in_grid]]
 ) {
-    if (cell >= PARTICLE_FLOCK_TABLE_SIZE) {
+    if (offset >= flock.windowCount || particleCells[offset] == 0xFFFFFFFFu) {
         return;
     }
+    uint cell = particleCells[offset];
     uint start = cellStarts[cell];
     uint end = cellEnds[cell];
-    for (uint i = start + 1; i < end; i++) {
-        uint value = sortedOffsets[i];
-        uint j = i;
-        while (j > start && sortedOffsets[j - 1] > value) {
-            sortedOffsets[j] = sortedOffsets[j - 1];
-            j--;
-        }
-        sortedOffsets[j] = value;
+    uint before = 0;
+    for (uint i = start; i < end; i++) {
+        before += scatteredOffsets[i] < offset ? 1 : 0;
     }
+    sortedOffsets[start + before] = offset;
 }
 
 kernel void flockSteer(

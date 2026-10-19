@@ -2,6 +2,7 @@ import Foundation
 import Metal
 import MetalSprockets
 @testable import MetalSprocketsParticles
+import MetalSprocketsParticlesSamples
 import MetalSprocketsParticlesShaders
 import simd
 import Testing
@@ -47,6 +48,33 @@ struct FlockingTests {
         let positions = particles.map { SIMD3($0.position.x, $0.position.y, $0.position.z) }
         let center = positions.reduce(.zero, +) / Float(positions.count)
         return positions.map { simd_distance($0, center) }.reduce(0, +) / Float(positions.count)
+    }
+
+    /// Flocking in a dense pile must stay cheap (#158). Each grid cell was sorted by one thread with an insertion sort,
+    /// so a crowded cell cost its count squared on a single thread: Inside the Teapot's beads, piled in a few cells,
+    /// took 2 to 5 ms of GPU a frame for 3 000 particles. Measured against the same preset without flocking, not a
+    /// fixed budget, so it does not depend on the machine.
+    @Test func flockingInADensePileStaysCheap() throws {
+        let preset = try #require(ParticleSystem.named("Inside the Teapot"))
+        func averageGPUMilliseconds(_ system: ParticleSystem) throws -> Double {
+            let size = CGSize(width: 320, height: 180)
+            let renderer = try OffscreenRenderer(size: size)
+            let player = try ParticlePlayer(system: system, device: renderer.device)
+            var total: Double = 0
+            for frame in 0..<240 {
+                let rendering = try renderer.render(try player.frame(deltaTime: 1.0 / 60.0, size: size))
+                // After the beads have fallen into a pile.
+                if frame >= 60 {
+                    total += (rendering.gpuTime ?? 0) * 1_000
+                }
+            }
+            return total / 180
+        }
+        var withoutFlocking = preset
+        withoutFlocking.layers[1].settings.flocking = nil
+        let flocking = try averageGPUMilliseconds(preset)
+        let baseline = try averageGPUMilliseconds(withoutFlocking)
+        #expect(flocking < baseline * 5 + 0.3, "with flocking \(flocking) ms, without \(baseline) ms")
     }
 
     @Test func alignmentMakesTheFlockMoveTogether() throws {

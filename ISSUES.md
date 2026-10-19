@@ -3295,11 +3295,13 @@ Ideas: entry-point response with the collider's motion accounted for (so resting
 ## 158: Inside the Teapot drops below 60 fps: flocking is slow in dense piles
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:performance, effort:m
 created: 2026-10-19T21:35:57Z
+updated: 2026-10-19T21:54:26Z
+closed: 2026-10-19T21:54:26Z
 +++
 
 Inside the Teapot (6 600 particles) takes about 5 ms of GPU a frame (particles-bench: 6.12 ms GPU, 16 ms worst), when Stress Test does 2 million particles in about 4.4 ms. In the app it falls below 60 fps.
@@ -3315,6 +3317,7 @@ The beads use flocking with separation only, as a stand-in for particle-particle
 Fix ideas: stop the neighbor search once maxNeighbors are found, or cap the particles visited per cell; or give the preset a cheaper stand-in for separation.
 
 - `2026-10-19T21:40:28Z`: Related: #159 (flocking in the inspector) would let the preset's flocking be turned off or tuned from the UI.
+- `2026-10-19T21:54:25Z`: Fixed. The cost was the per-cell sort (flockSortCells): one thread per cell ran an insertion sort, so a crowded cell (most of the 3 000 beads in a pile) cost its count squared on a single thread. Not the neighbor search: maxNeighbors 4 did not help, and my first guess (search visits every particle in a cell) was wrong, since the search already stops at maxNeighbors. Now one thread per particle counts the earlier particles in its cell and writes itself to that place: the same slot order (so results and goldens are unchanged), with the work spread over the cell's particles. The scatter writes to a new scatteredOffsets buffer. Rendered-frame GPU time for the preset: 2-5 ms before (peaks as the pile packs), about 1.1 ms after; particles-bench: 6.12 -> 1.28 ms GPU, worst frame 16.1 -> 3.8 ms. Test flockingInADensePileStaysCheap compares the preset's average GPU time with and without flocking; it fails with the old kernel and passes with the new. A first test with stationary particles packed in one cell passed even before the fix (they land in each cell already in order, which is insertion sort's best case), so it was replaced.
 
 ---
 
