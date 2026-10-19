@@ -22,20 +22,24 @@ struct TwoDModeTests {
         #expect(!model.currentEffect.is2D)
     }
 
-    /// The 2D toggle stays as the user set it when presets change, whatever the preset was saved with.
+    /// The 2D toggle stays as the user set it when presets change; presets made for 2D turn it on.
     @MainActor
     @Test func twoDModeSurvivesPresetChanges() throws {
         let model = ParticlesDemoModel()
-        let flatPreset = try #require(model.presets.first(where: \.is2D))
+        // A key path here makes #require think the call can throw.
+        // swiftlint:disable:next prefer_key_path
+        let flatPreset = try #require(model.presets.first { $0.is2D })
         let deepPreset = try #require(model.presets.first { !$0.is2D })
         model.is2D = true
         model.presetName = deepPreset.name
         #expect(model.is2D)
         model.is2D = false
+        model.presetName = deepPreset.name == model.presets.first?.name ? model.presets[1].name : model.presets[0].name
+        #expect(!model.is2D)
         model.presetName = flatPreset.name
-        #expect(!model.is2D)
-        model.stepPreset(by: 1)
-        #expect(!model.is2D)
+        #expect(model.is2D)
+        model.presetName = deepPreset.name
+        #expect(model.is2D)
     }
 
     /// The count overlay is centered, so its width must not follow the numbers, or the panel jumps around (#147).
