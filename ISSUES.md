@@ -2862,14 +2862,16 @@ Ideas: named categories per scene (for example Floor, Walls, Wind) stored with t
 status: open
 priority: low
 kind: task
-labels: area:simulation, effort:s, needs-decision
+labels: area:simulation, effort:s
 created: 2026-10-19T11:46:26Z
-updated: 2026-10-19T11:46:27Z
+updated: 2026-10-19T13:08:36Z
 +++
 
 An emitter has two masks, collisionMask (matched against Collider.categoryBitMask) and fieldMask (matched against ForceField.categoryBitMask), both UInt32. A single UInt32 would do the same job if colliders and fields use different bits: an emitter that should bounce off the floor but ignore the wind keeps the floor's bit and drops the wind's.
 Trade-off: with one mask, colliders and fields share one 32-bit category space, and a bit used by both a collider and a field cannot be split per emitter. Two masks allow that but are more to explain and edit (and the UI, previous issue, shows both).
 Decide whether to merge. If yes: add ParticleEmitter.categoryMask, decode old files by combining (an emitter matches a collider when collisionMask matches, and a field when fieldMask matches, so map carefully or keep reading the old keys), update docs, the inspector, and CategoryMaskTests.
+
+- `2026-10-19T13:08:36Z`: Decision (user): merge into one categoryMask. Users keep collider and field bits apart; 32 bits is plenty. Old files: combine collisionMask and fieldMask when reading.
 
 ---
 
@@ -2922,6 +2924,7 @@ updated: 2026-10-19T13:07:05Z
 2D mode should be one toggle. Turning it on should change rendering, z limits, the camera, and any other related settings together.
 
 - `2026-10-19T13:07:05Z`: Related: #140 (2D overlay confetti blob). Builds on the overlay camera, ParticleCamera.overlay, and ParticleEmitter.constrainsToPlane (#99, #107).
+- `2026-10-19T13:08:36Z`: Decision (user): one ParticleSystem.is2D setting that turns on together: the overlay camera (points, y down), constrainsToPlane on every emitter, and 2D defaults for new emitters (speeds and sizes in points, which likely fixes #140). The 3D settings stay underneath, so turning it off returns to the 3D scene.
 
 ---
 
@@ -2980,7 +2983,7 @@ Add an option to render with reverse Z (clear depth to 0, compare greater, swap 
 status: open
 priority: medium
 kind: documentation
-labels: area:docs,effort:s
+labels: area:docs, effort:s
 created: 2026-10-19T12:10:30Z
 updated: 2026-10-19T13:07:05Z
 +++
