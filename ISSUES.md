@@ -2776,11 +2776,13 @@ Born is known on the CPU (the spawner's count per step, plus bursts and sub-emit
 ## 136: Paint Drops does not splatter in the demo app: the model drops eventBursts
 
 +++
-status: open
+status: closed
 priority: high
 kind: bug
 labels: area:demo, effort:s
 created: 2026-10-19T11:44:54Z
+updated: 2026-10-19T11:56:07Z
+closed: 2026-10-19T11:56:07Z
 +++
 
 In the demo app, Paint Drops' drops fall and vanish without splattering. particles-render, the preview, and the golden image are fine.

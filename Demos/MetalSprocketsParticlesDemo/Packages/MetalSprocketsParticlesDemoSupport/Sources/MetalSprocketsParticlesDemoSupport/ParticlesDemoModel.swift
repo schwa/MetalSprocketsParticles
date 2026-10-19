@@ -120,6 +120,8 @@ final class ParticlesDemoModel {
     var pointerEmitterIDs: Set<EmitterDescription.ID> = []
     /// Stands in for the mouse when it is not over the view.
     var pointerMotion = EmitterMotion()
+    /// Reactions to particle events (no editor yet; kept so presets and saved effects play and save as authored).
+    var eventBursts: [EventBurst] = []
     /// The mouse location as a fraction of the view (0...1, origin top left), or nil when it is outside. Not observed:
     /// it changes on every mouse move and is only read while rendering.
     @ObservationIgnored var pointerLocation: CGPoint?
@@ -228,6 +230,7 @@ final class ParticlesDemoModel {
         preset.colliderSpins = colliderSpins
         preset.pointerBindings = pointerBindings
         preset.pointerMotion = pointerMotion
+        preset.eventBursts = eventBursts
         preset.comment = presetComment
         return preset
     }
@@ -277,6 +280,7 @@ final class ParticlesDemoModel {
         }
         pointerEmitterIDs = Set(emitters.indices.filter { preset.pointerBindings.contains(.emitter($0)) }.map { emitters[$0].id })
         pointerMotion = preset.pointerMotion
+        eventBursts = preset.eventBursts
         animateColliders = preset.animatesColliders
         drawColliders = preset.drawsColliders
         colliderSpins = preset.colliderSpins

@@ -140,6 +140,30 @@ struct ForceFieldAdapterTests {
 
 @MainActor
 struct ModelTests {
+    /// The scene the model hands the player must be the preset itself, so settings added later cannot be dropped by the
+    /// editor without a test failing. Layer ids differ on purpose (load renews them).
+    @Test func currentEffectRoundTripsEveryPreset() throws {
+        func normalized(_ system: ParticleSystem) throws -> NSDictionary {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .sortedKeys
+            var object = try #require(try JSONSerialization.jsonObject(with: encoder.encode(system)) as? [String: Any])
+            object["layers"] = (object["layers"] as? [[String: Any]])?.map { layer in
+                var layer = layer
+                layer["id"] = nil
+                return layer
+            }
+            return object as NSDictionary
+        }
+        let model = ParticlesDemoModel()
+        for preset in ParticleSystem.all {
+            model.presetName = preset.name
+            let expected = try normalized(preset)
+            let actual = try normalized(model.currentEffect)
+            let differing = (expected.allKeys as? [String] ?? []).filter { expected[$0] as? NSObject != actual[$0] as? NSObject }
+            #expect(differing.isEmpty, "\(preset.name): \(differing)")
+        }
+    }
+
     @Test func loadsEveryPreset() throws {
         let model = ParticlesDemoModel()
         let system = try #require(model.system)
