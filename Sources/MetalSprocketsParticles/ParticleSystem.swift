@@ -34,6 +34,8 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     /// Suggested camera.
     public var cameraEye: SIMD3<Float>
     public var cameraTarget: SIMD3<Float>
+    /// Reactions to particle events that `ParticlePlayer` carries out on the CPU, a frame or two after they happen.
+    public var eventBursts: [EventBurst] = []
 
     public var id: String { name }
 
@@ -78,6 +80,7 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
         try container.update(&comment, .comment)
         try container.update(&cameraEye, .cameraEye)
         try container.update(&cameraTarget, .cameraTarget)
+        try container.update(&eventBursts, .eventBursts)
     }
 
     /// The same system with `comment` set.

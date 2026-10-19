@@ -587,6 +587,18 @@ static void constrainToPlane(thread float3 &position, thread float3 &velocity, c
     velocity -= normal * dot(velocity, normal);
 }
 
+static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *events, ParticleEventKind kind, float3 position, float3 velocity, float time, uint emitterIndex, uint colliderIndex) {
+    uint sequence = atomic_fetch_add_explicit(cursor, 1u, memory_order_relaxed) + 1;
+    device ParticleEventRecord &record = events[(sequence - 1) % PARTICLE_EVENT_CAPACITY];
+    record.position = float4(position, time);
+    record.velocity = float4(velocity, 0);
+    record.kind = kind;
+    record.emitterIndex = emitterIndex;
+    record.colliderIndex = colliderIndex;
+    atomic_thread_fence(mem_flags::mem_device, memory_order_seq_cst, thread_scope_device);
+    record.sequence = sequence;
+}
+
 kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
     constant SimulationUniforms &uniforms [[buffer(1)]],
@@ -611,6 +623,8 @@ kernel void updateParticles(
     constant float4 *deathParameters [[buffer(20)]],
     device float4 *attributes [[buffer(21)]],
     constant uint &attributeCount [[buffer(22)]],
+    device atomic_uint *eventCursor [[buffer(23)]],
+    device ParticleEventRecord *events [[buffer(24)]],
     uint localID [[thread_position_in_grid]]
 ) {
     EmitterMeshInput mesh { meshTriangles, meshVertices, meshIndices, meshDeformedPositions };
@@ -693,6 +707,7 @@ kernel void updateParticles(
     float friction = saturate(uniforms.friction + p.properties.z);
 
     bool hit = false;
+    uint firstHitCollider = 0xFFFFFFFFu;
     for (uint i = 0; i < uniforms.colliderCount; i++) {
         // Hits on earlier colliders this step do not count toward this one.
         bool hitBefore = hit;
@@ -745,6 +760,9 @@ kernel void updateParticles(
                 collide(position, velocity, c, normal, 0, restitution, friction, hit);
             }
         }
+        if (hit && firstHitCollider == 0xFFFFFFFFu) {
+            firstHitCollider = c.triggerIndex;
+        }
         if (hit && uniforms.countsColliderHits != 0 && c.triggerIndex < PARTICLE_TRIGGER_MAX_COLLIDERS) {
             atomic_fetch_add_explicit(&triggerCounters[c.triggerIndex], 1u, memory_order_relaxed);
         }
@@ -762,6 +780,9 @@ kernel void updateParticles(
         }
     }
 
+    if (hit && uniforms.reportsCollisions != 0) {
+        writeEvent(eventCursor, events, ParticleEventKindCollision, position, velocity, uniforms.time, uniforms.eventEmitterIndex, firstHitCollider);
+    }
     if (hit && uniforms.diesOnCollision != 0) {
         age = lifetime;
     }
@@ -780,6 +801,10 @@ kernel void updateParticles(
         applyState(state, p, position, velocity, custom);
         age = state.age;
         lifetime = state.lifetime;
+    }
+
+    if (age >= lifetime && previousAge < lifetime && uniforms.reportsDeaths != 0) {
+        writeEvent(eventCursor, events, ParticleEventKindDeath, position, velocity, uniforms.time, uniforms.eventEmitterIndex, 0xFFFFFFFFu);
     }
 
     // Sub-emitters: on an event, write children into the slots this particle owns in each child slice. Children live in

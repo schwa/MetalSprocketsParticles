@@ -146,6 +146,11 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Runs on the step a particle dies (age reaches lifetime), before on-death sub-emitters. Raising lifetime above
     /// age keeps it alive.
     public var deathFunction: ParticleFunction?
+    /// Reports each collider hit to the app in `ParticleSystemRuntime.recentEvents`, with where, how fast, and which
+    /// collider. For sounds, decals, or game logic.
+    public var reportsCollisions = false
+    /// Reports each particle death in `ParticleSystemRuntime.recentEvents`.
+    public var reportsDeaths = false
 
     public init() {}
 }
@@ -203,6 +208,8 @@ extension ParticleEmitter {
         spawnFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .spawnFunction)
         collisionFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .collisionFunction)
         deathFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .deathFunction)
+        try container.update(&reportsCollisions, .reportsCollisions)
+        try container.update(&reportsDeaths, .reportsDeaths)
     }
 }
 

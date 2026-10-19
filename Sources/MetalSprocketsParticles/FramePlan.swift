@@ -93,7 +93,9 @@ extension ParticleSystemRuntime {
             forceFields: Array(zip(forceFields.map(\.categoryBitMask), forceFieldData))
         )
         return FramePlan(
-            dispatches: allEmitters.flatMap { dispatches($0, frameDeltaTime: frameDeltaTime, world: world) },
+            dispatches: allEmitters.enumerated().flatMap { index, emitter in
+                dispatches(emitter, index: index, frameDeltaTime: frameDeltaTime, world: world)
+            },
             colliders: colliderData,
             forceFields: forceFieldData,
             triggerVolumes: triggerVolumes.prefix(Int(PARTICLE_TRIGGER_MAX_VOLUMES)).map(\.data),
@@ -283,7 +285,7 @@ extension ParticleSystemRuntime {
         return (data, uniforms)
     }
 
-    private func dispatches(_ emitter: Emitter, frameDeltaTime: Float, world: WorldData) -> [FramePlan.Dispatch] {
+    private func dispatches(_ emitter: Emitter, index emitterIndex: Int, frameDeltaTime: Float, world: WorldData) -> [FramePlan.Dispatch] {
         // Filtering here keeps category masks off the GPU: unmasked emitters see exactly the full lists.
         let colliders = world.colliders.filter { $0.category & emitter.settings.collisionMask != 0 }.map(\.data)
         let forceFields = world.forceFields.filter { $0.category & emitter.settings.fieldMask != 0 }.map(\.data)
@@ -341,6 +343,9 @@ extension ParticleSystemRuntime {
             uniforms.hasSpawnFunction = emitter.settings.spawnFunction == nil ? 0 : 1
             uniforms.hasCollisionFunction = emitter.settings.collisionFunction == nil ? 0 : 1
             uniforms.hasDeathFunction = emitter.settings.deathFunction == nil ? 0 : 1
+            uniforms.reportsCollisions = emitter.settings.reportsCollisions ? 1 : 0
+            uniforms.reportsDeaths = emitter.settings.reportsDeaths ? 1 : 0
+            uniforms.eventEmitterIndex = UInt32(emitterIndex)
             return FramePlan.Dispatch(
                 uniforms: uniforms,
                 threadCount: step.threadCount,

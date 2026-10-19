@@ -151,6 +151,15 @@ public final class ParticleSystemRuntime {
     var pendingEvents: [String] = []
     /// Monotonic GPU counters: collider hits, then particles entering trigger volumes.
     let triggerCounters: MTLBuffer
+    let eventCursor: MTLBuffer
+    let eventRecords: MTLBuffer
+    /// The sequence number of the last event read, so each event is reported once.
+    var lastEventSequence: UInt32 = 0
+    /// Events read at the start of the last `simulate`, oldest first. GPU work is read a frame or two after it runs,
+    /// so events arrive that late. Only emitters with `reportsCollisions` or `reportsDeaths` produce them.
+    public internal(set) var recentEvents: [ParticleEvent] = []
+    /// Events lost since the system was made, because more than `ParticleEvent.capacity` happened between reads.
+    public internal(set) var droppedEventCount = 0
     /// Live-particle counts, one slot per recent frame; see `aliveParticleCount`.
     let aliveCounters: MTLBuffer
     /// Frames planned so far; picks the alive-counter slot.
@@ -278,6 +287,14 @@ public final class ParticleSystemRuntime {
         triggerCounters.contents().initializeMemory(as: UInt8.self, repeating: 0, count: counterLength)
         triggerCounters.label = "Particle trigger counters"
         self.triggerCounters = triggerCounters
+        guard let eventCursor = device.makeBuffer(length: MemoryLayout<UInt32>.stride, options: .storageModeShared),
+              let eventRecords = device.makeBuffer(length: MemoryLayout<ParticleEventRecord>.stride * ParticleEvent.capacity, options: .storageModeShared) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        eventCursor.label = "Particle event cursor"
+        eventRecords.label = "Particle events"
+        self.eventCursor = eventCursor
+        self.eventRecords = eventRecords
         let aliveLength = Int(PARTICLE_ALIVE_COUNTER_SLOTS) * MemoryLayout<UInt32>.stride
         guard let aliveCounters = device.makeBuffer(length: aliveLength, options: .storageModeShared) else {
             throw CocoaError(.featureUnsupported)
@@ -477,6 +494,7 @@ public final class ParticleSystemRuntime {
         view: simd_float4x4? = nil
     ) throws -> some Element {
         // swiftlint:enable discouraged_optional_collection
+        readEvents()
         let plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
         try makeAttributesIfNeeded(for: plan)
         return try encode(plan, sorts: try sorts(view: view))
@@ -502,6 +520,8 @@ public final class ParticleSystemRuntime {
         let dispatches = plan.dispatches
         let volumeData = plan.triggerVolumes
         let triggerCounters = triggerCounters
+        let eventCursor = eventCursor
+        let eventRecords = eventRecords
         let aliveCounters = aliveCounters
         let placeholderMesh = placeholderMesh
         let kernel = try library.updateParticles as ComputeKernel
@@ -547,6 +567,8 @@ public final class ParticleSystemRuntime {
                 .parameter("subEmitters", values: dispatches[index].subEmitters)
                 .parameter("subEmitterUniforms", values: dispatches[index].subEmitterUniforms)
                 .parameter("triggerCounters", buffer: triggerCounters)
+                .parameter("eventCursor", buffer: eventCursor)
+                .parameter("events", buffer: eventRecords)
                 .parameter("aliveCounters", buffer: aliveCounters)
                 .parameter("triggerVolumes", values: volumeData.isEmpty ? [TriggerVolume.sphere(center: .zero, radius: 0).data] : volumeData)
             }

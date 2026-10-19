@@ -39,6 +39,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Point Cloud](#point-cloud)
 - [Fireflies](#fireflies)
 - [Butterfly Dust](#butterfly-dust)
+- [Paint Drops](#paint-drops)
 
 ## Fountain
 
@@ -243,3 +244,9 @@ Fireflies drift over a dark meadow, each blinking at its own rate. User Metal fu
 A butterfly emoji dissolves into colored dust that drifts away on the breeze. Shows emitting from an image: particles are born on its opaque pixels and take their colors.
 
 ![butterfly-dust](previews/butterfly-dust.webp)
+
+## Paint Drops
+
+Paint drops fall and splatter where they land. Each landing is reported back to the app as an event with its position (reportsCollisions), and the app bursts the splatter layer there (eventBursts).
+
+![paint-drops](previews/paint-drops.webp)

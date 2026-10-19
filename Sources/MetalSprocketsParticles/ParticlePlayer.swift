@@ -80,6 +80,7 @@ public final class ParticlePlayer {
         runtime.trackedObjects = system.trackedObjectPositions(at: time)
         let colliders = system.colliders(at: time, pointer: pointer)
         let transforms = system.transforms(at: time, pointer: pointer)
+        runtime.applyEventBursts(system.eventBursts)
         switch runtime.state {
         case .playing:
             time += deltaTime * max(runtime.speedFactor, 0)

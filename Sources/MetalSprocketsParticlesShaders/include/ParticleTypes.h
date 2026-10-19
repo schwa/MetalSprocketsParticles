@@ -264,7 +264,30 @@ typedef struct {
     uint32_t constrainsToPlane;
     simd_float3 planePoint;
     simd_float3 planeNormal;
+    // Nonzero to write ParticleEventRecords for collisions and deaths. eventEmitterIndex goes in each record.
+    uint32_t reportsCollisions;
+    uint32_t reportsDeaths;
+    uint32_t eventEmitterIndex;
 } SimulationUniforms;
+
+/// Records kept in the event ring; older ones are overwritten if the CPU falls behind.
+#define PARTICLE_EVENT_CAPACITY 4096
+
+typedef MS_ENUM(uint32_t, ParticleEventKind) {
+    ParticleEventKindCollision = 1,
+    ParticleEventKindDeath = 2,
+};
+
+/// One event, in world space. Written to slot (sequence - 1) % PARTICLE_EVENT_CAPACITY; `sequence` is written last so
+/// the CPU can tell a finished record from one still being written.
+typedef struct {
+    simd_float4 position;     // xyz, w = simulation time
+    simd_float4 velocity;     // xyz
+    ParticleEventKind kind;
+    uint32_t emitterIndex;
+    uint32_t colliderIndex;   // Collisions: index in the system's colliders. Deaths: UINT32_MAX.
+    uint32_t sequence;
+} ParticleEventRecord;
 
 /// Frames of live-particle counters kept so the CPU can read a finished frame's count while others are in flight.
 #define PARTICLE_ALIVE_COUNTER_SLOTS 5

@@ -2383,12 +2383,13 @@ Emit particles from the bright or opaque pixels of an image (a logo dissolving i
 ## 114: Particle events with data back to the app
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:m
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T02:15:40Z
+closed: 2026-10-19T02:15:40Z
 +++
 
 Triggers today are counts the CPU diffs. Add events that carry data from the GPU: where a particle hit a collider, how fast, which emitter, so game code can play sounds, leave decals, or spawn app objects at the hit (Niagara and VFX Graph output events). A small GPU ring buffer of event records read back a frame or two late, with a callback or polling API.
