@@ -2885,3 +2885,16 @@ created: 2026-10-19T11:57:41Z
 Use `xcb ci` to generate the CI rules. Metal 4 fails on GitHub runners, so use conditional compilation to work around it, the same way other MetalSprockets projects do.
 
 ---
+
+## 143: Add a stress-test demo with a huge particle count
+
++++
+status: new
+priority: medium
+kind: task
+created: 2026-10-19T12:03:12Z
++++
+
+Add a demo preset with a very large number of particles (millions), for performance testing and profiling.
+
+---
