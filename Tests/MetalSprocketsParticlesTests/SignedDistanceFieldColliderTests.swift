@@ -7,7 +7,7 @@ import simd
 import SwiftMesh
 import Testing
 
-/// `Collider.Shape.signedDistanceField`: a baked distance grid as a collider (#149). Collision comes in #150.
+/// `Collider.Shape.signedDistanceField`: a baked distance grid as a collider (#149), which particles collide with (#150).
 @Suite(.serialized, .requiresMetal4)
 struct SignedDistanceFieldColliderTests {
     /// A sphere's exact signed distance on a 9×7×5 grid (uneven, so axis mix-ups show), centered on `center`.
@@ -97,30 +97,96 @@ struct SignedDistanceFieldColliderTests {
         }
     }
 
-    /// Until #150, distance field colliders are skipped: particles fall through as if nothing were there.
-    @Test func particlesPassThroughForNow() throws {
-        func fall(colliders: [Collider]) throws -> [SIMD3<Float>] {
-            let runner = try Runner()
-            var emitter = ParticleEmitter()
-            emitter.shape = .point
-            emitter.position = [0, 1, 0]
-            emitter.velocity = .zero
-            emitter.velocitySpread = 0
-            emitter.gravity = [0, -9.8, 0]
-            emitter.lifetime = 10...10
-            emitter.birthRate = 0
-            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
-            runtime.colliders = colliders
-            runtime.burst(4)
-            for _ in 0..<60 {
-                try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))
+    /// An exact signed distance on a fine grid covering -extent...extent on every axis.
+    func field(extent: Float = 1, samples: Int = 41, distance: (SIMD3<Float>) -> Float) -> SignedDistanceField {
+        let spacing = 2 * extent / Float(samples - 1)
+        let origin = SIMD3<Float>(repeating: -extent)
+        var values: [Float] = []
+        values.reserveCapacity(samples * samples * samples)
+        for z in 0..<samples {
+            for y in 0..<samples {
+                for x in 0..<samples {
+                    values.append(distance(origin + spacing * SIMD3<Float>(Float(x), Float(y), Float(z))))
+                }
             }
-            let pointer = runtime.buffer.contents().bindMemory(to: Particle.self, capacity: 4)
-            return (0..<4).map { SIMD3(pointer[$0].position.x, pointer[$0].position.y, pointer[$0].position.z) }
         }
-        let free = try fall(colliders: [])
-        let throughField = try fall(colliders: [.signedDistanceField(sphereField())])
-        #expect(free == throughField)
-        #expect(free.allSatisfy { $0.y < -2 })
+        return SignedDistanceField(origin: origin, spacing: SIMD3(repeating: spacing), resolution: SIMD3(repeating: samples), values: values)
+    }
+
+    /// Where particles end after falling from `start` with `velocity` for a second, all four on the same path.
+    func land(
+        on colliders: [Collider], from start: SIMD3<Float> = [0, 1.5, 0], velocity: SIMD3<Float> = .zero, radius: Float = 0, categoryMask: UInt32 = .max
+    ) throws -> [SIMD3<Float>] {
+        let runner = try Runner()
+        var emitter = ParticleEmitter()
+        emitter.shape = .point
+        emitter.position = start
+        emitter.velocity = velocity
+        emitter.velocitySpread = 0
+        emitter.gravity = [0, -9.8, 0]
+        emitter.lifetime = 10...10
+        emitter.birthRate = 0
+        emitter.restitution = 0
+        emitter.friction = 1
+        emitter.collisionRadius = radius
+        emitter.categoryMask = categoryMask
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
+        runtime.colliders = colliders
+        runtime.burst(4)
+        for _ in 0..<60 {
+            try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))
+        }
+        let pointer = runtime.buffer.contents().bindMemory(to: Particle.self, capacity: 4)
+        return (0..<4).map { SIMD3(pointer[$0].position.x, pointer[$0].position.y, pointer[$0].position.z) }
+    }
+
+    var ball: SignedDistanceField {
+        field { simd_length($0) - 0.5 }
+    }
+
+    /// One grid cell: trilinear filtering of an exact distance is close to the surface, not on it.
+    let cell: Float = 2.0 / 40
+
+    @Test func particlesRestOnTheSurface() throws {
+        let landed = try land(on: [.signedDistanceField(ball)])
+        #expect(landed.allSatisfy { abs($0.y - 0.5) < cell })
+    }
+
+    @Test func theColliderIsPlacedByItsCenterAndRotation() throws {
+        // A flat 0.6 × 0.1 × 0.6 slab, turned 90° about x so it stands up, then moved: from above it is 0.6 deep in
+        // y around y = 1 - 0.3, so particles rest on top at y = 1.3.
+        let slab = field { point in
+            let q = abs(point) - SIMD3<Float>(0.3, 0.05, 0.3)
+            return simd_length(simd_max(q, .zero)) + min(max(q.x, max(q.y, q.z)), 0)
+        }
+        let collider = Collider.signedDistanceField(slab, center: [2, 1, 0], rotation: simd_quatf(angle: .pi / 2, axis: [1, 0, 0]))
+        let landed = try land(on: [collider], from: [2, 2.5, 0])
+        #expect(landed.allSatisfy { abs($0.y - 1.3) < cell })
+    }
+
+    /// Faster than a cell per step (`45` m/s is 0.75 per step against a 0.1-thick wall): caught by sampling along the
+    /// step, not left to tunnel through.
+    @Test func fastParticlesDoNotPassThroughAThinWall() throws {
+        let wall = field { abs($0.y) - 0.05 }
+        let landed = try land(on: [.signedDistanceField(wall)], from: [0, 0.9, 0], velocity: [0, -45, 0])
+        #expect(landed.allSatisfy { $0.y > 0 && $0.y < 0.05 + cell })
+    }
+
+    @Test func collisionRadiusGrowsTheSurface() throws {
+        let landed = try land(on: [.signedDistanceField(ball)], radius: 0.1)
+        #expect(landed.allSatisfy { abs($0.y - 0.6) < cell })
+    }
+
+    @Test func categoryMasksApply() throws {
+        let landed = try land(on: [.signedDistanceField(ball, categoryBitMask: 0b10)], categoryMask: 0b01)
+        #expect(landed.allSatisfy { $0.y < -2 })
+    }
+
+    /// Outside the grid nothing collides, even where the field is negative at the grid's border (a half-space below
+    /// y = 0), which clamped sampling would otherwise carry outside.
+    @Test func nothingCollidesOutsideTheGrid() throws {
+        let ground = field { $0.y }
+        #expect(try land(on: [.signedDistanceField(ground)]).allSatisfy { abs($0.y) < cell })
+        #expect(try land(on: [.signedDistanceField(ground)], from: [1.5, 1.5, 0]).allSatisfy { $0.y < -2 })
     }
 }

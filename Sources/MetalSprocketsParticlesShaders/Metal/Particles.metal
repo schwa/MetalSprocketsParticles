@@ -419,6 +419,77 @@ static void collide(thread float3 &position, thread float3 &velocity, ColliderDa
     }
 }
 
+// Signed distance field colliders. Grid samples sit on cell corners, so sample i of n is at texture coordinate
+// (i + 0.5) / n; filtering between them is hardware trilinear.
+constexpr sampler fieldSampler(coord::normalized, filter::linear, address::clamp_to_edge);
+
+static float3 fieldLocal(ColliderData c, float3 world) {
+    return rotate(float4(-c.rotation.xyz, c.rotation.w), world - c.center);
+}
+
+// Distance at a local point, grown by c.radius (the particle's collision radius); a large value outside the grid, so
+// nothing there collides.
+static float fieldDistance(texture3d<float> field, ColliderData c, float3 local) {
+    if (any(local < c.fieldMin) || any(local > c.fieldMax)) {
+        return INFINITY;
+    }
+    float3 size = float3(field.get_width(), field.get_height(), field.get_depth());
+    float3 uvw = ((local - c.fieldMin) / c.fieldSpacing + 0.5) / size;
+    return field.sample(fieldSampler, uvw).r - c.radius;
+}
+
+// Outward unit normal in world space, from central differences one sample apart.
+static float3 fieldNormal(texture3d<float> field, ColliderData c, float3 local) {
+    float3 h = c.fieldSpacing;
+    float3 size = float3(field.get_width(), field.get_height(), field.get_depth());
+    float3 uvw = ((local - c.fieldMin) / c.fieldSpacing + 0.5) / size;
+    float3 step = 1 / size;
+    float3 gradient = float3(
+        field.sample(fieldSampler, uvw + float3(step.x, 0, 0)).r - field.sample(fieldSampler, uvw - float3(step.x, 0, 0)).r,
+        field.sample(fieldSampler, uvw + float3(0, step.y, 0)).r - field.sample(fieldSampler, uvw - float3(0, step.y, 0)).r,
+        field.sample(fieldSampler, uvw + float3(0, 0, step.z)).r - field.sample(fieldSampler, uvw - float3(0, 0, step.z)).r
+    ) / (2 * h);
+    float length = metal::length(gradient);
+    return rotate(c.rotation, length > 1e-6 ? gradient / length : float3(0, 1, 0));
+}
+
+// Pushes a particle that ends inside the field out along the normal. One that ends outside but crossed the surface
+// during the step (`start` to `position`, in the collider's frame now) is caught by sampling along the step, about
+// one sample per cell, then refined to the surface: fast particles do not pass through thin walls.
+static void fieldContact(texture3d<float> field, ColliderData c, float3 start, thread float3 &position, thread float3 &velocity, float restitution, float friction, thread bool &hit) {
+    float3 local = fieldLocal(c, position);
+    float distance = fieldDistance(field, c, local);
+    if (distance < 0) {
+        collide(position, velocity, c, fieldNormal(field, c, local), -distance, restitution, friction, hit);
+        return;
+    }
+    float3 startLocal = fieldLocal(c, start);
+    float cells = metal::length((local - startLocal) / c.fieldSpacing);
+    if (cells < 1) {
+        return;
+    }
+    int steps = int(min(ceil(cells), 32.0));
+    float previous = 0;
+    for (int index = 1; index < steps; index++) {
+        float t = float(index) / float(steps);
+        if (fieldDistance(field, c, mix(startLocal, local, t)) < 0) {
+            // Bisect between the last outside sample and this inside one.
+            float low = previous;
+            float high = t;
+            for (int refine = 0; refine < 5; refine++) {
+                float middle = (low + high) / 2;
+                if (fieldDistance(field, c, mix(startLocal, local, middle)) < 0) { high = middle; } else { low = middle; }
+            }
+            float3 contact = mix(startLocal, local, low);
+            float3 normal = fieldNormal(field, c, contact);
+            position = c.center + rotate(c.rotation, contact) + normal * 1e-4;
+            collide(position, velocity, c, normal, 0, restitution, friction, hit);
+            return;
+        }
+        previous = t;
+    }
+}
+
 // Swept tests for a particle that ended a step outside a collider but crossed it during the step (fast particles, thin
 // or fast colliders). `start` is the particle's start in the collider's current frame. On a hit, `t` is the fraction of
 // the step at entry and `normal` the outward normal there. Planes are half-spaces and never need this.
@@ -770,6 +841,7 @@ kernel void updateParticles(
     constant float4 *birthColorCurve [[buffer(29)]],
     constant DepthCollisionData &depthCollision [[buffer(26)]],
     texture2d<float, access::read> sceneDepth [[texture(0)]],
+    array<texture3d<float>, PARTICLE_MAX_SIGNED_DISTANCE_FIELDS> signedDistanceFields [[texture(1)]],
     device float4 *trails [[buffer(27)]],
     const device float4 *steering [[buffer(28)]],
     uint localID [[thread_position_in_grid]]
@@ -879,11 +951,6 @@ kernel void updateParticles(
         bool hitBefore = hit;
         hit = false;
         ColliderData c = colliders[i];
-        if (c.kind == ParticleColliderKindSignedDistanceField) {
-            // Not collided with yet; skip before the sweeps, which would treat it as a capsule.
-            hit = hitBefore;
-            continue;
-        }
         if (uniforms.collisionRadius > 0) {
             // Particles as spheres: grow the collider instead, so every test below (and the sweeps) stays the same.
             float r = uniforms.collisionRadius;
@@ -913,6 +980,14 @@ kernel void updateParticles(
                 else { normal.z = sign(local.z); penetration = depth.z; }
                 collide(position, velocity, c, rotate(c.rotation, normal), penetration, restitution, friction, hit);
             }
+        } else if (c.kind == ParticleColliderKindSignedDistanceField) {
+            if (c.fieldIndex < PARTICLE_MAX_SIGNED_DISTANCE_FIELDS) {
+                // In the collider's frame now: where the particle started is shifted by the collider's motion, as
+                // for the sweeps below.
+                texture3d<float> field = signedDistanceFields[c.fieldIndex];
+                float3 start = startPosition + c.velocity * dt;
+                fieldContact(field, c, start, position, velocity, restitution, friction, hit);
+            }
         } else if (c.kind == ParticleColliderKindCapsule) {
             float3 start = c.center;
             float3 axis = c.end - start;
@@ -924,7 +999,7 @@ kernel void updateParticles(
                 collide(position, velocity, c, offset / distance, c.radius - distance, restitution, friction, hit);
             }
         }
-        if (!hit && c.kind != ParticleColliderKindPlane) {
+        if (!hit && c.kind != ParticleColliderKindPlane && c.kind != ParticleColliderKindSignedDistanceField) {
             // Crossed during the step? Test in the collider's current frame: where the particle started, relative to
             // where the collider is now (the collider moved by velocity * dt, so the start is shifted the same way).
             float3 start = startPosition + c.velocity * dt;

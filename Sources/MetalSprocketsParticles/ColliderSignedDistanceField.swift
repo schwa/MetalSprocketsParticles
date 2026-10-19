@@ -1,4 +1,5 @@
 import Metal
+import MetalSprocketsParticlesShaders
 import SwiftMesh
 
 /// A signed distance field collider's grid on the GPU.
@@ -30,6 +31,24 @@ extension ParticleSystemRuntime {
             }
         }
         signedDistanceFieldTextures = kept
+    }
+
+    /// Where a distance field collider's texture is in the simulation's field textures; out of range (so the kernel
+    /// skips it) for other colliders and fields past `PARTICLE_MAX_SIGNED_DISTANCE_FIELDS`.
+    func signedDistanceFieldSlot(for collider: Collider) -> UInt32 {
+        guard case let .signedDistanceField(field, _, _) = collider.shape,
+              let index = signedDistanceFieldTextures.firstIndex(where: { $0.field == field }),
+              index < Int(PARTICLE_MAX_SIGNED_DISTANCE_FIELDS) else {
+            return .max
+        }
+        return UInt32(index)
+    }
+
+    /// The field textures to bind, one per slot; unused slots get `placeholder`.
+    func signedDistanceFieldTextureSlots(placeholder: MTLTexture) -> [MTLTexture] {
+        (0..<Int(PARTICLE_MAX_SIGNED_DISTANCE_FIELDS)).map { index in
+            index < signedDistanceFieldTextures.count ? signedDistanceFieldTextures[index].texture : placeholder
+        }
     }
 
     /// The texture for `field`, once `updateSignedDistanceFieldTextures(for:)` has seen a collider using it.

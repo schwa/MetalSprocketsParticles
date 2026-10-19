@@ -3100,13 +3100,14 @@ Part of #2.
 ## 150: Particles collide with SDF colliders
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:collision, effort:m, subtask
 depends: 149
 created: 2026-10-19T15:24:48Z
-updated: 2026-10-19T15:24:49Z
+updated: 2026-10-19T20:21:22Z
+closed: 2026-10-19T20:21:22Z
 +++
 
 In the simulation kernel, sample each SDF collider's texture (trilinear, in the collider's local space) and push particles with negative distance out along the gradient normal, with the emitter's restitution and friction, like the analytic colliders. Fast particles that cross the surface within a step are caught by checking the start and end of the step (or a few steps along it). Category masks and collisionRadius (inflate by subtracting it from the distance) apply.
@@ -3114,6 +3115,8 @@ In the simulation kernel, sample each SDF collider's texture (trilinear, in the 
 Acceptance: particles dropped on an SDF sphere rest on its surface (within a cell); fast particles do not pass through a thin SDF wall; masks and radius behave as with other colliders.
 
 Part of #2. Depends on the SDF collider type.
+
+- `2026-10-19T20:21:22Z`: Done: the simulation kernel binds up to PARTICLE_MAX_SIGNED_DISTANCE_FIELDS (8) field textures as array<texture3d<float>, 8> (placeholder 1x1x1 in unused slots); ColliderData carries the slot (fieldIndex) and the grid's local bounds and spacing. Contact: sample trilinear (hardware, texel centers at (i + 0.5) / n), subtract collision radius (c.radius), push out by the penetration along the gradient normal (central differences one sample apart), then the usual collide() response. Fast particles: when the end is outside, sample along the step (about one per cell, up to 32) in the collider's current frame and bisect to the surface. Outside the grid nothing collides. Tests: rest on a baked sphere within a cell, placement by center and rotation (a standing slab), 45 m/s through a 0.1-thick wall, collision radius, category mask, nothing outside the grid (half-space negative at the border). Mutation check: disabling the sub-steps or the bounds check fails the wall and outside-grid tests. Stress Test bench unchanged (~5.5 ms frame).
 
 ---
 

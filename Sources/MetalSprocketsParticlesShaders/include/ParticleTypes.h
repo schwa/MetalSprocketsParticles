@@ -399,6 +399,9 @@ typedef MS_ENUM(uint32_t, ParticleColliderKind) {
     ParticleColliderKindSignedDistanceField = 5,
 };
 
+// Distance field colliders the simulation samples at once; more are ignored.
+#define PARTICLE_MAX_SIGNED_DISTANCE_FIELDS 8
+
 // World space. Fields a kind does not use are zero.
 typedef struct {
     ParticleColliderKind kind;
@@ -415,6 +418,12 @@ typedef struct {
     // velocity + angularVelocity x (point - pivot).
     simd_float3 angularVelocity;
     simd_float3 pivot;
+    // Signed distance field: its slot in the simulation's field textures, and its grid's local bounds (first and last
+    // samples) and sample spacing.
+    uint32_t fieldIndex;
+    simd_float3 fieldMin;
+    simd_float3 fieldMax;
+    simd_float3 fieldSpacing;
 } ColliderData;
 
 /// Mirrored by the Swift ForceField.

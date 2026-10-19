@@ -59,6 +59,8 @@ extension ParticleSystemRuntime {
         if let colliders {
             self.colliders = colliders
         }
+        // Before colliderData, which looks up each distance field's texture slot.
+        try updateSignedDistanceFieldTextures(for: self.colliders)
         if let transforms {
             for (emitter, transform) in zip(emitters, transforms) {
                 emitter.transform = transform
@@ -133,6 +135,7 @@ extension ParticleSystemRuntime {
             return current.enumerated().map { index, collider in
                 var data = ColliderData(collider)
                 data.triggerIndex = UInt32(index)
+                data.fieldIndex = signedDistanceFieldSlot(for: collider)
                 return data
             }
         }
@@ -141,6 +144,7 @@ extension ParticleSystemRuntime {
             var data = ColliderData(pair.1, velocity: motion.linear)
             data.angularVelocity = motion.angular
             data.triggerIndex = UInt32(index)
+            data.fieldIndex = signedDistanceFieldSlot(for: pair.1)
             return data
         }
     }

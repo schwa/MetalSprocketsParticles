@@ -276,6 +276,8 @@ public final class ParticleSystemRuntime {
     private let sampler: MTLSamplerState
     /// Bound in place of a missing texture; the shader ignores it.
     private let placeholderTexture: MTLTexture
+    /// Bound in unused distance field slots; colliders never point at them.
+    private let placeholderFieldTexture: MTLTexture
     /// Bound in place of a missing emitter mesh; the counts in uniforms keep it unused.
     private let placeholderMesh: EmitterMesh
     private let sortKernels: ParticleSortKernels
@@ -326,6 +328,14 @@ public final class ParticleSystemRuntime {
         }
         placeholderTexture.label = "Particle placeholder texture"
         self.placeholderTexture = placeholderTexture
+        let fieldDescriptor = MTLTextureDescriptor()
+        fieldDescriptor.textureType = .type3D
+        fieldDescriptor.pixelFormat = .r32Float
+        guard let placeholderFieldTexture = device.makeTexture(descriptor: fieldDescriptor) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        placeholderFieldTexture.label = "Particle placeholder distance field"
+        self.placeholderFieldTexture = placeholderFieldTexture
         placeholderMesh = try EmitterMesh(device: device, positions: [], indices: [])
         sortKernels = try ParticleSortKernels(library: library)
         guard let placeholderSortRecords = device.makeBuffer(length: 16, options: .storageModePrivate) else {
@@ -555,7 +565,6 @@ public final class ParticleSystemRuntime {
         // swiftlint:enable discouraged_optional_collection
         readEvents()
         var plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
-        try updateSignedDistanceFieldTextures(for: colliders ?? self.colliders)
         let trailStride = UInt32(try makeTrailsIfNeeded())
         for index in plan.dispatches.indices {
             plan.dispatches[index].uniforms.trailStride = trailStride
@@ -606,6 +615,7 @@ public final class ParticleSystemRuntime {
         let flockingBuffers = flockingBuffers
         let steeringBuffer = flockingBuffers?.steering ?? placeholderMesh.vertices
         let depthTexture = collisionDepth?.depth.texture ?? placeholderTexture
+        let fieldTextures = signedDistanceFieldTextureSlots(placeholder: placeholderFieldTexture)
         let eventRecords = eventRecords
         let aliveCounters = aliveCounters
         let placeholderMesh = placeholderMesh
@@ -665,6 +675,7 @@ public final class ParticleSystemRuntime {
                 .parameter("birthColorCurve", values: dispatches[index].birthColorCurve)
                 .parameter("depthCollision", value: depthCollision)
                 .parameter("sceneDepth", texture: depthTexture)
+                .parameter("signedDistanceFields", textures: fieldTextures)
                 .parameter("trails", buffer: trailBuffer)
                 .parameter("steering", buffer: steeringBuffer)
                 .parameter("aliveCounters", buffer: aliveCounters)

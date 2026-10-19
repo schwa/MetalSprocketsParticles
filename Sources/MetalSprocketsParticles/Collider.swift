@@ -162,11 +162,15 @@ extension ColliderData {
             center = start
             self.end = end
             self.radius = radius
-        case let .signedDistanceField(_, center, rotation):
-            // The grid itself is a 3D texture the runtime binds separately.
+        case let .signedDistanceField(field, center, rotation):
+            // The grid itself is a 3D texture the runtime binds separately, at fieldIndex.
             kind = .signedDistanceField
             self.center = center
             self.rotation = simd_normalize(rotation).vector
+            fieldMin = field.origin
+            fieldMax = field.origin + field.spacing * SIMD3<Float>(field.resolution &- 1)
+            fieldSpacing = field.spacing
+            fieldIndex = .max
         }
     }
 }
