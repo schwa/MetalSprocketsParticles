@@ -1098,12 +1098,13 @@ Defaults keep today's behavior. Add tests for masked vs unmasked particles and e
 ## 55: Consider Canvas3D for debug wireframes
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: effort:m, area:rendering, deferred
 created: 2026-10-18T01:45:02Z
-updated: 2026-10-18T18:50:43Z
+updated: 2026-10-19T19:00:46Z
+closed: 2026-10-19T19:00:46Z
 +++
 
 Debug wireframes (DebugWireframes.swift, ColliderWireframe.swift) use a hand-rolled WireframeBuilder and a custom line-list RenderPipeline (wireframeVertex/wireframeFragment), one flat color per kind.
@@ -1871,12 +1872,13 @@ README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace
 ## 93: Move DEVELOPMENT_TEAM out of xcodeproj into gitignored Local.xcconfig
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: deferred, area:tooling, effort:xs
 created: 2026-10-18T19:03:42Z
-updated: 2026-10-19T00:16:31Z
+updated: 2026-10-19T19:00:50Z
+closed: 2026-10-19T19:00:50Z
 +++
 
 The demo xcodeproj has the developer team ID hardcoded in project.pbxproj. Other people must edit it to build.
