@@ -54,6 +54,7 @@ preset's camera). Regenerate them with `Scripts/make-demos.sh`.
 - [Pachinko](#pachinko)
 - [Whirlpool](#whirlpool)
 - [Sand Funnel](#sand-funnel)
+- [Spinning Teapot](#spinning-teapot)
 
 ## Fountain
 
@@ -348,3 +349,9 @@ Shows: 2D mode with force fields in the plane. A vortex and an attractor wind tw
 Shows: 2D mode with rotated box colliders. Sand pours into a funnel, slides down its sides, and trickles through the gap in a thin stream.
 
 ![sand-funnel](previews/sand-funnel.webp)
+
+## Spinning Teapot
+
+Shows: a collider baked from a mesh (a SwiftMesh teapot as a signed distance field) that turns each frame, as a scene-graph node would. Sand rains on the spinning teapot and is flung off its spout and handle.
+
+![spinning-teapot](previews/spinning-teapot.webp)

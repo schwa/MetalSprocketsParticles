@@ -24,13 +24,14 @@ Planes, spheres and boxes affect particles but are invisible. Particles are also
 ## 2: No collision with arbitrary meshes
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: effort:xl, area:collision, has-subtasks
 depends: 149, 150, 151, 152
 created: 2026-10-17T13:27:25Z
-updated: 2026-10-19T15:24:49Z
+updated: 2026-10-19T20:38:52Z
+closed: 2026-10-19T20:38:52Z
 +++
 
 Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes need collision with mesh geometry, e.g. via a baked SDF volume or the scene depth buffer.
@@ -45,6 +46,7 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 - `2026-10-19T00:16:31Z`: Related: #120 (screen-space collision with the scene depth buffer covers on-screen geometry cheaply; mesh/SDF colliders cover the rest).
 - `2026-10-19T15:23:09Z`: Un-deferred (user). The CPU geometry goes in SwiftMesh: #176 public Mesh bounds, #177 BVH, #178 closest point and distance, #179 winding-number inside test, #180 signed distance and baking an SDF grid. This issue keeps the GPU side: an SDF collider (3D texture, bounds, transform), sampling in the kernel, baking from a SwiftMesh mesh through #180, and per-frame transforms for scene-graph nodes.
 - `2026-10-19T15:24:49Z`: Split into subtasks, in order: #149 SDF collider type, #150 collision in the kernel, #151 baking from SwiftMesh meshes (also needs SwiftMesh #180), #152 moving SDF colliders for scene-graph nodes.
+- `2026-10-19T20:38:51Z`: Done through #149-#152: Collider.Shape.signedDistanceField (a SwiftMesh SignedDistanceField, saved in effect files), collision in the kernel with sub-stepping for fast particles, baking from SwiftMesh meshes (Collider.signedDistanceField(mesh:resolution:padding:...)), and moving or turning fields with Collider.placed(by:) for scene-graph nodes. Not done: scale in placed(by:) (bake at draw size), and more than eight distance field colliders at once.
 
 ---
 
@@ -3147,13 +3149,14 @@ Part of #2. Depends on the SDF collider type and SwiftMesh #180.
 ## 152: Moving SDF colliders for scene-graph nodes
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:collision, effort:s, subtask
 depends: 150
 created: 2026-10-19T15:24:48Z
-updated: 2026-10-19T15:24:49Z
+updated: 2026-10-19T20:38:51Z
+closed: 2026-10-19T20:38:51Z
 +++
 
 Let SDF colliders take a new transform each frame (translation and rotation), with velocity and angular velocity from the motion between frames, so moving and spinning meshes push particles like the other colliders. This is the path MetalSprocketsSceneGraph needs for node geometry. Add a sample preset with a moving mesh collider.
@@ -3161,6 +3164,8 @@ Let SDF colliders take a new transform each frame (translation and rotation), wi
 Acceptance: a moving SDF collider carries resting particles along; a spinning one flings them; the preset has a preview and golden image.
 
 Part of #2. Depends on particles colliding with SDF colliders.
+
+- `2026-10-19T20:38:51Z`: Done: distance field colliders get angular velocity from rotation changes (like boxes), on top of the velocity from center changes, so turning meshes fling particles. Collider.placed(by:) takes a node's world matrix (translation and rotation; scale dropped, since baked distances do not scale) for hosts that pass colliders to simulate(colliders:) each frame. Tests: a sliding field carries resting particles; a spinning one flings them (and a still one does not); placed(by:) decomposes a scaled, rotated, moved matrix. Removing the distance field case from motion(from:) fails the spin test. Preset Spinning Teapot: a 32-sample baked SwiftMesh teapot (77 KB JSON) spun by ColliderSpin under falling sand, with golden, preview, and Demos.md section.
 
 ---
 

@@ -97,14 +97,15 @@ extension Collider {
     }
 
     /// Linear velocity and angular velocity (axis times radians per second) implied by moving from `previous`. Boxes
-    /// turn with their rotation and capsules with their direction, the shorter way round; other shapes do not turn.
+    /// and distance fields turn with their rotation and capsules with their direction, the shorter way round; other
+    /// shapes do not turn.
     func motion(from previous: Collider, deltaTime: Float) -> (linear: SIMD3<Float>, angular: SIMD3<Float>) {
         guard deltaTime > 0 else {
             return (.zero, .zero)
         }
         var angular: SIMD3<Float> = .zero
         switch (previous.shape, shape) {
-        case let (.box(_, _, oldRotation), .box(_, _, rotation)):
+        case let (.box(_, _, oldRotation), .box(_, _, rotation)), let (.signedDistanceField(_, _, oldRotation), .signedDistanceField(_, _, rotation)):
             var delta = simd_normalize(rotation * simd_normalize(oldRotation).inverse)
             if delta.real < 0 {
                 delta = simd_quatf(vector: -delta.vector)

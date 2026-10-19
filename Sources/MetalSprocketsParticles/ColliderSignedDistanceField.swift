@@ -37,6 +37,32 @@ public extension Collider {
     }
 }
 
+public extension Collider {
+    /// The collider placed by a node's world transform, for colliders that follow scene-graph nodes: a box's or
+    /// distance field's center and rotation come from `transform`'s translation and rotation; other shapes move there but do not turn. Rigid transforms only:
+    /// scale is dropped, since a baked grid's distances do not scale with it; bake at the size you draw. Pass the
+    /// result to `ParticleSystemRuntime.simulate(colliders:)` each frame; the change since the last frame becomes
+    /// the collider's velocity and spin, so moving and turning nodes push and fling particles.
+    func placed(by transform: simd_float4x4) -> Self {
+        let columns = transform.columns
+        let basis = simd_float3x3(
+            simd_normalize(SIMD3(columns.0.x, columns.0.y, columns.0.z)),
+            simd_normalize(SIMD3(columns.1.x, columns.1.y, columns.1.z)),
+            simd_normalize(SIMD3(columns.2.x, columns.2.y, columns.2.z))
+        )
+        let rotation = simd_normalize(simd_quatf(basis))
+        let translation = SIMD3(columns.3.x, columns.3.y, columns.3.z)
+        switch shape {
+        case let .signedDistanceField(field, _, _):
+            return Self(.signedDistanceField(field, center: translation, rotation: rotation), categoryBitMask: categoryBitMask)
+        case let .box(_, halfExtents, _):
+            return Self(.box(center: translation, halfExtents: halfExtents, rotation: rotation), categoryBitMask: categoryBitMask)
+        default:
+            return centered(at: translation)
+        }
+    }
+}
+
 /// A signed distance field collider's grid on the GPU.
 struct SignedDistanceFieldTexture {
     var field: SignedDistanceField

@@ -26,6 +26,73 @@ struct SignedDistanceFieldColliderTests {
         return SignedDistanceField(origin: origin, spacing: spacing, resolution: resolution, values: values)
     }
 
+    // MARK: Moving with scene-graph nodes (#152)
+
+    /// A flat 1.2 × 0.1 × 1.2 slab, for particles to rest on.
+    var slab: SignedDistanceField {
+        field { point in
+            let q = abs(point) - SIMD3<Float>(0.6, 0.05, 0.6)
+            return simd_length(simd_max(q, .zero)) + min(max(q.x, max(q.y, q.z)), 0)
+        }
+    }
+
+    /// Particles dropped onto a slab at `start`, then the slab placed each frame by `transform(frame)`, as a host
+    /// following a scene-graph node would. Returns the particles' final positions.
+    func ride(from start: SIMD3<Float>, frames: Int = 90, transform: (Int) -> simd_float4x4) throws -> [SIMD3<Float>] {
+        let runner = try Runner()
+        var emitter = ParticleEmitter()
+        emitter.shape = .point
+        emitter.position = start
+        emitter.velocity = .zero
+        emitter.velocitySpread = 0
+        emitter.gravity = [0, -9.8, 0]
+        emitter.lifetime = 10...10
+        emitter.birthRate = 0
+        emitter.restitution = 0
+        emitter.friction = 1
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
+        let collider = Collider.signedDistanceField(slab)
+        runtime.burst(4)
+        for frame in 0..<frames {
+            try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0, colliders: [collider.placed(by: transform(frame))]))
+        }
+        let pointer = runtime.buffer.contents().bindMemory(to: Particle.self, capacity: 4)
+        return (0..<4).map { SIMD3(pointer[$0].position.x, pointer[$0].position.y, pointer[$0].position.z) }
+    }
+
+    /// Still for half a second while the particles land, then sliding in x at 0.6 m/s: the particles go with it.
+    @Test func aMovingFieldCarriesParticles() throws {
+        let landed = try ride(from: [0, 0.5, 0]) { frame in
+            let x = Float(max(frame - 30, 0)) / 60 * 0.6
+            return simd_float4x4(translation: [x, 0, 0])
+        }
+        #expect(landed.allSatisfy { abs($0.x - 0.6) < 0.05 && abs($0.y - 0.05) < cell })
+    }
+
+    /// Spinning fast about y after the particles land 0.4 from the axis: they are flung off the edge and fall.
+    @Test func aSpinningFieldFlingsParticles() throws {
+        let landed = try ride(from: [0.4, 0.5, 0]) { frame in
+            let angle = Float(max(frame - 30, 0)) / 60 * 4 * .pi
+            return simd_float4x4(simd_quatf(angle: angle, axis: [0, 1, 0]))
+        }
+        #expect(landed.allSatisfy { $0.y < -0.5 })
+        // Not spinning, they stay put: the throw comes from the spin.
+        let still = try ride(from: [0.4, 0.5, 0]) { _ in matrix_identity_float4x4 }
+        #expect(still.allSatisfy { abs($0.y - 0.05) < cell })
+    }
+
+    /// A node's world matrix gives the center and rotation; scale is dropped, since baked distances do not scale.
+    @Test func placedByTakesTranslationAndRotation() {
+        let rotation = simd_quatf(angle: 0.7, axis: simd_normalize([1, 2, 3]))
+        let transform = simd_float4x4(translation: [1, 2, 3]) * simd_float4x4(rotation) * simd_float4x4(scale: [2, 2, 2])
+        guard case let .signedDistanceField(_, center, placedRotation) = Collider.signedDistanceField(slab).placed(by: transform).shape else {
+            Issue.record("Not a distance field")
+            return
+        }
+        #expect(simd_distance(center, [1, 2, 3]) < 1e-5)
+        #expect(abs(abs(simd_dot(placedRotation.vector, rotation.vector)) - 1) < 1e-5)
+    }
+
     // MARK: Baking from meshes (#151)
 
     @Test func aBakedCubeMatchesItsExactDistance() throws {
