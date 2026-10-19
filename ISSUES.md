@@ -2894,36 +2894,46 @@ The demo viewport always shows its overlays (the particle count view, ParticleCo
 ## 140: 2D mode: particles all blob in the middle
 
 +++
-status: new
+status: open
 priority: medium
 kind: bug
+labels: area:demo, effort:s
 created: 2026-10-19T11:56:35Z
+updated: 2026-10-19T13:07:05Z
 +++
 
 In 2D mode, particles clump together in the center of the view instead of spreading out. Screenshot: /Users/schwa/Library/Application Support/CleanShot/media/media_p1yXCD4QzP/Screenshot 2026-10-19 at 07.56.00@2x.png
+
+- `2026-10-19T13:07:05Z`: Triage: this is the 2D Overlay demo window (OverlayDemoView). The screenshot shows Celebrate's confetti as a small blob just above the button instead of a burst across the view. Not investigated yet; a guess to check first: the overlay camera works in points, so emitter speeds, spread, and sizes meant for world units are tiny there. Related: #141 (one 2D toggle).
 
 ---
 
 ## 141: Make 2D mode a single toggle
 
 +++
-status: new
+status: open
 priority: medium
 kind: enhancement
+labels: area:editor, effort:m
 created: 2026-10-19T11:56:36Z
+updated: 2026-10-19T13:07:05Z
 +++
 
 2D mode should be one toggle. Turning it on should change rendering, z limits, the camera, and any other related settings together.
+
+- `2026-10-19T13:07:05Z`: Related: #140 (2D overlay confetti blob). Builds on the overlay camera, ParticleCamera.overlay, and ParticleEmitter.constrainsToPlane (#99, #107).
 
 ---
 
 ## 142: Add CI using xcb ci
 
 +++
-status: new
+status: open
 priority: medium
 kind: task
+labels: area:tooling, effort:m
 created: 2026-10-19T11:57:41Z
+updated: 2026-10-19T13:07:05Z
 +++
 
 Use `xcb ci` to generate the CI rules. Metal 4 fails on GitHub runners, so use conditional compilation to work around it, the same way other MetalSprockets projects do.
@@ -2933,36 +2943,46 @@ Use `xcb ci` to generate the CI rules. Metal 4 fails on GitHub runners, so use c
 ## 143: Add a stress-test demo with a huge particle count
 
 +++
-status: new
+status: open
 priority: medium
 kind: task
+labels: area:demo, effort:s
 created: 2026-10-19T12:03:12Z
+updated: 2026-10-19T13:07:05Z
 +++
 
 Add a demo preset with a very large number of particles (millions), for performance testing and profiling.
+
+- `2026-10-19T13:07:05Z`: Related: #131 (particles-bench --presets would time it against the frame budget).
 
 ---
 
 ## 144: Option to use reverse Z in depth buffers
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
+labels: area:rendering, effort:m
 created: 2026-10-19T12:09:39Z
+updated: 2026-10-19T13:07:05Z
 +++
 
 Add an option to render with reverse Z (clear depth to 0, compare greater, swap near/far in the projection) for better depth precision at distance.
+
+- `2026-10-19T13:07:05Z`: Touches every depth consumer: SceneDepth and its depth pass, solid colliders, soft particles (the depthUnproject math), and scene depth collision (#120, which compares particle depth against the stored value). Default stays forward Z so goldens hold.
 
 ---
 
 ## 145: Expand Methodology.md: issue subsystem and CLI rendering
 
 +++
-status: new
+status: open
 priority: medium
 kind: documentation
+labels: area:docs,effort:s
 created: 2026-10-19T12:10:30Z
+updated: 2026-10-19T13:07:05Z
 +++
 
 Documentation/Methodology.md should say more about the issues subsystem (how issues were filed, triaged, and closed during development) and the CLI rendering tool we used (what it does and how it fit into the workflow).
