@@ -301,6 +301,11 @@ typedef struct {
     // Nonzero: particles born in one step get birth ages in slot order, not at random, so slot order matches order along
     // the emitter's path (ribbons join particles in slot order).
     uint32_t ordersBirths;
+    // Nonzero: at birth, sample the birth color curve along birthColorStart...birthColorEnd (world space) at the spawn
+    // position and multiply it into the particle's tint (ParticleEmitter.colorByPositionAtBirth).
+    uint32_t colorsByBirthPosition;
+    simd_float3 birthColorStart;
+    simd_float3 birthColorEnd;
 } SimulationUniforms;
 
 /// Cells in the flocking spatial hash. Neighbor cells that hash to the same entry are searched once.

@@ -96,6 +96,41 @@ struct ColorGradientTests {
         #expect(lit.contains { $0.x > 70 && $0.z > 70 }) // In between.
     }
 
+    /// Born at x = -1 (green end), then moved to x = +1 (magenta end): at birth keeps green; current position is magenta.
+    @Test func birthPositionColorStaysWithTheParticle() throws {
+        func color(atBirth: Bool) throws -> SIMD3<Int> {
+            let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
+            var emitter = still(at: [-1, 0, 0], velocity: [20, 0, 0])
+            emitter.colorByPosition = .linear(from: [0, 1, 0, 1], to: [1, 0, 1, 1])
+            emitter.colorByPositionStart = [-1, 0, 0]
+            emitter.colorByPositionEnd = [1, 0, 0]
+            emitter.colorByPositionAtBirth = atBirth
+            emitter.drag = 0
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
+            system.burst(1)
+            let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
+            let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
+            // Steps are capped at 1/30 s, so four of them carry it 2 to 2.7 units right; drawn where it ends up.
+            var image: CGImage?
+            for _ in 0..<4 {
+                image = try renderer.render(Group {
+                    try system.simulate(deltaTime: 1.0 / 30.0)
+                    try RenderPass { try system.render(projection: projection, view: view) }
+                }).cgImage
+            }
+            let pixels = try #require(image).rgbaPixels()
+            let particle = system.buffer.contents().bindMemory(to: Particle.self, capacity: 1)[0]
+            let clip = projection * view * SIMD4(particle.position.x, particle.position.y, particle.position.z, 1)
+            let x = Int((clip.x / clip.w * 0.5 + 0.5) * 128)
+            let pixel = pixels[32 * 128 + min(max(x, 0), 127)]
+            return SIMD3(Int(pixel.x), Int(pixel.y), Int(pixel.z))
+        }
+        let atBirth = try color(atBirth: true)
+        let current = try color(atBirth: false)
+        #expect(atBirth.y > 200 && atBirth.x < 60)
+        #expect(current.x > 200 && current.y < 60)
+    }
+
     @Test func gradientsRoundTripThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.colorBySpeed = .linear(from: [1, 1, 1, 1], to: [1, 0, 0, 1])

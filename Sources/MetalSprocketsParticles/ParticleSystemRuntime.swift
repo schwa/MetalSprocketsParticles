@@ -629,6 +629,7 @@ public final class ParticleSystemRuntime {
                 .parameter("eventCursor", buffer: eventCursor)
                 .parameter("events", buffer: eventRecords)
                 .parameter("pathPoints", values: plan.pathPoints)
+                .parameter("birthColorCurve", values: dispatches[index].birthColorCurve)
                 .parameter("depthCollision", value: depthCollision)
                 .parameter("sceneDepth", texture: depthTexture)
                 .parameter("trails", buffer: trailBuffer)
@@ -958,7 +959,8 @@ private struct EmitterDraw {
             depthUnproject: [projection.columns.2.z, projection.columns.3.z, projection.columns.2.w],
             hasSpeedColor: settings.colorBySpeed == nil ? 0 : 1,
             hasAlternateColor: settings.alternateColorOverLife == nil ? 0 : 1,
-            hasPositionColor: settings.colorByPosition == nil ? 0 : 1,
+            // At birth, the simulation applies it instead.
+            hasPositionColor: settings.colorByPosition == nil || settings.colorByPositionAtBirth ? 0 : 1,
             speedColorRange: [settings.colorBySpeedRange.lowerBound, settings.colorBySpeedRange.upperBound],
             positionColorStart: settings.colorByPositionStart,
             positionColorEnd: settings.colorByPositionEnd,

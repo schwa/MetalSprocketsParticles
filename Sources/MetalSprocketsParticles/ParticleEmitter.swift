@@ -197,6 +197,10 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Grows particles as distance LOD thins them out (by 1 / sqrt of the LOD rate scale), so the effect covers about
     /// the same area of the screen with fewer particles.
     public var lodScalesSize = false
+    /// Samples `colorByPosition` once, where each particle is born, and keeps that color for its life, instead of by its
+    /// current position. Stored at 8 bits per channel, so values above 1 are clipped. Sub-emitter children are not
+    /// colored this way.
+    public var colorByPositionAtBirth = false
 
     public init() {}
 }
@@ -276,6 +280,7 @@ extension ParticleEmitter {
         ribbon = try container.decodeIfPresent(ParticleRibbon.self, forKey: .ribbon)
         try container.update(&minimumScreenSize, .minimumScreenSize)
         try container.update(&lodScalesSize, .lodScalesSize)
+        try container.update(&colorByPositionAtBirth, .colorByPositionAtBirth)
     }
 }
 

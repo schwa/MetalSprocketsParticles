@@ -2618,15 +2618,18 @@ Collisions treat particles as points, so mesh particles (#119) and large sprites
 ## 127: Color gradient by birth position
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:rendering, effort:s
 created: 2026-10-19T11:40:05Z
-updated: 2026-10-19T11:40:06Z
+updated: 2026-10-19T12:33:01Z
+closed: 2026-10-19T12:33:01Z
 +++
 
 colorByPosition (#121) uses the current position. Add an option to sample it once at birth and keep it (in the particle tint, like point cache colors), for two-tone fountains whose colors stay with each particle. A spawn function setting ParticleState.color can do this today.
+
+- `2026-10-19T12:33:01Z`: Done: ParticleEmitter.colorByPositionAtBirth samples colorByPosition once at the spawn position (world space) and multiplies it into the particle's tint, so the color stays with the particle; drawing then skips the per-frame position gradient. 8 bits per channel, values above 1 clip. Sub-emitter children are not colored this way (they spawn on the parent's dispatch).
 
 ---
 

@@ -23,6 +23,8 @@ struct FramePlan {
         var subEmitterUniforms: [SimulationUniforms]
         /// The emitter's user functions, one per `ParticleFunctionSlot` in order; the uniforms' has-function flags match.
         var functions: [ParticleFunction?]
+        /// `colorByPosition` baked, for coloring at birth; one white entry when unused.
+        var birthColorCurve: [SIMD4<Float>] = [.one]
     }
 
     /// Warmup steps first, then the frame's step, per emitter; sub-emitter instances after all emitters.
@@ -239,6 +241,11 @@ extension ParticleSystemRuntime {
         uniforms.trailPointCount = UInt32(settings.trail?.clampedPointCount ?? 0)
         uniforms.collisionRadius = max(settings.collisionRadius, 0)
         uniforms.ordersBirths = settings.ribbon == nil ? 0 : 1
+        if settings.colorByPositionAtBirth, settings.colorByPosition != nil {
+            uniforms.colorsByBirthPosition = 1
+            uniforms.birthColorStart = settings.colorByPositionStart
+            uniforms.birthColorEnd = settings.colorByPositionEnd
+        }
         if let flocking = settings.flocking {
             uniforms.flocks = 1
             uniforms.flockSpeedRange = [flocking.speedRange.lowerBound, flocking.speedRange.upperBound]
@@ -384,7 +391,8 @@ extension ParticleSystemRuntime {
                 followsSameEmitter: index > 0 || emitter.isSubEmitter,
                 subEmitters: subEmitters.data,
                 subEmitterUniforms: subEmitters.uniforms,
-                functions: ParticleFunctionSlot.allCases.map { emitter.settings[keyPath: $0.keyPath] }
+                functions: ParticleFunctionSlot.allCases.map { emitter.settings[keyPath: $0.keyPath] },
+                birthColorCurve: uniforms.colorsByBirthPosition != 0 ? emitter.settings.colorByPosition?.baked() ?? [.one] : [.one]
             )
         }
     }

@@ -631,6 +631,9 @@ struct ParticleState {
 };
 
 // The tint packed in properties.w as a color multiplier: 1 when there is none.
+template <typename T>
+static T sampleCurve(constant T *curve, float t);
+
 static float4 particleTint(Particle p) {
     uint tint = as_type<uint>(p.properties.w);
     return tint == 0 ? float4(1) : unpack_unorm4x8_to_float(tint);
@@ -727,6 +730,7 @@ kernel void updateParticles(
     device atomic_uint *eventCursor [[buffer(23)]],
     device ParticleEventRecord *events [[buffer(24)]],
     constant float4 *pathPoints [[buffer(25)]],
+    constant float4 *birthColorCurve [[buffer(29)]],
     constant DepthCollisionData &depthCollision [[buffer(26)]],
     texture2d<float, access::read> sceneDepth [[texture(0)]],
     device float4 *trails [[buffer(27)]],
@@ -762,6 +766,13 @@ kernel void updateParticles(
         p = spawnParticle(rng, uniforms, mesh, float3(0), float3(0), birthAge, orderedBirthAge);
         dt *= birthAge;
         custom = float4(0);
+        if (uniforms.colorsByBirthPosition != 0) {
+            // The position gradient, once, where the particle is born; kept in its tint for life.
+            float3 born = (uniforms.simulationToWorld * float4(p.position.xyz, 1)).xyz;
+            float3 axis = uniforms.birthColorEnd - uniforms.birthColorStart;
+            float along = dot(born - uniforms.birthColorStart, axis) / max(dot(axis, axis), 1e-10);
+            setParticleTint(p, particleTint(p) * sampleCurve(birthColorCurve, saturate(along)));
+        }
         if (uniforms.hasSpawnFunction != 0) {
             // The user sees world space, like the update function; deltaTime is 0 at birth.
             ParticleState state = makeState(p,
