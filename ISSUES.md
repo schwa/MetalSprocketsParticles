@@ -41,6 +41,7 @@ Particles only collide with analytic shapes (plane, sphere, AABB). Real scenes n
 - `2026-10-17T21:05:19Z`: Mesh input should come from SwiftMesh (github.com/schwa/SwiftMesh), the mesh type used across the MetalSprockets ecosystem (MetalSprocketsAddOns depends on it). Mesh/SDF colliders should accept a SwiftMesh mesh plus transform, not raw arrays.
 - `2026-10-17T21:05:19Z`: Related: #38 (SwiftMesh input for EmitterMesh); share the conversion.
 - `2026-10-18T13:33:59Z`: Decision (user): skip for now.
+- `2026-10-19T00:16:31Z`: Related: #120 (screen-space collision with the scene depth buffer covers on-screen geometry cheaply; mesh/SDF colliders cover the rest).
 
 ---
 
@@ -1869,9 +1870,9 @@ README.md and Documentation/METHODOLOGY.md mention xcb, a personal tool. Replace
 status: open
 priority: medium
 kind: task
-labels: deferred
+labels: deferred, area:tooling, effort:xs
 created: 2026-10-18T19:03:42Z
-updated: 2026-10-18T19:33:12Z
+updated: 2026-10-19T00:16:31Z
 +++
 
 The demo xcodeproj has the developer team ID hardcoded in project.pbxproj. Other people must edit it to build.
@@ -2290,5 +2291,208 @@ Tests: old files load with fresh ids; ids round-trip; index-form pointer binding
 - `2026-10-18T21:57:36Z`: Related: #104 (apply needs ids to diff), #100 (editor), #105. ColliderSpin also refers to colliders by index and should move to ids with PointerBinding.
 - `2026-10-18T22:13:27Z`: Tried: checked how ids would sit on Collider, ForceField, ParticleLight, SubEmitter, and EmissionTrigger. Punting: putting a generated id on the types changes their value equality, which about 40 call sites rely on (tests, the demo, ParticleKind): factories like .sphere(center:radius:) would make a fresh id each call, so colliders[1] == .sphere(...) stops matching. ParticleLight is an enum and has no place for an id without becoming a struct. Options: (A) id on each type, excluded from == and hash (value equality stays; Identifiable for lists and diffing; a little surprising). (B) An Identified<T> wrapper used only in ParticleSystem's lists (ids are a description concern; the runtime and factories stay plain values; ParticleSystem.colliders becomes [Identified<Collider>], a wide API change, with JSON as { id, ...flattened fields }). (C) id on each type and included in ==, updating tests to compare shapes or ignore ids (most honest, most churn). Which do you want? My pick is B if #104 (apply) and the editor are the main users, A if lists elsewhere also need ids.
 - `2026-10-18T22:16:43Z`: Closed (user): not needed now. Ids would mainly serve the deferred editor (#100) and #104; revisit with them if it comes up.
+
+---
+
+## 109: Ribbons and trails
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:l
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+Draw particles as connected strips instead of separate sprites: trails behind sparks and comets, swooshes, lightning, sword arcs. Like Niagara ribbons and Unity VFX Graph strips. Options: a per-particle history ring (last N positions) drawn as a strip, or strips that link particles born in sequence from one emitter. Needs width and color over the strip's length, UVs along it for textures, and facing the camera. Today the closest is a while-alive sub-emitter trail of separate dots.
+
+---
+
+## 110: Custom particle attributes, and color and size in ParticleState
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:m
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+User Metal functions (#86-89) see only position, velocity, age, lifetime, and id. Add color and size, and a few custom float4 attributes per particle that functions can read and write and that persist between steps (Niagara and VFX Graph attributes). Lets functions do things like change color on collision, store a phase or target, or pass state from spawn to update. Costs particle memory, so make the custom ones optional per emitter.
+
+- `2026-10-19T00:16:31Z`: Related: #121 (color by speed and similar could also be done in user functions once ParticleState has color).
+
+---
+
+## 111: Flocking: neighbor-aware simulation
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:l
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+Boids-style separation, alignment, and cohesion, and other effects that need nearby particles (simple fluids, crowd avoidance). Needs a spatial grid built each frame on the GPU (count, prefix sum, scatter, which the sort code partly has) and an extra simulation pass that reads it. Could be the first 'simulation stage' (Niagara) that user functions can also use later. Impressive at a million particles.
+
+---
+
+## 112: Curl-noise turbulence
+
++++
+status: closed
+priority: medium
+kind: feature
+labels: area:simulation, effort:s
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:51:10Z
+closed: 2026-10-19T00:51:10Z
++++
+
+Check whether the turbulence force field is curl noise (divergence-free). If not, add a curl-noise mode: it swirls without particles clumping into sinks or spreading out of sources, which reads much better for smoke and magic. Unity, Unreal, and Houdini all use curl noise for this.
+
+- `2026-10-19T00:51:10Z`: Already done: ForceField.turbulence is analytic curl noise (curlNoise in Particles.metal, curl of a noise vector potential, so it is divergence-free). Ten sample presets use it already (Color Smoke, Campfire, Fog, Snow, ...), so no new demo.
+
+---
+
+## 113: Sample textures: spawn from an image, color from an image
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:m
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+Emit particles from the bright or opaque pixels of an image (a logo dissolving into sparks), and let particles take their color from a texture at their spawn position or as they move. Niagara and VFX Graph both sample textures. Needs an image emitter shape (weighted by pixel brightness or alpha, like the mesh area table) and a texture input for color.
+
+---
+
+## 114: Particle events with data back to the app
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:m
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+Triggers today are counts the CPU diffs. Add events that carry data from the GPU: where a particle hit a collider, how fast, which emitter, so game code can play sounds, leave decals, or spawn app objects at the hit (Niagara and VFX Graph output events). A small GPU ring buffer of event records read back a frame or two late, with a callback or polling API.
+
+---
+
+## 115: Emit from point caches
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:s
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+Emit from a list of baked points (a scanned model, a logo outline, an SVG path sampled to points) with optional per-point normals and colors, as VFX Graph point caches do. Simpler than meshes and works for shapes with no surface. Load from a file or pass an array; store in effect files like mesh positions.
+
+---
+
+## 116: Follow a path: spline force field
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:m
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+A force field that pulls particles along a curve: magic swirling along a path, energy flowing through a pipe, particles orbiting a spline. Houdini, Niagara, and PopcornFX have curve forces. Defined by control points with a radius of influence, strength toward the curve, and speed along it. Shows as a wireframe.
+
+---
+
+## 117: Particle LOD and culling
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:simulation, effort:m
+created: 2026-10-19T00:12:15Z
+updated: 2026-10-19T00:12:16Z
++++
+
+Spend less on effects that are far away or off screen: scale emission rate and particle size with distance from the camera, and skip simulating or drawing emitters whose bounds are outside the view (with a choice to keep simulating so they stay correct when they come back). Common in Niagara (scalability) and Unity. Needs emitter bounds.
+
+---
+
+## 118: Particles that light the scene
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T00:12:16Z
++++
+
+Let particles emit light onto other particles and, through the host, onto scene geometry: sparks lighting the ground, fireflies glowing. Niagara has a light renderer that turns some particles into lights. Pick the brightest or a sample of particles each frame (GPU reduction), expose them as lights for the host renderer, and light lit particles with them.
+
+---
+
+## 119: Mesh particles
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T00:12:16Z
++++
+
+Draw each particle as a small 3D mesh instead of a sprite: debris, rocks, leaves, coins, confetti with thickness. Unity and Niagara both have mesh renderers. Instanced draw of a SwiftMesh mesh with the particle's position, rotation (needs a full 3D orientation per particle), scale, and color; lit by the particle lights.
+
+- `2026-10-19T00:16:31Z`: Related: #118 (mesh particles would be lit by particle lights) and #110 (needs a full 3D orientation per particle).
+
+---
+
+## 120: Collide with the scene depth buffer
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:collision, effort:m
+created: 2026-10-19T00:12:16Z
++++
+
+Collide particles against whatever the host renders, using the depth buffer (screen-space collision, as Unreal and Unity GPU particles do), so effects hit arbitrary scene geometry without colliders. Uses the SceneDepth path from soft particles: project each particle, compare with the stored depth, and bounce off a normal rebuilt from neighboring depths. Only works for what is on screen; pairs with real colliders for the rest. Related: #2.
+
+---
+
+## 121: More color gradients: by speed, random between two, by position
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T00:15:37Z
+updated: 2026-10-19T00:15:38Z
++++
+
+Colors today: colorOverLife (a multi-stop RGBA gradient over each particle's life), opacityOverLife, and per-particle HSB colorVariation. Add, as Unity and Niagara have:
+- Color by speed: a gradient sampled by speed (between a min and max speed), multiplied with or replacing color over life. Sparks and fire read hot when fast, cool when slow.
+- Random between two gradients: each particle picks a blend between two over-life gradients at birth. More varied than a hue shift.
+- Color by position: a gradient across the emitter's shape or along a world axis, picked at birth (a rainbow along a line, a two-tone fountain).
+Each needs a setting, a curve table on the GPU, the demo's gradient editor, and Codable with tolerant decoding. Related: #110 (user functions could do these once ParticleState has color).
 
 ---
