@@ -3584,4 +3584,63 @@ Follow-up to #155, which added foil (ParticleEmitter.foil) for mesh particles on
 
 Workaround today: use mesh particles (Draw As Coin) for foil confetti, as the Foil Confetti presets do.
 
+- `2026-10-19T22:40:04Z`: Related: #172 makes shading pluggable; foil for sprites becomes giving sprites a real tumbling normal in ShadingInput, and foil itself becomes a built-in shading model.
+
+---
+
+## 172: Pluggable shading: one shading function per emitter, with built-in models
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T22:40:03Z
++++
+
+Today lighting is special cases in the vertex shaders (unlit, isLit diffuse, and foil for mesh particles, #155). Make it one shading function slot per emitter instead, like user functions (#167) for the simulation: the mesh and sprite vertex shaders call a visible function with a ShadingInput (world position, normal, to-camera, base color, ambient and lights, particle age and custom attributes) that returns a color.
+
+Port the built-ins onto it: ShadingModel.unlit, .lit (today's isLit), .foil(glint:shininess:iridescence:) (today's ParticleEmitter.foil). Keep isLit and foil decoding in old effect files (map them to the model). Sprites get today's fake sphere normal in the input.
+
+Acceptance: every existing golden unchanged; foil and lit presets look the same; ShadingModel round-trips in effect files; old files with isLit or foil load as .lit or .foil. Per vertex only; a fragment variant is a separate issue.
+
+- `2026-10-19T22:40:04Z`: Related: #171 (foil for tumbling sprites, sparkles on glints) and #155 (foil, which becomes .foil here).
+
+---
+
+## 173: Custom shading functions (user Metal code)
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, area:editor, effort:m
+depends: 172
+created: 2026-10-19T22:40:03Z
+updated: 2026-10-19T22:40:04Z
++++
+
+On top of the shading function slot (#172): ShadingModel.custom(ParticleFunction-style source, name, parameters), compiled against a shading prelude that declares ShadingInput, validated like user functions. For toon, rim light, hologram, smoke tints, and the like, without library changes.
+
+Inspector: a Shading picker (Unlit, Lit, Foil, Custom) with the Custom source editor reusing the user-function editor (#167): drafts, Compile & Apply, compiler errors.
+
+Acceptance: a custom function that returns, say, a rim light compiles, renders (golden), round-trips; bad source is rejected before it reaches the runtime.
+
+---
+
+## 174: Per-pixel shading functions
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+depends: 172
+created: 2026-10-19T22:40:04Z
++++
+
+A fragment-stage variant of the shading function (#172): the same ShadingInput interpolated per pixel, so glints and rim light on large meshes are smooth instead of faceted (per vertex, a flat face flashes as a whole). Costs a function call per pixel; opt in per emitter.
+
+Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex stays the default and unchanged.
+
 ---
