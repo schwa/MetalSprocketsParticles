@@ -3204,3 +3204,30 @@ Fix (agreed with the user): in 2D, the scene cameras (.system and .lookAt) becom
 - `2026-10-19T16:32:16Z`: Fixed: in 2D, .system and .lookAt give an orthographic front view (looking along -z, y up) centered on the target and scaled to match the perspective view at the target distance; .overlay is unchanged for UI effects in points. The demo's 2D view uses it from the orbit camera's eye; Add Emitter no longer uses default2D in 2D, since the view is in scene units. particles-render follows the same rule (Fountain with is2D renders a flat, centered view). Test: TwoDModeTests.sceneCamerasShowAFlatFrontViewIn2D (centered target, y up, scale at the target, orthographic); demo test updated.
 
 ---
+
+## 155: Foil particles: glinting, iridescent confetti
+
++++
+status: open
+priority: medium
+kind: feature
+labels: area:rendering, effort:m
+created: 2026-10-19T19:16:26Z
+updated: 2026-10-19T19:16:26Z
++++
+
+Particles that render like metallic foil: tumbling pieces that flash when they catch the light and shift color with viewing angle, for confetti, tinsel, and glitter.
+
+Today lit particles get only diffuse light per vertex with no normal (particleLight(..., float3(0))), so they look matte, and sprites do not carry a facing direction into shading.
+
+Scope:
+- A per-particle facing normal for sprites that tumble (from the particle's rotation and the orientation mode), passed to the fragment shader.
+- A foil shading mode on the emitter: a sharp specular glint (Blinn-Phong, against the scene lights and particle lights; a fixed fake light in 2D, e.g. from the top left), a thin-film/iridescent tint from the view angle (gold-pink, holographic), and darkening edge-on.
+- Optional sparkle: a short-lived star sub-emitter when a piece glints (may need a glint event).
+- A Foil Confetti preset (3D) and a 2D version, with goldens.
+
+Out of scope: a bloom post-process (the library has none); fake halos with additive star sprites instead.
+
+Acceptance: a tumbling foil piece's brightness peaks when its normal bisects the light and view directions; color changes with angle; presets look like foil confetti in particles-render.
+
+---
