@@ -229,6 +229,8 @@ public final class ParticleSystemRuntime {
     /// World-space colliders shared by every emitter. Update them per frame to move them; their velocity is derived
     /// from the change since the previous frame.
     public var colliders: [Collider] = []
+    /// GPU copies of the colliders' distance field grids.
+    var signedDistanceFieldTextures: [SignedDistanceFieldTexture] = []
     /// World-space force fields shared by every emitter.
     public var forceFields: [ForceField] = []
     /// Lights for emitters with `isLit`. At most `PARTICLE_MAX_LIGHTS` are used.
@@ -553,6 +555,7 @@ public final class ParticleSystemRuntime {
         // swiftlint:enable discouraged_optional_collection
         readEvents()
         var plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
+        try updateSignedDistanceFieldTextures(for: colliders ?? self.colliders)
         let trailStride = UInt32(try makeTrailsIfNeeded())
         for index in plan.dispatches.indices {
             plan.dispatches[index].uniforms.trailStride = trailStride

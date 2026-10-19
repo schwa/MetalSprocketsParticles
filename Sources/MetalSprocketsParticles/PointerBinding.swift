@@ -117,6 +117,12 @@ extension Collider {
             return Collider(.plane(normal: normal, distance: simd_dot(simd_normalize(normal), point)), categoryBitMask: categoryBitMask)
         case let .sphere(center, _), let .box(center, _, _):
             return translated(by: point - center)
+        case .signedDistanceField:
+            // The grid's middle, which need not be its origin.
+            guard case let .box(center, _, _) = shape.signedDistanceFieldBounds else {
+                return self
+            }
+            return translated(by: point - center)
         case let .capsule(start, end, _):
             return translated(by: point - (start + end) / 2)
         }

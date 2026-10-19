@@ -3078,12 +3078,13 @@ Expected: type a whole number, press Return (or leave the field), then one rebui
 ## 149: SDF collider type
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:collision, effort:m, subtask
 created: 2026-10-19T15:24:48Z
-updated: 2026-10-19T15:24:49Z
+updated: 2026-10-19T20:14:55Z
+closed: 2026-10-19T20:14:55Z
 +++
 
 Add a Collider case for a baked signed distance field: a distance grid (resolution, origin, spacing, distances as Float, negative inside) plus a transform, uploaded once as a 3D texture (r32Float or r16Float) and cached per grid. Saved in effect files (the grid as data). No collision yet; drawn as its bounds box in debug wireframes.
@@ -3091,6 +3092,8 @@ Add a Collider case for a baked signed distance field: a distance grid (resoluti
 Acceptance: a grid round-trips through Codable; the runtime makes and reuses one texture per grid; the wireframe shows the bounds.
 
 Part of #2.
+
+- `2026-10-19T20:14:55Z`: Done: Collider.Shape.signedDistanceField(SignedDistanceField, center:rotation:) uses SwiftMesh's grid type (local space, placed like a box). Effect files store kind signedDistanceField with the grid's origin, spacing, resolution, and values as base64 little-endian Float32; decoding rejects resolutions under 2, over 256^3 samples, overflow, or a values size that does not match (SignedDistanceField's init would trap). The runtime keeps one r32Float 3D texture per grid (updateSignedDistanceFieldTextures in simulate), reused while colliders keep the grid and dropped when none do; equality is quick for copies of one grid since they share storage. The kernel skips the new kind (ParticleColliderKindSignedDistanceField) until #150, before the sweeps, which would otherwise treat it as a capsule. Wireframes draw the grid's bounds box; solids draw nothing (the field has no surface). Pointer bindings, translation, animation, and spin move or turn it like a box. Demo: kind and center accessors handle it; it is not in the collider kind picker (nothing to make it from yet).
 
 ---
 

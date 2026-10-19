@@ -202,6 +202,7 @@ extension ParticleColliderKind: @retroactive CaseIterable, @retroactive Identifi
         case .sphere: "Sphere"
         case .box: "Box"
         case .capsule: "Capsule"
+        case .signedDistanceField: "Distance Field"
         default: "Plane"
         }
     }
@@ -224,6 +225,7 @@ public extension Collider.Shape {
             case .sphere: .sphere
             case .box: .box
             case .capsule: .capsule
+            case .signedDistanceField: .signedDistanceField
             }
         }
         set {
@@ -232,7 +234,7 @@ public extension Collider.Shape {
             }
             let center: SIMD3<Float> = switch self {
             case let .plane(normal, distance): simd_normalize(normal) * distance
-            case let .sphere(center, _), let .box(center, _, _): center
+            case let .sphere(center, _), let .box(center, _, _), let .signedDistanceField(_, center, _): center
             case let .capsule(start, end, _): (start + end) / 2
             }
             self = switch newValue {

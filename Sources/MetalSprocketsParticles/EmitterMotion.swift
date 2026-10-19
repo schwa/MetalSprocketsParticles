@@ -73,6 +73,8 @@ public extension Collider.Shape {
             .box(center: center + offset, halfExtents: halfExtents, rotation: rotation)
         case let .capsule(start, end, radius):
             .capsule(start: start + offset, end: end + offset, radius: radius)
+        case let .signedDistanceField(field, center, rotation):
+            .signedDistanceField(field, center: center + offset, rotation: rotation)
         }
     }
 }
@@ -82,14 +84,14 @@ public extension Collider {
         Collider(shape.translated(by: offset), categoryBitMask: categoryBitMask)
     }
 
-    /// A simple showcase animation: spheres bob, boxes slide in x, capsules slide in z, planes stay put. `index`
+    /// A simple showcase animation: spheres bob, boxes and distance fields slide in x, capsules slide in z, planes stay put. `index`
     /// staggers the phase so colliders do not move in lockstep.
     func animated(time: Float, index: Int) -> Collider {
         let phase = time + Float(index) * 1.7
         return switch shape {
         case .plane: self
         case .sphere: translated(by: [0, 0.6 * sin(phase * 1.3), 0])
-        case .box: translated(by: [0.5 * sin(phase * 0.9), 0, 0])
+        case .box, .signedDistanceField: translated(by: [0.5 * sin(phase * 0.9), 0, 0])
         case .capsule: translated(by: [0, 0, 0.6 * sin(phase * 0.7)])
         }
     }

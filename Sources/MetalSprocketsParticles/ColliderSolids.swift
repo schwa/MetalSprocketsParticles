@@ -193,6 +193,9 @@ extension Collider {
             builder.sphere(center: start, radius: radius)
             builder.sphere(center: end, radius: radius)
             builder.cylinder(from: start, to: end, radius: radius)
+        case .signedDistanceField:
+            // No surface to draw yet: the field is only distances. Its mesh, if it came from one, is the host's to draw.
+            break
         }
         return builder.vertices
     }

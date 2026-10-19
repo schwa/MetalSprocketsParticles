@@ -32,6 +32,8 @@ public extension Collider {
             return self
         case let .box(center, halfExtents, boxRotation):
             return Self(.box(center: center, halfExtents: halfExtents, rotation: simd_normalize(rotation * boxRotation)), categoryBitMask: categoryBitMask)
+        case let .signedDistanceField(field, center, fieldRotation):
+            return Self(.signedDistanceField(field, center: center, rotation: simd_normalize(rotation * fieldRotation)), categoryBitMask: categoryBitMask)
         case let .capsule(start, end, radius):
             let pivot = (start + end) / 2
             return Self(.capsule(start: pivot + rotation.act(start - pivot), end: pivot + rotation.act(end - pivot), radius: radius), categoryBitMask: categoryBitMask)

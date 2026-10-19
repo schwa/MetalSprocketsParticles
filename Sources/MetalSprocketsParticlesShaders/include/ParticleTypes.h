@@ -395,6 +395,8 @@ typedef MS_ENUM(uint32_t, ParticleColliderKind) {
     ParticleColliderKindSphere = 2,
     ParticleColliderKindBox = 3,
     ParticleColliderKindCapsule = 4,
+    // A baked distance grid, sampled from a 3D texture; center and rotation place it.
+    ParticleColliderKindSignedDistanceField = 5,
 };
 
 // World space. Fields a kind does not use are zero.

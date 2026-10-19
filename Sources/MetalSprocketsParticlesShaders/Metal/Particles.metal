@@ -879,6 +879,11 @@ kernel void updateParticles(
         bool hitBefore = hit;
         hit = false;
         ColliderData c = colliders[i];
+        if (c.kind == ParticleColliderKindSignedDistanceField) {
+            // Not collided with yet; skip before the sweeps, which would treat it as a capsule.
+            hit = hitBefore;
+            continue;
+        }
         if (uniforms.collisionRadius > 0) {
             // Particles as spheres: grow the collider instead, so every test below (and the sweeps) stays the same.
             float r = uniforms.collisionRadius;

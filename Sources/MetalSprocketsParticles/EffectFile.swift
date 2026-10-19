@@ -2,6 +2,7 @@ import CoreTransferable
 import Foundation
 import MetalSprocketsParticlesShaders
 import simd
+import SwiftMesh
 import UniformTypeIdentifiers
 
 // Saved effects are ParticlePresets as JSON. Domain types are Codable directly; this file holds the conformances that
@@ -34,8 +35,15 @@ extension Collider: Codable {
 
 extension Collider.Shape: Codable {
     private enum CodingKeys: String, CodingKey {
-        case kind, normal, distance, center, radius, halfExtents, rotation, start, end
+        case kind, normal, distance, center, radius, halfExtents, rotation, start, end, field
     }
+
+    private enum FieldKeys: String, CodingKey {
+        case origin, spacing, resolution, values
+    }
+
+    /// The most samples a saved field may have (256³), so a hostile file cannot ask for a huge texture.
+    static let maximumFieldSamples = 256 * 256 * 256
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -56,6 +64,13 @@ extension Collider.Shape: Codable {
                 start: try container.decode(SIMD3<Float>.self, forKey: .start),
                 end: try container.decode(SIMD3<Float>.self, forKey: .end),
                 radius: try container.decode(Float.self, forKey: .radius)
+            )
+        case "signedDistanceField":
+            let rotation = try container.decodeIfPresent(SIMD4<Float>.self, forKey: .rotation) ?? [0, 0, 0, 1]
+            self = .signedDistanceField(
+                try Self.decodeField(container.nestedContainer(keyedBy: FieldKeys.self, forKey: .field)),
+                center: try container.decodeIfPresent(SIMD3<Float>.self, forKey: .center) ?? .zero,
+                rotation: simd_quatf(vector: rotation)
             )
         case let kind:
             throw DecodingError.dataCorruptedError(forKey: .kind, in: container, debugDescription: "Unknown collider kind '\(kind)'")
@@ -84,7 +99,41 @@ extension Collider.Shape: Codable {
             try container.encode(start, forKey: .start)
             try container.encode(end, forKey: .end)
             try container.encode(radius, forKey: .radius)
+        case let .signedDistanceField(field, center, rotation):
+            try container.encode("signedDistanceField", forKey: .kind)
+            try container.encode(center, forKey: .center)
+            try container.encode(rotation.vector, forKey: .rotation)
+            var fieldContainer = container.nestedContainer(keyedBy: FieldKeys.self, forKey: .field)
+            try fieldContainer.encode(field.origin, forKey: .origin)
+            try fieldContainer.encode(field.spacing, forKey: .spacing)
+            try fieldContainer.encode(field.resolution, forKey: .resolution)
+            // Little-endian Float32s, base64 in JSON: compact, and exact.
+            try fieldContainer.encode(field.values.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .values)
         }
+    }
+
+    /// Checks what SignedDistanceField's initializer would trap on, and sizes a hostile file could abuse.
+    private static func decodeField(_ container: KeyedDecodingContainer<FieldKeys>) throws -> SignedDistanceField {
+        let resolution = try container.decode(SIMD3<Int>.self, forKey: .resolution)
+        let data = try container.decode(Data.self, forKey: .values)
+        let (samples, overflow) = resolution.x.multipliedReportingOverflow(by: resolution.y)
+        let (total, overflow2) = samples.multipliedReportingOverflow(by: resolution.z)
+        guard all(resolution .>= 2), !overflow, !overflow2, total <= maximumFieldSamples else {
+            throw DecodingError.dataCorruptedError(forKey: .resolution, in: container, debugDescription: "Distance field resolution must be 2 or more per axis and at most \(maximumFieldSamples) samples")
+        }
+        guard data.count == total * MemoryLayout<Float>.size else {
+            throw DecodingError.dataCorruptedError(forKey: .values, in: container, debugDescription: "Distance field has \(data.count) bytes of values; its resolution needs \(total * MemoryLayout<Float>.size)")
+        }
+        // Data's bytes need not be aligned for Float.
+        let values = data.withUnsafeBytes { bytes in
+            (0..<total).map { bytes.loadUnaligned(fromByteOffset: $0 * MemoryLayout<Float>.size, as: Float.self) }
+        }
+        return SignedDistanceField(
+            origin: try container.decode(SIMD3<Float>.self, forKey: .origin),
+            spacing: try container.decode(SIMD3<Float>.self, forKey: .spacing),
+            resolution: resolution,
+            values: values
+        )
     }
 }
 

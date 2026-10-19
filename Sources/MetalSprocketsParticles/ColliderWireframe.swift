@@ -6,6 +6,9 @@ import simd
 extension Collider {
     /// Line-list vertices (pairs) outlining the collider.
     var wireframe: [SIMD4<Float>] {
+        if let bounds = shape.signedDistanceFieldBounds {
+            return Collider(bounds).wireframe
+        }
         switch shape {
         case let .plane(normal, distance):
             let n = simd_normalize(normal)
@@ -75,6 +78,8 @@ extension Collider {
                 }
             }
             return lines.map { SIMD4($0, 1) }
+        case .signedDistanceField:
+            return [] // Drawn as its bounds above.
         }
     }
 }

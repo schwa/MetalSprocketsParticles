@@ -155,7 +155,7 @@ extension Collider.Shape {
         get {
             switch self {
             case let .plane(normal, distance): simd_normalize(normal) * distance
-            case let .sphere(center, _), let .box(center, _, _): center
+            case let .sphere(center, _), let .box(center, _, _), let .signedDistanceField(_, center, _): center
             case let .capsule(start, end, _): (start + end) / 2
             }
         }
@@ -164,6 +164,7 @@ extension Collider.Shape {
             case let .plane(normal, _): self = .plane(normal: normal, distance: simd_dot(newValue, simd_normalize(normal)))
             case let .sphere(_, radius): self = .sphere(center: newValue, radius: radius)
             case let .box(_, halfExtents, rotation): self = .box(center: newValue, halfExtents: halfExtents, rotation: rotation)
+            case let .signedDistanceField(field, _, rotation): self = .signedDistanceField(field, center: newValue, rotation: rotation)
             case let .capsule(start, end, radius):
                 let offset = newValue - (start + end) / 2
                 self = .capsule(start: start + offset, end: end + offset, radius: radius)

@@ -1,5 +1,6 @@
 import MetalSprocketsParticlesShaders
 import simd
+import SwiftMesh
 
 /// A world-space shape that particles bounce off. Only emitters whose `ParticleEmitter.categoryMask` shares a bit with
 /// `categoryBitMask` collide with it.
@@ -10,6 +11,9 @@ public struct Collider: Sendable, Equatable {
         case box(center: SIMD3<Float>, halfExtents: SIMD3<Float>, rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))
         /// A line segment from `start` to `end` with rounded ends.
         case capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float)
+        /// A baked signed distance field (negative inside) in the collider's local space, placed by `center` and
+        /// `rotation`. Bake one from a mesh with SwiftMesh's `Mesh.signedDistanceField(resolution:padding:bvh:)`.
+        case signedDistanceField(SignedDistanceField, center: SIMD3<Float> = .zero, rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))
     }
 
     public var shape: Shape
@@ -41,6 +45,34 @@ public struct Collider: Sendable, Equatable {
     public static func capsule(start: SIMD3<Float>, end: SIMD3<Float>, radius: Float, categoryBitMask: UInt32 = .max) -> Self {
         Self(.capsule(start: start, end: end, radius: radius), categoryBitMask: categoryBitMask)
     }
+
+    public static func signedDistanceField(
+        _ field: SignedDistanceField,
+        center: SIMD3<Float> = .zero,
+        rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1),
+        categoryBitMask: UInt32 = .max
+    ) -> Self {
+        Self(.signedDistanceField(field, center: center, rotation: rotation), categoryBitMask: categoryBitMask)
+    }
+}
+
+extension Collider.Shape {
+    /// A signed distance field's grid as a box in world space; nil for other shapes.
+    var signedDistanceFieldBounds: Collider.Shape? {
+        guard case let .signedDistanceField(field, center, rotation) = self else {
+            return nil
+        }
+        let bounds = field.localBounds
+        return .box(center: center + rotation.act(bounds.center), halfExtents: bounds.halfExtents, rotation: rotation)
+    }
+}
+
+extension SignedDistanceField {
+    /// The grid's box in its local space: from the first sample to the last.
+    var localBounds: (center: SIMD3<Float>, halfExtents: SIMD3<Float>) {
+        let size = spacing * SIMD3<Float>(resolution &- 1)
+        return (origin + size / 2, abs(size) / 2)
+    }
 }
 
 extension Collider {
@@ -55,7 +87,7 @@ extension Collider {
             return simd_normalize(normal) * (distance - oldDistance) / deltaTime
         case let (.sphere(oldCenter, _), .sphere(center, _)):
             return (center - oldCenter) / deltaTime
-        case let (.box(oldCenter, _, _), .box(center, _, _)):
+        case let (.box(oldCenter, _, _), .box(center, _, _)), let (.signedDistanceField(_, oldCenter, _), .signedDistanceField(_, center, _)):
             return (center - oldCenter) / deltaTime
         case let (.capsule(oldStart, oldEnd, _), .capsule(start, end, _)):
             return ((start + end) - (oldStart + oldEnd)) / 2 / deltaTime
@@ -104,7 +136,7 @@ extension ColliderData {
         self.velocity = velocity
         rotation = [0, 0, 0, 1]
         switch collider.shape {
-        case let .sphere(center, _), let .box(center, _, _):
+        case let .sphere(center, _), let .box(center, _, _), let .signedDistanceField(_, center, _):
             pivot = center
         case let .capsule(start, end, _):
             pivot = (start + end) / 2
@@ -130,6 +162,11 @@ extension ColliderData {
             center = start
             self.end = end
             self.radius = radius
+        case let .signedDistanceField(_, center, rotation):
+            // The grid itself is a 3D texture the runtime binds separately.
+            kind = .signedDistanceField
+            self.center = center
+            self.rotation = simd_normalize(rotation).vector
         }
     }
 }
