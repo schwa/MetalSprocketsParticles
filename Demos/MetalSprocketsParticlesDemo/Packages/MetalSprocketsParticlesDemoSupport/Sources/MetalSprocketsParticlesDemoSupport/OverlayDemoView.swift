@@ -70,7 +70,8 @@ public struct OverlayDemoView: View {
     }
 }
 
-/// The overlay demo's effects, in points: y grows down the screen, so gravity is +y.
+/// The overlay demo's effects, in points: y grows down the screen, so gravity is +y. Spread and speed variation are
+/// speeds too (points per second), not fractions of the velocity, so they are in the hundreds here.
 enum OverlayEffects {
     static let confetti = 0
     static let sparkles = 1
@@ -80,8 +81,8 @@ enum OverlayEffects {
         confetti.shape = .point
         confetti.birthRate = 0
         confetti.velocity = [0, -900, 0]
-        confetti.velocitySpread = 0.7
-        confetti.speedVariation = 0.4
+        confetti.velocitySpread = 600
+        confetti.speedVariation = 300
         confetti.gravity = [0, 1_400, 0]
         confetti.drag = 1.2
         confetti.lifetime = 3...4
@@ -98,8 +99,8 @@ enum OverlayEffects {
         sparkles.shape = .point
         sparkles.birthRate = 0
         sparkles.velocity = [0, -260, 0]
-        sparkles.velocitySpread = .pi
-        sparkles.speedVariation = 0.6
+        sparkles.velocitySpread = 220
+        sparkles.speedVariation = 120
         sparkles.gravity = [0, 250, 0]
         sparkles.drag = 2
         sparkles.lifetime = 0.4...0.9

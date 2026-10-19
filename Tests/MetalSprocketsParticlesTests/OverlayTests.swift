@@ -33,6 +33,37 @@ struct OverlayTests {
         return (0..<runtime.capacity).map { pointer[$0] }.filter { $0.velocity.w > 0 && $0.position.w < $0.velocity.w }
     }
 
+    /// The 2D overlay demo's confetti (OverlayEffects in the demo), burst above a button: it spreads across the window.
+    /// In points, spread and speed variation must be hundreds of points a second; with 0.7 and 0.4 (meant for meters)
+    /// every particle moved as one and the burst stayed a blob (#140).
+    @Test func overlayConfettiSpreads() throws {
+        var confetti = ParticleEmitter()
+        confetti.shape = .point
+        confetti.birthRate = 0
+        confetti.velocity = [0, -900, 0]
+        confetti.velocitySpread = 600
+        confetti.speedVariation = 300
+        confetti.gravity = [0, 1_400, 0]
+        confetti.drag = 1.2
+        confetti.lifetime = 3...4
+        confetti.sizeOverLife = .constant(7)
+        confetti.restitution = 0.3
+        confetti.friction = 0.6
+        confetti.constrainsToPlane = true
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 300, emitter: confetti)
+        let button = CGRect(x: 230, y: 420, width: 140, height: 50)
+        runtime.burst(300, at: [Float(button.midX), Float(button.minY) - 8, 0])
+        let colliders = Collider.edges(of: CGSize(width: 600, height: 540)) + [.box(frame: button)]
+        for _ in 0..<20 {
+            try runner.run(try runtime.simulate(deltaTime: deltaTime, colliders: colliders))
+        }
+        let positions = live(runtime).map { SIMD3($0.position.x, $0.position.y, $0.position.z) }
+        let xs = positions.map(\.x)
+        let ys = positions.map(\.y)
+        #expect((xs.max() ?? 0) - (xs.min() ?? 0) > 100)
+        #expect((ys.min() ?? .infinity) < Float(button.minY) - 100)
+    }
+
     @Test func burstsSpawnAtTheirPointsWithoutMovingTheEmitter() throws {
         let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 32, emitter: still { $0.position = [5, 5, 0] })
         runtime.burst(3, at: [100, 50, 0])

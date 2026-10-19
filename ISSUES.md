@@ -2896,17 +2896,19 @@ The demo viewport always shows its overlays (the particle count view, ParticleCo
 ## 140: 2D mode: particles all blob in the middle
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:demo, effort:s
 created: 2026-10-19T11:56:35Z
-updated: 2026-10-19T13:07:05Z
+updated: 2026-10-19T13:12:59Z
+closed: 2026-10-19T13:12:59Z
 +++
 
 In 2D mode, particles clump together in the center of the view instead of spreading out. Screenshot: /Users/schwa/Library/Application Support/CleanShot/media/media_p1yXCD4QzP/Screenshot 2026-10-19 at 07.56.00@2x.png
 
 - `2026-10-19T13:07:05Z`: Triage: this is the 2D Overlay demo window (OverlayDemoView). The screenshot shows Celebrate's confetti as a small blob just above the button instead of a burst across the view. Not investigated yet; a guess to check first: the overlay camera works in points, so emitter speeds, spread, and sizes meant for world units are tiny there. Related: #141 (one 2D toggle).
+- `2026-10-19T13:12:59Z`: Cause: velocitySpread and speedVariation are absolute speeds, not fractions of the velocity. The overlay demo works in points, so its confetti spread of 0.7 and speed variation of 0.4 were 0.7 and 0.4 points a second: every particle moved as one (a reproduction showed 300 particles 0.36 points apart). Fixed the demo values (confetti 600 and 300, sparkles 220 and 120 points a second). The library behaves as documented; #141's 2D defaults should set these in points too.
 
 ---
 

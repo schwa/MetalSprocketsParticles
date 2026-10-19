@@ -2,6 +2,7 @@ import CoreGraphics
 import MetalSprockets
 import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
+import simd
 import Testing
 
 /// The 2D overlay demo's effects, without a window. Overlay physics (positioned bursts, view edges, the plane) are
@@ -25,5 +26,16 @@ struct OverlayDemoTests {
             try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0, colliders: colliders))
         }
         #expect(runtime.aliveParticleCount == 300)
+    }
+
+    /// Spread and speed variation are absolute speeds, so in points they must be in proportion to the launch speed;
+    /// values like 0.7 meant for meters left the confetti in a blob (#140). The spreading itself is tested in the
+    /// library (OverlayTests.overlayConfettiSpreads).
+    @Test func spreadsAreInPointsPerSecond() {
+        for layer in OverlayEffects.system.layers {
+            let speed = simd_length(layer.settings.velocity)
+            #expect(layer.settings.velocitySpread > speed * 0.3, "\(layer.name)")
+            #expect(layer.settings.speedVariation > speed * 0.2, "\(layer.name)")
+        }
     }
 }
