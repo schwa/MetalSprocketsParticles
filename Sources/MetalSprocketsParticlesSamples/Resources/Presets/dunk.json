@@ -197,7 +197,7 @@
           {
             "action": {
               "burst": {
-                "_0": 400
+                "count": 400
               }
             },
             "condition": {

@@ -208,7 +208,7 @@
           {
             "action": {
               "burst": {
-                "_0": 150
+                "count": 150
               }
             },
             "condition": {
@@ -321,7 +321,7 @@
           {
             "action": {
               "burst": {
-                "_0": 30
+                "count": 30
               }
             },
             "condition": {
@@ -443,7 +443,7 @@
           {
             "action": {
               "burst": {
-                "_0": 1
+                "count": 1
               }
             },
             "condition": {
@@ -551,12 +551,12 @@
           {
             "action": {
               "burst": {
-                "_0": 800
+                "count": 800
               }
             },
             "condition": {
               "event": {
-                "_0": "boom"
+                "name": "boom"
               }
             }
           }

@@ -10,6 +10,43 @@ public enum PointerBinding: Sendable, Hashable, Codable {
     case forceField(Int)
     /// The emitter for the layer at this index moves to the pointer, keeping its motion's rotation.
     case emitter(Int)
+
+    // Effect files name the index ("collider": { "index": 0 }) instead of Swift's default "_0".
+    private enum ColliderCodingKeys: String, CodingKey {
+        case _0 = "index" // swiftlint:disable:this identifier_name
+    }
+
+    private enum ForceFieldCodingKeys: String, CodingKey {
+        case _0 = "index" // swiftlint:disable:this identifier_name
+    }
+
+    private enum EmitterCodingKeys: String, CodingKey {
+        case _0 = "index" // swiftlint:disable:this identifier_name
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case collider, forceField, emitter
+    }
+
+    /// Reads "index", and "_0" from files saved before it was named.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        guard let key = container.allKeys.first else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Expected collider, forceField, or emitter"))
+        }
+        let values = try container.nestedContainer(keyedBy: LegacyValueKeys.self, forKey: key)
+        let index = try values.decodeIfPresent(Int.self, forKey: .named) ?? values.decode(Int.self, forKey: .legacy)
+        switch key {
+        case .collider: self = .collider(index)
+        case .forceField: self = .forceField(index)
+        case .emitter: self = .emitter(index)
+        }
+    }
+
+    private enum LegacyValueKeys: String, CodingKey {
+        case named = "index"
+        case legacy = "_0"
+    }
 }
 
 public extension ParticleSystem {

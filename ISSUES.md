@@ -3155,11 +3155,13 @@ Part of #2. Depends on particles colliding with SDF colliders.
 ## 153: Effect files show "_0" keys for enum cases with unlabeled values
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:simulation, effort:s
 created: 2026-10-19T15:47:44Z
+updated: 2026-10-19T16:13:02Z
+closed: 2026-10-19T16:13:02Z
 +++
 
 Swift's synthesized Codable writes an enum case's unlabeled associated value under the key "_0", so effect files contain blobs like:
@@ -3176,5 +3178,7 @@ Cases that do it today:
 Seen in the sample presets Pointer Stir, Dunk, and Bumper.
 
 Fix: give the values labels (for example collider(index:), burst(count:), event(name:)), so they encode as { "index": 0 }, or write custom Codable for a shorter form like "collider": 0. Keep reading the old "_0" form so saved effects still load, and migrate the sample presets. A test (or DecodingCoverageTests) could fail on any "_0" key in encoded effects so it does not come back.
+
+- `2026-10-19T16:13:02Z`: Fixed: PointerBinding writes { "index": n }, EmissionTrigger.Action.burst writes { "count": n }, and EmissionTrigger.Condition.event writes { "name": s }, through per-case CodingKeys; the Swift API is unchanged (.collider(3), .burst(150)). Hand-written decoders read both the new names and the old "_0", so saved effects still load. The three affected presets (Pointer Stir, Dunk, Bumper) were migrated with jq and Prettier; goldens unchanged. EnumKeyTests checks the names, round trips every case, reads old files, and fails if any sample preset (file or re-encoded) contains "_0".
 
 ---

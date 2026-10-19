@@ -16,6 +16,10 @@ type_name:
 trailing_comma:
   mandatory_comma: true
 
+# Codable's per-case key enums must be nested in the enum they describe.
+nesting:
+  ignore_coding_keys: true
+
 only_rules:
   - accessibility_label_for_image
   - accessibility_trait_for_button

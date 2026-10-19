@@ -19,6 +19,45 @@ public struct EmissionTrigger: Sendable, Equatable, Codable {
         /// At least `count` particle hits on `ParticleSystemRuntime.colliders[index]` since the last check. Read back from the
         /// GPU like `particlesEnter`.
         case colliderHit(index: Int, count: Int = 1)
+
+        // Effect files name the event ("event": { "name": "boom" }) instead of Swift's default "_0". Codable needs
+        // these key enums nested in the enum they describe.
+        // swiftlint:disable:next nesting
+        private enum EventCodingKeys: String, CodingKey {
+            case _0 = "name" // swiftlint:disable:this identifier_name
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case event, after, every, objectEnters, particlesEnter, colliderHit
+        }
+
+        // swiftlint:disable:next nesting
+        private enum ValueKeys: String, CodingKey {
+            case name, legacyName = "_0", seconds, volume, count, index
+        }
+
+        /// Reads the event's "name", and "_0" from files saved before it was named; the other cases as written.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            guard let key = container.allKeys.first else {
+                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Expected a trigger condition"))
+            }
+            let values = try container.nestedContainer(keyedBy: ValueKeys.self, forKey: key)
+            switch key {
+            case .event:
+                self = .event(try values.decodeIfPresent(String.self, forKey: .name) ?? values.decode(String.self, forKey: .legacyName))
+            case .after:
+                self = .after(seconds: try values.decode(Float.self, forKey: .seconds))
+            case .every:
+                self = .every(seconds: try values.decode(Float.self, forKey: .seconds))
+            case .objectEnters:
+                self = .objectEnters(name: try values.decode(String.self, forKey: .name), volume: try values.decode(TriggerVolume.self, forKey: .volume))
+            case .particlesEnter:
+                self = .particlesEnter(volume: try values.decode(TriggerVolume.self, forKey: .volume), count: try values.decodeIfPresent(Int.self, forKey: .count) ?? 1)
+            case .colliderHit:
+                self = .colliderHit(index: try values.decode(Int.self, forKey: .index), count: try values.decodeIfPresent(Int.self, forKey: .count) ?? 1)
+            }
+        }
     }
 
     public enum Action: Sendable, Equatable, Codable {
@@ -29,6 +68,38 @@ public struct EmissionTrigger: Sendable, Equatable, Codable {
         case stop
         /// Removes the emitter's particles and restarts its clock.
         case restart
+
+        // Effect files name the count ("burst": { "count": 150 }) instead of Swift's default "_0".
+        // swiftlint:disable:next nesting
+        private enum BurstCodingKeys: String, CodingKey {
+            case _0 = "count" // swiftlint:disable:this identifier_name
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case burst, start, stop, restart
+        }
+
+        // swiftlint:disable:next nesting
+        private enum BurstValueKeys: String, CodingKey {
+            case count
+            case legacy = "_0"
+        }
+
+        /// Reads "count", and "_0" from files saved before it was named.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            guard let key = container.allKeys.first else {
+                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Expected burst, start, stop, or restart"))
+            }
+            switch key {
+            case .burst:
+                let values = try container.nestedContainer(keyedBy: BurstValueKeys.self, forKey: .burst)
+                self = .burst(try values.decodeIfPresent(Int.self, forKey: .count) ?? values.decode(Int.self, forKey: .legacy))
+            case .start: self = .start
+            case .stop: self = .stop
+            case .restart: self = .restart
+            }
+        }
     }
 
     public var condition: Condition

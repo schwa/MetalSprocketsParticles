@@ -144,12 +144,12 @@
   "pointerBindings": [
     {
       "collider": {
-        "_0": 0
+        "index": 0
       }
     },
     {
       "forceField": {
-        "_0": 0
+        "index": 0
       }
     }
   ],
