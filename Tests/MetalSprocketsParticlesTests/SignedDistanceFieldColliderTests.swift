@@ -26,6 +26,43 @@ struct SignedDistanceFieldColliderTests {
         return SignedDistanceField(origin: origin, spacing: spacing, resolution: resolution, values: values)
     }
 
+    // MARK: Baking from meshes (#151)
+
+    @Test func aBakedCubeMatchesItsExactDistance() throws {
+        let collider = try #require(Collider.signedDistanceField(mesh: .box(extents: [1, 1, 1]), resolution: 24))
+        guard case let .signedDistanceField(field, _, _) = collider.shape else {
+            Issue.record("Not a distance field")
+            return
+        }
+        let spacing = field.spacing.max()
+        var worst: Float = 0
+        for index in field.values.indices {
+            let q = abs(field.position(ofIndex: index)) - SIMD3<Float>(repeating: 0.5)
+            let exact = simd_length(simd_max(q, .zero)) + min(max(q.x, max(q.y, q.z)), 0)
+            worst = max(worst, abs(field.values[index] - exact))
+        }
+        #expect(worst < spacing)
+        // Padding keeps the grid's edge outside the mesh.
+        #expect(field.values[0] > 0)
+    }
+
+    /// `resolution` samples along the longest side, the same spacing on the others, plus `padding` cells all round.
+    @Test func bakedGridsHaveCubeCellsAndPadding() throws {
+        let collider = try #require(Collider.signedDistanceField(mesh: .box(extents: [2, 1, 0.5]), resolution: 33, padding: 2))
+        guard case let .signedDistanceField(field, _, _) = collider.shape else {
+            Issue.record("Not a distance field")
+            return
+        }
+        #expect(field.resolution.x == 33)
+        #expect(field.spacing.max() / field.spacing.min() < 1.1)
+        // Two cells of padding before the mesh starts at x = -1.
+        #expect(abs(field.origin.x - (-1 - 2 * field.spacing.x)) < 1e-4)
+    }
+
+    @Test func meshesWithoutTrianglesBakeNothing() {
+        #expect(Collider.signedDistanceField(mesh: Mesh(positions: [], faces: [[Int]]())) == nil)
+    }
+
     @Test func roundTripsThroughEffectFiles() throws {
         let collider = Collider.signedDistanceField(
             sphereField(), center: [1, 2, 3], rotation: simd_quatf(angle: 0.5, axis: [0, 1, 0]), categoryBitMask: 0b101

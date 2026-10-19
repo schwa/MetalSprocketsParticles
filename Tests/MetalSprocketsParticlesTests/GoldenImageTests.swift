@@ -6,6 +6,7 @@ import MetalSprockets
 import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
 import simd
+import SwiftMesh
 import Testing
 import UniformTypeIdentifiers
 
@@ -46,6 +47,30 @@ struct GoldenImageTests {
             })
         }
         return try #require(rendering).cgImage
+    }
+
+    /// Sand on a teapot baked into a distance field collider (#151): the pile takes the lid, spout, and handle.
+    @Test func sandOnABakedTeapot() throws {
+        // The model's spout points along z; turned so it points along x, side on to the camera.
+        let teapot = try #require(Collider.signedDistanceField(
+            mesh: .teapot(diameter: 2.4), resolution: 64, center: [0, 0.6, 0], rotation: simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
+        ))
+        var sand = ParticleEmitter()
+        sand.shape = .box(size: [2.8, 0.05, 1.6])
+        sand.position = [0, 3.2, 0]
+        sand.velocity = .zero
+        sand.velocitySpread = 0.1
+        // About the helper's 50 000 particles alive by the end, so the coating builds up without recycling.
+        sand.birthRate = 9_000
+        sand.lifetime = 6...6
+        sand.restitution = 0.05
+        sand.friction = 0.8
+        sand.colorOverLife = .constant([0.95, 0.78, 0.48, 1])
+        sand.colorVariation = [0.08, 0.06, 0.04, 0]
+        sand.sizeOverLife = .constant(0.022)
+        sand.blendMode = .opaque
+        let image = try render(emitter: sand, frames: 330, colliders: false, worldColliders: [.plane(normal: [0, 1, 0], distance: 0), teapot])
+        #expect(try image.matchesGolden(named: "sand-on-baked-teapot"))
     }
 
     @Test func fountainEarly() throws {

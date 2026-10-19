@@ -1,6 +1,41 @@
 import Metal
 import MetalSprocketsParticlesShaders
+import simd
 import SwiftMesh
+
+public extension Collider {
+    /// A distance field collider baked from `mesh` on the CPU, once. `resolution` is the number of samples along the
+    /// mesh's longest side; the other sides get the same spacing, so cells are cubes. `padding` (in cells) grows the
+    /// grid past the mesh on every side so the field is positive at its edge. The mesh is in the collider's local
+    /// space, placed by `center` and `rotation`. Nil when the mesh has no triangles.
+    ///
+    /// Baking runs on all cores and takes a moment for detailed meshes at high resolutions; bake once and keep the
+    /// collider, rather than baking per frame.
+    static func signedDistanceField(
+        mesh: Mesh,
+        resolution: Int = 64,
+        padding: Int = 2,
+        center: SIMD3<Float> = .zero,
+        rotation: simd_quatf = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1),
+        categoryBitMask: UInt32 = .max
+    ) -> Self? {
+        guard let bounds = mesh.bounds else {
+            return nil
+        }
+        let size = bounds.max - bounds.min
+        let longest = max(size.max(), 1e-6)
+        let padding = max(padding, 0)
+        let cell = longest / Float(max(max(resolution, 2) - 1 - 2 * padding, 1))
+        let paddingDistance = cell * Float(padding)
+        // Samples per axis to cover each side plus padding at about this cell size (SwiftMesh spreads the grid over the
+        // padded bounds exactly, so cells are cubes to within rounding); the longest side gets `resolution`.
+        let perAxis = SIMD3<Int>(((size + 2 * paddingDistance) / cell).rounded(.up)) &+ 1
+        guard let field = mesh.signedDistanceField(resolution: simd_max(perAxis, SIMD3(repeating: 2)), padding: paddingDistance) else {
+            return nil
+        }
+        return .signedDistanceField(field, center: center, rotation: rotation, categoryBitMask: categoryBitMask)
+    }
+}
 
 /// A signed distance field collider's grid on the GPU.
 struct SignedDistanceFieldTexture {

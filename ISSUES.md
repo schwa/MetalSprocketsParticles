@@ -3123,13 +3123,14 @@ Part of #2. Depends on the SDF collider type.
 ## 151: Bake SDF colliders from SwiftMesh meshes
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:collision, effort:s, subtask
 depends: 149
 created: 2026-10-19T15:24:48Z
-updated: 2026-10-19T15:24:49Z
+updated: 2026-10-19T20:27:10Z
+closed: 2026-10-19T20:27:10Z
 +++
 
 Add Collider.sdf(mesh:resolution:padding:) that bakes a SwiftMesh mesh with SwiftMesh's signed distance baking (SwiftMesh #180) and wraps the grid in the SDF collider. CPU bake, once per mesh.
@@ -3139,6 +3140,7 @@ Acceptance: an SDF baked from a SwiftMesh cube matches the cube's analytic dista
 Part of #2. Depends on the SDF collider type and SwiftMesh #180.
 
 - `2026-10-19T20:01:22Z`: Unblocked: SwiftMesh 0.0.11 has SwiftMesh #176-#180 (Mesh.bounds, TriangleBVH, closest point and distance, winding-number contains, Mesh.signedDistanceField(resolution:padding:bvh:) returning SignedDistanceField: origin, spacing, resolution, values x-fastest). The package now resolves 0.0.11.
+- `2026-10-19T20:27:10Z`: Done: Collider.signedDistanceField(mesh:resolution:padding:center:rotation:categoryBitMask:) bakes with SwiftMesh's Mesh.signedDistanceField. resolution is samples along the longest side (default 64), other sides get about the same spacing (cube cells), padding is in cells (default 2) so the edge is outside the mesh; nil for a mesh with no triangles. Tests: a baked unit cube is within one cell of the exact box distance at every sample (and positive at the padded edge); grid sizing and padding; empty mesh. Golden sand-on-baked-teapot: sand rains on a SwiftMesh teapot (64 samples, turned so the spout is side on). The sand rests on the lid and body; the narrow, curved spout and handle shed it, but show as their shadow in the sand on the floor. (A probe showed the model's spout is along z, hence the turn.)
 
 ---
 
