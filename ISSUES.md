@@ -3294,7 +3294,6 @@ priority: medium
 kind: bug
 labels: area:performance, effort:m
 created: 2026-10-19T21:35:57Z
-updated: 2026-10-19T21:35:57Z
 +++
 
 Inside the Teapot (6 600 particles) takes about 5 ms of GPU a frame (particles-bench: 6.12 ms GPU, 16 ms worst), when Stress Test does 2 million particles in about 4.4 ms. In the app it falls below 60 fps.
@@ -3308,5 +3307,168 @@ Measured with copies of the preset, one part removed at a time (particles-render
 The beads use flocking with separation only, as a stand-in for particle-particle collision (without it they stack into one point). My guess, not checked in the shader: the cost grows with how densely the particles pack, not their count. In a pile each hash-grid cell holds hundreds of beads, and the neighbor search may visit all of them although maxNeighbors (16) caps how many are used. Why removing the outline layer makes it slower is unexplained.
 
 Fix ideas: stop the neighbor search once maxNeighbors are found, or cap the particles visited per cell; or give the preset a cheaper stand-in for separation.
+
+---
+
+## 159: Inspector: flocking
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T21:37:16Z
++++
+
+ParticleEmitter.flocking (ParticleFlocking): an on/off switch plus radius, separationRadius, separation, alignment, cohesion, speedRange, maxNeighbors. Murmuration and Inside the Teapot use it and cannot be changed or turned off (see #158).
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 160: Inspector: color by speed, by position, alternate colors, color image
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T21:37:16Z
++++
+
+ParticleEmitter.colorBySpeed and colorBySpeedRange; colorByPosition, colorByPositionStart, colorByPositionEnd, colorByPositionAtBirth; alternateColorOverLife; colorImage (ParticleColorImage, an image picker).
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 161: Inspector: trails and ribbons
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T21:37:16Z
++++
+
+ParticleEmitter.trail (ParticleTrail: pointCount, pointInterval, fades, tapers) and ribbon (ParticleRibbon: tapers), each with an on/off switch.
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 162: Inspector: LOD and culling
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T21:37:16Z
+updated: 2026-10-19T21:37:17Z
++++
+
+ParticleEmitter.cullingRadius, simulatesWhenCulled, lodNearDistance, lodFarDistance, lodFarRateScale, lodScalesSize, minimumScreenSize.
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 163: Inspector: collision extras and particle events
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:s
+created: 2026-10-19T21:37:17Z
++++
+
+ParticleEmitter.collisionRadius, collidesWithSceneDepth, softness, reportsCollisions, reportsDeaths.
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 164: Inspector: particle lights and scene lighting
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:m
+created: 2026-10-19T21:37:17Z
++++
+
+ParticleEmitter.light (ParticleLight: intensity, picksBrightest, on/off); the scene's lights (ParticleSystem.lights: add, remove, edit) and ambientLight.
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 165: Inspector: mesh particles, emitter meshes, point caches, emitter images
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:m
+created: 2026-10-19T21:37:17Z
++++
+
+Inputs that need data, not just numbers: ParticleEmitter.particleMesh (mesh particles); EmitterDescription.mesh (for the mesh shape), points (point caches), image (EmitterImage: data, pointCount, weighting, usesColors), meshDeformation; ImageSequence.initialFrame. Pickers could offer SwiftMesh primitives, the teapot, and files (images, OBJ).
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 166: Inspector: distance field colliders
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:m
+created: 2026-10-19T21:37:17Z
++++
+
+Distance field colliders (Collider.Shape.signedDistanceField) are not in the collider kind picker, and there is no way to bake one in the demo. Offer baking from a SwiftMesh primitive, the teapot, extruded text, or an OBJ file, with resolution and padding; show the grid size and bake time.
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 167: Inspector: user functions
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:m
+created: 2026-10-19T21:37:17Z
+updated: 2026-10-19T21:37:18Z
++++
+
+ParticleEmitter.updateFunction, spawnFunction, collisionFunction, deathFunction (ParticleFunction: source, parameters) and customAttributeCount: a source editor per slot with compile errors (ParticleFunction.errorDescription) and parameter fields.
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+---
+
+## 168: Inspector: scene-level animation and events
+
++++
+status: open
+priority: medium
+kind: enhancement
+labels: area:editor, effort:m
+created: 2026-10-19T21:37:18Z
+updated: 2026-10-19T21:37:18Z
++++
+
+ParticleSystem.colliderSpins (spin per collider: axis, speed), eventBursts (EventBurst: sourceLayer, targetLayer, and the rest; the model keeps them but notes there is no editor), trackedObjects (name and motion), and pointerMotion (the scripted pointer path used when the mouse is away).
+
+Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
 
 ---
