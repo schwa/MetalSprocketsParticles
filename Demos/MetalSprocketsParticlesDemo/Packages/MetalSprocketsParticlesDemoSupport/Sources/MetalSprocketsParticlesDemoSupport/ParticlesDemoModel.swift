@@ -120,8 +120,10 @@ final class ParticlesDemoModel {
     var pointerEmitterIDs: Set<EmitterDescription.ID> = []
     /// Stands in for the mouse when it is not over the view.
     var pointerMotion = EmitterMotion()
-    /// Reactions to particle events (no editor yet; kept so presets and saved effects play and save as authored).
-    var eventBursts: [EventBurst] = []
+    /// Reactions to particle events, by emitter id (see EventBurstItem).
+    var eventBurstItems: [EventBurstItem] = [] {
+        didSet { applyToRuntime() }
+    }
     /// 2D mode (`ParticleSystem.is2D`): the viewport shows the scene flat from the front and emitters stay on their plane.
     /// Kept when another preset or effect loads, for the session only; loading a 2D effect turns it on.
     var is2D = false
@@ -169,8 +171,6 @@ final class ParticlesDemoModel {
     var reverseZ = false
     /// Draws colliders as solids and gives soft particles their depth.
     var drawColliders = false
-    /// The preset's spinning colliders, by index.
-    var colliderSpins: [ColliderSpin] = []
 
     @ObservationIgnored private var cachedPlayer: ParticlePlayer?
     /// Why the last capacity edit could not be applied (more particles than one GPU buffer holds); nil once one is.
@@ -330,17 +330,24 @@ final class ParticlesDemoModel {
         }
         pointerEmitterIDs = Set(emitters.indices.filter { preset.pointerBindings.contains(.emitter($0)) }.map { emitters[$0].id })
         pointerMotion = preset.pointerMotion
-        eventBursts = preset.eventBursts
+        eventBurstItems = preset.eventBursts.compactMap { burst in
+            guard emitters.indices.contains(burst.sourceLayer), emitters.indices.contains(burst.targetLayer) else {
+                return nil
+            }
+            return EventBurstItem(sourceID: emitters[burst.sourceLayer].id, occasion: burst.occasion, targetID: emitters[burst.targetLayer].id, count: burst.count)
+        }
         // 2D is a viewing choice that stays as the user set it across presets; effects made for 2D turn it on.
         if preset.is2D {
             is2D = true
         }
         animateColliders = preset.animatesColliders
         drawColliders = preset.drawsColliders
-        colliderSpins = preset.colliderSpins
+        for spin in preset.colliderSpins where colliders.indices.contains(spin.collider) {
+            colliders[spin.collider].spin = SteadySpin(axis: spin.axis, speed: spin.speed)
+        }
         lights = preset.lights.map { LightItem(light: $0) }
         ambientLight = preset.ambientLight
-        trackedObjects = preset.trackedObjects
+        trackedObjectItems = preset.trackedObjects.sorted { $0.key < $1.key }.map { TrackedObjectItem(name: $0.key, motion: $0.value) }
         presetComment = preset.comment
         cameraEye = preset.cameraEye
         cameraTarget = preset.cameraTarget
@@ -489,7 +496,9 @@ final class ParticlesDemoModel {
     private(set) var presetComment = ""
 
     /// The preset's stand-ins for app objects, for objectEnters triggers.
-    var trackedObjects: [String: EmitterMotion] = [:]
+    var trackedObjectItems: [TrackedObjectItem] = [] {
+        didSet { applyToRuntime() }
+    }
 
     /// Tracked object positions at `time`, for `ParticleSystemRuntime.trackedObjects`.
 }

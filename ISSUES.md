@@ -3506,16 +3506,20 @@ Found by an audit of every public setting in the description types against the d
 ## 168: Inspector: scene-level animation and events
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T21:37:18Z
+updated: 2026-10-19T22:26:59Z
+closed: 2026-10-19T22:26:59Z
 +++
 
 ParticleSystem.colliderSpins (spin per collider: axis, speed), eventBursts (EventBurst: sourceLayer, targetLayer, and the rest; the model keeps them but notes there is no editor), trackedObjects (name and motion), and pointerMotion (the scripted pointer path used when the mouse is away).
 
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
+
+- `2026-10-19T22:26:59Z`: Done. Collider inspector: Spins switch with axis and speed. Scene inspector: Event Bursts (list; when [emitter]'s particles [hit a collider / die], burst [count] from [emitter]; warns when the source emitter does not report that event, since EventBurst needs reportsCollisions or reportsDeaths), Tracked Objects (name and path; add and remove), and Scripted Pointer (the path pointer-bound items follow without the mouse). The model now keeps spins on ColliderItem, bursts as EventBurstItem by emitter id, and tracked objects as named items, converting to the saved index/dictionary forms on save and back on load, so removing or reordering colliders or emitters keeps them attached (before, colliderSpins and eventBursts were index arrays that would shift). Tests: bursts follow their emitters through removals and drop when a target goes; spins follow their collider; tracked object names; every preset still round-trips. Not snapshot-checked (same controls as other sections).
 
 ---
 

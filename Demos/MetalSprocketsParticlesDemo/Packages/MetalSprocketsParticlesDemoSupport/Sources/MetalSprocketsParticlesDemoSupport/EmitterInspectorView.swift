@@ -17,6 +17,9 @@ struct EmitterInspectorView: View {
                 SceneSectionView()
                 WorldSectionView()
                 SendEventSectionView()
+                EventBurstsSectionView()
+                TrackedObjectsSectionView()
+                ScriptedPointerSectionView()
             case .emitter:
                 EmitterSectionView()
                 EmissionSectionView(settings: $model.selectedEmitter.settings, capacity: $model.selectedEmitter.editableCapacity)
@@ -56,6 +59,12 @@ struct EmitterInspectorView: View {
                     Section("Collider") {
                         ColliderEditorView(collider: $model.selectedCollider)
                         Toggle("Follow Pointer", isOn: $model.selectedColliderFollowsPointer)
+                        Toggle("Spins", isOn: $model.selectedColliderSpins)
+                            .help("Turn at a steady rate about the collider's center, flinging particles that rest on it.")
+                        if model.selectedColliderSpins {
+                            VectorEditorView("Spin Axis", value: $model.selectedColliderSpin.axis, in: -1...1)
+                            ParameterSliderView("Spin Speed", value: $model.selectedColliderSpin.speed, in: -10...10)
+                        }
                     }
                     RemoveSectionView(title: "Remove Collider")
                 }

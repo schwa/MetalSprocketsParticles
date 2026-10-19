@@ -65,6 +65,48 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// Scene-level animation and events (#168). Kept by id, so removing or reordering items keeps them pointing at the
+    /// right ones; saved by index.
+    @MainActor
+    @Test func eventBurstsFollowTheirEmitters() throws {
+        let model = ParticlesDemoModel()
+        model.emitters = [EmitterDescription("A", settings: ParticleEmitter()), EmitterDescription("B", settings: ParticleEmitter()), EmitterDescription("C", settings: ParticleEmitter())]
+        let (a, b, c) = (model.emitters[0].id, model.emitters[1].id, model.emitters[2].id)
+        model.eventBurstItems = [EventBurstItem(sourceID: c, occasion: .death, targetID: b, count: 5)]
+        #expect(model.currentEffect.eventBursts == [EventBurst(sourceLayer: 2, occasion: .death, targetLayer: 1, count: 5)])
+        // Removing A shifts the layers; the burst still goes from C to B.
+        model.emitters.removeAll { $0.id == a }
+        #expect(model.currentEffect.eventBursts == [EventBurst(sourceLayer: 1, occasion: .death, targetLayer: 0, count: 5)])
+        // Removing its target drops it from the saved effect.
+        model.emitters.removeAll { $0.id == b }
+        #expect(model.currentEffect.eventBursts.isEmpty)
+    }
+
+    @MainActor
+    @Test func colliderSpinsLiveOnTheirColliders() {
+        let model = ParticlesDemoModel()
+        model.colliders = [ColliderItem(collider: .sphere(center: .zero, radius: 1)), ColliderItem(collider: .box(center: .zero, halfExtents: [1, 1, 1]))]
+        model.selection = .collider(model.colliders[1].id)
+        model.selectedColliderSpins = true
+        model.selectedColliderSpin.speed = 2
+        #expect(model.currentEffect.colliderSpins == [ColliderSpin(collider: 1, axis: [0, 1, 0], speed: 2)])
+        model.colliders.remove(at: 0)
+        #expect(model.currentEffect.colliderSpins == [ColliderSpin(collider: 0, axis: [0, 1, 0], speed: 2)])
+        model.selectedColliderSpins = false
+        #expect(model.currentEffect.colliderSpins.isEmpty)
+    }
+
+    @MainActor
+    @Test func trackedObjectsAreNamedItems() {
+        let model = ParticlesDemoModel()
+        model.trackedObjectItems = []
+        model.addTrackedObject()
+        model.addTrackedObject()
+        #expect(model.trackedObjectItems.map(\.name) == ["Object 1", "Object 2"])
+        model.trackedObjectItems[0].name = "Ball"
+        #expect(Set(model.currentEffect.trackedObjects.keys) == ["Ball", "Object 2"])
+    }
+
     /// User functions in the inspector (#167): every slot's template compiles and runs.
     @Test func userFunctionTemplatesCompileAndRun() throws {
         var settings = ParticleEmitter()
