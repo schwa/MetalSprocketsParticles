@@ -2967,17 +2967,19 @@ Add a demo preset with a very large number of particles (millions), for performa
 ## 144: Option to use reverse Z in depth buffers
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T12:09:39Z
-updated: 2026-10-19T13:07:05Z
+updated: 2026-10-19T13:21:24Z
+closed: 2026-10-19T13:21:24Z
 +++
 
 Add an option to render with reverse Z (clear depth to 0, compare greater, swap near/far in the projection) for better depth precision at distance.
 
 - `2026-10-19T13:07:05Z`: Touches every depth consumer: SceneDepth and its depth pass, solid colliders, soft particles (the depthUnproject math), and scene depth collision (#120, which compares particle depth against the stored value). Default stays forward Z so goldens hold.
+- `2026-10-19T13:21:24Z`: Done: ParticleSystemRuntime.reverseZ (off by default) plus reversingDepth(_:) for any projection. With it on: the scene depth pass clears to 0 and tests greater (its 'nothing drawn' value is 0), solid colliders and mesh particles test greater, renderScene's pass clears depth to 0, depth collision flips its in-front test and empty value, and ParticlePlayer reverses its camera's projection. Soft particles already unproject from the projection matrix, so they work unchanged. Hosts that draw their own passes must reverse their projection and clear depth to 0. Not done: a demo toggle.
 
 ---
 

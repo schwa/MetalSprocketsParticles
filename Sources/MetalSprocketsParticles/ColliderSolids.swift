@@ -56,7 +56,9 @@ public struct SceneDepthCollision {
             cameraPosition: view.inverse.columns.3.xyz,
             size: [UInt32(depth.width), UInt32(depth.height)],
             thickness: max(thickness, 0),
-            enabled: 1
+            enabled: 1,
+            // Set from the runtime when encoding.
+            reverseZ: 0
         )
     }
 }
@@ -81,7 +83,7 @@ public extension ParticleSystemRuntime {
     func renderColliderSolids(projection: simd_float4x4, view: simd_float4x4, color: SIMD3<Float> = [0.1, 0.11, 0.13], planeExtent: Float = 6) throws -> some Element {
         let vertices = colliderSolidVertices(planeExtent: planeExtent)
         return try solids(vertices, fragmentShader: library.solidFragment, uniforms: WireframeUniforms(viewProjection: projection * view, color: SIMD4(color, 1)))
-            .depthCompare(function: .less, writes: true)
+            .depthCompare(function: depthCompareFunction, writes: true)
     }
 
     /// A whole frame after `simulate`: with `sceneDepth`, a pass that fills it and solid colliders; then wireframes if
@@ -100,6 +102,12 @@ public extension ParticleSystemRuntime {
                 }
                 try render(projection: projection, view: view, sceneDepth: sceneDepth?.texture)
             }
+            .renderPassDescriptorModifier { [reverseZ] descriptor in
+                // Reverse Z needs the depth buffer cleared to 0, the far plane; forward Z keeps the default of 1.
+                if reverseZ {
+                    descriptor.depthAttachment.clearDepth = 0
+                }
+            }
         }
     }
 
@@ -110,9 +118,10 @@ public extension ParticleSystemRuntime {
         collisionDepth = SceneDepthCollision(depth: sceneDepth, projection: projection, view: view, thickness: collisionDepth?.thickness ?? 0.5)
         let vertices = colliderSolidVertices(planeExtent: planeExtent)
         let uniforms = WireframeUniforms(viewProjection: projection * view, color: .one)
+        let farDepth = farDepth
         return try RenderPass(label: "Scene Depth") {
             try solids(vertices, fragmentShader: library.solidDepthFragment, uniforms: uniforms)
-                .depthCompare(function: .less, writes: true)
+                .depthCompare(function: depthCompareFunction, writes: true)
         }
         .renderPassDescriptorModifier { descriptor in
             for index in 1..<8 {
@@ -121,13 +130,13 @@ public extension ParticleSystemRuntime {
             descriptor.colorAttachments[0]?.texture = sceneDepth.texture
             descriptor.colorAttachments[0]?.resolveTexture = nil
             descriptor.colorAttachments[0]?.loadAction = .clear
-            // Depth 1 is the far plane: nothing in front, so particles there are not softened.
-            descriptor.colorAttachments[0]?.clearColor = MTLClearColor(red: 1, green: 1, blue: 1, alpha: 1)
+            // The far plane (1, or 0 with reverse Z): nothing in front, so particles there are not softened.
+            descriptor.colorAttachments[0]?.clearColor = MTLClearColor(red: farDepth, green: farDepth, blue: farDepth, alpha: 1)
             descriptor.colorAttachments[0]?.storeAction = .store
             descriptor.depthAttachment.texture = sceneDepth.depthAttachment
             descriptor.depthAttachment.resolveTexture = nil
             descriptor.depthAttachment.loadAction = .clear
-            descriptor.depthAttachment.clearDepth = 1
+            descriptor.depthAttachment.clearDepth = farDepth
             descriptor.depthAttachment.storeAction = .dontCare
             descriptor.stencilAttachment.texture = nil
         }

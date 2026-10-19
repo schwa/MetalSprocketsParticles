@@ -257,6 +257,10 @@ public final class ParticleSystemRuntime {
     private(set) var attributeStride = 1
     /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
     var trails: MTLBuffer?
+    /// Reverse Z: depth runs from 1 at the near plane to 0 at the far plane, for better precision at a distance. Use a
+    /// reversed projection (`reversingDepth(_:)`; `ParticlePlayer` does this itself) and clear depth buffers to 0.
+    /// Scene depth, solid colliders, mesh particles, soft particles, and depth collision all follow it.
+    public var reverseZ = false
     /// Draws particles in false colors or as wireframes instead of their own colors. Simulation is unaffected.
     public var debugView: ParticleDebugView = .none
     /// Speeds for `ParticleDebugView.speed`; the upper bound is also the seconds for `.lifeRemaining`.
@@ -592,7 +596,8 @@ public final class ParticleSystemRuntime {
         let particleLightColorCurves = particleLightColorCurves
         let particleLightBuffer = particleLightBuffer
         let gatherKernel = try library.gatherParticleLights as ComputeKernel
-        let depthCollision = collisionDepth?.data ?? DepthCollisionData()
+        var depthCollision = collisionDepth?.data ?? DepthCollisionData()
+        depthCollision.reverseZ = reverseZ ? 1 : 0
         let trailBuffer = trails ?? placeholderMesh.vertices
         let flocks = flocks
         let flockingBuffers = flockingBuffers
@@ -783,6 +788,7 @@ public final class ParticleSystemRuntime {
             return draw
         }
         let meshVertexShader = try library.particleMeshVertex as VertexShader
+        let depthCompare = depthCompareFunction
         let trailVertexShader = try library.particleTrailVertex as VertexShader
         let ribbonVertexShader = try library.particleRibbonVertex as VertexShader
         let trailBuffer = trails ?? placeholderMesh.vertices
@@ -843,7 +849,7 @@ public final class ParticleSystemRuntime {
                 .parameter("particleLights", buffer: particleLightBuffer)
                 .parameter("sceneDepth", texture: sceneDepth ?? placeholderTexture)
                 // Shapes hide each other; only opaque ones write depth, so blended ones still show what is behind.
-                .depthCompare(function: .less, writes: draw.blendMode == .opaque)
+                .depthCompare(function: depthCompare, writes: draw.blendMode == .opaque)
                 .renderPipelineDescriptorTransformer { descriptor in
                     if let attachment = descriptor.colorAttachments[0] {
                         draw.blendMode.configure(attachment)

@@ -339,6 +339,8 @@ typedef struct {
     // Particles more than this far behind the surface are taken to be behind the object, not inside it.
     float thickness;
     uint32_t enabled;
+    // Nonzero when depth runs from 1 (near) to 0 (far); empty depth is then 0.
+    uint32_t reverseZ;
 } DepthCollisionData;
 
 /// ParticleEventRecord.colliderIndex for hits on the scene depth.

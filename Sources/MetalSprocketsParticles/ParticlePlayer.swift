@@ -55,7 +55,8 @@ public final class ParticlePlayer {
     /// The camera's matrices for a view of `size` (in points for the overlay camera).
     public func matrices(size: CGSize) -> (projection: simd_float4x4, view: simd_float4x4) {
         let matrices = camera.matrices(for: system, size: size)
-        return (matrices.projection, matrices.cameraToWorld.inverse)
+        let projection = runtime.reverseZ ? ParticleSystemRuntime.reversingDepth(matrices.projection) : matrices.projection
+        return (projection, matrices.cameraToWorld.inverse)
     }
 
     /// One frame with the player's camera: simulate, then draw into a view of `size` points at `scale` pixels per

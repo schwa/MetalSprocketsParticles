@@ -367,8 +367,11 @@ static bool sceneDepthContact(DepthCollisionData d, texture2d<float, access::rea
     }
     uint2 pixel = min(uint2((ndc.xy * float2(0.5, -0.5) + 0.5) * float2(d.size)), d.size - 1);
     float sceneValue = depth.read(pixel).r;
-    // Depth 1 is the far plane: nothing drawn there.
-    if (sceneValue >= 1 || ndc.z <= sceneValue) {
+    // The far plane (1, or 0 with reverse Z) means nothing was drawn there; otherwise the particle must be behind the
+    // surface (farther: larger depth, or smaller with reverse Z).
+    bool empty = d.reverseZ != 0 ? sceneValue <= 0 : sceneValue >= 1;
+    bool inFront = d.reverseZ != 0 ? ndc.z >= sceneValue : ndc.z <= sceneValue;
+    if (empty || inFront) {
         return false;
     }
     surface = depthWorldPosition(d, depth, pixel);
