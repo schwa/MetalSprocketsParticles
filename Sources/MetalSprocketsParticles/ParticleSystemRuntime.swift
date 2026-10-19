@@ -39,6 +39,8 @@ public final class ParticleSystemRuntime {
         public var mesh: EmitterMesh?
         /// The mesh `mesh` was made from by `ParticleSystemRuntime.apply(_:)`, to skip remaking it.
         var meshSource: Mesh?
+        /// The point cache `mesh` was made from by `apply(_:)`.
+        var pointsSource: [EmitterPoint]?
         /// Animates `mesh` each frame, by the emitter's own clock.
         public var meshDeformation: MeshDeformation = .none
         /// Particles this emitter can have alive at once.
@@ -391,6 +393,7 @@ public final class ParticleSystemRuntime {
             new.appliedIsEmitting = old.appliedIsEmitting
             new.mesh = old.mesh
             new.meshSource = old.meshSource
+            new.pointsSource = old.pointsSource
             new.meshDeformation = old.meshDeformation
         }
     }

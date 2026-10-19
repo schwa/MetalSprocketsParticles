@@ -22,6 +22,24 @@ public enum EmitterShape: Sendable, Equatable, Codable {
     case torus(radius: Float, tubeRadius: Float)
     /// The emitter's `ParticleSystemRuntime.Emitter.mesh`. Volume emission falls back to the surface.
     case mesh
+    /// The emitter's point cache (`EmitterDescription.points`). Each birth picks a point at random; birth location is
+    /// ignored.
+    case points
+}
+
+/// One point of a point cache: a baked point set such as a scanned model or a logo outline.
+public struct EmitterPoint: Sendable, Equatable, Codable {
+    public var position: SIMD3<Float>
+    /// The direction for `ParticleBirthDirection.normal`; nil picks a random one.
+    public var normal: SIMD3<Float>?
+    /// Multiplies the particle's color over life; nil leaves it alone.
+    public var color: SIMD4<Float>?
+
+    public init(_ position: SIMD3<Float>, normal: SIMD3<Float>? = nil, color: SIMD4<Float>? = nil) {
+        self.position = position
+        self.normal = normal
+        self.color = color
+    }
 }
 
 extension ParticleShapeData {
@@ -36,6 +54,8 @@ extension ParticleShapeData {
         switch settings.shape {
         case .point:
             break
+        case .points:
+            meshVertexCount = UInt32(mesh?.vertexCount ?? 0)
         case .mesh:
             meshTriangleCount = UInt32(mesh?.triangleCount ?? 0)
             meshVertexCount = UInt32(mesh?.vertexCount ?? 0)
@@ -118,6 +138,23 @@ public final class EmitterMesh {
         self.triangles = try Self.makeBuffer(device: device, triangles.isEmpty ? [EmitterMeshTriangle()] : triangles, label: "Emitter mesh triangles")
         self.indices = try Self.makeBuffer(device: device, indices.isEmpty ? [UInt32(0)] : Array(indices.prefix(triangleCount * 3)), label: "Emitter mesh indices")
         vertices = try Self.makeBuffer(device: device, positions.isEmpty ? [SIMD4<Float>.zero] : positions.map { SIMD4($0, 1) }, label: "Emitter mesh vertices")
+    }
+
+    /// A point cache for `EmitterShape.points`, in emitter space.
+    public init(device: MTLDevice, points: [EmitterPoint]) throws {
+        let packed = points.map { point in
+            EmitterPointData(
+                position: SIMD4(point.position, point.color == nil ? 0 : 1),
+                normal: point.normal.map { SIMD4(simd_length($0) > 0 ? simd_normalize($0) : .zero, 1) } ?? .zero,
+                color: point.color ?? .zero
+            )
+        }
+        triangleCount = 0
+        vertexCount = points.count
+        restPositions = points.map(\.position)
+        triangles = try Self.makeBuffer(device: device, packed.isEmpty ? [EmitterPointData()] : packed, label: "Emitter point cache")
+        indices = try Self.makeBuffer(device: device, [UInt32(0)], label: "Emitter mesh indices")
+        vertices = try Self.makeBuffer(device: device, points.isEmpty ? [SIMD4<Float>.zero] : points.map { SIMD4($0.position, 1) }, label: "Emitter mesh vertices")
     }
 
     /// Emits from a SwiftMesh mesh. Polygon faces, including faces with holes, are triangulated; positions are in

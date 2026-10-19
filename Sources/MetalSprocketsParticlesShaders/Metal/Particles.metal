@@ -147,6 +147,7 @@ struct Random {
 struct ShapeSample {
     float3 position; // Emitter space, relative to the shape center.
     float3 normal;   // Outward unit normal, or a random direction where the shape has none.
+    float4 tint;     // Multiplies the particle's color; zero for none.
 };
 
 // A unit direction with azimuth around +Y limited to 0...sweep.
@@ -296,6 +297,16 @@ static ShapeSample sampleShape(
         float3 normal = cross(b - a, c - a);
         float length = metal::length(normal);
         return { point, length > 0 ? normal / length : sweptDirection(rng, twoPi) };
+    }
+    case ParticleEmitterShapeKindPoints: {
+        uint count = shape.meshVertexCount;
+        if (count == 0) {
+            return { float3(0), sweptDirection(rng, twoPi) };
+        }
+        uint index = min(uint(rng.next() * count), count - 1);
+        EmitterPointData point = ((constant EmitterPointData *)triangles)[index];
+        float3 normal = point.normal.w != 0 ? point.normal.xyz : sweptDirection(rng, twoPi);
+        return { point.position.xyz, normal, point.position.w != 0 ? point.color : float4(0) };
     }
     default:
         return { float3(0), sweptDirection(rng, twoPi) };
@@ -456,6 +467,7 @@ static Particle spawnParticle(
             position = uniforms.shape.center + offset * uniforms.shape.radius;
             float offsetLength = length(offset);
             sample.normal = offsetLength > 1e-6 ? offset / offsetLength : float3(0, 1, 0);
+            sample.tint = float4(0);
         } else {
             sample = sampleShape(rng, uniforms, mesh);
             position = uniforms.shape.center + sample.position;
@@ -511,7 +523,9 @@ static Particle spawnParticle(
         p.velocity = float4(velocity + extraVelocity, lifetime);
         p.rotation = float4(angle, angularVelocity, initialFrame, frameRate);
         p.color = colorOffset * variation.color;
-        p.properties = float4(sizeScale, restitutionOffset, frictionOffset, 0);
+        // A set tint never packs to 0 (no tint): transparent black becomes the smallest nonzero value.
+        uint tint = all(sample.tint == 0) ? 0u : max(pack_float_to_unorm4x8(saturate(sample.tint)), 1u);
+        p.properties = float4(sizeScale, restitutionOffset, frictionOffset, as_type<float>(tint));
     }
     return p;
 }
@@ -961,6 +975,10 @@ vertex VertexOut particleVertex(
     float3 world = center + (right * offset.x + up * offset.y) * size;
     out.position = uniforms.viewProjection * float4(world, 1);
     out.color = applyColorVariation(sampleCurve(colorCurve, t), p.color);
+    uint tint = as_type<uint>(p.properties.w);
+    if (tint != 0) {
+        out.color *= unpack_unorm4x8_to_float(tint);
+    }
     if (uniforms.isLit != 0) {
         out.color.rgb *= particleLight(uniforms, lights, center, right * offset.x + up * offset.y);
     }

@@ -20,6 +20,8 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public var mesh: Mesh?
     /// Animates `mesh`.
     public var meshDeformation: MeshDeformation = .none
+    /// Points for `EmitterShape.points`, in emitter space. Takes the place of `mesh` when set.
+    public var points: [EmitterPoint]?
     public var isEmitting: Bool
 
     public init(
@@ -56,6 +58,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
             isEmitting: isEmitting
         )
         copy.meshDeformation = meshDeformation
+        copy.points = points
         return copy
     }
 }
@@ -84,9 +87,14 @@ public extension ParticleSystemRuntime {
             }
             emitter.texture = texture(for: description.sprite)
             // Array equality is fast when the storage is shared, so an unchanged mesh costs almost nothing here.
-            if emitter.meshSource != description.mesh {
-                emitter.mesh = try description.mesh.map { try EmitterMesh(device: device, mesh: $0) }
+            if emitter.meshSource != description.mesh || emitter.pointsSource != description.points {
+                if let points = description.points {
+                    emitter.mesh = try EmitterMesh(device: device, points: points)
+                } else {
+                    emitter.mesh = try description.mesh.map { try EmitterMesh(device: device, mesh: $0) }
+                }
                 emitter.meshSource = description.mesh
+                emitter.pointsSource = description.points
             }
             // Back to the rest pose only when turning a built-in deformation off; positions an app set itself stay.
             if description.meshDeformation == .none, emitter.meshDeformation != .none {
@@ -111,7 +119,7 @@ public extension ParticleSystemRuntime {
 /// emission uses) and loads back as a triangle mesh.
 extension EmitterDescription: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting, meshPositions, meshTriangles, meshDeformation
+        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting, meshPositions, meshTriangles, meshDeformation, points
     }
 
     public init(from decoder: Decoder) throws {
@@ -134,6 +142,7 @@ extension EmitterDescription: Codable {
             mesh = nil
         }
         meshDeformation = try container.decodeIfPresent(MeshDeformation.self, forKey: .meshDeformation) ?? .none
+        points = try container.decodeIfPresent([EmitterPoint].self, forKey: .points)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -154,6 +163,7 @@ extension EmitterDescription: Codable {
         if meshDeformation != .none {
             try container.encode(meshDeformation, forKey: .meshDeformation)
         }
+        try container.encodeIfPresent(points, forKey: .points)
     }
 }
 

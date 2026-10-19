@@ -93,7 +93,7 @@ extension ParticleSprite: ParticleKind {
 // MARK: - Emitter shape
 
 extension ParticleEmitterShapeKind: @retroactive CaseIterable, @retroactive Identifiable, ParticleKind {
-    public static var allCases: [ParticleEmitterShapeKind] { [.point, .sphere, .box, .plane, .disc, .cylinder, .cone, .torus, .mesh] }
+    public static var allCases: [ParticleEmitterShapeKind] { [.point, .sphere, .box, .plane, .disc, .cylinder, .cone, .torus, .mesh, .points] }
 
     public var name: String {
         switch self {
@@ -105,6 +105,7 @@ extension ParticleEmitterShapeKind: @retroactive CaseIterable, @retroactive Iden
         case .cone: "Cone"
         case .torus: "Torus"
         case .mesh: "Mesh"
+        case .points: "Point Cache"
         default: "Point"
         }
     }
@@ -124,6 +125,7 @@ public extension EmitterShape {
             case .cone: .cone
             case .torus: .torus
             case .mesh: .mesh
+            case .points: .points
             }
         }
         set {
@@ -143,6 +145,7 @@ public extension EmitterShape {
             case .cone: .cone(radius: radius, height: 1)
             case .torus: .torus(radius: radius, tubeRadius: radius * 0.2)
             case .mesh: .mesh
+            case .points: .points
             default: .point
             }
         }

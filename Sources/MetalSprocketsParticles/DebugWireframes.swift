@@ -123,7 +123,7 @@ extension EmitterShape {
     /// The shape outline in emitter space around `center`. Mesh shapes draw only a cross at the center.
     func addWireframe(to builder: inout WireframeBuilder, center: SIMD3<Float>) {
         switch self {
-        case .point, .mesh:
+        case .point, .mesh, .points:
             builder.cross(center, size: 0.1)
         case let .sphere(radius):
             builder.sphere(center, radius: radius)

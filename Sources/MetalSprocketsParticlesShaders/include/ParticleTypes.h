@@ -20,6 +20,7 @@ typedef MS_ENUM(uint32_t, ParticleEmitterShapeKind) {
     ParticleEmitterShapeKindCone = 6,
     ParticleEmitterShapeKindTorus = 7,
     ParticleEmitterShapeKindMesh = 8,
+    ParticleEmitterShapeKindPoints = 9,
 };
 
 typedef MS_ENUM(uint32_t, ParticleBirthLocation) {
@@ -46,6 +47,14 @@ typedef struct {
     simd_float4 b;
     simd_float4 c;
 } EmitterMeshTriangle;
+
+/// One point of a point cache, stored in the mesh triangle buffer (same size). position.w = 1 when `color` is set;
+/// normal.w = 1 when `normal` is set.
+typedef struct {
+    simd_float4 position;
+    simd_float4 normal;
+    simd_float4 color;
+} EmitterPointData;
 
 typedef MS_ENUM(uint32_t, ParticleSpawnOccasion) {
     ParticleSpawnOccasionBirth = 0,
@@ -148,7 +157,7 @@ typedef struct {
     simd_float4 velocity; // xyz, w = lifetime (0 = never spawned). Dead when age >= lifetime.
     simd_float4 color;      // Per-particle hue, saturation, brightness, alpha offsets applied to the color-over-life curve.
     simd_float4 rotation;   // x = angle (radians), y = angular velocity (radians per second), z = initial frame, w = frame rate
-    simd_float4 properties; // x = size scale, y = restitution offset, z = friction offset
+    simd_float4 properties; // x = size scale, y = restitution offset, z = friction offset, w = tint (RGBA8 bits; 0 = none)
 } Particle;
 
 /// Where newborn particles are placed, in emitter space. Mirrored by the Swift EmitterShape plus the birth settings on

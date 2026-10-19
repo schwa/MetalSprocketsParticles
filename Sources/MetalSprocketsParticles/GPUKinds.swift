@@ -14,6 +14,7 @@ extension EmitterShape {
         case .cone: .cone
         case .torus: .torus
         case .mesh: .mesh
+        case .points: .points
         }
     }
 }

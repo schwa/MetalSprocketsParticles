@@ -2132,18 +2132,18 @@ Scope: the type and its nested Layer alias, file names (ParticlePreset.swift, Pr
 ## 102: Video export tests occasionally hang
 
 +++
-status: closed
+status: open
 priority: medium
 kind: bug
 labels: area:tooling, effort:s
 created: 2026-10-18T20:49:53Z
-updated: 2026-10-18T23:06:20Z
-closed: 2026-10-18T23:06:20Z
+updated: 2026-10-19T01:43:06Z
 +++
 
 A full library test run hung for 10 minutes (killed by the timeout) and passed in 18 seconds when re-run. A sample of the stuck test process showed nothing working: the main thread idle in its run loop, and AVFoundation's video compression and QuickTime writer threads waiting on semaphores. My guess is that a video export test (VideoExportTests, which uses MetalSprockets' OffscreenVideoRenderer) awaits a completion that never arrives, such as the writer's finish callback or a GPU completion handler. Not confirmed; seen once so far. Next time, sample the process and look for the awaiting task. Consider a timeout inside the video tests so a hang fails instead of stalling the run.
 
 - `2026-10-18T23:06:20Z`: Could not reproduce: 40 runs of VideoExportTests alone and 15 full library runs, no hangs. Best guess if it recurs: MetalSprockets VideoFrameWriter.waitUntilReady awaits AVAssetWriterInput.isReadyForMoreMediaData with no timeout and no check of the writer's status; if the writer fails, the flag stays false and the wait never resumes (matches the idle sample: test task suspended, AVFoundation threads waiting). If it happens again: sample the stuck test process, check assetWriter.status, and consider .timeLimit on VideoExportTests and an upstream fix that throws on writer failure. Closed (user): deal with it if it happens again.
+- `2026-10-19T01:43:06Z`: Recurred: particles-render --video hung (showreel run stalled on the last preset; make-demos.sh point-cloud hung 34 min with no output).
 
 ---
 
@@ -2392,12 +2392,13 @@ Triggers today are counts the CPU diffs. Add events that carry data from the GPU
 ## 115: Emit from point caches
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:simulation, effort:s
 created: 2026-10-19T00:12:15Z
-updated: 2026-10-19T00:12:16Z
+updated: 2026-10-19T01:43:06Z
+closed: 2026-10-19T01:43:06Z
 +++
 
 Emit from a list of baked points (a scanned model, a logo outline, an SVG path sampled to points) with optional per-point normals and colors, as VFX Graph point caches do. Simpler than meshes and works for shapes with no surface. Load from a file or pass an array; store in effect files like mesh positions.
