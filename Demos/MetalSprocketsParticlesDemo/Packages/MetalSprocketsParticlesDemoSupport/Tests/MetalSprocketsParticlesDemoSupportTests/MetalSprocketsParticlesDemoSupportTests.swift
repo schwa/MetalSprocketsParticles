@@ -1,8 +1,8 @@
 import Metal
 import MetalSprockets
 import MetalSprocketsParticles
-import MetalSprocketsParticlesSamples
 @testable import MetalSprocketsParticlesDemoSupport
+import MetalSprocketsParticlesSamples
 import simd
 import SwiftUI
 import Testing

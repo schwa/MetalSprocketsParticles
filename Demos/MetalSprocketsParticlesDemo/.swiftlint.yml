@@ -14,7 +14,7 @@ only_rules:
   - capture_variable
   - class_delegate_protocol
   - closing_brace
-  - closure_body_length
+#  - closure_body_length # size rules are off, as in the root config
   - closure_end_indentation
   - closure_parameter_position
   - closure_spacing
@@ -91,7 +91,6 @@ only_rules:
 #  - implicitly_unwrapped_optional
   - inclusive_language
 #  - indentation_width
-  - inert_defer
   - invalid_swiftlint_command
   - is_disjoint
   - joined_default_parameter
@@ -141,7 +140,7 @@ only_rules:
 #  - one_declaration_per_file
   - opening_brace
   - operator_usage_whitespace
-  - operator_whitespace
+  - function_name_whitespace
 #  - optional_data_string_conversion
   - optional_enum_case_matching
 #  - orphaned_doc_comment
@@ -174,8 +173,8 @@ only_rules:
   - redundant_discardable_let
   - redundant_nil_coalescing
   - redundant_objc_attribute
-  - redundant_optional_initialization
-  - redundant_self_in_closure
+  - implicit_optional_initialization
+  - redundant_self
   - redundant_set_access_control
   - redundant_string_enum_value
   - redundant_type_annotation
@@ -201,7 +200,7 @@ only_rules:
   - superfluous_disable_command
 #  - superfluous_else
   - switch_case_alignment
-  - switch_case_on_newline
+#  - switch_case_on_newline # off, as in the root config: one-line cases are house style
   - syntactic_sugar
 #  - test_case_accessibility (fixable)
 #  - todo
@@ -211,7 +210,7 @@ only_rules:
 #  - trailing_newline (fixable)
   - trailing_semicolon
   - trailing_whitespace
-  - type_body_length
+#  - type_body_length # size rules are off, as in the root config
 #  - type_contents_order
 #  - type_name
   - typesafe_array_init

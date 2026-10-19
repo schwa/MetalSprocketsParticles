@@ -1,7 +1,7 @@
 import Foundation
 import MetalSprocketsParticles
-import MetalSprocketsParticlesSamples
 @testable import MetalSprocketsParticlesDemoSupport
+import MetalSprocketsParticlesSamples
 import Testing
 
 @MainActor
