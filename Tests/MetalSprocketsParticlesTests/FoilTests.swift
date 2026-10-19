@@ -86,6 +86,46 @@ struct FoilTests {
         #expect(spread > 0.15, "balances \(balances)")
     }
 
+    /// Sparkles: an `.onGlint` sub-emitter fires as a spinning foil card flashes (#171), and only then.
+    @Test func glintSubEmittersFireWhenPiecesFlash() throws {
+        func children(spin: Float, withView: Bool) throws -> Int {
+            var card = ParticleEmitter()
+            card.shape = .point
+            card.velocity = .zero
+            card.velocitySpread = 0
+            card.gravity = .zero
+            card.birthRate = 0
+            card.lifetime = 10...10
+            card.orientation = .tumbling
+            card.angularSpeed = spin
+            card.foil = ParticleFoil()
+            var sparkle = ParticleEmitter()
+            sparkle.shape = .point
+            sparkle.lifetime = 5...5
+            sparkle.gravity = .zero
+            card.subEmitters = [SubEmitter(occasion: .onGlint(threshold: 0.5), countPerEvent: 2, settings: sparkle)]
+            let runner = try Runner()
+            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: card)
+            runtime.burst(1)
+            let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
+            for _ in 0..<120 {
+                try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0, view: withView ? view : nil))
+            }
+            // Children live in the sub-emitter's slice, after the parent.
+            let count = runtime.buffer.length / MemoryLayout<Particle>.stride
+            let pointer = runtime.buffer.contents().bindMemory(to: Particle.self, capacity: count)
+            return (1..<count).filter { pointer[$0].velocity.w > 0 && pointer[$0].position.w < pointer[$0].velocity.w }.count
+        }
+        #expect(try children(spin: 6, withView: true) > 0)
+        #expect(try children(spin: 6, withView: false) == 0)
+        #expect(try children(spin: 0, withView: true) == 0)
+    }
+
+    @Test func onGlintRoundTripsThroughEffectFiles() throws {
+        let sub = SubEmitter(occasion: .onGlint(threshold: 0.6), countPerEvent: 3, settings: ParticleEmitter())
+        #expect(try JSONDecoder().decode(SubEmitter.self, from: JSONEncoder().encode(sub)).occasion == .onGlint(threshold: 0.6))
+    }
+
     /// A billboard always faces the camera, so turning it (in its plane) does not make it glint: why foil needs tumbling.
     @Test func foilBillboardsDoNotGlint() throws {
         let angles = (0..<12).map { Float($0) / 12 * 2 * .pi }

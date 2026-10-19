@@ -303,7 +303,7 @@ public extension ForceField.Effect {
 // MARK: - Sub-emitters and triggers
 
 extension ParticleSpawnOccasion: @retroactive CaseIterable, @retroactive Identifiable, ParticleKind {
-    public static var allCases: [ParticleSpawnOccasion] { [.birth, .death, .collision, .whileAlive, .age, .enterVolume] }
+    public static var allCases: [ParticleSpawnOccasion] { [.birth, .death, .collision, .whileAlive, .age, .enterVolume, .glint] }
 
     public var name: String {
         switch self {
@@ -312,14 +312,15 @@ extension ParticleSpawnOccasion: @retroactive CaseIterable, @retroactive Identif
         case .whileAlive: "While Alive"
         case .age: "At Age"
         case .enterVolume: "On Entering Volume"
+        case .glint: "On Glint"
         default: "On Birth"
         }
     }
 }
 
 public extension SubEmitter.Occasion {
-    /// Setting it to `.whileAlive` starts with a 0.05 second interval, `.age` at 1 second, and `.enterVolume` with a
-    /// half-meter sphere at y = 1.
+    /// Setting it to `.whileAlive` starts with a 0.05 second interval, `.age` at 1 second, `.enterVolume` with a
+    /// half-meter sphere at y = 1, and `.glint` at a threshold of 0.8.
     var kind: ParticleSpawnOccasion {
         get {
             switch self {
@@ -329,6 +330,7 @@ public extension SubEmitter.Occasion {
             case .whileAlive: .whileAlive
             case .atAge: .age
             case .onEntering: .enterVolume
+            case .onGlint: .glint
             }
         }
         set {
@@ -341,6 +343,7 @@ public extension SubEmitter.Occasion {
             case .whileAlive: .whileAlive(interval: 0.05)
             case .age: .atAge(seconds: 1)
             case .enterVolume: .onEntering(.sphere(center: [0, 1, 0], radius: 0.5))
+            case .glint: .onGlint(threshold: 0.8)
             default: .onBirth
             }
         }

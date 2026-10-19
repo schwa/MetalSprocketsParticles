@@ -826,6 +826,21 @@ static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *e
     record.sequence = sequence;
 }
 
+static float3 rotateAbout(float3 v, float3 axis, float angle);
+static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base);
+
+// A particle's own tumble axis, the same one mesh particles turn about.
+static float3 tumbleAxis(uint index) {
+    float3 axis = float3(hash(index * 3u + 1u), hash(index * 3u + 2u), hash(index * 3u + 3u)) / 4294967295.0 * 2 - 1;
+    return length_squared(axis) > 1e-6 ? normalize(axis) : float3(0, 1, 0);
+}
+
+// Foil's glint for a face with `normal` (either side), as in foilColor: 0 to 1.
+static float glintAt(float3 normal, float3 toCamera, float3 halfway, float shininess) {
+    float3 n = dot(normal, toCamera) < 0 ? -normal : normal;
+    return pow(max(dot(n, halfway), 0.0), shininess);
+}
+
 kernel void updateParticles(
     device Particle *particles [[buffer(0)]],
     constant SimulationUniforms &uniforms [[buffer(1)]],
@@ -1122,6 +1137,19 @@ kernel void updateParticles(
         case ParticleSpawnOccasionAge:
             count = (born ? interval <= age : previousAge < interval && interval <= age) ? childrenPerEvent : 0;
             break;
+        case ParticleSpawnOccasionGlint: {
+            // The glint foil shading draws, from the particle's tumble before and after this step's spin.
+            if (uniforms.hasGlintCamera != 0 && !born) {
+                float3 axis = tumbleAxis(id);
+                float3 toCamera = normalize(uniforms.glintCamera - position);
+                float3 toLight = uniforms.glintLight.w > 0 ? normalize(uniforms.glintLight.xyz - position) : uniforms.glintLight.xyz;
+                float3 halfway = normalize(toLight + toCamera);
+                float before = glintAt(rotateAbout(float3(0, 0, 1), axis, p.rotation.x - p.rotation.y * dt), toCamera, halfway, uniforms.glintShininess);
+                float after = glintAt(rotateAbout(float3(0, 0, 1), axis, p.rotation.x), toCamera, halfway, uniforms.glintShininess);
+                count = before < interval && interval <= after ? childrenPerEvent : 0;
+            }
+            break;
+        }
         case ParticleSpawnOccasionWhileAlive: {
             // One child each time the age crosses a multiple of the interval, into a ring of the owned slots.
             float tick = floor(age / max(interval, 1e-4));
@@ -1553,15 +1581,6 @@ static float4 particleBaseColor(constant RenderUniforms &uniforms, constant floa
         color *= sampleCurve(extraColorCurves + 2 * PARTICLE_CURVE_SAMPLES, saturate(along));
     }
     return color;
-}
-
-static float3 rotateAbout(float3 v, float3 axis, float angle);
-static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base);
-
-// A particle's own tumble axis, the same one mesh particles turn about.
-static float3 tumbleAxis(uint index) {
-    float3 axis = float3(hash(index * 3u + 1u), hash(index * 3u + 2u), hash(index * 3u + 3u)) / 4294967295.0 * 2 - 1;
-    return length_squared(axis) > 1e-6 ? normalize(axis) : float3(0, 1, 0);
 }
 
 vertex VertexOut particleVertex(

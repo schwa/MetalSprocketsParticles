@@ -18,6 +18,10 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         case atAge(seconds: Float)
         /// When the parent moves into `volume` (world space) during a step.
         case onEntering(TriggerVolume)
+        /// When the parent flashes: its foil glint, as the camera sees it, rises past `threshold` (0...1) during a step.
+        /// Sparkles on confetti. The parent needs `ParticleEmitter.foil` and to turn (tumbling sprites or mesh
+        /// particles), and the runtime a camera: `ParticleSystemRuntime.simulate(view:)` or a `ParticlePlayer`.
+        case onGlint(threshold: Float = 0.8)
     }
 
     public var occasion: Occasion
@@ -89,6 +93,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         switch occasion {
         case let .whileAlive(interval): interval
         case let .atAge(seconds): seconds
+        case let .onGlint(threshold): threshold
         default: 0
         }
     }

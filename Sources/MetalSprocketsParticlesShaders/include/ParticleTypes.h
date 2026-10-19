@@ -66,6 +66,8 @@ typedef MS_ENUM(uint32_t, ParticleSpawnOccasion) {
     ParticleSpawnOccasionAge = 4,
     /// When the parent moves into `volume` during a step.
     ParticleSpawnOccasionEnterVolume = 5,
+    /// When the parent's foil glint, seen from the camera, rises past `interval` (0...1) during a step.
+    ParticleSpawnOccasionGlint = 6,
 };
 
 /// Trigger counters: one per collider, then one per trigger volume. Monotonic; the CPU diffs them between frames.
@@ -311,6 +313,12 @@ typedef struct {
     uint32_t colorsByBirthPosition;
     simd_float3 birthColorStart;
     simd_float3 birthColorEnd;
+    // For glint sub-emitters (ParticleSpawnOccasionGlint): the camera, when simulate was given a view (hasGlintCamera),
+    // the light (xyz a direction toward it when w is 0, a position when w is 1), and the foil's shininess.
+    uint32_t hasGlintCamera;
+    simd_float3 glintCamera;
+    simd_float4 glintLight;
+    float glintShininess;
 } SimulationUniforms;
 
 /// Cells in the flocking spatial hash. Neighbor cells that hash to the same entry are searched once.

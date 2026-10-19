@@ -10,7 +10,7 @@
       "normal": [0, 1, 0]
     }
   ],
-  "comment": "Shows: foil shading on tumbling sprites. Confetti cards flutter down, flashing as they turn to catch the lights and shifting color with the angle.",
+  "comment": "Shows: foil shading on tumbling sprites. Confetti cards flutter down, flashing as they turn to catch the lights, with a sparkle at each flash, and shifting color with the angle.",
   "forceFields": [],
   "layers": [
     {
@@ -95,7 +95,54 @@
         "softness": 0,
         "sortMode": "None",
         "speedVariation": 0,
-        "subEmitters": [],
+        "subEmitters": [
+          {
+            "occasion": {
+              "onGlint": {
+                "threshold": 0.7
+              }
+            },
+            "countPerEvent": 1,
+            "velocityFactor": 0.5,
+            "sprite": "Star",
+            "settings": {
+              "shape": {
+                "point": {}
+              },
+              "velocity": [0, 0, 0],
+              "velocitySpread": 0,
+              "gravity": [0, 0, 0],
+              "drag": 2,
+              "lifetime": [0.3, 0.45],
+              "sizeOverLife": {
+                "keyframes": [
+                  {
+                    "time": 0,
+                    "value": 0.12
+                  },
+                  {
+                    "time": 1,
+                    "value": 0
+                  }
+                ]
+              },
+              "colorOverLife": {
+                "keyframes": [
+                  {
+                    "time": 0,
+                    "value": [1, 1, 1, 1]
+                  },
+                  {
+                    "time": 1,
+                    "value": [1, 0.9, 0.7, 0]
+                  }
+                ]
+              },
+              "angularSpeed": 4,
+              "blendMode": 0
+            }
+          }
+        ],
         "sweepAngle": 6.283185,
         "triggers": [],
         "velocity": [0, -0.3, 0],

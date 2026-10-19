@@ -3571,11 +3571,13 @@ Move the existing inline meshes in the presets out to files. Decide whether to k
 ## 171: Foil shading for tumbling sprites, and sparkles on glints
 
 +++
-status: open
+status: closed
 priority: low
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T22:35:25Z
+updated: 2026-10-19T23:11:53Z
+closed: 2026-10-19T23:11:53Z
 +++
 
 Follow-up to #155, which added foil (ParticleEmitter.foil) for mesh particles only. Not done there:
@@ -3586,6 +3588,7 @@ Workaround today: use mesh particles (Draw As Coin) for foil confetti, as the Fo
 
 - `2026-10-19T22:40:04Z`: Related: #172 makes shading pluggable; foil for sprites becomes giving sprites a real tumbling normal in ShadingInput, and foil itself becomes a built-in shading model.
 - `2026-10-19T23:01:44Z`: Sprites done (first half): ParticleOrientation.tumbling makes each sprite a world-space card turned about its own random axis (the same per-particle axis mesh particles use) by its spin angle, so it has a real facing normal. The sprite vertex shader now applies foil with the quad's own plane normal in every orientation (a tumbling card flashes; a billboard faces the camera, so its glint stays put). New Confetti sprite (a flat rectangle). Foil Confetti and Foil Confetti 2D now use tumbling confetti sprites, no coins. Inspector: Tumbling in the orientation picker; the Foil switch shows for sprites too. Tests: a tumbling card glints and shifts color like a mesh particle; a foil billboard does not glint; tumbling round-trips. Other goldens unchanged. Sparkles on glints next.
+- `2026-10-19T23:11:53Z`: Sparkles done (second half): SubEmitter.Occasion.onGlint(threshold:) fires when the parent's foil glint, as the camera sees it, rises past the threshold during a step. The simulation computes the same glint the renderer draws: the particle's tumble axis (same per-particle hash) and its rotation before and after the step, the camera from simulate(view:) (ParticlePlayer passes it), the first scene light or foil's fixed light, and the foil's shininess. Without a view nothing fires. Foil Confetti and Foil Confetti 2D sparkle with a short white star at each flash. Inspector: On Glint in the sub-emitter occasion picker with a threshold. Tests: a spinning foil card fires with a camera, not without one, and not when it does not spin; onGlint round-trips. Goldens updated for the two presets only.
 
 ---
 

@@ -28,6 +28,7 @@ extension SubEmitter.Occasion {
         case .whileAlive: .whileAlive
         case .atAge: .age
         case .onEntering: .enterVolume
+        case .onGlint: .glint
         }
     }
 }

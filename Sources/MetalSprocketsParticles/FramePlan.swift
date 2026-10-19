@@ -222,6 +222,14 @@ extension ParticleSystemRuntime {
         let model = emitter.modelTransform
         var uniforms = SimulationUniforms()
         uniforms.emitterTransform = motion.transform
+        // Glint sub-emitters see what foil shading sees: the first light (or foil's fixed light) and the shininess.
+        // The camera is set by simulate when it has a view.
+        uniforms.glintShininess = max(settings.foil?.shininess ?? ParticleFoil().shininess, 1)
+        uniforms.glintLight = switch lights.first {
+        case let .directional(direction, _, _)?: SIMD4(simd_length(direction) > 0 ? -simd_normalize(direction) : [0, 1, 0], 0)
+        case let .point(position, _, _, _)?: SIMD4(position, 1)
+        case nil: SIMD4(simd_normalize(SIMD3<Float>(0.3, 1, 0.6)), 0)
+        }
         if settings.constrainsToPlane {
             uniforms.constrainsToPlane = 1
             uniforms.planePoint = motion.transform.columns.3.xyz

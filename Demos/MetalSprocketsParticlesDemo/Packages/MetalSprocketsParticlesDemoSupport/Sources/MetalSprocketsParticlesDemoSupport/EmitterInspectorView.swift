@@ -808,6 +808,10 @@ struct SubEmitterEditorView: View {
             if subEmitter.occasion.kind == .enterVolume {
                 TriggerVolumeEditorView(volume: $subEmitter.enteredVolume)
             }
+            if subEmitter.occasion.kind == .glint {
+                ParameterSliderView("Threshold", value: $subEmitter.glintThreshold, in: 0...1)
+                    .help("Fires when the parent's glint rises past this. The parent needs Foil and to tumble (Tumbling sprites or meshes).")
+            }
             Toggle("Replaces Parent", isOn: $subEmitter.replacesParent)
                 .help("The parent dies when it spawns children, so it turns into them.")
             Toggle("Continues Parent's Life", isOn: $subEmitter.continuesParentLife)

@@ -571,8 +571,14 @@ public final class ParticleSystemRuntime {
         readEvents()
         var plan = try planFrame(deltaTime: deltaTime, colliders: colliders, transforms: transforms, trackedObjects: trackedObjects)
         let trailStride = UInt32(try makeTrailsIfNeeded())
+        // The camera, for glint sub-emitters (they flash as the camera sees them).
+        let camera = view.map(\.inverse.columns.3.xyz)
         for index in plan.dispatches.indices {
             plan.dispatches[index].uniforms.trailStride = trailStride
+            if let camera {
+                plan.dispatches[index].uniforms.hasGlintCamera = 1
+                plan.dispatches[index].uniforms.glintCamera = camera
+            }
             for child in plan.dispatches[index].subEmitterUniforms.indices {
                 plan.dispatches[index].subEmitterUniforms[child].trailStride = trailStride
             }

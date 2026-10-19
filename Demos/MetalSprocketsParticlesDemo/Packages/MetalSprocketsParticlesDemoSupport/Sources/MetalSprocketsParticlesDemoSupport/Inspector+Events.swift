@@ -38,6 +38,17 @@ extension SubEmitter {
         set { occasion = .atAge(seconds: newValue) }
     }
 
+    /// The `onGlint` threshold, or 0.8 for other occasions. Setting it switches to `onGlint`.
+    var glintThreshold: Float {
+        get {
+            if case let .onGlint(threshold) = occasion {
+                return threshold
+            }
+            return 0.8
+        }
+        set { occasion = .onGlint(threshold: newValue) }
+    }
+
     /// A small burst of short-lived sparks, a sensible starting point for a new sub-emitter.
     static var sparks: SubEmitter {
         var settings = ParticleEmitter()

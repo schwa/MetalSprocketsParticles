@@ -395,12 +395,12 @@ Shows: a mesh turned inside out as a container (its baked distance field negated
 
 ## Foil Confetti
 
-Shows: foil shading on tumbling sprites. Confetti cards flutter down, flashing as they turn to catch the lights and shifting color with the angle.
+Shows: foil shading on tumbling sprites. Confetti cards flutter down, flashing as they turn to catch the lights, with a sparkle at each flash, and shifting color with the angle.
 
 ![foil-confetti](previews/foil-confetti.webp)
 
 ## Foil Confetti 2D
 
-Shows: foil shading in 2D mode. The same confetti seen flat from the front; the cards still tumble, so they still glint.
+Shows: foil shading in 2D mode. The same confetti seen flat from the front; the cards still tumble, so they still glint and sparkle.
 
 ![foil-confetti-2d](previews/foil-confetti-2d.webp)
