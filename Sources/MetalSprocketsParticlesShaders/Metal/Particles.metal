@@ -458,12 +458,28 @@ static float3 fieldNormal(texture3d<float> field, ColliderData c, float3 local) 
 // one sample per cell, then refined to the surface: fast particles do not pass through thin walls.
 static void fieldContact(texture3d<float> field, ColliderData c, float3 start, thread float3 &position, thread float3 &velocity, float restitution, float friction, thread bool &hit) {
     float3 local = fieldLocal(c, position);
+    float3 startLocal = fieldLocal(c, start);
     float distance = fieldDistance(field, c, local);
     if (distance < 0) {
+        if (fieldDistance(field, c, startLocal) >= 0) {
+            // Came in this step: respond where the path went in. Pushing out to the nearest surface from where it
+            // ended can pick a side of a thin part, or its far face, when the step went several cells deep (#157).
+            float low = 0;
+            float high = 1;
+            for (int refine = 0; refine < 6; refine++) {
+                float middle = (low + high) / 2;
+                if (fieldDistance(field, c, mix(startLocal, local, middle)) < 0) { high = middle; } else { low = middle; }
+            }
+            float3 contact = mix(startLocal, local, low);
+            float3 normal = fieldNormal(field, c, contact);
+            position = c.center + rotate(c.rotation, contact) + normal * 1e-4;
+            collide(position, velocity, c, normal, 0, restitution, friction, hit);
+            return;
+        }
+        // Started inside too (pushed in by a moving collider, say): out along the normal.
         collide(position, velocity, c, fieldNormal(field, c, local), -distance, restitution, friction, hit);
         return;
     }
-    float3 startLocal = fieldLocal(c, start);
     float cells = metal::length((local - startLocal) / c.fieldSpacing);
     if (cells < 1) {
         return;
@@ -982,10 +998,11 @@ kernel void updateParticles(
             }
         } else if (c.kind == ParticleColliderKindSignedDistanceField) {
             if (c.fieldIndex < PARTICLE_MAX_SIGNED_DISTANCE_FIELDS) {
-                // In the collider's frame now: where the particle started is shifted by the collider's motion, as
-                // for the sweeps below.
+                // In the collider's frame now: where the particle started, carried along by the collider's motion
+                // over the step, its spin included. A particle resting on a turning collider then starts on its
+                // surface, not off it.
                 texture3d<float> field = signedDistanceFields[c.fieldIndex];
-                float3 start = startPosition + c.velocity * dt;
+                float3 start = startPosition + (c.velocity + cross(c.angularVelocity, startPosition - c.pivot)) * dt;
                 fieldContact(field, c, start, position, velocity, restitution, friction, hit);
             }
         } else if (c.kind == ParticleColliderKindCapsule) {

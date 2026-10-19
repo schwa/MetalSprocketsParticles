@@ -347,6 +347,20 @@ struct SignedDistanceFieldColliderTests {
         #expect(landed.allSatisfy { $0.y > 0 && $0.y < 0.05 + cell })
     }
 
+    /// Sand falling fast onto a thin part (a fin two cells wide) rests on its top: it must not be pushed out a side,
+    /// slide off, or end inside (#157). A step moves it several cells, so it ends deep in the fin, where the nearest
+    /// surface is a side.
+    @Test func fastParticlesRestOnTopOfThinParts() throws {
+        let fin = field { point in
+            let q = abs(point - [0, 0.2, 0]) - SIMD3<Float>(0.05, 0.2, 0.5)
+            return simd_length(simd_max(q, .zero)) + min(max(q.x, max(q.y, q.z)), 0)
+        }
+        for x: Float in [-0.03, 0, 0.02] {
+            let landed = try land(on: [.signedDistanceField(fin)], from: [x, 0.95, 0], velocity: [0, -9, 0])
+            #expect(landed.allSatisfy { abs($0.y - 0.4) < cell && abs($0.x - x) < cell }, "x = \(x): \(landed[0])")
+        }
+    }
+
     @Test func collisionRadiusGrowsTheSurface() throws {
         let landed = try land(on: [.signedDistanceField(ball)], radius: 0.1)
         #expect(landed.allSatisfy { abs($0.y - 0.6) < cell })

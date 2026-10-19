@@ -3269,11 +3269,13 @@ Spinning Teapot sometimes flings sand, notably when the app goes to the backgrou
 ## 157: Fast particles sink into or slide off thin parts of distance field colliders
 
 +++
-status: open
+status: closed
 priority: medium
 kind: bug
 labels: area:collision, effort:m
 created: 2026-10-19T21:29:36Z
+updated: 2026-10-19T21:47:12Z
+closed: 2026-10-19T21:47:12Z
 +++
 
 Found while making Sand on Letters (sand on extruded 'SDF' text, 96-sample grid, letters 0.35 tall). After 5 s, of the sand that landed: about 8 000 grains rest on the letter tops, about 45 000 on the floor beside them, and about 3 400 on the floor inside a letter's footprint, inside the solid. The letters cover roughly a quarter of the pour area, so far fewer stay on top than should, and some end up inside.
@@ -3286,6 +3288,7 @@ What I measured and tried:
 Ideas: entry-point response with the collider's motion accounted for (so resting contacts are not reset), smaller steps for fast particles near fields, or normals from a wider stencil near thin parts.
 
 - `2026-10-19T21:40:28Z`: Related: #166 (distance field colliders in the inspector): its bake resolution setting is one of the levers here.
+- `2026-10-19T21:47:12Z`: Fixed. Two changes in fieldContact: (1) a particle that ends a step inside the field but started outside responds where its path went in (bisected), not at the nearest surface to where it ended; (2) the step's start is carried by the collider's spin as well as its velocity (start + (v + w x (start - pivot)) dt). (2) is why the earlier entry-point attempt broke aSpinningFieldFlingsParticles: without the spin, a grain resting on a turning collider seemed to start off its surface, so every step counted as a new entry and reset it. Test fastParticlesRestOnTopOfThinParts (9 m/s onto a fin two cells wide; failed at 2 of 3 drop points before). Sand on Letters: grains on the letter tops 8 000 -> 15 900, inside the letters 3 400 -> 1 160 (not zero; some still get in, likely at stroke edges). Goldens moved for the five distance-field scenes: sand now rests on the baked teapot's spout and handle, and the umbrella's dry patch is crisp.
 
 ---
 
