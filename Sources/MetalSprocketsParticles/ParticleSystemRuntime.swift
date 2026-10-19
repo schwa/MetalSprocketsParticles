@@ -239,6 +239,11 @@ public final class ParticleSystemRuntime {
     public var ambientLight: SIMD3<Float> = [0.25, 0.25, 0.25]
     /// Multiplies simulation time. 2 runs twice as fast; 0.5 is slow motion.
     public var speedFactor: Float = 1
+    /// The longest step `simulate` takes, in seconds. A longer frame (a hitch, or the app coming back from the
+    /// background) simulates only this much, so particles do not jump. Anything that animates alongside the simulation
+    /// (spun or animated colliders, moving emitters) should advance by the same capped step, or it gets ahead and its
+    /// motion looks much faster than it is.
+    public static let maximumStep: Float = 1.0 / 30.0
 
     public var state: SimulationState = .playing {
         didSet {

@@ -3245,3 +3245,21 @@ Out of scope: a bloom post-process (the library has none); fake halos with addit
 Acceptance: a tumbling foil piece's brightness peaks when its normal bisects the light and view directions; color changes with angle; presets look like foil confetti in particles-render.
 
 ---
+
+## 156: Spun colliders fling particles after a long frame (app to background and back)
+
++++
+status: closed
+priority: medium
+kind: bug
+labels: area:collision, effort:xs
+created: 2026-10-19T20:59:29Z
+updated: 2026-10-19T20:59:29Z
+closed: 2026-10-19T20:59:29Z
++++
+
+Spinning Teapot sometimes flings sand, notably when the app goes to the background and back. ParticlePlayer advanced its clock (which turns spun and animated colliders) by the whole frame, while ParticleSystemRuntime caps each step at 1/30 s and derives collider spin over the capped step. After a long frame the collider jumped ahead of the particles and looked many times faster, so it threw them.
+
+- `2026-10-19T20:59:29Z`: Fixed: ParticleSystemRuntime.maximumStep (1/30 s) is the one cap; FramePlan uses it and ParticlePlayer advances its clock by min(deltaTime, maximumStep) * speedFactor. Test aLongFrameKeepsSpunCollidersInStep: after a 0.5 s frame the player's clock matches the simulation's (failed before the fix), and sand on a spinning slab stays on it. User confirmed the symptom tracks background/foreground switches; not checked in the app after the fix.
+
+---

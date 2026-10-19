@@ -84,7 +84,9 @@ public final class ParticlePlayer {
         runtime.applyEventBursts(system.eventBursts)
         switch runtime.state {
         case .playing:
-            time += deltaTime * max(runtime.speedFactor, 0)
+            // The simulation's capped step: a whole long frame here would turn spun colliders ahead of the particles
+            // in one jump, and their spin over the capped step would fling them.
+            time += min(deltaTime, ParticleSystemRuntime.maximumStep) * max(runtime.speedFactor, 0)
         case .stopped:
             // Play after stop restarts the emitters; the clock starts over with them.
             time = 0

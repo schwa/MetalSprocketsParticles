@@ -81,6 +81,42 @@ struct SignedDistanceFieldColliderTests {
         #expect(still.allSatisfy { abs($0.y - 0.05) < cell })
     }
 
+    /// A long frame (the app coming back from the background) must not fling particles off a spinning collider. The
+    /// player's clock, which turns spun colliders, has to step the same capped time as the simulation; it used to step
+    /// the whole frame, so the collider jumped ahead and its spin over the capped step looked many times faster. The
+    /// clock check catches that; this gentle spin alone does not throw the sand far enough to see.
+    @Test func aLongFrameKeepsSpunCollidersInStep() throws {
+        var sand = ParticleEmitter()
+        sand.shape = .point
+        sand.position = [0.4, 0.3, 0]
+        sand.velocity = .zero
+        sand.velocitySpread = 0
+        sand.gravity = [0, -9.8, 0]
+        sand.lifetime = 100...100
+        sand.birthRate = 0
+        sand.restitution = 0
+        sand.friction = 1
+        var system = ParticleSystem("Turntable", layers: [EmitterDescription("Sand", settings: sand, capacity: 4)], colliders: [.signedDistanceField(slab)])
+        system.colliderSpins = [ColliderSpin(collider: 0, axis: [0, 1, 0], speed: 0.5)]
+        let size = CGSize(width: 64, height: 64)
+        let renderer = try OffscreenRenderer(size: size)
+        let player = try ParticlePlayer(system: system, device: renderer.device)
+        player.runtime.burst(4)
+        for _ in 0..<60 {
+            _ = try renderer.render(try player.frame(deltaTime: 1.0 / 60.0, size: size))
+        }
+        _ = try renderer.render(try player.frame(deltaTime: 0.5, size: size))
+        // The colliders' clock and the simulation's agree after the long frame.
+        #expect(abs(player.time - player.runtime.emitters[0].spawner.time) < 1e-4)
+        for _ in 0..<30 {
+            _ = try renderer.render(try player.frame(deltaTime: 1.0 / 60.0, size: size))
+        }
+        let pointer = player.runtime.buffer.contents().bindMemory(to: Particle.self, capacity: 4)
+        let positions = (0..<4).map { SIMD3(pointer[$0].position.x, pointer[$0].position.y, pointer[$0].position.z) }
+        // Still on the slab, riding round at 0.4 from the axis.
+        #expect(positions.allSatisfy { abs($0.y - 0.05) < cell && abs(simd_length(SIMD2($0.x, $0.z)) - 0.4) < 0.05 })
+    }
+
     /// A node's world matrix gives the center and rotation; scale is dropped, since baked distances do not scale.
     @Test func placedByTakesTranslationAndRotation() {
         let rotation = simd_quatf(angle: 0.7, axis: simd_normalize([1, 2, 3]))

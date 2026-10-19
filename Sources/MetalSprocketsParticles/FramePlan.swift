@@ -69,7 +69,7 @@ extension ParticleSystemRuntime {
         if Self.subEmitterLayout(of: emitters) != subEmitterLayout {
             try rebuild()
         }
-        let frameDeltaTime = min(deltaTime, 1.0 / 30.0) * max(speedFactor, 0)
+        let frameDeltaTime = min(deltaTime, Self.maximumStep) * max(speedFactor, 0)
         // Live-particle statistics: read the oldest slot (its frame has surely finished, with at most a few frames in
         // flight), then clear it for this frame to fill.
         let slots = Int(PARTICLE_ALIVE_COUNTER_SLOTS)
