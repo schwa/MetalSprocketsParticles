@@ -2915,18 +2915,20 @@ In 2D mode, particles clump together in the center of the view instead of spread
 ## 141: Make 2D mode a single toggle
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:m
 created: 2026-10-19T11:56:36Z
-updated: 2026-10-19T13:07:05Z
+updated: 2026-10-19T13:17:19Z
+closed: 2026-10-19T13:17:19Z
 +++
 
 2D mode should be one toggle. Turning it on should change rendering, z limits, the camera, and any other related settings together.
 
 - `2026-10-19T13:07:05Z`: Related: #140 (2D overlay confetti blob). Builds on the overlay camera, ParticleCamera.overlay, and ParticleEmitter.constrainsToPlane (#99, #107).
 - `2026-10-19T13:08:36Z`: Decision (user): one ParticleSystem.is2D setting that turns on together: the overlay camera (points, y down), constrainsToPlane on every emitter, and 2D defaults for new emitters (speeds and sizes in points, which likely fixes #140). The 3D settings stay underneath, so turning it off returns to the 3D scene.
+- `2026-10-19T13:17:19Z`: Done: ParticleSystem.is2D. The .system camera becomes the overlay camera (points, y down); apply keeps every emitter on its plane (effectiveLayers) without changing the stored layers, so turning 2D off restores the 3D scene; ParticleEmitter.default2D is a starting point in points (spreads in points too, see #140). Demo: a 2D toggle in the World section switches the viewport to the overlay camera, and Add Emitter uses the 2D defaults in 2D. Not done: converting an existing 3D scene's units to points (2D effects are authored in points).
 
 ---
 

@@ -213,6 +213,23 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
 }
 
 extension ParticleEmitter {
+    /// A starting point for 2D effects (`ParticleSystem.is2D`), in points: a fountain shooting up the screen at a few
+    /// hundred points a second, with spread and speed variation in points too, falling back down (+y), 8 points across.
+    public static var default2D: Self {
+        var emitter = Self()
+        emitter.shape = .point
+        emitter.birthRate = 200
+        emitter.velocity = [0, -400, 0]
+        emitter.velocitySpread = 150
+        emitter.speedVariation = 100
+        emitter.gravity = [0, 500, 0]
+        emitter.drag = 0.3
+        emitter.lifetime = 1...2
+        emitter.sizeOverLife = .constant(4)
+        emitter.constrainsToPlane = true
+        return emitter
+    }
+
     /// Missing keys keep their defaults, so effects saved before a setting existed still load.
     public init(from decoder: Decoder) throws {
         self.init()

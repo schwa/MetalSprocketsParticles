@@ -31,6 +31,20 @@ struct OverlayDemoTests {
     /// Spread and speed variation are absolute speeds, so in points they must be in proportion to the launch speed;
     /// values like 0.7 meant for meters left the confetti in a blob (#140). The spreading itself is tested in the
     /// library (OverlayTests.overlayConfettiSpreads).
+    /// In 2D, new emitters start from the 2D defaults (points), and the scene saves as 2D (#141).
+    @MainActor
+    @Test func twoDModeAddsTwoDEmittersAndSaves() {
+        let model = ParticlesDemoModel()
+        model.is2D = true
+        model.addEmitter()
+        #expect(model.emitters.last?.settings == ParticleEmitter.default2D)
+        #expect(model.currentEffect.is2D)
+        model.is2D = false
+        model.addEmitter()
+        #expect(model.emitters.last?.settings != ParticleEmitter.default2D)
+        #expect(!model.currentEffect.is2D)
+    }
+
     @Test func spreadsAreInPointsPerSecond() {
         for layer in OverlayEffects.system.layers {
             let speed = simd_length(layer.settings.velocity)

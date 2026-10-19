@@ -4,7 +4,7 @@ import simd
 /// How a `ParticlePlayer` (and `ParticleView`) looks at a particle system. Hosts with their own camera, such as a scene
 /// graph, pass their own matrices to `ParticlePlayer.frame(deltaTime:projection:view:sceneDepth:wireframes:)` instead.
 public enum ParticleCamera: Sendable, Equatable {
-    /// The system's `cameraEye` and `cameraTarget`, with a perspective projection.
+    /// The system's `cameraEye` and `cameraTarget`, with a perspective projection; the overlay camera for 2D systems.
     case system
     /// A perspective camera at `eye`, looking at `target`.
     case lookAt(eye: SIMD3<Float>, target: SIMD3<Float>)
@@ -20,6 +20,9 @@ public enum ParticleCamera: Sendable, Equatable {
     public func matrices(for system: ParticleSystem, size: CGSize) -> (projection: simd_float4x4, cameraToWorld: simd_float4x4, focus: SIMD3<Float>) {
         switch self {
         case .system:
+            if system.is2D {
+                return Self.overlay.matrices(for: system, size: size)
+            }
             return Self.perspective(eye: system.cameraEye, target: system.cameraTarget, size: size)
         case let .lookAt(eye, target):
             return Self.perspective(eye: eye, target: target, size: size)

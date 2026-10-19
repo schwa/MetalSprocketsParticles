@@ -112,13 +112,16 @@ struct ParticleViewportView: View {
         if let system = model.system {
             RenderView(colorPixelFormat: Self.colorPixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
-                let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
-                // The demo owns its camera (the orbit controls), so it passes matrices to the player.
-                if let player = try model.player(projection: projection, cameraToWorld: cameraMatrix) {
+                // The demo owns its 3D camera (the orbit controls); in 2D the overlay camera maps one unit to one point of
+                // the view. Either way it passes matrices to the player.
+                let overlay = ParticleCamera.overlay.matrices(for: model.currentEffect, size: viewSize)
+                let projection = model.is2D ? overlay.projection : simd_float4x4.perspective(fovY: .pi / 4, aspect: aspect, near: 0.1, far: 100)
+                let cameraToWorld = model.is2D ? overlay.cameraToWorld : cameraMatrix
+                if let player = try model.player(projection: projection, cameraToWorld: cameraToWorld) {
                     try player.frame(
                         deltaTime: context.frameUniforms.deltaTime,
                         projection: projection,
-                        view: cameraMatrix.inverse,
+                        view: cameraToWorld.inverse,
                         sceneDepth: player.sceneDepth(size: size),
                         wireframes: model.showColliders
                     )

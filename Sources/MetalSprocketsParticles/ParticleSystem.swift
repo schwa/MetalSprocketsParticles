@@ -36,8 +36,24 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     public var cameraTarget: SIMD3<Float>
     /// Reactions to particle events that `ParticlePlayer` carries out on the CPU, a frame or two after they happen.
     public var eventBursts: [EventBurst] = []
+    /// 2D: the `.system` camera becomes the overlay camera (one unit is one point, y down) and every emitter is kept on
+    /// its plane. The 3D camera and each emitter's own `constrainsToPlane` are kept, so turning it off restores them.
+    /// Author 2D effects in points; see `ParticleEmitter.default2D`.
+    public var is2D = false
 
     public var id: String { name }
+
+    /// The layers as they run: in 2D, every emitter kept on its plane.
+    var effectiveLayers: [Layer] {
+        guard is2D else {
+            return layers
+        }
+        return layers.map { layer in
+            var layer = layer
+            layer.settings.constrainsToPlane = true
+            return layer
+        }
+    }
 
     public init(
         _ name: String,
@@ -81,6 +97,7 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
         try container.update(&cameraEye, .cameraEye)
         try container.update(&cameraTarget, .cameraTarget)
         try container.update(&eventBursts, .eventBursts)
+        try container.update(&is2D, .is2D)
     }
 
     /// The same system with `comment` set.
@@ -126,7 +143,7 @@ public extension ParticleSystemRuntime {
     /// This is the one way a description reaches the runtime; per-frame changes (animation, pointer bindings, tracked
     /// objects) come from `ParticlePlayer` or the caller's `simulate` arguments.
     func apply(_ system: ParticleSystem, rebuild: Bool = false) throws {
-        try apply(system.layers, rebuild: rebuild)
+        try apply(system.effectiveLayers, rebuild: rebuild)
         colliders = system.colliders
         forceFields = system.forceFields
         lights = system.lights
