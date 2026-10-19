@@ -3324,11 +3324,13 @@ Fix ideas: stop the neighbor search once maxNeighbors are found, or cap the part
 ## 159: Inspector: flocking
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:editor, effort:s
 created: 2026-10-19T21:37:16Z
+updated: 2026-10-19T21:57:05Z
+closed: 2026-10-19T21:57:05Z
 +++
 
 ParticleEmitter.flocking (ParticleFlocking): an on/off switch plus radius, separationRadius, separation, alignment, cohesion, speedRange, maxNeighbors. Murmuration and Inside the Teapot use it and cannot be changed or turned off (see #158).
@@ -3336,6 +3338,7 @@ ParticleEmitter.flocking (ParticleFlocking): an on/off switch plus radius, separ
 Found by an audit of every public setting in the description types against the demo sources: these are loaded and saved, but nothing in the UI shows or edits them.
 
 - `2026-10-19T21:40:28Z`: Related: #158 (Inside the Teapot's flocking is slow in dense piles).
+- `2026-10-19T21:57:05Z`: Done: a Flocking section in the emitter inspector, after Collision: a Flocks switch (on starts from ParticleFlocking's defaults, or the settings it had) and sliders for neighbor radius, separation radius, separation, alignment, cohesion, minimum and maximum speed (kept ordered), and neighbors (maxNeighbors, at least 1). Built on computed properties (isFlocking, editableFlocking, minimumSpeed, maximumSpeed, neighborLimit), no closure bindings. Tests: on/off and edits, speed bounds. Checked the layout with an offscreen snapshot; the switch drew in its off style there although flocking was on, likely a snapshot artifact, worth a look in the app.
 
 ---
 

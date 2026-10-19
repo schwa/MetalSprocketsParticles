@@ -56,6 +56,18 @@ extension ParticleEmitter {
         return lower...max(average + variation, lower)
     }
 
+    /// Whether the emitter flocks. Turning it on starts from the library's defaults, or the settings it had.
+    var isFlocking: Bool {
+        get { flocking != nil }
+        set { flocking = newValue ? (flocking ?? ParticleFlocking()) : nil }
+    }
+
+    /// The flocking settings, or the defaults when the emitter does not flock. Setting them turns flocking on.
+    var editableFlocking: ParticleFlocking {
+        get { flocking ?? ParticleFlocking() }
+        set { flocking = newValue }
+    }
+
     var hasLimitedEmission: Bool {
         get { emissionDuration != nil }
         set { emissionDuration = newValue ? (emissionDuration ?? 1) : nil }
@@ -144,6 +156,28 @@ extension ParticleEmitter {
             default: break
             }
         }
+    }
+}
+
+// MARK: - Flocking
+
+extension ParticleFlocking {
+    /// The slowest a flocking particle is kept. Kept at or below `maximumSpeed`.
+    var minimumSpeed: Float {
+        get { speedRange.lowerBound }
+        set { speedRange = max(newValue, 0)...max(newValue, speedRange.upperBound) }
+    }
+
+    /// The fastest a flocking particle is kept. Kept at or above `minimumSpeed`.
+    var maximumSpeed: Float {
+        get { speedRange.upperBound }
+        set { speedRange = min(speedRange.lowerBound, max(newValue, 0))...max(newValue, 0) }
+    }
+
+    /// `maxNeighbors` as a slider value, at least 1.
+    var neighborLimit: Float {
+        get { Float(maxNeighbors) }
+        set { maxNeighbors = max(Int(newValue.rounded()), 1) }
     }
 }
 

@@ -23,6 +23,7 @@ struct EmitterInspectorView: View {
                 MotionSectionView(emitter: $model.selectedEmitter)
                 AppearanceSectionView(emitter: $model.selectedEmitter)
                 CollisionSectionView(settings: $model.selectedEmitter.settings)
+                FlockingSectionView(settings: $model.selectedEmitter.settings)
             case let .subEmitter(_, index):
                 if index < model.selectedEmitter.settings.subEmitters.count {
                     Section {
@@ -476,6 +477,30 @@ struct CollisionSectionView: View {
                     + categoryMatchCount(settings.categoryMask, categories: model.forceFields.map(\.field.categoryBitMask), noun: "field")
             )
             .help("Colliders and force fields apply when they share a category with the emitter. Give them different categories to feel one but not the other.")
+        }
+    }
+}
+
+struct FlockingSectionView: View {
+    @Binding var settings: ParticleEmitter
+
+    var body: some View {
+        Section("Flocking") {
+            Toggle("Flocks", isOn: $settings.isFlocking)
+                .help("Particles steer by their neighbors: away from close ones, along with their heading, and toward their center. Costs a neighbor search each frame.")
+            if settings.isFlocking {
+                ParameterSliderView("Neighbor Radius", value: $settings.editableFlocking.radius, in: 0.01...2)
+                    .help("How far a particle sees its neighbors. Smaller is faster.")
+                ParameterSliderView("Separation Radius", value: $settings.editableFlocking.separationRadius, in: 0...1)
+                    .help("Closer than this, neighbors push apart.")
+                ParameterSliderView("Separation", value: $settings.editableFlocking.separation, in: 0...0.2, format: .number.precision(.fractionLength(3)))
+                ParameterSliderView("Alignment", value: $settings.editableFlocking.alignment, in: 0...5)
+                ParameterSliderView("Cohesion", value: $settings.editableFlocking.cohesion, in: 0...5)
+                ParameterSliderView("Minimum Speed", value: $settings.editableFlocking.minimumSpeed, in: 0...10)
+                ParameterSliderView("Maximum Speed", value: $settings.editableFlocking.maximumSpeed, in: 0...10)
+                ParameterSliderView("Neighbors", value: $settings.editableFlocking.neighborLimit, in: 1...64, format: .number.precision(.fractionLength(0)))
+                    .help("Neighbors counted per particle, to bound the cost in dense crowds.")
+            }
         }
     }
 }

@@ -64,6 +64,34 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("-5") == nil)
     }
 
+    /// The Flocking section edits ParticleEmitter.flocking (#159).
+    @Test func flockingTurnsOnAndOffAndKeepsItsSettings() {
+        var emitter = ParticleEmitter()
+        #expect(!emitter.isFlocking)
+        emitter.isFlocking = true
+        #expect(emitter.flocking == ParticleFlocking())
+        emitter.editableFlocking.alignment = 0
+        emitter.editableFlocking.neighborLimit = 7.6
+        #expect(emitter.flocking?.maxNeighbors == 8)
+        emitter.editableFlocking.neighborLimit = 0
+        #expect(emitter.flocking?.maxNeighbors == 1)
+        emitter.isFlocking = false
+        #expect(emitter.flocking == nil)
+        // Editing while off turns it on.
+        emitter.editableFlocking.cohesion = 3
+        #expect(emitter.flocking?.cohesion == 3)
+    }
+
+    @Test func flockingSpeedBoundsStayOrdered() {
+        var flocking = ParticleFlocking(speedRange: 1...2)
+        flocking.minimumSpeed = 5
+        #expect(flocking.speedRange == 5...5)
+        flocking.maximumSpeed = 3
+        #expect(flocking.speedRange == 3...3)
+        flocking.maximumSpeed = -1
+        #expect(flocking.speedRange == 0...0)
+    }
+
     @Test func capacityHasAFloorButNoCeiling() {
         var description = EmitterDescription("Dots", settings: ParticleEmitter(), capacity: 1_000)
         description.editableCapacity = 5_000
