@@ -7,8 +7,9 @@ import simd
 // 3. If the GPU needs it: a field in SimulationUniforms or RenderUniforms (ParticleTypes.h), set in
 //    FramePlan.uniforms(for:) or the render draw, and used in Particles.metal.
 // 4. A control in the demo inspector, and in ParticleKind.swift if it is a new enum kind.
-// 5. A module for it in EmitterModules.swift: a case (or a field of one), its `apply`, and the lifting in
-//    `EmitterModules.init(_:)` (EmitterModulesTests fails if presets stop round-tripping).
+// 5. A module for it: a field of an existing ParticleModule type, or a new type in SpawnModules.swift,
+//    UpdateModules.swift, or RenderModules.swift (a case and an entry in `types`), with `apply` and `init?(lifting:)`.
+//    EmitterModulesTests fails if presets stop round-tripping.
 
 /// The flat form of an emitter: what `EmitterModules` lowers to and the simulation reads. Kept public as a convenient
 /// way to build emitters in code; `EmitterDescription.settings` converts to and from modules.

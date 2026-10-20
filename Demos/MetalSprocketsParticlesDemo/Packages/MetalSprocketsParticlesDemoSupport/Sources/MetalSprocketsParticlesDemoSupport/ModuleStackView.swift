@@ -19,7 +19,7 @@ struct ModuleStacksSectionView: View {
     }
 }
 
-struct ModuleStackView<Module: EmitterModule>: View {
+struct ModuleStackView<Module: StageModule>: View {
     let title: String
     @Binding var stack: [ModuleSlot<Module>]
 
@@ -54,11 +54,10 @@ struct ModuleStackView<Module: EmitterModule>: View {
 
     /// "colorOverLife" as "Color Over Life".
     static func label(_ module: Module) -> String {
-        if case let .stitched(stitched)? = (module as? UpdateModule).map({ $0 }) {
-            return "Stitched: \(stitched.name)"
-        }
-        if case let .stitched(stitched)? = (module as? SpawnModule).map({ $0 }) {
-            return "Stitched: \(stitched.name)"
+        switch module.module {
+        case let stitched as StitchedUpdateModule: return "Stitched: \(stitched.module.name)"
+        case let stitched as StitchedSpawnModule: return "Stitched: \(stitched.module.name)"
+        default: break
         }
         let kind = module.kind
         var words = ""

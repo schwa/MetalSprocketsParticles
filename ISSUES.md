@@ -4266,12 +4266,13 @@ Part of #197.
 ## 200: Each module owns its settings, coding, lowering, and defaults in one place
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:l
 created: 2026-10-20T18:58:48Z
-updated: 2026-10-20T19:04:14Z
+updated: 2026-10-20T19:18:40Z
+closed: 2026-10-20T19:18:40Z
 +++
 
 A module's fields are spread over ParticleEmitter, the module enum case, apply(to:), and the lifting in EmitterModules.init(_:). Make each module one type (e.g. a protocol with a settings struct, Codable, and a lower-into-uniforms method), so adding a feature touches one module plus the kernel. Replace the enum cases with long associated-value lists (which needed a swiftlint disable).
@@ -4281,6 +4282,7 @@ Gate: no regression in particles-bench --compare (#184) for presets and scenario
 Part of #197.
 
 - `2026-10-20T19:04:14Z`: Per #205: built-ins can be stitched modules running in stack order at no measured cost (after #206). Decide per module whether it's stitched or a fixed kernel stage (collisions, fields, events need system data).
+- `2026-10-20T19:18:40Z`: Each module is a ParticleModule struct owning its settings, kind, required flag, editor default, apply(to:), and init?(lifting:). Stage enums (SpawnModule/UpdateModule/RenderModule) are thin StageModule wrappers with shared Codable; saved JSON is byte-identical (presets re-saved: no diff). Still lowers to ParticleEmitter; #199 changes that target.
 
 ---
 

@@ -90,12 +90,12 @@ For behavior the built-in modules lack, add a stitched user module. It is a `[[s
 
 ```swift
 var description = EmitterDescription("Flame", settings: flame)
-description.modules.update.append(ModuleSlot(.stitched(module: StitchedModule(source: """
+description.modules.update.append(ModuleSlot(.stitched(StitchedUpdateModule(module: StitchedModule(source: """
     [[stitchable]] constant float4 *swirl(thread ParticleState &p, float dt, float time, constant float4 *parameters) {
         p.velocity += cross(float3(0, 1, 0), p.position) * parameters[0].x * dt;
         return parameters + 1;
     }
-    """, name: "swirl", parameters: [[2, 0, 0, 0]]))))
+    """, name: "swirl", parameters: [[2, 0, 0, 0]])))))
 ```
 
 See [Documentation/Modules.md](Documentation/Modules.md) for the design.

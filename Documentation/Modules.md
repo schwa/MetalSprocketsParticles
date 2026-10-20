@@ -10,7 +10,7 @@ Design for #178 / #179. An emitter is a stack of modules per stage instead of on
   - `render: [ModuleSlot<RenderModule>]`: sprite (blend, sort, orientation, softness, lighting, minimum size), foil, mesh, trail, ribbon, light, level of detail.
 - `categoryMask` and `customAttributeCount` belong to no stage; they sit on `EmitterModules`.
 - `ModuleSlot` carries `isEnabled`, so a module can be turned off without losing its settings.
-- Modules are enums with labeled payloads, Codable as `{"module": {"gravity": {"acceleration": [...]}}}`.
+- Each module is a struct conforming to `ParticleModule` (e.g. `GravityModule`): its settings, its `kind`, whether it is required, the instance editors add, `apply(to:)` onto `ParticleEmitter`, and `init?(lifting:)` back from one. `SpawnModule`, `UpdateModule`, and `RenderModule` are enums wrapping a stage's types (`StageModule`), saved as `{"module": {"gravity": {"acceleration": [...]}}}`.
 
 ## Lowering
 
