@@ -3809,6 +3809,7 @@ Steps 2 and 6 cover these; split them into their own issues after the spike.
 - `2026-10-20T18:32:44Z`: Graphs per effect: one per (emitter, stage) distinct stack; typical effects 2 to 6.
 - `2026-10-20T18:32:44Z`: Verdict: go, with one risk. If all built-in behavior moves into modules, every particle pays the call overhead; the Stress Test may regress past the #184 gate. Mitigations to try in #188: keep hot built-ins (integrate, gravity, drag) inline in the kernel and only stitch the rest; or link the stitched function by direct extern call rather than through a table so the pipeline compiler can inline it. Fallback if both fail: generated Metal source per stack.
 - `2026-10-20T18:48:40Z`: Landed: modules model, effect format 2, stitched user modules in update/spawn, migration tool, presets migrated, demo module stacks. Open: #193 (render-stage stitching, after #172).
+- `2026-10-20T19:04:14Z`: Correction to the #182 notes: the ~22% was the custom attribute buffer, not the function call. See #205 and #206.
 
 ---
 
@@ -4245,7 +4246,9 @@ status: new
 priority: medium
 kind: task
 labels: area:simulation, effort:l
+depends: 206
 created: 2026-10-20T18:58:48Z
+updated: 2026-10-20T19:04:14Z
 +++
 
 Modules are lowered to the flat ParticleEmitter, and the runtime and FramePlan read that. Lower EmitterModules directly into the per-emitter runtime state and SimulationUniforms/RenderUniforms instead, so ParticleEmitter leaves the runtime path. Lower once when modules change and cache the result; today lowering runs every frame (about 0.01 ms per emitter of build time).
@@ -4264,6 +4267,7 @@ priority: medium
 kind: task
 labels: area:api, effort:l
 created: 2026-10-20T18:58:48Z
+updated: 2026-10-20T19:04:14Z
 +++
 
 A module's fields are spread over ParticleEmitter, the module enum case, apply(to:), and the lifting in EmitterModules.init(_:). Make each module one type (e.g. a protocol with a settings struct, Codable, and a lower-into-uniforms method), so adding a feature touches one module plus the kernel. Replace the enum cases with long associated-value lists (which needed a swiftlint disable).
@@ -4271,6 +4275,8 @@ A module's fields are spread over ParticleEmitter, the module enum case, apply(t
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T19:04:14Z`: Per #205: built-ins can be stitched modules running in stack order at no measured cost (after #206). Decide per module whether it's stitched or a fixed kernel stage (collisions, fields, events need system data).
 
 ---
 
@@ -4351,11 +4357,13 @@ Part of #197.
 ## 205: Built-in modules run in stack order without losing speed
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:m, needs-design
 created: 2026-10-20T18:58:49Z
+updated: 2026-10-20T19:04:14Z
+closed: 2026-10-20T19:04:14Z
 +++
 
 Built-in modules run in the kernel's fixed order whatever the stack says; only stitched user modules follow stack order. Find a way to honor order with no regression. Try first: stitch an emitter's whole update stack (built-ins as [[stitchable]] modules) into one function and check whether the pipeline compiler inlines it (spike: 1 call measured ~22% of simulate on 1M). Fallback: generated kernel source per distinct stack, compiled off the frame path and cached (binary archive). If neither meets the gate, keep the fixed order and make the inspector show built-ins as unordered.
@@ -4363,5 +4371,21 @@ Built-in modules run in the kernel's fixed order whatever the stack says; only s
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T19:04:14Z`: Spike (StitchingInlineSpikeTests, STITCHING_TIMINGS=1): the call is not the cost. Standalone kernel, 8 modules, 1M particles: inline 0.22-0.26 ms, through a visible function table 0.22-0.25, direct extern call with privateFunctions 0.23-0.28: same within noise, bit-identical results. Real runtime: a no-op user function adds 0.07 ms only because of the custom attribute load/store; with that off, no-op = none. So built-ins can be stitched modules that run in stack order without losing speed, if attribute traffic is fixed first (#206). Direct extern linking (privateFunctions, '[[visible]] extern' declaration) also works if we ever want to drop the table. Open design points for #199/#200: modules that need system data (colliders, force fields, SDF textures, events, sub-emitters) can't get it through the (state, dt, time, parameters) signature; either keep those as kernel stages around the stitched stack, or widen the ABI with a context struct of pointers. #182's '22% per call' note on #179 was wrong; corrected here.
+
+---
+
+## 206: Custom attribute buffer is read and written whenever an emitter has any user function
+
++++
+status: new
+priority: medium
+kind: enhancement
+labels: area:simulation, effort:s
+created: 2026-10-20T19:04:14Z
++++
+
+When any emitter has a user function or stitched module, the update kernel loads and stores ParticleState.custom for every particle (16+ bytes each way). On 1M particles that costs about 0.07 ms of simulate GPU time (0.28 → 0.35 ms), even for a no-op function. With the attribute traffic off, a no-op function costs the same as none (#205 spike). Only keep attributes for emitters whose functions or modules use them: e.g. a declared customAttributeCount of 0 meaning none, or modules declaring what they read and write. This matters for #205: if built-ins become stitched modules, every emitter has a function, and this cost would apply everywhere.
 
 ---
