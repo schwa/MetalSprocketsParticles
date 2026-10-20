@@ -20,7 +20,7 @@ Design for #178 / #179. An emitter is a stack of modules per stage instead of on
 
 ## Performance rule
 
-The #182 spike showed a visible-function call costs about 0.07 ms per 1M particles (~22% of simulate). So:
+The #182 spike measured about 0.07 ms per 1M particles (~22% of simulate) for any user function. #205 found that this is the custom attribute load/store that any function turns on (#206), not the call: a stitched stack costs the same as inline code. So stitching built-ins to honor stack order is viable once #206 is fixed. For now:
 
 - Built-in modules lower to kernel uniforms. They cost nothing per module, and the kernel applies them in its fixed order (gravity, fields, flocking, drag, integrate, user code, constraint, collisions), not stack order.
 - Only user modules (`.stitched(StitchedModule)`) run as functions. A stage's stitched modules are stitched (`MTLFunctionStitchingGraph`) into one function in the stage's slot and run in stack order. Graphs and pipelines are cached by the stack's sources and names, not parameter values.
