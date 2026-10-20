@@ -3669,6 +3669,7 @@ Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex
 
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 - `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
+- `2026-10-20T22:42:37Z`: Implemented: ShadingModule.perPixel; the vertex shader hands the ShadingInput on (function-constant varyings, absent otherwise) and the fragment shader calls the same function. ShadingInput gained uv. Tests: custom function per pixel matches per vertex; lit per pixel is brighter at the sprite center (interpolated sphere normal). Golden for a large foil mesh waits for #175's foil model.
 
 ---
 
