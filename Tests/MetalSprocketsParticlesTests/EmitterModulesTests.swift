@@ -79,6 +79,11 @@ struct EmitterModulesTests {
         #expect(!emitter.usesCustomAttributes)
         emitter.spawnModules = [StitchedModule(source: "p.custom.x = 1;", name: "g")]
         #expect(emitter.usesCustomAttributes)
+        // Only member accesses outside comments count (#213).
+        #expect(!SlotFunction.usesCustomAttributes("// custom colors\nfloat customize = 1; /* p.custom */"))
+        #expect(SlotFunction.usesCustomAttributes("p.custom3.y += 1;"))
+        #expect(SlotFunction.usesCustomAttributes("particle . custom = float4(1);"))
+        #expect(!SlotFunction.usesCustomAttributes("p.customValue = 1;"))
     }
 
     @Test func builderPlacesModulesAndFillsRequiredOnes() {

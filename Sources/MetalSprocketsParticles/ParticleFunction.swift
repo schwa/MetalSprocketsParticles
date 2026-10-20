@@ -151,12 +151,21 @@ enum SlotFunction: Equatable {
         }
     }
 
-    /// Whether the code may touch `ParticleState.custom` through `custom3`. A plain text search, so it errs toward yes.
+    /// Whether the code may touch `ParticleState.custom` through `custom3`: a `.custom` member access outside comments.
+    /// Code that reaches them some other way (a macro, a pointer) is not seen.
     var usesCustomAttributes: Bool {
         switch self {
-        case let .user(function): function.source.contains("custom")
-        case let .stitched(modules, _): modules.contains { $0.source.contains("custom") }
+        case let .user(function): Self.usesCustomAttributes(function.source)
+        case let .stitched(modules, _): modules.contains { Self.usesCustomAttributes($0.source) }
         }
+    }
+
+    static func usesCustomAttributes(_ source: String) -> Bool {
+        let withoutComments = source
+            .replacing(/\/\*[\s\S]*?\*\//, with: " ")
+            .replacing(/\/\/[^\n]*/, with: " ")
+        // Not \b: Unicode word boundaries treat "custom.x" as one word.
+        return withoutComments.contains(/\.\s*custom[0-3]?(?![A-Za-z0-9_])/)
     }
 
     func compile(device: MTLDevice) throws -> VisibleFunction {

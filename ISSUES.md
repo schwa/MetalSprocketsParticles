@@ -4536,14 +4536,18 @@ ParticleSystem.effectiveLayers sets layer.settings.constrainsToPlane in 2D, whic
 ## 213: Custom attribute detection is a text search for 'custom'
 
 +++
-status: new
+status: closed
 priority: low
 kind: enhancement
 labels: area:simulation, effort:s
 created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T20:30:55Z
+closed: 2026-10-20T20:30:55Z
 +++
 
 #206 keeps attributes only when a function's source contains 'custom'. Comments or names with 'custom' turn them on needlessly; macros could hide a real use (unlikely). Consider an explicit declaration on functions and modules (e.g. reads/writes custom attributes) once #200-style module metadata exists.
+
+- `2026-10-20T20:30:55Z`: Detection now looks for a .custom/.custom1-3 member access outside // and /* */ comments (not \b: Unicode word boundaries treat custom.x as one word). Comments and names like customize no longer turn attributes on. No new API; code reaching custom some other way (macros, pointers) is still not seen, which seems acceptable.
 
 ---
 
@@ -4578,7 +4582,7 @@ updated: 2026-10-20T19:20:22Z
 
 In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any ParticleModule.Type] crashes swift-frontend (Xcode 27 RC). Worked around with a closure. Reduce to a minimal repro and report to Swift (swiftlang/swift).
 
-- `2026-10-20T20:29:01Z`: Minimal repro (crashes swift-frontend in SILGen, signal 5, Apple Swift 6.4 swiftlang-6.4.0.34.1, Xcode 27 RC, `swiftc -swift-version 6 repro.swift`):
+\- `2026-10-20T20:29:01Z`: Minimal repro (crashes swift-frontend in SILGen, signal 5, Apple Swift 6.4 swiftlang-6.4.0.34.1, Xcode 27 RC, `swiftc -swift-version 6 repro.swift`):
 
 ```swift
 protocol P {
