@@ -1,3 +1,12 @@
 [defaults]
-scheme = "MetalSprocketsParticlesDemo"
+container = "MetalSprocketsParticles"
 skip_plugin_validation = true
+
+[defaults.build]
+scheme = "MetalSprocketsParticlesDemo"
+
+[defaults.test]
+scheme = "MetalSprocketsParticles"
+
+[defaults.run]
+scheme = "MetalSprocketsParticlesDemo"
