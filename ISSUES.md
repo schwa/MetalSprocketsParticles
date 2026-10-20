@@ -4034,72 +4034,84 @@ Part of #179 (plan for #178).
 ## 189: Update modules: gravity, drag, force fields, plane constraint
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l
 depends: 188, 184
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:42:22Z
+closed: 2026-10-20T18:42:22Z
 +++
 
 Gravity, drag, force fields, and the plane constraint are hard-coded in updateParticles. Move them to update modules. Every golden stays identical and the performance gate does not regress.
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:42:22Z`: Per Documentation/Modules.md: these are now modules (EmitterModules) in the API and effect files, lowered to kernel uniforms. Kernel code stays: the #182 spike measured ~22% simulate cost for per-module function calls, which would fail the #184 gate. Goldens unchanged.
+
 ---
 
 ## 190: Update modules: color, size, rotation over life, image sequences
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l
 depends: 189
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:42:22Z
+closed: 2026-10-20T18:42:22Z
 +++
 
 Color, size, and rotation over life and image sequence playback are fixed emitter settings sampled in the kernel/vertex shader. Move them to modules. Goldens identical; no performance regression.
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:42:23Z`: Per Documentation/Modules.md: these are now modules (EmitterModules) in the API and effect files, lowered to kernel uniforms. Kernel code stays: the #182 spike measured ~22% simulate cost for per-module function calls, which would fail the #184 gate. Goldens unchanged.
+
 ---
 
 ## 191: Update modules: collisions, flocking, and user update functions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l
 depends: 190
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-20T18:42:23Z
+closed: 2026-10-20T18:42:23Z
 +++
 
 Collisions (analytic, SDF, scene depth, with events), flocking steering, and the user update function are separate code paths in the kernel. Move them into the module stack (or document why some stay in the kernel, per the design). User functions become user modules. Goldens identical; no performance regression.
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:42:23Z`: Collisions and flocking are modules lowered to uniforms (perf rule, Documentation/Modules.md). User code: update/collision/death functions are modules, and user [[stitchable]] modules (StitchedModule) stitch into the update/spawn slots in stack order.
+
 ---
 
 ## 192: Spawn modules: shape, rate, initial velocity, color, user spawn functions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l
 depends: 188, 184
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-20T18:42:23Z
+closed: 2026-10-20T18:42:23Z
 +++
 
 Spawn behavior (emitter shape, birth location and direction, velocity and spread, variations, birth color gradient, user spawn function) is fixed code in spawnParticle. Move it to spawn modules. Goldens identical; no performance regression.
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:42:23Z`: Per Documentation/Modules.md: these are now modules (EmitterModules) in the API and effect files, lowered to kernel uniforms. Kernel code stays: the #182 spike measured ~22% simulate cost for per-module function calls, which would fail the #184 gate. Goldens unchanged.
 
 ---
 
@@ -4118,6 +4130,8 @@ updated: 2026-10-20T18:26:32Z
 Rendering (sprite/mesh/trail/ribbon drawing, shading models, foil) does not use modules. Bring the render stage onto the same mechanism, building on #172 (pluggable shading), then #175 (foil) and #174 (per-pixel functions).
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:42:23Z`: Render modules exist at the API/file level (sprite, foil, mesh, trail, ribbon, light, LOD) and lower to current settings. Stitching render/shading functions still needs #172 first.
 
 ---
 
