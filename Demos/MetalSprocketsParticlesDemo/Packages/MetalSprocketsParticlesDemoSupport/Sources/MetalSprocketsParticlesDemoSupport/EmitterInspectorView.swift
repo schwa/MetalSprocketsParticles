@@ -28,11 +28,11 @@ struct EmitterInspectorView: View {
                     ShapeSourceSectionView(emitter: $model.selectedEmitter)
                 }
                 ModuleStacksView(modules: $model.selectedEmitter.modules)
-                UserFunctionsSectionView(settings: $model.selectedEmitter.settings)
+                UserFunctionsSectionView(modules: $model.selectedEmitter.modules)
                     // Fresh drafts when another emitter is selected.
                     .id(model.selectedEmitter.id)
             case let .subEmitter(_, index):
-                if index < model.selectedEmitter.settings.subEmitters.count {
+                if index < model.selectedEmitter.modules.subEmitters.count {
                     Section {
                         SubEmitterEditorView(subEmitter: $model.selectedSubEmitter)
                     } header: {
@@ -44,7 +44,7 @@ struct EmitterInspectorView: View {
                     RemoveSectionView(title: "Remove Sub-Emitter")
                 }
             case let .trigger(_, index):
-                if index < model.selectedEmitter.settings.triggers.count {
+                if index < model.selectedEmitter.modules.triggers.count {
                     Section("Trigger on \(model.selectedEmitter.name)") {
                         TriggerEditorView(trigger: $model.selectedTrigger)
                     }

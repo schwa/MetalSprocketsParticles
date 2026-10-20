@@ -57,7 +57,7 @@ struct EventBurstsSectionView: View {
         } header: {
             Text("Event Bursts")
         } footer: {
-            Text("The source emitter must report its events: Report Collisions or Report Deaths in its Collision section.")
+            Text("The source emitter must report its events: an Events module with Report Collisions or Report Deaths.")
         }
     }
 
@@ -66,7 +66,7 @@ struct EventBurstsSectionView: View {
         guard let source = model.emitters.first(where: { $0.id == item.sourceID }) else {
             return false
         }
-        return item.occasion == .collision ? source.settings.reportsCollisions : source.settings.reportsDeaths
+        return item.occasion == .collision ? source.modules.events?.reportsCollisions ?? false : source.modules.events?.reportsDeaths ?? false
     }
 
     private func summary(_ item: EventBurstItem) -> String {

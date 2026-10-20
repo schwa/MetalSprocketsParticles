@@ -138,6 +138,18 @@ struct EmitterModulesTests {
         #expect(throws: DecodingError.self) { try JSONDecoder().decode(EmitterModules.self, from: Data(bad.utf8)) }
     }
 
+    @Test func typedSubscriptReadsAddsReplacesAndRemoves() {
+        var modules = EmitterModules.standard
+        modules[RateModule.self]?.birthRate = 7
+        #expect(modules.lowered().birthRate == 7)
+        modules[FoilModule.self] = FoilModule(foil: ParticleFoil(glint: 2))
+        #expect(modules.render.contains { $0.module.kind == "foil" })
+        #expect(modules[FoilModule.self]?.foil.glint == 2)
+        modules[GravityModule.self] = nil
+        #expect(modules[GravityModule.self] == nil)
+        #expect(modules.lowered().gravity == .zero)
+    }
+
     @Test func jsonRoundTrips() throws {
         for system in ParticleSystem.all {
             let (json, files) = try system.encoded()

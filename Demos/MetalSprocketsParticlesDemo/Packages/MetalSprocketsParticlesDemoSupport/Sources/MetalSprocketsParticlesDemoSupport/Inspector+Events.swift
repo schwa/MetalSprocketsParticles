@@ -51,15 +51,16 @@ extension SubEmitter {
 
     /// A small burst of short-lived sparks, a sensible starting point for a new sub-emitter.
     static var sparks: SubEmitter {
-        var settings = ParticleEmitter()
-        settings.shape = .point
-        settings.velocity = [0, 1.5, 0]
-        settings.velocitySpread = 1.5
-        settings.lifetime = 0.4...0.8
-        settings.blendMode = .additive
-        settings.sizeOverLife = .linear(from: 0.015, to: 0.003)
-        settings.colorOverLife = .linear(from: [1, 0.9, 0.6, 1], to: [1, 0.3, 0.05, 0])
-        return SubEmitter(occasion: .onDeath, countPerEvent: 20, settings: settings)
+        SubEmitter(occasion: .onDeath, countPerEvent: 20, modules: EmitterModules {
+            ShapeModule(shape: .point)
+            LifetimeModule(range: 0.4...0.8)
+            VelocityModule(velocity: [0, 1.5, 0], spread: 1.5)
+            GravityModule(acceleration: [0, -9.8, 0])
+            DragModule(amount: 0.1)
+            SpriteModule(blendMode: .additive)
+            SizeOverLifeModule(curve: .linear(from: 0.015, to: 0.003))
+            ColorOverLifeModule(color: .linear(from: [1, 0.9, 0.6, 1], to: [1, 0.3, 0.05, 0]))
+        })
     }
 }
 

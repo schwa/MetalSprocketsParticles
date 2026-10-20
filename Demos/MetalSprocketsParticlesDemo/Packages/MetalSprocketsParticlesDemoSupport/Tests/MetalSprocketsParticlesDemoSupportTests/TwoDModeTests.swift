@@ -13,12 +13,12 @@ struct TwoDModeTests {
         let model = ParticlesDemoModel()
         model.is2D = true
         model.addEmitter()
-        let flatEmitter = model.emitters.last?.settings
-        #expect(flatEmitter != ParticleEmitter.default2D)
+        let flatEmitter = model.emitters.last?.modules
+        #expect(flatEmitter != EmitterModules.default2D)
         #expect(model.currentEffect.is2D)
         model.is2D = false
         model.addEmitter()
-        #expect(model.emitters.last?.settings == flatEmitter)
+        #expect(model.emitters.last?.modules == flatEmitter)
         #expect(!model.currentEffect.is2D)
     }
 

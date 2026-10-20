@@ -11,15 +11,6 @@ enum UserFunctionSlot: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var keyPath: WritableKeyPath<ParticleEmitter, ParticleFunction?> {
-        switch self {
-        case .update: \.updateFunction
-        case .spawn: \.spawnFunction
-        case .collision: \.collisionFunction
-        case .death: \.deathFunction
-        }
-    }
-
     var detail: String {
         switch self {
         case .update: "Runs every step for every live particle."
@@ -47,36 +38,16 @@ enum UserFunctionSlot: String, CaseIterable, Identifiable {
     }
 }
 
-extension ParticleEmitter {
-    /// Whether `slot` has a function. Turning it on starts from the slot's template.
-    subscript(hasFunction slot: UserFunctionSlot) -> Bool {
-        get { self[keyPath: slot.keyPath] != nil }
-        set { self[keyPath: slot.keyPath] = newValue ? (self[keyPath: slot.keyPath] ?? slot.template) : nil }
-    }
-
-    /// `slot`'s function, or its template when there is none. Setting it turns the slot on.
-    subscript(editableFunction slot: UserFunctionSlot) -> ParticleFunction {
-        get { self[keyPath: slot.keyPath] ?? slot.template }
-        set { self[keyPath: slot.keyPath] = newValue }
-    }
-
-    /// `customAttributeCount` as a slider value, kept to 1...4.
-    var editableCustomAttributeCount: Float {
-        get { Float(customAttributeCount) }
-        set { customAttributeCount = min(max(Int(newValue.rounded()), 1), ParticleFunction.maximumCustomAttributes) }
-    }
-}
-
 /// The emitter's user functions: one editor per slot, plus how many custom attributes particles keep.
 struct UserFunctionsSectionView: View {
-    @Binding var settings: ParticleEmitter
+    @Binding var modules: EmitterModules
 
     var body: some View {
         Section {
             ForEach(UserFunctionSlot.allCases) { slot in
-                UserFunctionEditorView(slot: slot, settings: $settings)
+                UserFunctionEditorView(slot: slot, modules: $modules)
             }
-            ParameterSliderView("Custom Attributes", value: $settings.editableCustomAttributeCount, in: 1...4, format: .number.precision(.fractionLength(0)))
+            ParameterSliderView("Custom Attributes", value: $modules.editableCustomAttributeCount, in: 1...4, format: .number.precision(.fractionLength(0)))
                 .help("How many of ParticleState.custom through custom3 each particle keeps between steps.")
         } header: {
             Text("User Functions")
@@ -90,14 +61,14 @@ struct UserFunctionsSectionView: View {
 /// compiler first, so typing does not recompile (and restart) the effect on every key. Parameters apply at once.
 struct UserFunctionEditorView: View {
     let slot: UserFunctionSlot
-    @Binding var settings: ParticleEmitter
+    @Binding var modules: EmitterModules
     @State private var draftSource = ""
     @State private var draftName = ""
     @State private var compileError: String?
 
     var body: some View {
         DisclosureGroup {
-            Toggle("Enabled", isOn: $settings[hasFunction: slot])
+            Toggle("Enabled", isOn: $modules[hasFunction: slot])
                 .help(slot.detail)
             if let current = function {
                 TextField("Function Name", text: $draftName)
@@ -120,7 +91,7 @@ struct UserFunctionEditorView: View {
                     Button("Revert") { loadDrafts() }
                         .disabled(draftSource == current.source && draftName == current.name)
                 }
-                ParametersEditorView(parameters: $settings[editableFunction: slot].parameters)
+                ParametersEditorView(parameters: $modules[editableFunction: slot].parameters)
             }
         } label: {
             Text(slot.rawValue + (function == nil ? "" : " ●"))
@@ -131,7 +102,7 @@ struct UserFunctionEditorView: View {
     }
 
     private var function: ParticleFunction? {
-        settings[keyPath: slot.keyPath]
+        modules[function: slot]
     }
 
     private func loadDrafts() {
@@ -145,7 +116,7 @@ struct UserFunctionEditorView: View {
         do {
             try candidate.validate(device: ParticleSystemRuntime.defaultDevice())
             compileError = nil
-            settings[keyPath: slot.keyPath] = candidate
+            modules[function: slot] = candidate
         } catch {
             compileError = error.localizedDescription
         }

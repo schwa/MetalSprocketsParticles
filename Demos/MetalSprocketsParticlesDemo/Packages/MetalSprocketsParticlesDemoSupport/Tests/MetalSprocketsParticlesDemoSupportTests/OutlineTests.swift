@@ -23,13 +23,13 @@ struct OutlineTests {
         #expect(model.selection == .subEmitter(id, 0))
         model.addTrigger(to: id)
         #expect(model.selection == .trigger(id, 0))
-        #expect(model.selectedEmitter.settings.triggers.count == 1)
+        #expect(model.selectedEmitter.modules.triggers.count == 1)
         model.removeSelection()
         #expect(model.selection == .emitter(id))
-        #expect(model.selectedEmitter.settings.triggers.isEmpty)
+        #expect(model.selectedEmitter.modules.triggers.isEmpty)
         model.selection = .subEmitter(id, 0)
         model.removeSelection()
-        #expect(model.selectedEmitter.settings.subEmitters.isEmpty)
+        #expect(model.selectedEmitter.modules.subEmitters.isEmpty)
     }
 
     @Test func addAndRemoveWorldItems() throws {
@@ -81,14 +81,14 @@ struct OutlineTests {
         model.removeSelection()
         model.selection = .subEmitter(emitter, 0)
         _ = model.selectedSubEmitter
-        model.selectedSubEmitter = SubEmitter(occasion: .onBirth, countPerEvent: 9, settings: ParticleEmitter())
-        #expect(model.selectedEmitter.settings.subEmitters.isEmpty)
+        model.selectedSubEmitter = SubEmitter(occasion: .onBirth, countPerEvent: 9, modules: .standard)
+        #expect(model.selectedEmitter.modules.subEmitters.isEmpty)
         model.selection = .trigger(emitter, 0)
         model.removeSelection()
         model.selection = .trigger(emitter, 0)
         _ = model.selectedTrigger
         model.selectedTrigger = EmissionTrigger(.event("x"), .stop)
-        #expect(model.selectedEmitter.settings.triggers.isEmpty)
+        #expect(model.selectedEmitter.modules.triggers.isEmpty)
     }
 
     /// #57: curve rows bind by position; after removing a stop, stale row bindings must not trap or write.
@@ -107,7 +107,7 @@ struct OutlineTests {
     /// #25: the current scene saves to a file and opens again as a picker entry.
     @Test func saveAndOpenEffect() throws {
         let model = ParticlesDemoModel(preset: .fireworks)
-        model.emitters[0].settings.birthRate = 7
+        model.emitters[0].modules[RateModule.self]?.birthRate = 7
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("My Fireworks-\(UUID()).json")
         defer { try? FileManager.default.removeItem(at: url) }
         try model.currentEffect.write(to: url)
@@ -116,7 +116,7 @@ struct OutlineTests {
         try model.openEffect(at: url)
         #expect(model.presetName.hasPrefix("My Fireworks"))
         #expect(model.presets.contains { $0.name == model.presetName })
-        #expect(model.emitters[0].settings.birthRate == 7)
+        #expect(model.emitters[0].modules[RateModule.self]?.birthRate == 7)
         #expect(model.emitters.count == ParticleSystem.fireworks.layers.count)
 
         // A file named like a built-in preset does not shadow it.
@@ -130,7 +130,7 @@ struct OutlineTests {
         model.open(ParticleSystem("Empty", layers: []), named: "Empty")
         #expect(model.emitters.isEmpty)
         _ = model.selectedEmitter
-        model.selectedEmitter.settings.birthRate = 99
+        model.selectedEmitter.modules[RateModule.self]?.birthRate = 99
         #expect(model.emitters.isEmpty)
         model.burstSelectedEmitter()
         model.addEmitter()

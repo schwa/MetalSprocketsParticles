@@ -27,7 +27,7 @@ final class ParticlesDemoModel {
 
     var selectedEmitterID: EmitterDescription.ID?
 
-    private static let placeholderEmitter = EmitterDescription("No Emitter", settings: ParticleEmitter(), isEmitting: false)
+    private static let placeholderEmitter = EmitterDescription("No Emitter", modules: .standard, isEmitting: false)
 
     /// What the outline has selected and the inspector shows. Selecting an emitter or one of its children also
     /// selects that emitter.
@@ -70,28 +70,28 @@ final class ParticlesDemoModel {
 
     var selectedSubEmitter: SubEmitter {
         get {
-            guard case let .subEmitter(_, index) = selection, index < selectedEmitter.settings.subEmitters.count else {
-                return SubEmitter(occasion: .onDeath, countPerEvent: 1, settings: ParticleEmitter())
+            guard case let .subEmitter(_, index) = selection, index < selectedEmitter.modules.subEmitters.count else {
+                return SubEmitter(occasion: .onDeath, countPerEvent: 1, modules: .standard)
             }
-            return selectedEmitter.settings.subEmitters[index]
+            return selectedEmitter.modules.subEmitters[index]
         }
         set {
-            if case let .subEmitter(_, index) = selection, index < selectedEmitter.settings.subEmitters.count {
-                selectedEmitter.settings.subEmitters[index] = newValue
+            if case let .subEmitter(_, index) = selection, index < selectedEmitter.modules.subEmitters.count {
+                selectedEmitter.modules.subEmitters[index] = newValue
             }
         }
     }
 
     var selectedTrigger: EmissionTrigger {
         get {
-            guard case let .trigger(_, index) = selection, index < selectedEmitter.settings.triggers.count else {
+            guard case let .trigger(_, index) = selection, index < selectedEmitter.modules.triggers.count else {
                 return EmissionTrigger(.event(""), .start)
             }
-            return selectedEmitter.settings.triggers[index]
+            return selectedEmitter.modules.triggers[index]
         }
         set {
-            if case let .trigger(_, index) = selection, index < selectedEmitter.settings.triggers.count {
-                selectedEmitter.settings.triggers[index] = newValue
+            if case let .trigger(_, index) = selection, index < selectedEmitter.modules.triggers.count {
+                selectedEmitter.modules.triggers[index] = newValue
             }
         }
     }
@@ -364,9 +364,9 @@ final class ParticlesDemoModel {
 
     func addEmitter() {
         // 2D shows the scene in its own units, so new emitters are the same in both modes; 2D keeps them on the plane.
-        var settings = ParticleEmitter()
-        settings.birthRate = 2_000
-        let emitter = EmitterDescription("Emitter \(emitters.count + 1)", settings: settings)
+        var modules = EmitterModules.standard
+        modules[RateModule.self]?.birthRate = 2_000
+        let emitter = EmitterDescription("Emitter \(emitters.count + 1)", modules: modules)
         emitters.append(emitter)
         selection = .emitter(emitter.id)
     }
@@ -392,16 +392,16 @@ final class ParticlesDemoModel {
         guard let index = emitters.firstIndex(where: { $0.id == emitterID }) else {
             return
         }
-        emitters[index].settings.subEmitters.append(.sparks)
-        selection = .subEmitter(emitterID, emitters[index].settings.subEmitters.count - 1)
+        emitters[index].modules.subEmitters.append(.sparks)
+        selection = .subEmitter(emitterID, emitters[index].modules.subEmitters.count - 1)
     }
 
     func addTrigger(to emitterID: EmitterDescription.ID) {
         guard let index = emitters.firstIndex(where: { $0.id == emitterID }) else {
             return
         }
-        emitters[index].settings.triggers.append(EmissionTrigger(.event(eventToSend), .burst(100)))
-        selection = .trigger(emitterID, emitters[index].settings.triggers.count - 1)
+        emitters[index].modules.triggers.append(EmissionTrigger(.event(eventToSend), .burst(100)))
+        selection = .trigger(emitterID, emitters[index].modules.triggers.count - 1)
     }
 
     func addCollider(_ kind: ParticleColliderKind) {
@@ -426,13 +426,13 @@ final class ParticlesDemoModel {
         case .emitter:
             removeSelectedEmitter()
         case let .subEmitter(emitterID, index):
-            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }), index < emitters[emitter].settings.subEmitters.count {
-                emitters[emitter].settings.subEmitters.remove(at: index)
+            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }), index < emitters[emitter].modules.subEmitters.count {
+                emitters[emitter].modules.subEmitters.remove(at: index)
             }
             selection = .emitter(emitterID)
         case let .trigger(emitterID, index):
-            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }), index < emitters[emitter].settings.triggers.count {
-                emitters[emitter].settings.triggers.remove(at: index)
+            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }), index < emitters[emitter].modules.triggers.count {
+                emitters[emitter].modules.triggers.remove(at: index)
             }
             selection = .emitter(emitterID)
         case let .collider(id):

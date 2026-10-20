@@ -49,8 +49,8 @@ struct TriggerAdapterTests {
     @Test func sendEventReachesTheSystem() throws {
         let model = ParticlesDemoModel()
         let system = try #require(model.system)
-        model.selectedEmitter.settings.birthRate = 0
-        model.selectedEmitter.settings.triggers = [EmissionTrigger(.event("pop"), .burst(5))]
+        model.selectedEmitter.modules[RateModule.self]?.birthRate = 0
+        model.selectedEmitter.modules.triggers = [EmissionTrigger(.event("pop"), .burst(5))]
         model.eventToSend = "pop"
         model.sendEvent()
         #expect(system.pendingEvents == ["pop"])

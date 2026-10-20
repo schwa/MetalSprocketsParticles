@@ -69,7 +69,7 @@ struct EmitterAdapterTests {
     @MainActor
     @Test func eventBurstsFollowTheirEmitters() throws {
         let model = ParticlesDemoModel()
-        model.emitters = [EmitterDescription("A", settings: ParticleEmitter()), EmitterDescription("B", settings: ParticleEmitter()), EmitterDescription("C", settings: ParticleEmitter())]
+        model.emitters = [EmitterDescription("A", modules: .standard), EmitterDescription("B", modules: .standard), EmitterDescription("C", modules: .standard)]
         let (a, b, c) = (model.emitters[0].id, model.emitters[1].id, model.emitters[2].id)
         model.eventBurstItems = [EventBurstItem(sourceID: c, occasion: .death, targetID: b, count: 5)]
         #expect(model.currentEffect.eventBursts == [EventBurst(sourceLayer: 2, occasion: .death, targetLayer: 1, count: 5)])
@@ -108,13 +108,13 @@ struct EmitterAdapterTests {
 
     /// User functions in the inspector (#167): every slot's template compiles and runs.
     @Test func userFunctionTemplatesCompileAndRun() throws {
-        var settings = ParticleEmitter()
+        var modules = EmitterModules.standard
         for slot in UserFunctionSlot.allCases {
             try slot.template.validate(device: ParticleSystemRuntime.defaultDevice())
-            settings[hasFunction: slot] = true
+            modules[hasFunction: slot] = true
         }
         let runtime = try ParticleSystemRuntime(capacity: 1)
-        try runtime.apply(ParticleSystem("Functions", layers: [EmitterDescription("All Slots", settings: settings, capacity: 100)]), rebuild: true)
+        try runtime.apply(ParticleSystem("Functions", layers: [EmitterDescription("All Slots", modules: modules, capacity: 100)]), rebuild: true)
         let runner = try Runner()
         for _ in 0..<5 {
             try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))
@@ -122,17 +122,20 @@ struct EmitterAdapterTests {
     }
 
     @Test func userFunctionSlotsTurnOnAndOff() {
-        var settings = ParticleEmitter()
-        settings[hasFunction: .collision] = true
-        #expect(settings.collisionFunction == UserFunctionSlot.collision.template)
-        settings[editableFunction: .collision].parameters.append([1, 2, 3, 4])
-        #expect(settings.collisionFunction?.parameters.count == 2)
-        settings[hasFunction: .collision] = false
-        #expect(settings.collisionFunction == nil)
-        settings.editableCustomAttributeCount = 9
-        #expect(settings.customAttributeCount == ParticleFunction.maximumCustomAttributes)
-        settings.editableCustomAttributeCount = 0
-        #expect(settings.customAttributeCount == 1)
+        var modules = EmitterModules.standard
+        modules[hasFunction: .collision] = true
+        #expect(modules[CollisionFunctionModule.self]?.function == UserFunctionSlot.collision.template)
+        modules[editableFunction: .collision].parameters.append([1, 2, 3, 4])
+        #expect(modules[CollisionFunctionModule.self]?.function.parameters.count == 2)
+        modules[hasFunction: .collision] = false
+        #expect(modules[CollisionFunctionModule.self] == nil)
+        // Spawn functions go to the spawn stage.
+        modules[hasFunction: .spawn] = true
+        #expect(modules.spawn.contains { $0.module.kind == "function" })
+        modules.editableCustomAttributeCount = 9
+        #expect(modules.customAttributeCount == ParticleFunction.maximumCustomAttributes)
+        modules.editableCustomAttributeCount = 0
+        #expect(modules.customAttributeCount == 1)
         // Bad code is caught before it reaches the runtime.
         let broken = ParticleFunction(source: "not metal", name: "x")
         #expect(throws: (any Error).self) { try broken.validate(device: ParticleSystemRuntime.defaultDevice()) }
@@ -229,7 +232,7 @@ struct EmitterAdapterTests {
     }
 
     @Test func waveDeformationEdits() {
-        var emitter = EmitterDescription("Mesh", settings: ParticleEmitter())
+        var emitter = EmitterDescription("Mesh", modules: .standard)
         emitter.waveAmplitude = 5 // Ignored while off.
         #expect(emitter.meshDeformation == .none)
         emitter.hasWaveDeformation = true
@@ -247,7 +250,7 @@ struct EmitterAdapterTests {
             rect.fill()
             return true
         }.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0)?.representation(using: .png, properties: [:]) })
-        var emitter = EmitterDescription("Image", settings: ParticleEmitter())
+        var emitter = EmitterDescription("Image", modules: .standard)
         emitter.editableImage.width = 9 // Ignored without an image.
         #expect(emitter.image == nil)
         emitter.image = try EmitterImage.choosing(data: png, replacing: nil)
@@ -348,7 +351,7 @@ struct EmitterAdapterTests {
     }
 
     @Test func capacityHasAFloorButNoCeiling() {
-        var description = EmitterDescription("Dots", settings: ParticleEmitter(), capacity: 1_000)
+        var description = EmitterDescription("Dots", modules: .standard, capacity: 1_000)
         description.editableCapacity = 5_000
         #expect(description.capacity == 5_000)
         description.editableCapacity = 0
@@ -571,7 +574,7 @@ struct ModelTests {
 
     @Test func pointerBindingsLoadSaveAndSurviveRemovals() {
         let model = ParticlesDemoModel()
-        var preset = ParticleSystem("Pointer", layers: [ParticleSystem.Layer("A", settings: ParticleEmitter())])
+        var preset = ParticleSystem("Pointer", layers: [ParticleSystem.Layer("A", modules: .standard)])
         preset.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: .zero, radius: 0.5)]
         preset.forceFields = [.wind(velocity: [1, 0, 0], strength: 1), .attractor(center: .zero, strength: 2)]
         preset.pointerBindings = [.collider(1), .forceField(1), .emitter(0)]
@@ -604,10 +607,10 @@ struct ModelTests {
 
     @Test func revertDiscardsEdits() {
         let model = ParticlesDemoModel()
-        model.selectedEmitter.settings.birthRate = 1
+        model.selectedEmitter.modules[RateModule.self]?.birthRate = 1
         model.colliders = []
         model.reloadPreset()
-        #expect(model.selectedEmitter.settings == ParticleSystem.fountain.layers[0].settings)
+        #expect(model.selectedEmitter.modules == ParticleSystem.fountain.layers[0].modules)
         #expect(model.colliders.map(\.collider) == ParticleSystem.fountain.colliders)
     }
 
@@ -626,11 +629,11 @@ struct ModelTests {
     @Test func editingSelectedEmitterReachesSystem() throws {
         let model = ParticlesDemoModel()
         let system = try #require(model.system)
-        model.selectedEmitter.settings.birthRate = 123
+        model.selectedEmitter.modules[RateModule.self]?.birthRate = 123
         model.selectedEmitter.isEmitting = false
         model.selectedEmitter.simulationSpace = .local
         model.selectedEmitter.sprite = .star
-        #expect(system.emitters[0].settings.birthRate == 123)
+        #expect(system.emitters[0].modules[RateModule.self]?.birthRate == 123)
         #expect(!system.emitters[0].isEmitting)
         #expect(system.emitters[0].simulationSpace == .local)
         #expect(system.emitters[0].texture != nil)

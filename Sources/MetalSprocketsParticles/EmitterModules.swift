@@ -115,6 +115,53 @@ public struct EmitterModules: Sendable, Equatable, Codable {
     }
 }
 
+// MARK: - Typed access
+
+public extension EmitterModules {
+    /// The first module of type `Module` in any stage, enabled or not. Setting replaces it, adds it to its stage when
+    /// there is none, or removes it for nil:
+    ///
+    ///     modules[RateModule.self]?.birthRate = 500
+    ///     modules[GravityModule.self] = GravityModule(acceleration: [0, -1, 0])
+    subscript<Module: ParticleModule>(_: Module.Type) -> Module? {
+        get {
+            spawn.lazy.compactMap { $0.module.module as? Module }.first
+                ?? update.lazy.compactMap { $0.module.module as? Module }.first
+                ?? render.lazy.compactMap { $0.module.module as? Module }.first
+        }
+        set {
+            if spawn.replaceFirst(Module.self, with: newValue) || update.replaceFirst(Module.self, with: newValue) || render.replaceFirst(Module.self, with: newValue) {
+                return
+            }
+            guard let newValue else {
+                return
+            }
+            if let module = SpawnModule(wrapping: newValue) {
+                spawn.append(ModuleSlot(module))
+            } else if let module = UpdateModule(wrapping: newValue) {
+                update.append(ModuleSlot(module))
+            } else if let module = RenderModule(wrapping: newValue) {
+                render.append(ModuleSlot(module))
+            }
+        }
+    }
+}
+
+extension Array {
+    /// Replaces (or for nil removes) the first slot holding a `Module`. Returns whether there was one.
+    mutating func replaceFirst<Stage: StageModule, Module: ParticleModule>(_: Module.Type, with module: Module?) -> Bool where Element == ModuleSlot<Stage> {
+        guard let index = firstIndex(where: { $0.module.module is Module }) else {
+            return false
+        }
+        if let module, let wrapped = Stage(wrapping: module) {
+            self[index].module = wrapped
+        } else {
+            remove(at: index)
+        }
+        return true
+    }
+}
+
 // MARK: - Merging
 
 extension Array {

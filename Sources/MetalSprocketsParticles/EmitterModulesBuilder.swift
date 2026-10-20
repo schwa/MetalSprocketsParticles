@@ -64,6 +64,11 @@ public extension EmitterModules {
 }
 
 public extension EmitterModules {
+    /// A starting point for 3D effects: a small sphere spraying orange-to-red sparks upward that fall back down.
+    static var standard: Self {
+        Self(ParticleEmitter())
+    }
+
     /// A starting point for 2D effects (`ParticleSystem.is2D`), in points: a fountain shooting up the screen at a few
     /// hundred points a second, falling back down (+y), 8 points across, kept on its plane.
     static var default2D: Self {

@@ -91,17 +91,17 @@ struct EmitterOutlineRow: View {
     @State private var isExpanded = true
 
     var body: some View {
-        let children = emitter.settings.subEmitters.count + emitter.settings.triggers.count
+        let children = emitter.modules.subEmitters.count + emitter.modules.triggers.count
         if children == 0 {
             EmitterOutlineLabelView(emitter: emitter)
         } else {
             DisclosureGroup(isExpanded: $isExpanded) {
-                ForEach(emitter.settings.subEmitters.indices, id: \.self) { index in
-                    Label(emitter.settings.subEmitters[index].occasion.kind.name, systemImage: "sparkles")
+                ForEach(emitter.modules.subEmitters.indices, id: \.self) { index in
+                    Label(emitter.modules.subEmitters[index].occasion.kind.name, systemImage: "sparkles")
                         .tag(OutlineItem.subEmitter(emitter.id, index))
                 }
-                ForEach(emitter.settings.triggers.indices, id: \.self) { index in
-                    let trigger = emitter.settings.triggers[index]
+                ForEach(emitter.modules.triggers.indices, id: \.self) { index in
+                    let trigger = emitter.modules.triggers[index]
                     Label("\(trigger.condition.kind.name) → \(trigger.action.kind.name)", systemImage: "bolt")
                         .tag(OutlineItem.trigger(emitter.id, index))
                 }
