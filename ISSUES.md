@@ -4292,11 +4292,13 @@ Part of #197.
 ## 201: Sub-emitters hold modules instead of flat ParticleEmitter settings
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 created: 2026-10-20T18:58:48Z
+updated: 2026-10-20T19:26:34Z
+closed: 2026-10-20T19:26:34Z
 +++
 
 SubEmitter.settings is still a ParticleEmitter inside the subEmitters module. Make sub-emitters hold EmitterModules, lowered like top-level emitters. Effect files: format bump or migration via particles-migrate.
@@ -4304,6 +4306,8 @@ SubEmitter.settings is still a ParticleEmitter inside the subEmitters module. Ma
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T19:26:35Z`: SubEmitter stores EmitterModules (lowered and cached like EmitterDescription); settings is the flat view. Effect files: sub-emitters save 'modules'; old 'settings' still loads. 4 presets with sub-emitters migrated.
 
 ---
 

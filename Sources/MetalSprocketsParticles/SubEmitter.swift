@@ -28,10 +28,19 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     public var countPerEvent: Int
     /// Fraction of the parent's velocity added to each child.
     public var velocityFactor: Float
-    /// The children's settings. Their shape is centered on the parent particle; birth rate, timing, and warmup are
+    /// The children's modules. Their shape is centered on the parent particle; birth rate, timing, and warmup are
     /// ignored. Their own sub-emitters work, down to `ParticleSystemRuntime.maxSubEmitterDepth` levels, so a particle can change
     /// type several times. Capacity multiplies at each level (parent capacity × countPerEvent).
-    public var settings: ParticleEmitter
+    public var modules: EmitterModules {
+        didSet { lowered = modules.lowered() }
+    }
+    /// `modules.lowered()`, kept up to date.
+    private var lowered: ParticleEmitter
+    /// The children's modules as flat settings. Setting it replaces the modules; disabled modules are kept.
+    public var settings: ParticleEmitter {
+        get { lowered }
+        set { modules = modules.merging(EmitterModules(newValue)) }
+    }
     /// How the children are drawn. Soft dots by default.
     public var sprite: ParticleSprite = .softDot
     /// The parent dies when it spawns children, so it turns into them: a transition to another particle type.
@@ -44,7 +53,17 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         self.occasion = occasion
         self.countPerEvent = countPerEvent
         self.velocityFactor = velocityFactor
-        self.settings = settings
+        let modules = EmitterModules(settings)
+        self.modules = modules
+        lowered = modules.lowered()
+    }
+
+    public init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, modules: EmitterModules) {
+        self.occasion = occasion
+        self.countPerEvent = countPerEvent
+        self.velocityFactor = velocityFactor
+        self.modules = modules
+        lowered = modules.lowered()
     }
 
     /// The parent turns into one particle with `settings` and `sprite` when `occasion` happens, keeping its position
@@ -64,21 +83,36 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case occasion, countPerEvent, velocityFactor, settings, sprite, replacesParent, continuesParentLife
+        case occasion, countPerEvent, velocityFactor, settings, modules, sprite, replacesParent, continuesParentLife
     }
 
     /// Missing keys keep their defaults, so effects saved before a setting existed still load.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        // Files from before sub-emitter modules have flat settings; they lift to modules.
+        let modules = container.contains(.modules)
+            ? try container.decode(EmitterModules.self, forKey: .modules)
+            : EmitterModules(try container.decode(ParticleEmitter.self, forKey: .settings))
         self.init(
             occasion: try container.decode(Occasion.self, forKey: .occasion),
             countPerEvent: try container.decode(Int.self, forKey: .countPerEvent),
             velocityFactor: try container.decodeIfPresent(Float.self, forKey: .velocityFactor) ?? 0,
-            settings: try container.decode(ParticleEmitter.self, forKey: .settings)
+            modules: modules
         )
         try container.update(&sprite, .sprite)
         try container.update(&replacesParent, .replacesParent)
         try container.update(&continuesParentLife, .continuesParentLife)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(occasion, forKey: .occasion)
+        try container.encode(countPerEvent, forKey: .countPerEvent)
+        try container.encode(velocityFactor, forKey: .velocityFactor)
+        try container.encode(modules, forKey: .modules)
+        try container.encode(sprite, forKey: .sprite)
+        try container.encode(replacesParent, forKey: .replacesParent)
+        try container.encode(continuesParentLife, forKey: .continuesParentLife)
     }
 
     /// The volume for `.onEntering`; an empty sphere otherwise.

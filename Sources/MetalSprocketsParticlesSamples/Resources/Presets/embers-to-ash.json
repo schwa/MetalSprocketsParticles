@@ -188,229 +188,344 @@
                   {
                     "continuesParentLife": false,
                     "countPerEvent": 1,
+                    "modules": {
+                      "render": [
+                        {
+                          "module": {
+                            "sprite": {
+                              "blendMode": 0,
+                              "isLit": false,
+                              "minimumScreenSize": 0,
+                              "orientation": {
+                                "billboard": {}
+                              },
+                              "softness": 0,
+                              "sortMode": "None"
+                            }
+                          }
+                        }
+                      ],
+                      "spawn": [
+                        {
+                          "module": {
+                            "shape": {
+                              "birthDirection": 0,
+                              "birthLocation": 0,
+                              "position": [0, 0.5, 0],
+                              "shape": {
+                                "point": {}
+                              },
+                              "sweepAngle": 6.283185
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "rate": {
+                              "birthRate": 20000,
+                              "idleDuration": 0,
+                              "loops": true,
+                              "overTime": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": 1
+                                  }
+                                ]
+                              },
+                              "variation": 0,
+                              "warmupDuration": 0
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "lifetime": {
+                              "range": [4, 5]
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "rotation": {
+                              "angle": 0,
+                              "angleVariation": 3.14,
+                              "angularSpeed": 0,
+                              "angularSpeedVariation": 4
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "variation": {
+                              "color": [0, 0, 0.15, 0],
+                              "size": 0
+                            }
+                          }
+                        }
+                      ],
+                      "update": [
+                        {
+                          "module": {
+                            "gravity": {
+                              "acceleration": [0, -1.4, 0]
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "drag": {
+                              "amount": 2.5
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "collision": {
+                              "collidesWithSceneDepth": false,
+                              "diesOnCollision": false,
+                              "friction": 1,
+                              "frictionVariation": 0,
+                              "radius": 0,
+                              "restitution": 0,
+                              "restitutionVariation": 0
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "colorOverLife": {
+                              "color": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": [0.35, 0.33, 0.32, 1]
+                                  },
+                                  {
+                                    "time": 1,
+                                    "value": [0.18, 0.18, 0.18, 1]
+                                  }
+                                ]
+                              },
+                              "opacity": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": 1
+                                  },
+                                  {
+                                    "time": 0.8,
+                                    "value": 1
+                                  },
+                                  {
+                                    "time": 1,
+                                    "value": 0
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "sizeOverLife": {
+                              "curve": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": 0.018
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "subEmitters": {
+                              "emitters": [
+                                {
+                                  "continuesParentLife": false,
+                                  "countPerEvent": 1,
+                                  "modules": {
+                                    "render": [
+                                      {
+                                        "module": {
+                                          "sprite": {
+                                            "blendMode": 0,
+                                            "isLit": false,
+                                            "minimumScreenSize": 0,
+                                            "orientation": {
+                                              "billboard": {}
+                                            },
+                                            "softness": 0,
+                                            "sortMode": "None"
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "spawn": [
+                                      {
+                                        "module": {
+                                          "shape": {
+                                            "birthDirection": 0,
+                                            "birthLocation": 0,
+                                            "position": [0, 0.5, 0],
+                                            "shape": {
+                                              "point": {}
+                                            },
+                                            "sweepAngle": 6.283185
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "rate": {
+                                            "birthRate": 20000,
+                                            "idleDuration": 0,
+                                            "loops": true,
+                                            "overTime": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": 1
+                                                }
+                                              ]
+                                            },
+                                            "variation": 0,
+                                            "warmupDuration": 0
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "lifetime": {
+                                            "range": [0.8, 1.2]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "velocity": {
+                                            "inherit": 0,
+                                            "speedVariation": 0,
+                                            "spread": 0.6,
+                                            "velocity": [0, 0.15, 0]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "rotation": {
+                                            "angle": 0,
+                                            "angleVariation": 3.14,
+                                            "angularSpeed": 0,
+                                            "angularSpeedVariation": 0.5
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "variation": {
+                                            "color": [0, 0, 0.15, 0],
+                                            "size": 0
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "update": [
+                                      {
+                                        "module": {
+                                          "gravity": {
+                                            "acceleration": [0, 0.15, 0]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "drag": {
+                                            "amount": 1.5
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "collision": {
+                                            "collidesWithSceneDepth": false,
+                                            "diesOnCollision": false,
+                                            "friction": 1,
+                                            "frictionVariation": 0,
+                                            "radius": 0,
+                                            "restitution": 0,
+                                            "restitutionVariation": 0
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "colorOverLife": {
+                                            "color": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": [0.45, 0.43, 0.41, 1]
+                                                }
+                                              ]
+                                            },
+                                            "opacity": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": 0.75
+                                                },
+                                                {
+                                                  "time": 1,
+                                                  "value": 0
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "sizeOverLife": {
+                                            "curve": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": 0.03
+                                                },
+                                                {
+                                                  "time": 1,
+                                                  "value": 0.09
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "occasion": {
+                                    "onCollision": {}
+                                  },
+                                  "replacesParent": true,
+                                  "sprite": "Smoke Puff",
+                                  "velocityFactor": 0
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
                     "occasion": {
                       "atAge": {
                         "seconds": 1.4
                       }
                     },
                     "replacesParent": true,
-                    "settings": {
-                      "angle": 0,
-                      "angleVariation": 3.14,
-                      "angularSpeed": 0,
-                      "angularSpeedVariation": 4,
-                      "birthDirection": 0,
-                      "birthLocation": 0,
-                      "birthRate": 20000,
-                      "birthRateVariation": 0,
-                      "blendMode": 0,
-                      "categoryMask": 4294967295,
-                      "collidesWithSceneDepth": false,
-                      "collisionRadius": 0,
-                      "colorByPositionAtBirth": false,
-                      "colorByPositionEnd": [0, 1, 0],
-                      "colorByPositionStart": [0, 0, 0],
-                      "colorBySpeedRange": [0, 5],
-                      "colorOverLife": {
-                        "keyframes": [
-                          {
-                            "time": 0,
-                            "value": [0.35, 0.33, 0.32, 1]
-                          },
-                          {
-                            "time": 1,
-                            "value": [0.18, 0.18, 0.18, 1]
-                          }
-                        ]
-                      },
-                      "colorVariation": [0, 0, 0.15, 0],
-                      "constrainsToPlane": false,
-                      "cullingRadius": 0,
-                      "customAttributeCount": 1,
-                      "diesOnCollision": false,
-                      "drag": 2.5,
-                      "emissionOverTime": {
-                        "keyframes": [
-                          {
-                            "time": 0,
-                            "value": 1
-                          }
-                        ]
-                      },
-                      "friction": 1,
-                      "frictionVariation": 0,
-                      "gravity": [0, -1.4, 0],
-                      "idleDuration": 0,
-                      "inheritVelocity": 0,
-                      "isLit": false,
-                      "lifetime": [4, 5],
-                      "lodFarDistance": 0,
-                      "lodFarRateScale": 0.25,
-                      "lodNearDistance": 0,
-                      "lodScalesSize": false,
-                      "loops": true,
-                      "minimumScreenSize": 0,
-                      "opacityOverLife": {
-                        "keyframes": [
-                          {
-                            "time": 0,
-                            "value": 1
-                          },
-                          {
-                            "time": 0.8,
-                            "value": 1
-                          },
-                          {
-                            "time": 1,
-                            "value": 0
-                          }
-                        ]
-                      },
-                      "orientation": {
-                        "billboard": {}
-                      },
-                      "position": [0, 0.5, 0],
-                      "reportsCollisions": false,
-                      "reportsDeaths": false,
-                      "restitution": 0,
-                      "restitutionVariation": 0,
-                      "shape": {
-                        "point": {}
-                      },
-                      "simulatesWhenCulled": true,
-                      "sizeOverLife": {
-                        "keyframes": [
-                          {
-                            "time": 0,
-                            "value": 0.018
-                          }
-                        ]
-                      },
-                      "sizeVariation": 0,
-                      "softness": 0,
-                      "sortMode": "None",
-                      "spawnModules": [],
-                      "speedVariation": 0,
-                      "subEmitters": [
-                        {
-                          "continuesParentLife": false,
-                          "countPerEvent": 1,
-                          "occasion": {
-                            "onCollision": {}
-                          },
-                          "replacesParent": true,
-                          "settings": {
-                            "angle": 0,
-                            "angleVariation": 3.14,
-                            "angularSpeed": 0,
-                            "angularSpeedVariation": 0.5,
-                            "birthDirection": 0,
-                            "birthLocation": 0,
-                            "birthRate": 20000,
-                            "birthRateVariation": 0,
-                            "blendMode": 0,
-                            "categoryMask": 4294967295,
-                            "collidesWithSceneDepth": false,
-                            "collisionRadius": 0,
-                            "colorByPositionAtBirth": false,
-                            "colorByPositionEnd": [0, 1, 0],
-                            "colorByPositionStart": [0, 0, 0],
-                            "colorBySpeedRange": [0, 5],
-                            "colorOverLife": {
-                              "keyframes": [
-                                {
-                                  "time": 0,
-                                  "value": [0.45, 0.43, 0.41, 1]
-                                }
-                              ]
-                            },
-                            "colorVariation": [0, 0, 0.15, 0],
-                            "constrainsToPlane": false,
-                            "cullingRadius": 0,
-                            "customAttributeCount": 1,
-                            "diesOnCollision": false,
-                            "drag": 1.5,
-                            "emissionOverTime": {
-                              "keyframes": [
-                                {
-                                  "time": 0,
-                                  "value": 1
-                                }
-                              ]
-                            },
-                            "friction": 1,
-                            "frictionVariation": 0,
-                            "gravity": [0, 0.15, 0],
-                            "idleDuration": 0,
-                            "inheritVelocity": 0,
-                            "isLit": false,
-                            "lifetime": [0.8, 1.2],
-                            "lodFarDistance": 0,
-                            "lodFarRateScale": 0.25,
-                            "lodNearDistance": 0,
-                            "lodScalesSize": false,
-                            "loops": true,
-                            "minimumScreenSize": 0,
-                            "opacityOverLife": {
-                              "keyframes": [
-                                {
-                                  "time": 0,
-                                  "value": 0.75
-                                },
-                                {
-                                  "time": 1,
-                                  "value": 0
-                                }
-                              ]
-                            },
-                            "orientation": {
-                              "billboard": {}
-                            },
-                            "position": [0, 0.5, 0],
-                            "reportsCollisions": false,
-                            "reportsDeaths": false,
-                            "restitution": 0,
-                            "restitutionVariation": 0,
-                            "shape": {
-                              "point": {}
-                            },
-                            "simulatesWhenCulled": true,
-                            "sizeOverLife": {
-                              "keyframes": [
-                                {
-                                  "time": 0,
-                                  "value": 0.03
-                                },
-                                {
-                                  "time": 1,
-                                  "value": 0.09
-                                }
-                              ]
-                            },
-                            "sizeVariation": 0,
-                            "softness": 0,
-                            "sortMode": "None",
-                            "spawnModules": [],
-                            "speedVariation": 0,
-                            "subEmitters": [],
-                            "sweepAngle": 6.283185,
-                            "triggers": [],
-                            "updateModules": [],
-                            "velocity": [0, 0.15, 0],
-                            "velocitySpread": 0.6,
-                            "warmupDuration": 0
-                          },
-                          "sprite": "Smoke Puff",
-                          "velocityFactor": 0
-                        }
-                      ],
-                      "sweepAngle": 6.283185,
-                      "triggers": [],
-                      "updateModules": [],
-                      "velocity": [0, 0, 0],
-                      "velocitySpread": 0,
-                      "warmupDuration": 0
-                    },
                     "sprite": "Triangle",
                     "velocityFactor": 1
                   }
