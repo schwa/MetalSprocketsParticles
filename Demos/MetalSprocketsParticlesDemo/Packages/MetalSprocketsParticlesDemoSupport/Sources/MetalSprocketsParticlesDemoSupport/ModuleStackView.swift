@@ -89,7 +89,7 @@ struct ModuleStackView<Module: StageModule, Editor: View>: View {
             Section {
                 Menu("Add \(title) Module") {
                     ForEach(missing.indices, id: \.self) { index in
-                        Button(Self.label(missing[index])) { stack.append(ModuleSlot(missing[index])) }
+                        Button(Self.label(missing[index])) { stack.append(ModuleSlot(Self.uniquelyNamed(missing[index], in: stack))) }
                     }
                 }
             }
@@ -118,6 +118,35 @@ struct ModuleStackView<Module: StageModule, Editor: View>: View {
         }
         .labelStyle(.iconOnly)
         .buttonStyle(.borderless)
+    }
+
+    /// `module` with a function name no stitched module in `stack` has (swirl, swirl2, ...), so editing one copy's
+    /// source cannot clash with another's (#217).
+    static func uniquelyNamed(_ module: Module, in stack: [ModuleSlot<Module>]) -> Module {
+        let names = Set(stack.compactMap { stitched($0.module)?.name })
+        guard var stitched = stitched(module), names.contains(stitched.name) else {
+            return module
+        }
+        let base = stitched.name
+        var number = 2
+        while names.contains("\(base)\(number)") {
+            number += 1
+        }
+        stitched.source = stitched.source.replacingOccurrences(of: "*\(base)(", with: "*\(base)\(number)(")
+        stitched.name = "\(base)\(number)"
+        switch module.module {
+        case is StitchedUpdateModule: return Module(wrapping: StitchedUpdateModule(module: stitched)) ?? module
+        case is StitchedSpawnModule: return Module(wrapping: StitchedSpawnModule(module: stitched)) ?? module
+        default: return module
+        }
+    }
+
+    private static func stitched(_ module: Module) -> StitchedModule? {
+        switch module.module {
+        case let stitched as StitchedUpdateModule: stitched.module
+        case let stitched as StitchedSpawnModule: stitched.module
+        default: nil
+        }
     }
 
     /// "colorOverLife" as "Color Over Life"; stitched modules by their function name.

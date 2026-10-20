@@ -4601,13 +4601,17 @@ StitchedModule.stitch concatenates every distinct module source into one Metal l
 ## 217: Two stitched modules with the same name but edited sources break the emitter
 
 +++
-status: new
+status: closed
 priority: low
 kind: bug
-labels: area:demo,effort:s
+labels: area:demo, effort:s
 created: 2026-10-20T20:24:39Z
+updated: 2026-10-20T20:28:49Z
+closed: 2026-10-20T20:28:49Z
 +++
 
 Adding the stitched template twice gives two modules named 'swirl'. Editing one's source but keeping the name makes the stack fail to stitch ('Two stitched modules in one stack are named ... but have different sources', #216), so the emitter's functions fail at runtime. The editor's Compile & Apply only validates the module alone. Fix: validate against the whole stack before applying, or give added templates unique names (swirl2...).
+
+- `2026-10-20T20:28:49Z`: Added stitched modules get unique names (swirl, swirl2, ...; the source's function is renamed too). A user can still type a clashing name by hand; the stack then fails with #216's clear error.
 
 ---

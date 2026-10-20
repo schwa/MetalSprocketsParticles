@@ -2,6 +2,7 @@ import Foundation
 import MetalSprocketsParticles
 @testable import MetalSprocketsParticlesDemoSupport
 import MetalSprocketsParticlesSamples
+import SwiftUI
 import Testing
 
 @MainActor
@@ -56,9 +57,15 @@ struct OutlineTests {
         let addable = UpdateModule.addable.filter { $0.kind == "stitched" }
         #expect(addable.count == 1)
         var modules = EmitterModules.standard
-        modules.update.append(ModuleSlot(addable[0]))
-        modules.update.append(ModuleSlot(addable[0]))
-        #expect(modules.update.filter { $0.module.kind == "stitched" }.count == 2)
+        typealias Stack = ModuleStackView<UpdateModule, EmptyView>
+        for _ in 0..<3 {
+            modules.update.append(ModuleSlot(Stack.uniquelyNamed(addable[0], in: modules.update)))
+        }
+        #expect(ModuleStage.update.labels(of: modules).map(\.title).suffix(3) == ["Stitched swirl", "Stitched swirl2", "Stitched swirl3"])
+        // Each copy compiles on its own and the stack stitches.
+        for case let .stitched(stitched) in modules.update.map(\.module) {
+            try stitched.module.validate(device: ParticleSystemRuntime.defaultDevice())
+        }
         let player = try ParticlePlayer(system: ParticleSystem("Stitched", layers: [EmitterDescription("A", modules: modules, capacity: 100)]))
         _ = try player.frame(deltaTime: 1.0 / 60.0, size: CGSize(width: 16, height: 16))
     }
