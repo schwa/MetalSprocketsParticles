@@ -4564,13 +4564,17 @@ In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any Partic
 ## 216: Stitched modules whose sources define the same function name fail to compile together
 
 +++
-status: new
+status: closed
 priority: medium
 kind: bug
-labels: area:simulation,effort:s
+labels: area:simulation, effort:s
 created: 2026-10-20T19:40:59Z
+updated: 2026-10-20T19:42:37Z
+closed: 2026-10-20T19:42:37Z
 +++
 
 StitchedModule.stitch concatenates every distinct module source into one Metal library. Two modules from different sources that define the same function (a helper, or two versions of a module with one name) fail with 'redefinition of ...'. Found while writing StitchingSpikeTests.firstFrameCost. Fix: compile each distinct source into its own library and pass functions from several libraries to MTLStitchedLibraryDescriptor (check that stitching accepts that), and report two modules with the same name in one stack clearly.
+
+- `2026-10-20T19:42:37Z`: Each distinct module source compiles into its own library; the stitched descriptor takes functions from several libraries. Two modules with one name but different sources now fail with a clear error. Test: StitchingSpikeTests.modulesWithSameHelperNameStitch.
 
 ---

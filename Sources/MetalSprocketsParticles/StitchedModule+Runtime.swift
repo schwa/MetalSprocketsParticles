@@ -26,17 +26,20 @@ extension StitchedModule {
 
     /// One visible function named `name` that calls `modules` in order, each passing its returned parameter pointer on.
     static func stitch(_ modules: [StitchedModule], name: String, device: MTLDevice) throws -> VisibleFunction {
-        var sources: [String] = []
-        for module in modules where !sources.contains(module.source) {
-            sources.append(module.source)
+        // Graph nodes name functions, so one name must mean one function.
+        var sourceByName: [String: String] = [:]
+        for module in modules {
+            if let other = sourceByName[module.name], other != module.source {
+                throw ParticleFunctionError(name: module.name, message: "Two stitched modules in one stack are named '\(module.name)' but have different sources.")
+            }
+            sourceByName[module.name] = module.source
         }
-        let source = ParticleFunction.prelude + sources.joined(separator: "\n") + "\n[[stitchable]] void particleEndModules(constant float4 *parameters) {}\n"
-        let library: MTLLibrary
-        do {
-            library = try device.makeLibrary(source: source, options: nil)
-        } catch {
-            throw ParticleFunctionError(name: name, message: error.localizedDescription)
+        // Each distinct source compiles on its own, so helpers with the same name in different sources do not clash.
+        var libraries: [String: MTLLibrary] = [:]
+        for source in Set(sourceByName.values) {
+            libraries[source] = try compile(ParticleFunction.prelude + source, name: name, device: device)
         }
+        let endLibrary = try compile("[[stitchable]] void particleEndModules(constant float4 *parameters) {}\n", name: name, device: device)
         let inputs = (0..<4).map { MTLFunctionStitchingInputNode(argumentIndex: $0) }
         var previous: MTLFunctionStitchingNode = inputs[3]
         var nodes: [MTLFunctionStitchingFunctionNode] = []
@@ -48,9 +51,9 @@ extension StitchedModule {
         let end = MTLFunctionStitchingFunctionNode(name: "particleEndModules", arguments: [previous], controlDependencies: [])
         let descriptor = MTLStitchedLibraryDescriptor()
         descriptor.functionGraphs = [MTLFunctionStitchingGraph(functionName: name, nodes: nodes, outputNode: end, attributes: [])]
-        var functions: [MTLFunction] = []
-        for functionName in Set(modules.map(\.name) + ["particleEndModules"]) {
-            guard let function = library.makeFunction(name: functionName) else {
+        var functions: [MTLFunction] = try endLibrary.makeFunction(name: "particleEndModules").map { [$0] } ?? []
+        for (functionName, source) in sourceByName {
+            guard let function = libraries[source]?.makeFunction(name: functionName) else {
                 throw ParticleFunctionError(name: functionName, message: "The source defines no [[stitchable]] function with that name.")
             }
             functions.append(function)
@@ -59,6 +62,14 @@ extension StitchedModule {
         do {
             let stitched = try device.makeLibrary(stitchedDescriptor: descriptor)
             return try VisibleFunction(library: stitched, name: name)
+        } catch {
+            throw ParticleFunctionError(name: name, message: error.localizedDescription)
+        }
+    }
+
+    private static func compile(_ source: String, name: String, device: MTLDevice) throws -> MTLLibrary {
+        do {
+            return try device.makeLibrary(source: source, options: nil)
         } catch {
             throw ParticleFunctionError(name: name, message: error.localizedDescription)
         }
