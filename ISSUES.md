@@ -4202,14 +4202,13 @@ Part of #179 (plan for #178).
 ## 197: Retire the flat ParticleEmitter settings
 
 +++
-status: closed
+status: open
 priority: medium
 kind: task
 labels: area:api, effort:m
-depends: 195, 196, 193
+depends: 195, 196, 193, 199, 200, 201, 202, 203, 205, 204
 created: 2026-10-20T18:19:54Z
-updated: 2026-10-20T18:48:40Z
-closed: 2026-10-20T18:48:40Z
+updated: 2026-10-20T18:58:50Z
 +++
 
 After migration, the flat settings and the kernel branches behind them remain. Remove them or keep a thin convenience layer per the design decision; update the presets DSL (ParticlePresetBuilder), README, and docs.
@@ -4217,5 +4216,152 @@ After migration, the flat settings and the kernel branches behind them remain. R
 Part of #179 (plan for #178).
 
 - `2026-10-20T18:48:40Z`: Decision: ParticleEmitter stays public as the lowered/flat convenience form (EmitterDescription.settings converts both ways); modules are the stored and saved model. Kernel branches stay (perf rule, Documentation/Modules.md). README, docs, and the 'adding a setting' checklist updated; the preset builder works unchanged through settings.
+- `2026-10-20T18:58:49Z`: Reopened: closing it with 'ParticleEmitter stays' was a shortcut, not the design. Redo properly, perf-neutral: #199 #200 #201 #202 #203 #204, plus #205 for real ordering.
+
+---
+
+## 198: Stitched module stacks travel as a fake ParticleFunction with a marker in its source
+
++++
+status: new
+priority: low
+kind: task
+labels: area:api, effort:s
+created: 2026-10-20T18:57:18Z
++++
+
+StitchedModule.function(for:slot:) packs a stack of stitched modules into a ParticleFunction whose source is a marker string plus each module's name and source. ParticleFunction.compile checks for the marker and parses the modules back out (StitchedModule.modules(in:)). This reuses the function-slot cache and binding path, but it is fragile: a module source that contains the separator line breaks parsing, and the type does not say what the slot holds.
+
+Fix: give FramePlan.Dispatch.functions a real type per slot (e.g. an enum: user function or stitched stack), key the compiled-function cache by it, and remove the marker. Tests: EmitterModulesTests, StitchingSpikeTests.
+
+Part of #179.
+
+---
+
+## 199: Modules lower straight to runtime state and GPU uniforms, not through ParticleEmitter
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:simulation, effort:l
+created: 2026-10-20T18:58:48Z
++++
+
+Modules are lowered to the flat ParticleEmitter, and the runtime and FramePlan read that. Lower EmitterModules directly into the per-emitter runtime state and SimulationUniforms/RenderUniforms instead, so ParticleEmitter leaves the runtime path. Lower once when modules change and cache the result; today lowering runs every frame (about 0.01 ms per emitter of build time).
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
+
+---
+
+## 200: Each module owns its settings, coding, lowering, and defaults in one place
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:api, effort:l
+created: 2026-10-20T18:58:48Z
++++
+
+A module's fields are spread over ParticleEmitter, the module enum case, apply(to:), and the lifting in EmitterModules.init(_:). Make each module one type (e.g. a protocol with a settings struct, Codable, and a lower-into-uniforms method), so adding a feature touches one module plus the kernel. Replace the enum cases with long associated-value lists (which needed a swiftlint disable).
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
+
+---
+
+## 201: Sub-emitters hold modules instead of flat ParticleEmitter settings
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:api, effort:m
+created: 2026-10-20T18:58:48Z
++++
+
+SubEmitter.settings is still a ParticleEmitter inside the subEmitters module. Make sub-emitters hold EmitterModules, lowered like top-level emitters. Effect files: format bump or migration via particles-migrate.
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
+
+---
+
+## 202: Preset builder, tests, and samples build modules, not ParticleEmitter
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:api, effort:l
+created: 2026-10-20T18:58:48Z
++++
+
+ParticleSystemBuilder, the sample presets in code, the README example, and many tests build ParticleEmitter and pass it as settings. Move them to modules (with convenient builders so code stays short).
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
+
+---
+
+## 203: Demo inspector sections edit modules directly
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:demo, effort:l
+created: 2026-10-20T18:58:48Z
++++
+
+The inspector's sections (#159-#168) bind to EmitterDescription.settings, which converts both ways and merges to keep module order (EmitterModules.merging). Give each module its own section bound to its slot, shown in stack order, and drop the settings bridge.
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
+
+---
+
+## 204: Remove ParticleEmitter and EmitterDescription.settings
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:api, effort:m
+depends: 199, 200, 201, 202, 203
+created: 2026-10-20T18:58:48Z
+updated: 2026-10-20T18:58:50Z
++++
+
+After the other #197 tasks, ParticleEmitter has no users. Remove it, the settings bridge, lifting (EmitterModules.init(_:)) except inside particles-migrate for format-1 files, and update docs (Documentation/Modules.md, README, the adding-a-setting checklist).
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
+
+---
+
+## 205: Built-in modules run in stack order without losing speed
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:simulation, effort:m, needs-design
+created: 2026-10-20T18:58:49Z
++++
+
+Built-in modules run in the kernel's fixed order whatever the stack says; only stitched user modules follow stack order. Find a way to honor order with no regression. Try first: stitch an emitter's whole update stack (built-ins as [[stitchable]] modules) into one function and check whether the pipeline compiler inlines it (spike: 1 call measured ~22% of simulate on 1M). Fallback: generated kernel source per distinct stack, compiled off the frame path and cached (binary archive). If neither meets the gate, keep the fixed order and make the inspector show built-ins as unordered.
+
+Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
+
+Part of #197.
 
 ---
