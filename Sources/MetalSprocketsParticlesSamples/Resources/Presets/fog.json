@@ -3,6 +3,7 @@
   "animatesColliders": false,
   "cameraEye": [0, 3.4, 4.6],
   "cameraTarget": [0, 0.2, -0.3],
+  "colliderSpins": [],
   "colliders": [
     {
       "distance": 0,
@@ -29,6 +30,7 @@
   ],
   "comment": "Shows: soft particles that fade where they meet a surface, and colliders drawn as solids. Set Softness to 0 to see the hard edges. Low fog drifts around a box, a ball, and a log.",
   "drawsColliders": true,
+  "eventBursts": [],
   "forceFields": [
     {
       "categoryBitMask": 4294967295,
@@ -41,11 +43,183 @@
       }
     }
   ],
+  "formatVersion": 2,
+  "is2D": false,
   "layers": [
     {
       "capacity": 2000,
       "id": "B6E1437E-7243-4DC2-8CAF-7C2A40B038D6",
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0.6,
+                "sortMode": "Back to Front"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [-0.5, 0.25, 0],
+                "shape": {
+                  "plane": {
+                    "size": [6, 4]
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 45,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 8
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [6, 8]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.4,
+                "velocity": [0.35, 0.03, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "rotation": {
+                "angle": 0,
+                "angleVariation": 3.1415925,
+                "angularSpeed": 0,
+                "angularSpeedVariation": 0.3
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0, 0, 0.05, 0],
+                "size": 0.3
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -0.06, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "drag": {
+                "amount": 0.3
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.78, 0.82, 0.88, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0
+                    },
+                    {
+                      "time": 0.15,
+                      "value": 0.22
+                    },
+                    {
+                      "time": 0.75,
+                      "value": 0.22
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.5
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.9
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -56,98 +230,6 @@
         "yaw": 0
       },
       "name": "Fog",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 3.1415925,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0.3,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 45,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "categoryMask": 4294967295,
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [0.78, 0.82, 0.88, 1]
-            }
-          ]
-        },
-        "colorVariation": [0, 0, 0.05, 0],
-        "diesOnCollision": false,
-        "drag": 0.3,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 0.2,
-        "frictionVariation": 0,
-        "gravity": [0, -0.06, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [6, 8],
-        "loops": true,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0
-            },
-            {
-              "time": 0.15,
-              "value": 0.22
-            },
-            {
-              "time": 0.75,
-              "value": 0.22
-            },
-            {
-              "time": 1,
-              "value": 0
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [-0.5, 0.25, 0],
-        "restitution": 0,
-        "restitutionVariation": 0,
-        "shape": {
-          "plane": {
-            "size": [6, 4]
-          }
-        },
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.5
-            },
-            {
-              "time": 1,
-              "value": 0.9
-            }
-          ]
-        },
-        "sizeVariation": 0.3,
-        "softness": 0.6,
-        "sortMode": "Back to Front",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0.35, 0.03, 0],
-        "velocitySpread": 0.4,
-        "warmupDuration": 8
-      },
       "simulationSpace": {
         "world": {}
       },
@@ -156,5 +238,15 @@
   ],
   "lights": [],
   "name": "Fog",
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
   "trackedObjects": {}
 }

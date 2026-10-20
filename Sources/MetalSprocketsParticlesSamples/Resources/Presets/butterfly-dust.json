@@ -3,8 +3,11 @@
   "animatesColliders": false,
   "cameraEye": [0, 1.5, 4.5],
   "cameraTarget": [0, 1.5, 0],
+  "colliderSpins": [],
   "colliders": [],
   "comment": "Shows: emission from an image, with births on its opaque pixels and colors taken from them. A butterfly emoji dissolves into dust.",
+  "drawsColliders": false,
+  "eventBursts": [],
   "forceFields": [
     {
       "categoryBitMask": 4294967295,
@@ -20,17 +23,173 @@
       "categoryBitMask": 4294967295,
       "effect": {
         "wind": {
-          "velocity": [0.6, 0.25, 0],
-          "strength": 0.6
+          "strength": 0.6,
+          "velocity": [0.6, 0.25, 0]
         }
       }
     }
   ],
+  "formatVersion": 2,
+  "is2D": false,
   "layers": [
     {
       "capacity": 12000,
       "id": "C7A3E9D2-41B6-4F0A-8D5C-2E9B7F1A6034",
+      "image": {
+        "data": "emitter-image-8bfb6116.png",
+        "pointCount": 20000,
+        "usesColors": true,
+        "weighting": "alpha",
+        "width": 2.6
+      },
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 1.5, 0],
+                "shape": {
+                  "points": {}
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 5000,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 3
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [2, 3]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.03,
+                "velocity": [0, 0, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0, 0, 0, 0],
+                "size": 0.3
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "drag": {
+                "amount": 0.4
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.4,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 1, 1, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    },
+                    {
+                      "time": 0.6,
+                      "value": 0.9
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.02
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.01
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -41,106 +200,23 @@
         "yaw": 0
       },
       "name": "Dust",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 5000,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [1, 1, 1, 1]
-            }
-          ]
-        },
-        "colorVariation": [0, 0, 0, 0],
-        "diesOnCollision": false,
-        "drag": 0.4,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 0.2,
-        "frictionVariation": 0,
-        "gravity": [0, 0, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [2, 3],
-        "loops": true,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            },
-            {
-              "time": 0.6,
-              "value": 0.9
-            },
-            {
-              "time": 1,
-              "value": 0
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 1.5, 0],
-        "restitution": 0.4,
-        "restitutionVariation": 0,
-        "shape": {
-          "points": {}
-        },
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.02
-            },
-            {
-              "time": 1,
-              "value": 0.01
-            }
-          ]
-        },
-        "sizeVariation": 0.3,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 0, 0],
-        "velocitySpread": 0.03,
-        "warmupDuration": 3,
-        "categoryMask": 4294967295
-      },
       "simulationSpace": {
         "world": {}
       },
-      "sprite": "Soft Dot",
-      "image": {
-        "data": "emitter-image-8bfb6116.png",
-        "width": 2.6,
-        "pointCount": 20000,
-        "weighting": "alpha",
-        "usesColors": true
-      }
+      "sprite": "Soft Dot"
     }
   ],
   "lights": [],
   "name": "Butterfly Dust",
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
   "trackedObjects": {}
 }

@@ -3,42 +3,192 @@
   "animatesColliders": false,
   "cameraEye": [0, 2.4, 7.5],
   "cameraTarget": [0, 2.4, 0],
+  "colliderSpins": [],
   "colliders": [
     {
+      "distance": 0.3,
       "kind": "plane",
-      "normal": [0, 1, 0],
-      "distance": 0.3
+      "normal": [0, 1, 0]
     },
     {
+      "distance": -2.6,
       "kind": "plane",
-      "normal": [1, 0, 0],
-      "distance": -2.6
+      "normal": [1, 0, 0]
     },
     {
+      "distance": -2.6,
       "kind": "plane",
-      "normal": [-1, 0, 0],
-      "distance": -2.6
+      "normal": [-1, 0, 0]
     },
     {
-      "kind": "box",
       "center": [-0.97, 3.1, 0],
       "halfExtents": [1.25, 0.12, 0.5],
+      "kind": "box",
       "rotation": [0, 0, -0.38268, 0.92388]
     },
     {
-      "kind": "box",
       "center": [0.97, 3.1, 0],
       "halfExtents": [1.25, 0.12, 0.5],
+      "kind": "box",
       "rotation": [0, 0, 0.38268, 0.92388]
     }
   ],
   "comment": "Shows: 2D mode with rotated box colliders. Sand pours into a funnel, slides down its sides, and trickles through the gap in a thin stream.",
+  "drawsColliders": false,
+  "eventBursts": [],
   "forceFields": [],
+  "formatVersion": 2,
+  "is2D": true,
   "layers": [
     {
       "capacity": 40000,
       "id": "D7AA74FA-DAB8-4BEF-85DD-91D63367AF9F",
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 4.9, 0],
+                "shape": {
+                  "box": {
+                    "size": [2.2, 0.2, 0]
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 1200,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [10, 12]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.05,
+                "velocity": [0, 0, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0.08, 0.06, 0.04, 0],
+                "size": 0
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -9.8, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.7,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.05,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.93, 0.78, 0.5, 1]
+                    },
+                    {
+                      "time": 0.95,
+                      "value": [0.93, 0.78, 0.5, 1]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.93, 0.78, 0.5, 0]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.03
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -49,90 +199,6 @@
         "yaw": 0
       },
       "name": "Sand",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 1200,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "categoryMask": 4294967295,
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [0.93, 0.78, 0.5, 1]
-            },
-            {
-              "time": 0.95,
-              "value": [0.93, 0.78, 0.5, 1]
-            },
-            {
-              "time": 1,
-              "value": [0.93, 0.78, 0.5, 0]
-            }
-          ]
-        },
-        "colorVariation": [0.08, 0.06, 0.04, 0],
-        "diesOnCollision": false,
-        "drag": 0,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 0.7,
-        "frictionVariation": 0,
-        "gravity": [0, -9.8, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [10, 12],
-        "loops": true,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 4.9, 0],
-        "restitution": 0.05,
-        "restitutionVariation": 0,
-        "shape": {
-          "box": {
-            "size": [2.2, 0.2, 0]
-          }
-        },
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.03
-            }
-          ]
-        },
-        "sizeVariation": 0,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 0, 0],
-        "velocitySpread": 0.05,
-        "warmupDuration": 0
-      },
       "simulationSpace": {
         "world": {}
       },
@@ -141,6 +207,15 @@
   ],
   "lights": [],
   "name": "Sand Funnel",
-  "trackedObjects": {},
-  "is2D": true
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
+  "trackedObjects": {}
 }

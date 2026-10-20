@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "MetalSprocketsParticlesSamples", targets: ["MetalSprocketsParticlesSamples"]),
         .executable(name: "particles-render", targets: ["particles-render"]),
         .executable(name: "particles-bench", targets: ["particles-bench"]),
+        .executable(name: "particles-migrate", targets: ["particles-migrate"]),
     ],
     dependencies: [
         // main until a release includes RenderViewContext.depthTexture (MetalSprockets #530).
@@ -74,6 +75,13 @@ let package = Package(
                 "MetalSprocketsParticles",
                 "MetalSprocketsParticlesSamples",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ]
+        ),
+        .executableTarget(
+            name: "particles-migrate",
+            dependencies: [
+                "MetalSprocketsParticles",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),

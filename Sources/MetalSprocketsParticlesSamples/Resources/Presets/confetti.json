@@ -3,6 +3,7 @@
   "animatesColliders": false,
   "cameraEye": [0, 3, 6],
   "cameraTarget": [0, 1.5, 0],
+  "colliderSpins": [],
   "colliders": [
     {
       "distance": 0,
@@ -11,6 +12,8 @@
     }
   ],
   "comment": "Shows: a one-shot emitter (an emission duration that does not loop) that makes the effect finite, textured sprites with random spin, turbulence, and friction. When every piece is gone the HUD says Finished, and Restart plays it again. A party popper fires one burst of confetti.",
+  "drawsColliders": false,
+  "eventBursts": [],
   "forceFields": [
     {
       "categoryBitMask": 4294967295,
@@ -23,11 +26,184 @@
       }
     }
   ],
+  "formatVersion": 2,
+  "is2D": false,
   "layers": [
     {
       "capacity": 6000,
       "id": "CA1CB4E0-59A1-4380-A752-33C8812CAE4F",
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "Back to Front"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 0.1, 0],
+                "shape": {
+                  "disc": {
+                    "radius": 0.15
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 12000,
+                "emissionDuration": 0.35,
+                "idleDuration": 0,
+                "loops": false,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [6, 8]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0.5,
+                "spread": 1,
+                "velocity": [0, 7, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "rotation": {
+                "angle": 0,
+                "angleVariation": 3.1415925,
+                "angularSpeed": 0,
+                "angularSpeedVariation": 8
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0.5, 0.1, 0, 0],
+                "size": 0.3
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -1.5, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "drag": {
+                "amount": 1.2
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 1,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 0.25, 0.3, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    },
+                    {
+                      "time": 0.8,
+                      "value": 1
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.04
+                    },
+                    {
+                      "time": 0.9,
+                      "value": 0.04
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -38,99 +214,6 @@
         "yaw": 0
       },
       "name": "Confetti",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 3.1415925,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 8,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 12000,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "categoryMask": 4294967295,
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [1, 0.25, 0.3, 1]
-            }
-          ]
-        },
-        "colorVariation": [0.5, 0.1, 0, 0],
-        "diesOnCollision": false,
-        "drag": 1.2,
-        "emissionDuration": 0.35,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 1,
-        "frictionVariation": 0,
-        "gravity": [0, -1.5, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [6, 8],
-        "loops": false,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            },
-            {
-              "time": 0.8,
-              "value": 1
-            },
-            {
-              "time": 1,
-              "value": 0
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 0.1, 0],
-        "restitution": 0,
-        "restitutionVariation": 0,
-        "shape": {
-          "disc": {
-            "radius": 0.15
-          }
-        },
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.04
-            },
-            {
-              "time": 0.9,
-              "value": 0.04
-            },
-            {
-              "time": 1,
-              "value": 0
-            }
-          ]
-        },
-        "sizeVariation": 0.3,
-        "softness": 0,
-        "sortMode": "Back to Front",
-        "speedVariation": 0.5,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 7, 0],
-        "velocitySpread": 1,
-        "warmupDuration": 0
-      },
       "simulationSpace": {
         "world": {}
       },
@@ -139,5 +222,15 @@
   ],
   "lights": [],
   "name": "Confetti",
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
   "trackedObjects": {}
 }

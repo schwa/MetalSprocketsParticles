@@ -27,12 +27,132 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
+  "formatVersion": 2,
   "is2D": false,
   "layers": [
     {
       "capacity": 14000,
       "id": "036F36B9-E6CD-4CD2-9331-E795C9FD91D4",
       "isEmitting": true,
+      "mesh": "mesh-1123789e.obj",
+      "modules": {
+        "categoryMask": 0,
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 0, 0],
+                "shape": {
+                  "mesh": {}
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 9000,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [0.4, 0.4]
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "drag": {
+                "amount": 0.1
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.4,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.7, 0.8, 1, 0.18]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.012
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 1.2, 0],
@@ -43,107 +163,175 @@
         "yaw": 0
       },
       "name": "Teapot",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 9000,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "categoryMask": 0,
-        "collidesWithSceneDepth": false,
-        "collisionRadius": 0,
-        "colorByPositionAtBirth": false,
-        "colorByPositionEnd": [0, 1, 0],
-        "colorByPositionStart": [0, 0, 0],
-        "colorBySpeedRange": [0, 5],
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [0.7, 0.8, 1, 0.18]
-            }
-          ]
-        },
-        "colorVariation": [0, 0, 0, 0],
-        "constrainsToPlane": false,
-        "cullingRadius": 0,
-        "customAttributeCount": 1,
-        "diesOnCollision": false,
-        "drag": 0.1,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 0.2,
-        "frictionVariation": 0,
-        "gravity": [0, 0, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [0.4, 0.4],
-        "lodFarDistance": 0,
-        "lodFarRateScale": 0.25,
-        "lodNearDistance": 0,
-        "lodScalesSize": false,
-        "loops": true,
-        "minimumScreenSize": 0,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 0, 0],
-        "reportsCollisions": false,
-        "reportsDeaths": false,
-        "restitution": 0.4,
-        "restitutionVariation": 0,
-        "shape": {
-          "mesh": {}
-        },
-        "simulatesWhenCulled": true,
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.012
-            }
-          ]
-        },
-        "sizeVariation": 0,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 0, 0],
-        "velocitySpread": 0,
-        "warmupDuration": 0
-      },
       "simulationSpace": {
         "world": {}
       },
-      "sprite": "Soft Dot",
-      "mesh": "mesh-1123789e.obj"
+      "sprite": "Soft Dot"
     },
     {
       "capacity": 3000,
       "id": "909E6DFD-619C-4432-84F3-39434B28B952",
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 3,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 1.2, 0],
+                "shape": {
+                  "sphere": {
+                    "radius": 0.35
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 6000,
+                "emissionDuration": 0.5,
+                "idleDuration": 0,
+                "loops": false,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [1000, 1000]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.3,
+                "velocity": [0, 0, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0.45, 0.45, 0.45, 0],
+                "size": 0
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -9.8, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "drag": {
+                "amount": 0.1
+              }
+            }
+          },
+          {
+            "module": {
+              "flocking": {
+                "flocking": {
+                  "alignment": 0,
+                  "cohesion": 0,
+                  "maxNeighbors": 16,
+                  "radius": 0.1,
+                  "separation": 0.05,
+                  "separationRadius": 0.07,
+                  "speedRange": [0, 4]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0.02,
+                "restitution": 0.3,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.55, 0.55, 0.55, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.06
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -154,109 +342,6 @@
         "yaw": 0
       },
       "name": "Beads",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 6000,
-        "birthRateVariation": 0,
-        "blendMode": 3,
-        "categoryMask": 4294967295,
-        "collidesWithSceneDepth": false,
-        "collisionRadius": 0.02,
-        "colorByPositionAtBirth": false,
-        "colorByPositionEnd": [0, 1, 0],
-        "colorByPositionStart": [0, 0, 0],
-        "colorBySpeedRange": [0, 5],
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [0.55, 0.55, 0.55, 1]
-            }
-          ]
-        },
-        "colorVariation": [0.45, 0.45, 0.45, 0],
-        "constrainsToPlane": false,
-        "cullingRadius": 0,
-        "customAttributeCount": 1,
-        "diesOnCollision": false,
-        "drag": 0.1,
-        "emissionDuration": 0.5,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "flocking": {
-          "alignment": 0,
-          "cohesion": 0,
-          "maxNeighbors": 16,
-          "radius": 0.1,
-          "separation": 0.05,
-          "separationRadius": 0.07,
-          "speedRange": [0, 4]
-        },
-        "friction": 0.2,
-        "frictionVariation": 0,
-        "gravity": [0, -9.8, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [1000, 1000],
-        "lodFarDistance": 0,
-        "lodFarRateScale": 0.25,
-        "lodNearDistance": 0,
-        "lodScalesSize": false,
-        "loops": false,
-        "minimumScreenSize": 0,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 1.2, 0],
-        "reportsCollisions": false,
-        "reportsDeaths": false,
-        "restitution": 0.3,
-        "restitutionVariation": 0,
-        "shape": {
-          "sphere": {
-            "radius": 0.35
-          }
-        },
-        "simulatesWhenCulled": true,
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.06
-            }
-          ]
-        },
-        "sizeVariation": 0,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 0, 0],
-        "velocitySpread": 0.3,
-        "warmupDuration": 0
-      },
       "simulationSpace": {
         "world": {}
       },

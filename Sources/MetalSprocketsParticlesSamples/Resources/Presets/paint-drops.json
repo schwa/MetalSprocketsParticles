@@ -3,128 +3,367 @@
   "animatesColliders": false,
   "cameraEye": [0, 2.6, 4.2],
   "cameraTarget": [0, 0.5, 0],
-  "colliders": [{ "distance": 0, "kind": "plane", "normal": [0, 1, 0] }],
+  "colliderSpins": [],
+  "colliders": [
+    {
+      "distance": 0,
+      "kind": "plane",
+      "normal": [0, 1, 0]
+    }
+  ],
   "comment": "Shows: collision events reported back to the app (reportsCollisions) and app-driven bursts at a position (eventBursts). Paint drops splatter where they land.",
+  "drawsColliders": true,
+  "eventBursts": [
+    {
+      "count": 40,
+      "occasion": "collision",
+      "sourceLayer": 0,
+      "targetLayer": 1
+    }
+  ],
   "forceFields": [],
+  "formatVersion": 2,
+  "is2D": false,
   "layers": [
     {
       "capacity": 200,
       "id": "1F4E8A2C-9B3D-4C7E-A1F0-6D2B8E5C3A71",
       "isEmitting": true,
-      "motion": { "kind": "Still", "offset": [0, 0, 0], "pitch": 0, "radius": 1.5, "speed": 1, "spin": 0, "yaw": 0 },
-      "name": "Drops",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 5,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "colorOverLife": { "keyframes": [{ "time": 0, "value": [0.95, 0.25, 0.45, 1] }] },
-        "colorVariation": [0, 0, 0, 0],
-        "diesOnCollision": true,
-        "drag": 0,
-        "emissionOverTime": { "keyframes": [{ "time": 0, "value": 1 }] },
-        "friction": 0.2,
-        "frictionVariation": 0,
-        "gravity": [0, -9.8, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [3, 3],
-        "loops": true,
-        "opacityOverLife": { "keyframes": [{ "time": 0, "value": 1 }] },
-        "orientation": { "billboard": {} },
-        "position": [0, 3.2, 0],
-        "restitution": 0.4,
-        "restitutionVariation": 0,
-        "shape": { "disc": { "radius": 1.6 } },
-        "sizeOverLife": { "keyframes": [{ "time": 0, "value": 0.14 }] },
-        "sizeVariation": 0.2,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 0, 0],
-        "velocitySpread": 0,
-        "warmupDuration": 0,
-        "reportsCollisions": true,
-        "categoryMask": 4294967295
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 3.2, 0],
+                "shape": {
+                  "disc": {
+                    "radius": 1.6
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 5,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [3, 3]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0, 0, 0, 0],
+                "size": 0.2
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -9.8, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": true,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.4,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.95, 0.25, 0.45, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.14
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "events": {
+                "reportsCollisions": true,
+                "reportsDeaths": false
+              }
+            }
+          }
+        ]
       },
-      "simulationSpace": { "world": {} },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Drops",
+      "simulationSpace": {
+        "world": {}
+      },
       "sprite": "Soft Dot"
     },
     {
       "capacity": 6000,
       "id": "6A0C3E91-2D7B-4F58-B4E6-0C9A1D8F2B53",
       "isEmitting": true,
-      "motion": { "kind": "Still", "offset": [0, 0, 0], "pitch": 0, "radius": 1.5, "speed": 1, "spin": 0, "yaw": 0 },
-      "name": "Splatter",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 0,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "colorOverLife": { "keyframes": [{ "time": 0, "value": [0.95, 0.25, 0.45, 1] }] },
-        "colorVariation": [0, 0, 0, 0],
-        "diesOnCollision": false,
-        "drag": 0.5,
-        "emissionOverTime": { "keyframes": [{ "time": 0, "value": 1 }] },
-        "friction": 1,
-        "frictionVariation": 0,
-        "gravity": [0, -9.8, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [4, 5],
-        "loops": true,
-        "opacityOverLife": {
-          "keyframes": [
-            { "time": 0, "value": 1 },
-            { "time": 0.8, "value": 1 },
-            { "time": 1, "value": 0 }
-          ]
-        },
-        "orientation": { "billboard": {} },
-        "position": [0, 0.02, 0],
-        "restitution": 0,
-        "restitutionVariation": 0,
-        "shape": { "point": {} },
-        "sizeOverLife": {
-          "keyframes": [
-            { "time": 0, "value": 0.045 },
-            { "time": 1, "value": 0.035 }
-          ]
-        },
-        "sizeVariation": 0.6,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 1.4, 0],
-        "velocitySpread": 1.6,
-        "warmupDuration": 0,
-        "categoryMask": 4294967295
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 0.02, 0],
+                "shape": {
+                  "point": {}
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 0,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [4, 5]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 1.6,
+                "velocity": [0, 1.4, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0, 0, 0, 0],
+                "size": 0.6
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -9.8, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "drag": {
+                "amount": 0.5
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 1,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.95, 0.25, 0.45, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    },
+                    {
+                      "time": 0.8,
+                      "value": 1
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.045
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.035
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
       },
-      "simulationSpace": { "world": {} },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Splatter",
+      "simulationSpace": {
+        "world": {}
+      },
       "sprite": "Soft Dot"
     }
   ],
   "lights": [],
   "name": "Paint Drops",
-  "trackedObjects": {},
-  "drawsColliders": true,
-  "eventBursts": [{ "sourceLayer": 0, "occasion": "collision", "targetLayer": 1, "count": 40 }]
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
+  "trackedObjects": {}
 }

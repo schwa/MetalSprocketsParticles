@@ -4124,36 +4124,42 @@ Part of #179 (plan for #178).
 ## 194: Migration tool: convert flat effect files to module stacks
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 depends: 186, 191, 192
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-20T18:42:12Z
+closed: 2026-10-20T18:42:12Z
 +++
 
 Existing effects (presets, user files, packages) use flat settings. Needed: a converter from today's settings to module stacks (library function + particles-render or a CLI subcommand), round-trip tested so every preset renders identically after conversion.
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:42:12Z`: particles-migrate rewrites effect files/packages/folders in the current format (--dry-run to report).
+
 ---
 
 ## 195: Migrate bundled presets to the module format
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:s
 depends: 194
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-20T18:42:13Z
+closed: 2026-10-20T18:42:13Z
 +++
 
 The bundled presets are in the flat format. Convert them with the migration tool; every golden stays identical.
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:42:13Z`: All bundled presets migrated to format 2 (modules), formatted with prettier --print-width 120 like before.
 
 ---
 

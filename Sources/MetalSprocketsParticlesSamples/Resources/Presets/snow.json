@@ -3,6 +3,7 @@
   "animatesColliders": false,
   "cameraEye": [0, 2.5, 7],
   "cameraTarget": [0, 1.5, 0],
+  "colliderSpins": [],
   "colliders": [
     {
       "distance": 0,
@@ -16,6 +17,8 @@
     }
   ],
   "comment": "Shows: plane emission over a large area, turbulence, and particles that come to rest on colliders. Snow drifts down onto the ground and a sphere.",
+  "drawsColliders": false,
+  "eventBursts": [],
   "forceFields": [
     {
       "categoryBitMask": 4294967295,
@@ -28,11 +31,169 @@
       }
     }
   ],
+  "formatVersion": 2,
+  "is2D": false,
   "layers": [
     {
       "capacity": 12000,
       "id": "741DB232-7E9F-469C-A423-2A29833D2567",
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "Back to Front"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 5, 0],
+                "shape": {
+                  "plane": {
+                    "size": [10, 10]
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 700,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 10
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [14, 14]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.1,
+                "velocity": [0, -0.6, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0, 0, 0, 0],
+                "size": 0.6
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -0.4, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "drag": {
+                "amount": 1.2
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 1,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.9, 0.95, 1, 0]
+                    },
+                    {
+                      "time": 0.05,
+                      "value": [0.9, 0.95, 1, 0.9]
+                    },
+                    {
+                      "time": 0.9,
+                      "value": [0.9, 0.95, 1, 0.9]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.9, 0.95, 1, 0]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.02
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -43,94 +204,6 @@
         "yaw": 0
       },
       "name": "Snow",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 700,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "categoryMask": 4294967295,
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [0.9, 0.95, 1, 0]
-            },
-            {
-              "time": 0.05,
-              "value": [0.9, 0.95, 1, 0.9]
-            },
-            {
-              "time": 0.9,
-              "value": [0.9, 0.95, 1, 0.9]
-            },
-            {
-              "time": 1,
-              "value": [0.9, 0.95, 1, 0]
-            }
-          ]
-        },
-        "colorVariation": [0, 0, 0, 0],
-        "diesOnCollision": false,
-        "drag": 1.2,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 1,
-        "frictionVariation": 0,
-        "gravity": [0, -0.4, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [14, 14],
-        "loops": true,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 5, 0],
-        "restitution": 0,
-        "restitutionVariation": 0,
-        "shape": {
-          "plane": {
-            "size": [10, 10]
-          }
-        },
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.02
-            }
-          ]
-        },
-        "sizeVariation": 0.6,
-        "softness": 0,
-        "sortMode": "Back to Front",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, -0.6, 0],
-        "velocitySpread": 0.1,
-        "warmupDuration": 10
-      },
       "simulationSpace": {
         "world": {}
       },
@@ -139,5 +212,15 @@
   ],
   "lights": [],
   "name": "Snow",
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
   "trackedObjects": {}
 }

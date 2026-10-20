@@ -3,15 +3,18 @@
   "animatesColliders": false,
   "cameraEye": [0, 1.5, 4.2],
   "cameraTarget": [0, 1.5, 0],
+  "colliderSpins": [],
   "colliders": [],
   "comment": "Shows: color from a screen-space image (ParticleEmitter.colorImage), so each particle takes the picture's color wherever it is. A sunset painted with drifting particles.",
+  "drawsColliders": false,
+  "eventBursts": [],
   "forceFields": [
     {
       "categoryBitMask": 4294967295,
       "effect": {
         "wind": {
-          "velocity": [0.4, 0, 0],
-          "strength": 0.5
+          "strength": 0.5,
+          "velocity": [0.4, 0, 0]
         }
       }
     },
@@ -26,11 +29,174 @@
       }
     }
   ],
+  "formatVersion": 2,
+  "is2D": false,
   "layers": [
     {
       "capacity": 20000,
       "id": "D3A6E9C1-5B2F-4C84-A7D0-8E1F2B3C4D5E",
       "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 1.5, 0],
+                "shape": {
+                  "box": {
+                    "size": [3.9, 1.9, 0.1]
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 3500,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 3
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [2, 3]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.05,
+                "velocity": [0, 0, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "variation": {
+                "color": [0, 0, 0, 0],
+                "size": 0.4
+              }
+            }
+          },
+          {
+            "module": {
+              "colorImage": {
+                "image": {
+                  "data": "color-image-a28527af.png",
+                  "height": [0, 2, 0],
+                  "origin": [-2, 0.5, 0],
+                  "width": [4, 0, 0]
+                }
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "drag": {
+                "amount": 0.3
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.4,
+                "restitutionVariation": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 1, 1, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0
+                    },
+                    {
+                      "time": 0.15,
+                      "value": 1
+                    },
+                    {
+                      "time": 0.8,
+                      "value": 1
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.034
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
       "motion": {
         "kind": "Still",
         "offset": [0, 0, 0],
@@ -41,100 +207,6 @@
         "yaw": 0
       },
       "name": "Paint",
-      "settings": {
-        "angle": 0,
-        "angleVariation": 0,
-        "angularSpeed": 0,
-        "angularSpeedVariation": 0,
-        "birthDirection": 0,
-        "birthLocation": 0,
-        "birthRate": 3500,
-        "birthRateVariation": 0,
-        "blendMode": 0,
-        "colorOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": [1, 1, 1, 1]
-            }
-          ]
-        },
-        "colorVariation": [0, 0, 0, 0],
-        "diesOnCollision": false,
-        "drag": 0.3,
-        "emissionOverTime": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 1
-            }
-          ]
-        },
-        "friction": 0.2,
-        "frictionVariation": 0,
-        "gravity": [0, 0, 0],
-        "idleDuration": 0,
-        "inheritVelocity": 0,
-        "isLit": false,
-        "lifetime": [2, 3],
-        "loops": true,
-        "opacityOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0
-            },
-            {
-              "time": 0.15,
-              "value": 1
-            },
-            {
-              "time": 0.8,
-              "value": 1
-            },
-            {
-              "time": 1,
-              "value": 0
-            }
-          ]
-        },
-        "orientation": {
-          "billboard": {}
-        },
-        "position": [0, 1.5, 0],
-        "restitution": 0.4,
-        "restitutionVariation": 0,
-        "shape": {
-          "box": {
-            "size": [3.9, 1.9, 0.1]
-          }
-        },
-        "sizeOverLife": {
-          "keyframes": [
-            {
-              "time": 0,
-              "value": 0.034
-            }
-          ]
-        },
-        "sizeVariation": 0.4,
-        "softness": 0,
-        "sortMode": "None",
-        "speedVariation": 0,
-        "subEmitters": [],
-        "sweepAngle": 6.283185,
-        "triggers": [],
-        "velocity": [0, 0, 0],
-        "velocitySpread": 0.05,
-        "warmupDuration": 3,
-        "colorImage": {
-          "data": "color-image-a28527af.png",
-          "origin": [-2, 0.5, 0],
-          "width": [4, 0, 0],
-          "height": [0, 2, 0]
-        },
-        "categoryMask": 4294967295
-      },
       "simulationSpace": {
         "world": {}
       },
@@ -143,5 +215,15 @@
   ],
   "lights": [],
   "name": "Living Picture",
+  "pointerBindings": [],
+  "pointerMotion": {
+    "kind": "Still",
+    "offset": [0, 0, 0],
+    "pitch": 0,
+    "radius": 1.5,
+    "speed": 1,
+    "spin": 0,
+    "yaw": 0
+  },
   "trackedObjects": {}
 }
