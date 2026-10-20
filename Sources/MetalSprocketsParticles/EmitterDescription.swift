@@ -152,7 +152,17 @@ extension EmitterDescription: Codable {
             mesh = nil
         }
         meshDeformation = try container.decodeIfPresent(MeshDeformation.self, forKey: .meshDeformation) ?? .none
-        points = try container.decodeIfPresent([EmitterPoint].self, forKey: .points)
+        if container.contains(.points) {
+            guard (try? container.decode(String.self, forKey: .points)) != nil else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .points, in: container,
+                    debugDescription: "Inline point caches are not read; effects keep points in PLY files next to their JSON."
+                )
+            }
+            points = try PointCacheFile.points(from: container.decodeResource(forKey: .points, decoder: decoder))
+        } else {
+            points = nil
+        }
         image = try container.decodeIfPresent(EmitterImage.self, forKey: .image)
     }
 
@@ -172,7 +182,9 @@ extension EmitterDescription: Codable {
         if meshDeformation != .none {
             try container.encode(meshDeformation, forKey: .meshDeformation)
         }
-        try container.encodeIfPresent(points, forKey: .points)
+        if let points {
+            try container.encodeResource(PointCacheFile.plyData(of: points), forKey: .points, encoder: encoder, prefix: "points", fileExtension: "ply")
+        }
         try container.encodeIfPresent(image, forKey: .image)
     }
 }

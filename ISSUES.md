@@ -3714,23 +3714,24 @@ Since #157, marbles in Marble Run roll very slowly. #157 made a particle that en
 
 ---
 
-## 177: Point caches and custom particle meshes as files, not inline arrays
+## 177: Point caches as PLY files, not inline arrays
 
 +++
-status: open
+status: closed
 priority: low
 kind: enhancement
 labels: area:api, effort:s
 created: 2026-10-20T02:14:44Z
+updated: 2026-10-20T17:54:43Z
+closed: 2026-10-20T17:54:43Z
 +++
 
-Follow-up to #169 and #170, which moved images, distance fields, and emitter meshes out of effect JSON. Still inline:
-- EmitterDescription.points (point caches: position, normal, color per point), e.g. Point Cloud.
-- ParticleMesh.triangles(positions:normals:) (custom mesh particles), not used by any preset yet.
+Follow-up to #169 and #170, which moved images, distance fields, and emitter meshes out of effect JSON. EmitterDescription.points (point caches: position, normal, color per point, e.g. Point Cloud) is still inline.
 
-Store them through EffectResources like the others: points as a small binary or PLY file, custom particle meshes as OBJ (with normals). Same decisions as #169: references only, no inline reading.
+Store point caches through EffectResources as PLY files (x y z, nx ny nz, red green blue alpha). Same decisions as #169: references only, no inline reading. Custom particle meshes are split out to their own issue.
 
 - `2026-10-20T02:22:48Z`: Decision (user): use PLY for both (point caches: x y z, nx ny nz, red green blue alpha; custom particle meshes: positions, normals, faces). Do it later, with one shared PLY implementation: move PLYReader from MetalSprocketsGaussianSplats into SwiftMesh and add a writer there (SwiftMesh #187), rather than depending on the Splats target or copying it. Waiting on SwiftMesh #187.
+- `2026-10-20T17:48:04Z`: Split (user): this issue now covers point caches only; custom particle meshes moved to a new issue. Use SwiftPLY (https://github.com/schwa/SwiftPLY) instead of waiting on SwiftMesh #187.
 
 ---
 
@@ -3826,5 +3827,21 @@ Approach: start with the gaps by impact; tests should check behavior, not just t
 - `2026-10-20T02:42:09Z`: Decision (user): exclude code that is not testable or not worth testing rather than writing tests for it. Candidates: ParticleView+Previews.swift (SwiftUI #Previews), and review the rest case by case (e.g. thin SwiftUI glue in ParticleView.swift). Tooling gap: xcb test has no option to exclude files from the coverage summary (only --coverage-include-tests), so exclusions need either an xcb option (file a request) or a project-side list the summary is filtered by.
 - `2026-10-20T02:43:33Z`: Filed xcb #96: --coverage-exclude <glob> and coverage_exclude in .xcb.toml.
 - `2026-10-20T11:40:40Z`: xcb #96 landed. .xcb.toml now has [defaults.test] coverage_exclude = ["Sources/**/*+Previews.swift"]. New baseline: 93.7% of lines (5701/6082), 90.5% of functions (830/917); 1 file (629 lines) excluded. Next gaps: ParticleView.swift 61, ParticleFlocking.swift 51, SamplePresets.swift 28, DebugWireframes.swift 23.
+
+---
+
+## 181: Custom particle meshes as PLY files, not inline arrays
+
++++
+status: new
+priority: low
+kind: enhancement
+labels: area:api, effort:s
+created: 2026-10-20T17:48:04Z
++++
+
+Split from #177. ParticleMesh.triangles(positions:normals:) (custom mesh particles) is still saved inline in effect JSON. No preset uses it yet.
+
+Store it through EffectResources as a PLY file (positions, normals, faces), like emitter meshes (#170) and point caches (#177). References only, no inline reading (#169).
 
 ---

@@ -21,6 +21,7 @@ let package = Package(
         .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.6")),
         .package(url: "https://github.com/schwa/MetalCompilerPlugin", .upToNextMinor(from: "0.4.1")),
         .package(url: "https://github.com/schwa/SwiftMesh", .upToNextMinor(from: "0.0.10")),
+        .package(url: "https://github.com/schwa/SwiftPLY", .upToNextMinor(from: "0.0.1")),
     ],
     targets: [
         .target(
@@ -29,6 +30,7 @@ let package = Package(
                 "MetalSprocketsParticlesShaders",
                 .product(name: "MetalSprockets", package: "MetalSprockets"),
                 .product(name: "SwiftMesh", package: "SwiftMesh"),
+                .product(name: "SwiftPLY", package: "SwiftPLY"),
             ]
         ),
         .target(

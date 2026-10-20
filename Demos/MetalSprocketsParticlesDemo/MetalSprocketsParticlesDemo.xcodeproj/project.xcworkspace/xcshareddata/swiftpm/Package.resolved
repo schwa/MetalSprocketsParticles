@@ -135,6 +135,15 @@
         "revision" : "4270c075af06d438609f61548f7d6c632d15e4da",
         "version" : "0.0.11"
       }
+    },
+    {
+      "identity" : "swiftply",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/schwa/SwiftPLY",
+      "state" : {
+        "revision" : "46a78c2f61babad1b950bd354b83f072c21489b8",
+        "version" : "0.0.1"
+      }
     }
   ],
   "version" : 3
