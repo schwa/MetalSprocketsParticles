@@ -3808,6 +3808,7 @@ Steps 2 and 6 cover these; split them into their own issues after the spike.
 - `2026-10-20T18:32:44Z`: Build time: about 2.3 ms per graph. Pipeline creation with a stitched function linked: about 420 ms first frame vs 60 ms for a source user function, so pipelines per distinct stack must be cached (and maybe a binary archive) and built off the frame path.
 - `2026-10-20T18:32:44Z`: Graphs per effect: one per (emitter, stage) distinct stack; typical effects 2 to 6.
 - `2026-10-20T18:32:44Z`: Verdict: go, with one risk. If all built-in behavior moves into modules, every particle pays the call overhead; the Stress Test may regress past the #184 gate. Mitigations to try in #188: keep hot built-ins (integrate, gravity, drag) inline in the kernel and only stitch the rest; or link the stitched function by direct extern call rather than through a table so the pipeline compiler can inline it. Fallback if both fail: generated Metal source per stack.
+- `2026-10-20T18:48:40Z`: Landed: modules model, effect format 2, stitched user modules in update/spawn, migration tool, presets migrated, demo module stacks. Open: #193 (render-stage stitching, after #172).
 
 ---
 
@@ -4201,17 +4202,20 @@ Part of #179 (plan for #178).
 ## 197: Retire the flat ParticleEmitter settings
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 depends: 195, 196, 193
 created: 2026-10-20T18:19:54Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-20T18:48:40Z
+closed: 2026-10-20T18:48:40Z
 +++
 
 After migration, the flat settings and the kernel branches behind them remain. Remove them or keep a thin convenience layer per the design decision; update the presets DSL (ParticlePresetBuilder), README, and docs.
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:48:40Z`: Decision: ParticleEmitter stays public as the lowered/flat convenience form (EmitterDescription.settings converts both ways); modules are the stored and saved model. Kernel branches stay (perf rule, Documentation/Modules.md). README, docs, and the 'adding a setting' checklist updated; the preset builder works unchanged through settings.
 
 ---

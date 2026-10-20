@@ -82,6 +82,24 @@ let built = ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6,
 }
 ```
 
+### Modules
+
+Each emitter is stored as module stacks per stage (`EmitterDescription.modules`): spawn, update, and render. Modules can be turned off, reordered, added, and removed, and effect files save them. `ParticleEmitter` is the same emitter as flat settings; `EmitterDescription.settings` converts both ways, so code like the example above keeps working.
+
+For behavior the built-in modules lack, add a stitched user module. It is a `[[stitchable]]` Metal function, and the stage's user modules run in stack order:
+
+```swift
+var description = EmitterDescription("Flame", settings: flame)
+description.modules.update.append(ModuleSlot(.stitched(module: StitchedModule(source: """
+    [[stitchable]] constant float4 *swirl(thread ParticleState &p, float dt, float time, constant float4 *parameters) {
+        p.velocity += cross(float3(0, 1, 0), p.position) * parameters[0].x * dt;
+        return parameters + 1;
+    }
+    """, name: "swirl", parameters: [[2, 0, 0, 0]]))))
+```
+
+See [Documentation/Modules.md](Documentation/Modules.md) for the design.
+
 ### Show it with ParticleView
 
 `ParticleView` runs the simulation, draws the effect with its camera, and lets the mouse move pointer-bound items:
@@ -148,10 +166,11 @@ For soft particles, which fade where they meet your geometry, render your scene'
 To try the presets and edit effects live, open the demo app in `Demos/MetalSprocketsParticlesDemo`. Pick a preset in the
 toolbar, change any setting in the inspector, and save the result as an effect file to load in your own app.
 
-There are also two command-line tools:
+There are also three command-line tools:
 
 - `particles-render` renders presets and effect files to images and videos, with debug views if you want them.
-- `particles-bench` measures frame times, for particle counts or for every sample preset against a frame budget.
+- `particles-bench` measures frame times, for particle counts or for every sample preset against a frame budget. `--save-baseline` and `--compare` check for slowdowns (see `Benchmarks/`).
+- `particles-migrate` rewrites older effect files in the current format.
 
 ## 100% vibe coded
 
