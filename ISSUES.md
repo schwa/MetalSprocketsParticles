@@ -3532,10 +3532,12 @@ Found by an audit of every public setting in the description types against the d
 ## 169: No base64 blobs in effect JSON; reference external files
 
 +++
-status: new
+status: open
 priority: medium
 kind: enhancement
+labels: area:api, effort:l
 created: 2026-10-19T21:50:25Z
+updated: 2026-10-20T01:44:21Z
 +++
 
 Effect JSON embeds large binary data as base64 strings:
@@ -3550,16 +3552,20 @@ Replace these with references to files. A reference is either:
 
 Move the existing blobs out to files (e.g. raw float32 `.bin` for fields, `.png` for images) and update the presets. Consider doing the same for inline mesh arrays (`meshPositions`/`meshTriangles`), which make inside-the-teapot.json ~9800 lines.
 
+- `2026-10-20T01:44:21Z`: Decisions (user): (1) the app saves effects as a package (a folder, e.g. Name.particles/ with effect.json plus image and field files); bundle presets use the same layout, resources next to their JSON. (2) No inline base64 any more: references only; old files with inline data fail with a clear error. (3) URL references are file URLs only, loaded during decoding; remote http(s) deferred. Plan: library reference type and coding plumbing (encoder collects named resources, decoder resolves names against the effect's folder), applied to distance field values, EmitterImage.data, ParticleColorImage.data; then migrate the presets; then the demo's open/save as packages.
+
 ---
 
 ## 170: Emitter meshes as file references (OBJ/PLY) instead of inline JSON arrays
 
 +++
-status: new
+status: open
 priority: medium
 kind: enhancement
+labels: area:api, effort:m
 depends: 169
 created: 2026-10-19T21:51:47Z
+updated: 2026-10-20T01:44:21Z
 +++
 
 Emitter meshes are saved inline in effect JSON as `meshPositions` and `meshTriangles` number arrays (see `EmitterDescription` Codable). This makes presets huge: inside-the-teapot.json is ~9800 lines, mostly the teapot.
