@@ -1,0 +1,453 @@
+{
+  "mode" : "presets",
+  "rows" : [
+    {
+      "metrics" : {
+        "build" : 0.014875,
+        "frame" : 0.715167,
+        "gpu" : 0.2679585013538599
+      },
+      "name" : "Fountain"
+    },
+    {
+      "metrics" : {
+        "build" : 0.021458,
+        "frame" : 1.249375,
+        "gpu" : 0.32587512396275997
+      },
+      "name" : "Campfire"
+    },
+    {
+      "metrics" : {
+        "build" : 0.044375,
+        "frame" : 1.796667,
+        "gpu" : 0.18912507221102715
+      },
+      "name" : "Fireworks"
+    },
+    {
+      "metrics" : {
+        "build" : 0.014625,
+        "frame" : 0.488292,
+        "gpu" : 0.04812492989003658
+      },
+      "name" : "Sparks"
+    },
+    {
+      "metrics" : {
+        "build" : 0.01475,
+        "frame" : 0.745708,
+        "gpu" : 0.10520848445594311
+      },
+      "name" : "Snow"
+    },
+    {
+      "metrics" : {
+        "build" : 0.0215,
+        "frame" : 0.866417,
+        "gpu" : 0.27466658502817154
+      },
+      "name" : "Rain"
+    },
+    {
+      "metrics" : {
+        "build" : 0.016375,
+        "frame" : 0.649208,
+        "gpu" : 0.06700004450976849
+      },
+      "name" : "Magic Trail"
+    },
+    {
+      "metrics" : {
+        "build" : 0.02025,
+        "frame" : 0.96725,
+        "gpu" : 0.3527500666677952
+      },
+      "name" : "Comet"
+    },
+    {
+      "metrics" : {
+        "build" : 0.022083,
+        "frame" : 0.946166,
+        "gpu" : 0.20787515677511692
+      },
+      "name" : "Galaxy"
+    },
+    {
+      "metrics" : {
+        "build" : 0.029917,
+        "frame" : 1.446833,
+        "gpu" : 0.6021249573677778
+      },
+      "name" : "Waterfall"
+    },
+    {
+      "metrics" : {
+        "build" : 0.013833,
+        "frame" : 0.756125,
+        "gpu" : 0.11762487702071667
+      },
+      "name" : "Confetti"
+    },
+    {
+      "metrics" : {
+        "build" : 0.021,
+        "frame" : 0.82725,
+        "gpu" : 0.1016249880194664
+      },
+      "name" : "Portal"
+    },
+    {
+      "metrics" : {
+        "build" : 0.018667,
+        "frame" : 0.884,
+        "gpu" : 0.09487499482929707
+      },
+      "name" : "Hearts"
+    },
+    {
+      "metrics" : {
+        "build" : 0.0185,
+        "frame" : 0.877458,
+        "gpu" : 0.09975000284612179
+      },
+      "name" : "Moon Phases"
+    },
+    {
+      "metrics" : {
+        "build" : 0.015167,
+        "frame" : 0.780166,
+        "gpu" : 0.13741664588451385
+      },
+      "name" : "Color Smoke"
+    },
+    {
+      "metrics" : {
+        "build" : 0.029291,
+        "frame" : 1.322333,
+        "gpu" : 0.5298333708196878
+      },
+      "name" : "Fog"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017416,
+        "frame" : 0.618292,
+        "gpu" : 0.042750034481287
+      },
+      "name" : "Pond"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017333,
+        "frame" : 0.879083,
+        "gpu" : 0.10029156692326069
+      },
+      "name" : "Ring of Fire"
+    },
+    {
+      "metrics" : {
+        "build" : 0.016625,
+        "frame" : 0.623084,
+        "gpu" : 0.04654168151319027
+      },
+      "name" : "Swarms"
+    },
+    {
+      "metrics" : {
+        "build" : 0.021458,
+        "frame" : 0.831958,
+        "gpu" : 0.11300016194581985
+      },
+      "name" : "Geyser"
+    },
+    {
+      "metrics" : {
+        "build" : 0.0285,
+        "frame" : 1.092917,
+        "gpu" : 0.07870816625654697
+      },
+      "name" : "Bumper"
+    },
+    {
+      "metrics" : {
+        "build" : 0.0185,
+        "frame" : 0.604334,
+        "gpu" : 0.09237509220838547
+      },
+      "name" : "Paddle Wheel"
+    },
+    {
+      "metrics" : {
+        "build" : 0.01625,
+        "frame" : 0.801875,
+        "gpu" : 0.217916676774621
+      },
+      "name" : "Teapot"
+    },
+    {
+      "metrics" : {
+        "build" : 0.035125,
+        "frame" : 0.604916,
+        "gpu" : 0.07370836101472378
+      },
+      "name" : "Flag"
+    },
+    {
+      "metrics" : {
+        "build" : 0.014584,
+        "frame" : 0.659667,
+        "gpu" : 0.21437485702335835
+      },
+      "name" : "Strange Attractor"
+    },
+    {
+      "metrics" : {
+        "build" : 0.07725,
+        "frame" : 0.69425,
+        "gpu" : 0.12483331374824047
+      },
+      "name" : "Pointer Stir"
+    },
+    {
+      "metrics" : {
+        "build" : 0.022416,
+        "frame" : 0.859917,
+        "gpu" : 0.1155417412519455
+      },
+      "name" : "Embers to Ash"
+    },
+    {
+      "metrics" : {
+        "build" : 0.022041,
+        "frame" : 0.829916,
+        "gpu" : 0.09424984455108643
+      },
+      "name" : "Awning"
+    },
+    {
+      "metrics" : {
+        "build" : 0.02075,
+        "frame" : 1.376458,
+        "gpu" : 0.2926248125731945
+      },
+      "name" : "Lantern"
+    },
+    {
+      "metrics" : {
+        "build" : 0.020667,
+        "frame" : 0.774666,
+        "gpu" : 0.053999945521354675
+      },
+      "name" : "Dunk"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017541,
+        "frame" : 0.911708,
+        "gpu" : 0.13149995356798172
+      },
+      "name" : "Flare"
+    },
+    {
+      "metrics" : {
+        "build" : 0.01325,
+        "frame" : 0.495916,
+        "gpu" : 0.0552500132471323
+      },
+      "name" : "Point Cloud"
+    },
+    {
+      "metrics" : {
+        "build" : 0.016208,
+        "frame" : 0.471292,
+        "gpu" : 0.03487500362098217
+      },
+      "name" : "Fireflies"
+    },
+    {
+      "metrics" : {
+        "build" : 0.01275,
+        "frame" : 0.51125,
+        "gpu" : 0.07562502287328243
+      },
+      "name" : "Butterfly Dust"
+    },
+    {
+      "metrics" : {
+        "build" : 0.020625,
+        "frame" : 0.699917,
+        "gpu" : 0.06487499922513962
+      },
+      "name" : "Paint Drops"
+    },
+    {
+      "metrics" : {
+        "build" : 0.014708,
+        "frame" : 0.525583,
+        "gpu" : 0.08816667832434177
+      },
+      "name" : "Magic Loop"
+    },
+    {
+      "metrics" : {
+        "build" : 0.080583,
+        "frame" : 3.337292,
+        "gpu" : 0.2937917597591877
+      },
+      "name" : "Torch Avenue"
+    },
+    {
+      "metrics" : {
+        "build" : 0.020375,
+        "frame" : 1.009791,
+        "gpu" : 0.21404167637228966
+      },
+      "name" : "Ember Glow"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017875,
+        "frame" : 0.590625,
+        "gpu" : 0.07287506014108658
+      },
+      "name" : "Coin Shower"
+    },
+    {
+      "metrics" : {
+        "build" : 0.016875,
+        "frame" : 0.589,
+        "gpu" : 0.07362500764429569
+      },
+      "name" : "Sand on Shapes"
+    },
+    {
+      "metrics" : {
+        "build" : 0.015166,
+        "frame" : 0.494708,
+        "gpu" : 0.051999930292367935
+      },
+      "name" : "Spark Spectrum"
+    },
+    {
+      "metrics" : {
+        "build" : 0.014292,
+        "frame" : 0.483542,
+        "gpu" : 0.04558335058391094
+      },
+      "name" : "Light Ribbons"
+    },
+    {
+      "metrics" : {
+        "build" : 0.024667,
+        "frame" : 1.311958,
+        "gpu" : 0.6503749173134565
+      },
+      "name" : "Murmuration"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017542,
+        "frame" : 0.6205,
+        "gpu" : 0.0419167336076498
+      },
+      "name" : "Streamers"
+    },
+    {
+      "metrics" : {
+        "build" : 0.015708,
+        "frame" : 0.555833,
+        "gpu" : 0.11041667312383652
+      },
+      "name" : "Living Picture"
+    },
+    {
+      "metrics" : {
+        "build" : 0.043291,
+        "frame" : 5.698333,
+        "gpu" : 5.174250109121203
+      },
+      "name" : "Stress Test"
+    },
+    {
+      "metrics" : {
+        "build" : 0.023,
+        "frame" : 0.716167,
+        "gpu" : 0.1330834347754717
+      },
+      "name" : "Pachinko"
+    },
+    {
+      "metrics" : {
+        "build" : 0.018,
+        "frame" : 0.764708,
+        "gpu" : 0.18233316950500011
+      },
+      "name" : "Whirlpool"
+    },
+    {
+      "metrics" : {
+        "build" : 0.015084,
+        "frame" : 0.49825,
+        "gpu" : 0.05775014869868755
+      },
+      "name" : "Sand Funnel"
+    },
+    {
+      "metrics" : {
+        "build" : 0.013666,
+        "frame" : 0.587708,
+        "gpu" : 0.1440832857042551
+      },
+      "name" : "Spinning Teapot"
+    },
+    {
+      "metrics" : {
+        "build" : 0.021333,
+        "frame" : 0.857333,
+        "gpu" : 0.13312511146068573
+      },
+      "name" : "Umbrella"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017208,
+        "frame" : 0.659458,
+        "gpu" : 0.08354173041880131
+      },
+      "name" : "Marble Run"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017125,
+        "frame" : 0.491458,
+        "gpu" : 0.05650008097290993
+      },
+      "name" : "Snow Globe"
+    },
+    {
+      "metrics" : {
+        "build" : 0.016333,
+        "frame" : 0.779458,
+        "gpu" : 0.19562500528991222
+      },
+      "name" : "Sand on Letters"
+    },
+    {
+      "metrics" : {
+        "build" : 0.041667,
+        "frame" : 2.144666,
+        "gpu" : 1.3760000001639128
+      },
+      "name" : "Inside the Teapot"
+    },
+    {
+      "metrics" : {
+        "build" : 0.017666,
+        "frame" : 0.580959,
+        "gpu" : 0.07008342072367668
+      },
+      "name" : "Foil Confetti"
+    }
+  ]
+}

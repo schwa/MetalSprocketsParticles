@@ -1,0 +1,85 @@
+{
+  "mode" : "scenarios",
+  "rows" : [
+    {
+      "metrics" : {
+        "cpu" : 0.5312918513013125,
+        "renderGPU" : 0.036624958738684654,
+        "simulateGPU" : 0.02004159614443779
+      },
+      "name" : "10K"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.6394168320447207,
+        "renderGPU" : 0.26683323085308075,
+        "simulateGPU" : 0.04124990664422512
+      },
+      "name" : "100K"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.6462498832941056,
+        "renderGPU" : 2.8866250067949295,
+        "simulateGPU" : 0.2731666900217533
+      },
+      "name" : "1M"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.5919577894912958,
+        "renderGPU" : 0.26712496764957905,
+        "simulateGPU" : 0.042166560888290405
+      },
+      "name" : "1M cap, 100K alive"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.6563334157615899,
+        "renderGPU" : 2.961708465591073,
+        "simulateGPU" : 0.22404175251722336
+      },
+      "name" : "1M, no turbulence"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.6504588830960989,
+        "renderGPU" : 0.6232499144971371,
+        "simulateGPU" : 0.2790417056530714
+      },
+      "name" : "1M, sub-pixel"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.658291186249613,
+        "renderGPU" : 9.124083444476128,
+        "simulateGPU" : 0.27733342722058296
+      },
+      "name" : "1M, 4x size"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.6900832375138998,
+        "renderGPU" : 0.03687501884996891,
+        "simulateGPU" : 0.0666249543428421
+      },
+      "name" : "10K, sorted"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.7311668643994332,
+        "renderGPU" : 0.26554171927273273,
+        "simulateGPU" : 0.11570821516215801
+      },
+      "name" : "100K, sorted"
+    },
+    {
+      "metrics" : {
+        "cpu" : 0.8527918344331982,
+        "renderGPU" : 2.8697082307189703,
+        "simulateGPU" : 1.042249845340848
+      },
+      "name" : "1M, sorted"
+    }
+  ]
+}

@@ -44,6 +44,18 @@ struct BenchCommand: ParsableCommand {
     @Flag(help: "With --presets: exit with an error when any preset's median frame is over budget.")
     var check = false
 
+    @Option(help: "Write the results as JSON to this path, to use later as a baseline.")
+    var saveBaseline: String?
+
+    @Option(help: "Compare the results with a baseline JSON file written by --save-baseline.")
+    var compare: String?
+
+    @Option(help: "With --compare: allowed slowdown in percent before a row counts as a regression.")
+    var tolerance = 10.0
+
+    @Option(help: "With --compare: ignore differences smaller than this, in milliseconds (noise floor).")
+    var noiseFloor = 0.05
+
     struct Scenario {
         var name: String
         var capacity: Int
@@ -74,11 +86,18 @@ struct BenchCommand: ParsableCommand {
         let selected = only1M ? scenarios.filter { $0.name.hasPrefix("1M") && $0.sortMode == .none } : scenarios
         print("Scenario              | simulate GPU | render GPU | CPU/frame")
         print("----------------------|--------------|------------|----------")
+        var rows: [BenchRow] = []
         for scenario in selected {
             let result = try measure(scenario)
             let name = scenario.name.padding(toLength: 21, withPad: " ", startingAt: 0)
             print("\(name) | \(milliseconds(result.simulate)) | \(milliseconds(result.render)) | \(milliseconds(result.cpu))")
+            rows.append(BenchRow(name: scenario.name, metrics: [
+                "simulateGPU": result.simulate * 1_000,
+                "renderGPU": result.render * 1_000,
+                "cpu": result.cpu * 1_000,
+            ]))
         }
+        try finish(BenchReport(mode: "scenarios", rows: rows))
     }
 
     private func milliseconds(_ seconds: Double) -> String {

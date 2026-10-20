@@ -26,8 +26,10 @@ extension BenchCommand {
         print("Preset               |   build ms |     GPU ms |   frame ms |   worst ms |  alive | budget \(String(format: "%.2f", budget)) ms")
         print("---------------------|------------|------------|------------|------------|--------|-------")
         var overBudget: [String] = []
+        var rows: [BenchRow] = []
         for system in systems {
             let result = try measure(system, renderer: renderer)
+            rows.append(BenchRow(name: system.name, metrics: ["build": result.build, "gpu": result.gpu, "frame": result.frame]))
             let status = result.frame <= budget ? "ok" : "OVER"
             if status == "OVER" {
                 overBudget.append(system.name)
@@ -36,6 +38,7 @@ extension BenchCommand {
             let columns = [result.build, result.gpu, result.frame, result.worstFrame].map { String(format: "%10.2f", $0) }
             print("\(name) | \(columns.joined(separator: " | ")) | \(String(format: "%6d", result.alive)) | \(status)")
         }
+        try finish(BenchReport(mode: "presets", rows: rows))
         if !overBudget.isEmpty {
             print("Over budget: \(overBudget.joined(separator: ", "))")
             if check {

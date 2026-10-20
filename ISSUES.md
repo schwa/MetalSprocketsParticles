@@ -3800,6 +3800,14 @@ Related: #178 (why), #172, #174, #175, #167, #122 (custom attributes), #100.
 Steps 2 and 6 cover these; split them into their own issues after the spike.
 
 - `2026-10-20T18:19:58Z`: Split into sub-tickets (user: plan the big refactor first). Order: #182 spike (gates everything) and #184 perf baseline; #183 MetalSprockets stitching API; #185 design; #186 JSON format; #187 Swift module types; #188 runtime; #189-#191 update modules; #192 spawn; #193 render (with #172/#175/#174); #194 migration tool; #195 presets; #196 demo inspector; #197 retire flat settings. Dependencies are recorded on each issue.
+- `2026-10-20T18:32:44Z`: Spike results (#182, Tests/MetalSprocketsParticlesTests/StitchingSpikeTests.swift):
+- `2026-10-20T18:32:44Z`: Works. gravity, drag, and color over life as [[stitchable]] modules, stitched with MTLFunctionStitchingGraph into the update slot, give bit-identical particles to the same code written as one user function.
+- `2026-10-20T18:32:44Z`: ABI: modules use the user-function signature (thread ParticleState &, dt, time, constant float4 *parameters) and return parameters advanced past their own entries. That pointer is the data dependency that orders the chain; a void endModules(pointer) node ends it. ParticleState passes whole by thread reference; no need to split it. Structs by value, vectors, constant and device pointers also compile as stitchable.
+- `2026-10-20T18:32:44Z`: Metal 4: device.makeLibrary(stitchedDescriptor:) gives a library whose function wraps as a MetalSprockets VisibleFunction and links through MTL4StaticLinkingDescriptor and the existing visible function tables. No MetalSprockets change needed (#183).
+- `2026-10-20T18:32:44Z`: Cost, 1M particles, simulate GPU (debug build, M-series): built-in only 0.294 ms; hand-written user function 0.360 ms; stitched 0.360 ms. Stitching itself costs nothing over a user function. The visible function call (state marshalling plus indirect call) costs about 0.07 ms per 1M, about 22% of simulate.
+- `2026-10-20T18:32:44Z`: Build time: about 2.3 ms per graph. Pipeline creation with a stitched function linked: about 420 ms first frame vs 60 ms for a source user function, so pipelines per distinct stack must be cached (and maybe a binary archive) and built off the frame path.
+- `2026-10-20T18:32:44Z`: Graphs per effect: one per (emitter, stage) distinct stack; typical effects 2 to 6.
+- `2026-10-20T18:32:44Z`: Verdict: go, with one risk. If all built-in behavior moves into modules, every particle pays the call overhead; the Stress Test may regress past the #184 gate. Mitigations to try in #188: keep hot built-ins (integrate, gravity, drag) inline in the kernel and only stitch the rest; or link the stitched function by direct extern call rather than through a table so the pipeline compiler can inline it. Fallback if both fail: generated Metal source per stack.
 
 ---
 
@@ -3865,12 +3873,13 @@ Open point: MeshFile keeps positions and faces only. Normals must either be writ
 ## 182: Spike: stitch update behaviors into one function with MTLFunctionStitchingGraph
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:m, needs-design
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:32:44Z
+closed: 2026-10-20T18:32:44Z
 +++
 
 Nothing yet shows that Metal function stitching works for particle behaviors in this library.
@@ -3885,40 +3894,49 @@ Answer and write up on #179:
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:32:44Z`: Spike done; findings on #179. Go, with the call-overhead risk noted there.
+
 ---
 
 ## 183: MetalSprockets has no API for stitched functions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:s
 depends: 182
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:32:44Z
+closed: 2026-10-20T18:32:44Z
 +++
 
 MetalSprockets' VisibleFunctionTable docs mention stitched functions, but there is no way to build one (MTLFunctionStitchingGraph / stitched function descriptor) and get a VisibleFunction from it. The module runtime needs this. Check after the spike what is missing and file it in MetalSprockets if the work belongs there.
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:32:44Z`: Not needed: a stitched library's function wraps as VisibleFunction(library:name:) and links through the existing linkedFunctions path (see #179 spike notes). Reopen if #188 wants a convenience builder.
+
 ---
 
 ## 184: No performance gate for the module refactor
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:tooling, effort:s
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:32:44Z
+closed: 2026-10-20T18:32:44Z
 +++
 
 The module refactor must not slow the simulation, but there is no recorded baseline to compare against. Record particles-bench numbers (Stress Test and every preset: GPU ms, frame ms) on the current code, and a way to re-run and compare them after each migration step (a script or a bench mode that diffs against the baseline).
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:32:44Z`: Added --save-baseline / --compare / --tolerance / --noise-floor to particles-bench; baselines in Benchmarks/ (README there).
+- `2026-10-20T18:32:44Z`: Baselines recorded in Benchmarks/; compare with particles-bench --compare.
 
 ---
 
