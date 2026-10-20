@@ -123,12 +123,83 @@ struct EffectFileTests {
         mesh.triangulate().map { [Int($0.0.raw), Int($0.1.raw), Int($0.2.raw)] }
     }
 
+    // MARK: Mesh files (#170)
+
+    /// A layer's JSON with its mesh replaced by `obj`, decoded.
+    func layer(withMesh obj: String, named name: String = "mesh.obj") throws -> EmitterDescription {
+        let resources = EffectResources()
+        var json = try #require(try JSONSerialization.jsonObject(with: resources.encoder().encode(ParticleSystem.teapot.layers[0])) as? [String: Any])
+        json["mesh"] = name
+        let store = EffectResources(files: [name: Data(obj.utf8)])
+        return try store.decoder().decode(EmitterDescription.self, from: JSONSerialization.data(withJSONObject: json))
+    }
+
+    @Test func meshesAreSavedAsOBJFilesAndComeBackExactly() throws {
+        let layer = ParticleSystem.teapot.layers[0]
+        let resources = EffectResources()
+        let json = try resources.encoder().encode(layer)
+        let name = try #require(resources.files.keys.first)
+        #expect(name.hasPrefix("mesh-") && name.hasSuffix(".obj"))
+        let text = try #require(String(bytes: json, encoding: .utf8))
+        #expect(!text.contains("meshPositions") && text.contains(name))
+        let decoded = try resources.decoder().decode(EmitterDescription.self, from: json)
+        #expect(decoded.mesh?.positions == layer.mesh?.positions)
+        #expect(decoded.mesh.map(triangles) == layer.mesh.map(triangles))
+    }
+
     @Test func outOfRangeMeshIndicesAreAnError() throws {
-        var json = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(ParticleSystem.teapot.layers[0])) as! [String: Any]
-        json["meshTriangles"] = [[0, 1, 999_999]]
-        let data = try JSONSerialization.data(withJSONObject: json)
+        #expect(throws: MeshFileError.self) { try layer(withMesh: "v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 999999\n") }
+        #expect(throws: MeshFileError.self) { try layer(withMesh: "v 0 0 0\n") }
+    }
+
+    /// Faces as polygons, with `v/vt/vn` forms and negative (from the end) indices, as other tools write them.
+    @Test func objFilesFromOtherToolsLoad() throws {
+        let obj = """
+        # a quad and a triangle
+        v 0 0 0
+        v 1 0 0
+        v 1 1 0
+        v 0 1 0
+        vt 0 0
+        vn 0 0 1
+        f 1/1/1 2/1/1 3/1/1 4/1/1
+        f -4 -3 -1
+        """
+        let mesh = try #require(try layer(withMesh: obj).mesh)
+        #expect(mesh.positions.count == 4)
+        #expect(mesh.triangulate().count == 3)
+    }
+
+    /// Other formats Model I/O reads, such as PLY, load through it.
+    @Test func plyFilesLoad() throws {
+        let ply = """
+        ply
+        format ascii 1.0
+        element vertex 3
+        property float x
+        property float y
+        property float z
+        element face 1
+        property list uchar int vertex_indices
+        end_header
+        0 0 0
+        1 0 0
+        0 1 0
+        3 0 1 2
+
+        """
+        let mesh = try #require(try layer(withMesh: ply, named: "triangle.ply").mesh)
+        #expect(mesh.triangulate().count == 1)
+    }
+
+    /// Inline meshes (the old format) are not read, per #169's decision for inline data.
+    @Test func inlineMeshesAreAnError() throws {
+        var json = try #require(try JSONSerialization.jsonObject(with: EffectResources().encoder().encode(ParticleSystem.teapot.layers[0])) as? [String: Any])
+        json["mesh"] = nil
+        json["meshPositions"] = [[0, 0, 0], [1, 0, 0], [0, 1, 0]]
+        json["meshTriangles"] = [[0, 1, 2]]
         #expect(throws: DecodingError.self) {
-            try JSONDecoder().decode(EmitterDescription.self, from: data)
+            try EffectResources().decoder().decode(EmitterDescription.self, from: JSONSerialization.data(withJSONObject: json))
         }
     }
 

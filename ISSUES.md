@@ -3561,13 +3561,14 @@ Move the existing blobs out to files (e.g. raw float32 `.bin` for fields, `.png`
 ## 170: Emitter meshes as file references (OBJ/PLY) instead of inline JSON arrays
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:api, effort:m
 depends: 169
 created: 2026-10-19T21:51:47Z
-updated: 2026-10-20T01:44:21Z
+updated: 2026-10-20T02:15:05Z
+closed: 2026-10-20T02:15:05Z
 +++
 
 Emitter meshes are saved inline in effect JSON as `meshPositions` and `meshTriangles` number arrays (see `EmitterDescription` Codable). This makes presets huge: inside-the-teapot.json is ~9800 lines, mostly the teapot.
@@ -3575,6 +3576,8 @@ Emitter meshes are saved inline in effect JSON as `meshPositions` and `meshTrian
 Store the mesh as a file reference instead, using the same reference scheme as #169: a name (next to the JSON or in the bundle) or a URL. Load OBJ and PLY (e.g. via ModelIO `MDLAsset`, or SwiftMesh if it has loaders).
 
 Move the existing inline meshes in the presets out to files. Decide whether to keep reading the inline arrays for old files.
+
+- `2026-10-20T02:15:05Z`: Done. Emitter meshes are saved as OBJ files through EffectResources (mesh-<hash>.obj, positions and triangles, floats in shortest exact form), read back exactly by our own OBJ reader (v and f lines; polygons, v/vt/vn, negative indices); other formats Model I/O reads (PLY, USD) load through it. Inline meshPositions/meshTriangles are no longer read (a clear error), following #169's decision. Presets migrated: 8 meshes in 6 presets to 7 files (Teapot's two layers share one); inside-the-teapot.json went from ~9800 lines to 279; every golden unchanged. Tests: exact round trip, out-of-range and faceless OBJ are errors, OBJ from other tools, PLY, inline meshes rejected. CLI: Teapot saved as a package and rendered from it is pixel-identical. Point caches and custom particle meshes are still inline: #177.
 
 ---
 
@@ -3700,5 +3703,23 @@ closed: 2026-10-20T00:08:00Z
 Since #157, marbles in Marble Run roll very slowly. #157 made a particle that enters a distance field during a step respond at the entry point on its path; a particle sliding along the surface starts each step at the surface and dips in under gravity, so every step counted as an entry and put it back near where it started, throwing away its motion along the surface.
 
 - `2026-10-20T00:08:00Z`: Fixed: on entry, the particle goes to the entry point plus the rest of the step's motion along the surface, under Coulomb friction (kept only beyond friction times the part into the surface). Sliding particles keep their speed; resting ones stay put, so thin parts still hold sand (a first attempt, pushing shallow dips straight out, let a thin part's tilted normal walk grains off its edge). Test particlesSlideDownSlopesAtFullSpeed: a ball slides as far down a tilted distance-field slab as down the same analytic box (0.047 vs 0.23 before). Marble Run: mean marble speed 1.55-1.70 m/s over 6 s, matching pre-#157 (1.54-1.68). The #157 thin-part and spinning-fling tests still pass; five distance-field goldens moved slightly (reviewed).
+
+---
+
+## 177: Point caches and custom particle meshes as files, not inline arrays
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: area:api, effort:s
+created: 2026-10-20T02:14:44Z
++++
+
+Follow-up to #169 and #170, which moved images, distance fields, and emitter meshes out of effect JSON. Still inline:
+- EmitterDescription.points (point caches: position, normal, color per point), e.g. Point Cloud.
+- ParticleMesh.triangles(positions:normals:) (custom mesh particles), not used by any preset yet.
+
+Store them through EffectResources like the others: points as a small binary or PLY file, custom particle meshes as OBJ (with normals). Same decisions as #169: references only, no inline reading.
 
 ---

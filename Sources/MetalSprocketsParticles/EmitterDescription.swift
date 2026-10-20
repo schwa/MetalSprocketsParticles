@@ -125,7 +125,7 @@ public extension ParticleSystemRuntime {
 /// emission uses) and loads back as a triangle mesh.
 extension EmitterDescription: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting, meshPositions, meshTriangles, meshDeformation, points, image
+        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting, mesh, meshPositions, meshTriangles, meshDeformation, points, image
     }
 
     public init(from decoder: Decoder) throws {
@@ -138,12 +138,16 @@ extension EmitterDescription: Codable {
         simulationSpace = try container.decode(SimulationSpace.self, forKey: .simulationSpace)
         capacity = try container.decode(Int.self, forKey: .capacity)
         isEmitting = try container.decodeIfPresent(Bool.self, forKey: .isEmitting) ?? true
-        if let positions = try container.decodeIfPresent([SIMD3<Float>].self, forKey: .meshPositions) {
-            let triangles = try container.decode([SIMD3<Int32>].self, forKey: .meshTriangles)
-            guard triangles.allSatisfy({ all($0 .>= 0) && all($0 .< Int32(positions.count)) }) else {
-                throw DecodingError.dataCorruptedError(forKey: .meshTriangles, in: container, debugDescription: "Mesh triangle index out of range")
-            }
-            mesh = Mesh(positions: positions, faces: triangles.map { [Int($0.x), Int($0.y), Int($0.z)] })
+        if container.contains(.mesh) {
+            // A file next to the effect's JSON (see EffectResources): OBJ, or another format Model I/O reads.
+            let (reference, data) = try container.decodeNamedResource(forKey: .mesh, decoder: decoder)
+            let fileExtension = reference.contains(".") ? String(reference.split(separator: ".").last ?? "") : ""
+            mesh = try MeshFile.mesh(from: data, fileExtension: fileExtension)
+        } else if container.contains(.meshPositions) || container.contains(.meshTriangles) {
+            throw DecodingError.dataCorruptedError(
+                forKey: .meshPositions, in: container,
+                debugDescription: "Inline meshes (meshPositions, meshTriangles) are not read; effects keep meshes in files next to their JSON."
+            )
         } else {
             mesh = nil
         }
@@ -163,9 +167,7 @@ extension EmitterDescription: Codable {
         try container.encode(capacity, forKey: .capacity)
         try container.encode(isEmitting, forKey: .isEmitting)
         if let mesh {
-            try container.encode(mesh.positions, forKey: .meshPositions)
-            let triangles = mesh.triangulate().map { SIMD3<Int32>(Int32($0.0.raw), Int32($0.1.raw), Int32($0.2.raw)) }
-            try container.encode(triangles, forKey: .meshTriangles)
+            try container.encodeResource(MeshFile.objData(of: mesh), forKey: .mesh, encoder: encoder, prefix: "mesh", fileExtension: "obj")
         }
         if meshDeformation != .none {
             try container.encode(meshDeformation, forKey: .meshDeformation)

@@ -46,10 +46,15 @@ public final class EffectResources: @unchecked Sendable {
         return decoder
     }
 
-    /// Stores `data` and returns its file name: `prefix`, the first 8 hex digits of its SHA-256, and `fileExtension`.
-    func add(_ data: Data, prefix: String, fileExtension: String) -> String {
+    /// The file name `add` gives `data`: `prefix`, the first 8 hex digits of its SHA-256, and `fileExtension`.
+    static func name(for data: Data, prefix: String, fileExtension: String) -> String {
         let digest = SHA256.hash(data: data).prefix(4).map { String(format: "%02x", $0) }.joined()
-        let name = "\(prefix)-\(digest).\(fileExtension)"
+        return "\(prefix)-\(digest).\(fileExtension)"
+    }
+
+    /// Stores `data` and returns its file name (see `name(for:prefix:fileExtension:)`).
+    func add(_ data: Data, prefix: String, fileExtension: String) -> String {
+        let name = Self.name(for: data, prefix: prefix, fileExtension: fileExtension)
         lock.withLock { storage[name] = data }
         return name
     }
@@ -129,11 +134,16 @@ public extension CodingUserInfoKey {
 extension KeyedDecodingContainer {
     /// Data stored as a file reference.
     func decodeResource(forKey key: Key, decoder: Decoder) throws -> Data {
+        try decodeNamedResource(forKey: key, decoder: decoder).data
+    }
+
+    /// Data stored as a file reference, with the reference (for its file extension).
+    func decodeNamedResource(forKey key: Key, decoder: Decoder) throws -> (reference: String, data: Data) {
         let reference = try decode(String.self, forKey: key)
         guard let resources = decoder.userInfo[.effectResources] as? EffectResources else {
             throw EffectResourceError.noStore
         }
-        return try resources.data(for: reference)
+        return (reference, try resources.data(for: reference))
     }
 }
 
