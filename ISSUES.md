@@ -3830,7 +3830,7 @@ Approach: start with the gaps by impact; tests should check behavior, not just t
 
 ---
 
-## 181: Custom particle meshes as PLY files, not inline arrays
+## 181: Custom particle meshes as mesh files via MeshFile/Model I/O, not inline arrays
 
 +++
 status: new
@@ -3838,10 +3838,13 @@ priority: low
 kind: enhancement
 labels: area:api, effort:s
 created: 2026-10-20T17:48:04Z
+updated: 2026-10-20T17:59:15Z
 +++
 
 Split from #177. ParticleMesh.triangles(positions:normals:) (custom mesh particles) is still saved inline in effect JSON. No preset uses it yet.
 
-Store it through EffectResources as a PLY file (positions, normals, faces), like emitter meshes (#170) and point caches (#177). References only, no inline reading (#169).
+Store it through EffectResources as a mesh file, reusing MeshFile (#170): write OBJ, read OBJ ourselves and other formats (PLY, USD) through Model I/O. References only, no inline reading (#169).
+
+Open point: MeshFile keeps positions and faces only. Normals must either be written (OBJ vn) and read back, or be rebuilt as flat normals, as ParticleMesh(mesh:) does now.
 
 ---
