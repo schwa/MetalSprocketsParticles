@@ -77,7 +77,7 @@ enum PointCacheFile {
     }
 }
 
-enum PointCacheFileError: Error, LocalizedError {
+enum PointCacheFileError: Error, LocalizedError, Equatable {
     case noVertices
     case noPositions
     case unreadable

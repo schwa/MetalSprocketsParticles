@@ -84,7 +84,7 @@ enum MeshFile {
     }
 }
 
-public enum MeshFileError: Error, LocalizedError, Sendable {
+public enum MeshFileError: Error, LocalizedError, Sendable, Equatable {
     case unreadable
     case indexOutOfRange
     case noMesh

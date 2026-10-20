@@ -122,6 +122,35 @@ struct FlockingTests {
         #expect(particles.allSatisfy { $0.velocity.x.isFinite && $0.position.x.isFinite })
     }
 
+    /// Each flocking emitter gets its own grid pass, one after another: both flocks align, each on its own.
+    @Test func twoFlockingEmittersEachFlock() throws {
+        var emitter = ParticleEmitter()
+        emitter.shape = .box(size: [1, 1, 1])
+        emitter.velocity = .zero
+        emitter.velocitySpread = 1
+        emitter.gravity = .zero
+        emitter.drag = 0
+        emitter.lifetime = 100...100
+        emitter.birthRate = 0
+        emitter.flocking = ParticleFlocking(radius: 2, separation: 0, alignment: 3, cohesion: 0, speedRange: 0...10)
+        var far = emitter
+        far.position = [20, 0, 0]
+        let layers = [EmitterDescription("A", settings: emitter, capacity: 200), EmitterDescription("B", settings: far, capacity: 200)]
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: ParticleEmitter(), seed: 3)
+        try system.apply(layers)
+        for emitter in system.emitters {
+            emitter.burst(200)
+        }
+        for _ in 0..<120 {
+            try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
+        }
+        let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 400)
+        let first = system.emitters[0].range.map { pointer[$0] }
+        let second = system.emitters[1].range.map { pointer[$0] }
+        #expect(order(first) > 0.9)
+        #expect(order(second) > 0.9)
+    }
+
     @Test func flockingRoundTripsThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.flocking = ParticleFlocking(radius: 0.7, separation: 0.1, speedRange: 1...3, maxNeighbors: 12)
