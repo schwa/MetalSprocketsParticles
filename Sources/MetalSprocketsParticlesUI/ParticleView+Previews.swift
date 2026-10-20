@@ -12,8 +12,8 @@ private final class PreviewEffect {
     var system: ParticleSystem
     @ObservationIgnored let runtime: ParticleSystemRuntime?
 
-    convenience init(_ name: String, _ emitter: ParticleEmitter, sprite: ParticleSprite = .softDot, capacity: Int = 2_000) {
-        self.init(name, layers: [EmitterDescription(name, settings: emitter, sprite: sprite, capacity: capacity)])
+    convenience init(_ name: String, sprite: ParticleSprite = .softDot, capacity: Int = 2_000, @EmitterModulesBuilder modules: () -> [any ParticleModule]) {
+        self.init(name, layers: [EmitterDescription(name, sprite: sprite, capacity: capacity, modules: modules)])
     }
 
     init(_ name: String, layers: [EmitterDescription]) {
@@ -47,19 +47,18 @@ private final class PreviewEffect {
 private struct LikeButtonPreview: View {
     @State private var isLiked = false
     @State private var hearts: PreviewEffect = {
-        var emitter = ParticleEmitter.default2D
-        emitter.birthRate = 0
-        emitter.velocity = [0, -260, 0]
-        emitter.velocitySpread = 220
-        emitter.speedVariation = 80
-        emitter.gravity = [0, 420, 0]
-        emitter.drag = 1
-        emitter.lifetime = 0.7...1.1
-        emitter.sizeOverLife = .linear(from: 22, to: 12)
-        emitter.opacityOverLife = .linear(from: 1, to: 0)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.angleVariation = 0.6
-        return PreviewEffect("Hearts", emitter, sprite: .heart, capacity: 200)
+        PreviewEffect("Hearts", sprite: .heart, capacity: 200) {
+            ShapeModule(shape: .point)
+            RateModule(birthRate: 0)
+            LifetimeModule(range: 0.7...1.1)
+            VelocityModule(velocity: [0, -260, 0], spread: 220, speedVariation: 80)
+            RotationModule(angleVariation: 0.6)
+            GravityModule(acceleration: [0, 420, 0])
+            DragModule(amount: 1)
+            PlaneConstraintModule()
+            SizeOverLifeModule(curve: .linear(from: 22, to: 12))
+            ColorOverLifeModule(color: .constant([1, 1, 1, 1]), opacity: .linear(from: 1, to: 0))
+        }
     }()
 
     static let effectSize: CGFloat = 240
@@ -93,23 +92,19 @@ private struct LikeButtonPreview: View {
 
 private struct PaymentSentPreview: View {
     @State private var confetti: PreviewEffect = {
-        var emitter = ParticleEmitter.default2D
-        emitter.birthRate = 0
-        emitter.shape = .box(size: [120, 1, 0])
-        emitter.velocity = [0, -520, 0]
-        emitter.velocitySpread = 380
-        emitter.speedVariation = 160
-        emitter.gravity = [0, 650, 0]
-        emitter.drag = 1.4
-        emitter.lifetime = 2...3
-        emitter.sizeOverLife = .constant(9)
-        emitter.colorOverLife = .constant([0.6, 0.6, 0.6, 1])
-        emitter.colorVariation = [0.4, 0.4, 0.4, 0]
-        emitter.opacityOverLife = ParticleCurve([.init(0, 1), .init(0.8, 1), .init(1, 0)])
-        emitter.angleVariation = .pi
-        emitter.angularSpeed = 6
-        emitter.angularSpeedVariation = 6
-        return PreviewEffect("Confetti", emitter, sprite: .triangle)
+        PreviewEffect("Confetti", sprite: .triangle) {
+            ShapeModule(shape: .box(size: [120, 1, 0]))
+            RateModule(birthRate: 0)
+            LifetimeModule(range: 2...3)
+            VelocityModule(velocity: [0, -520, 0], spread: 380, speedVariation: 160)
+            RotationModule(angleVariation: .pi, angularSpeed: 6, angularSpeedVariation: 6)
+            VariationModule(color: [0.4, 0.4, 0.4, 0])
+            GravityModule(acceleration: [0, 650, 0])
+            DragModule(amount: 1.4)
+            PlaneConstraintModule()
+            SizeOverLifeModule(curve: .constant(9))
+            ColorOverLifeModule(color: .constant([0.6, 0.6, 0.6, 1]), opacity: ParticleCurve([.init(0, 1), .init(0.8, 1), .init(1, 0)]))
+        }
     }()
 
     var body: some View {
@@ -154,21 +149,16 @@ private struct WeatherCardPreview: View {
     static let size = CGSize(width: 300, height: 380)
 
     @State private var snow: PreviewEffect = {
-        var emitter = ParticleEmitter.default2D
-        emitter.shape = .box(size: [Float(Self.size.width) + 40, 1, 0])
-        emitter.position = [Float(Self.size.width) / 2, -10, 0]
-        emitter.birthRate = 40
-        emitter.velocity = [0, 45, 0]
-        emitter.velocitySpread = 18
-        emitter.speedVariation = 15
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 8...10
-        emitter.sizeOverLife = .constant(4)
-        emitter.sizeVariation = 0.5
-        emitter.colorOverLife = .constant([1, 1, 1, 0.9])
-        emitter.warmupDuration = 8
-        return PreviewEffect("Snow", emitter, capacity: 1_000)
+        PreviewEffect("Snow", capacity: 1_000) {
+            ShapeModule(position: [Float(Self.size.width) / 2, -10, 0], shape: .box(size: [Float(Self.size.width) + 40, 1, 0]))
+            RateModule(birthRate: 40, warmupDuration: 8)
+            LifetimeModule(range: 8...10)
+            VelocityModule(velocity: [0, 45, 0], spread: 18, speedVariation: 15)
+            VariationModule(size: 0.5)
+            PlaneConstraintModule()
+            SizeOverLifeModule(curve: .constant(4))
+            ColorOverLifeModule(color: .constant([1, 1, 1, 0.9]))
+        }
     }()
 
     var body: some View {
@@ -214,19 +204,17 @@ private struct ProBadgePreview: View {
     static let size = CGSize(width: 220, height: 120)
 
     @State private var sparkles: PreviewEffect = {
-        var emitter = ParticleEmitter.default2D
-        emitter.shape = .box(size: [130, 50, 0])
-        emitter.position = [Float(Self.size.width) / 2, Float(Self.size.height) / 2, 0]
-        emitter.birthRate = 14
-        emitter.velocity = .zero
-        emitter.velocitySpread = 6
-        emitter.speedVariation = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 0.6...1.2
-        emitter.sizeOverLife = ParticleCurve([.init(0, 0), .init(0.4, 14), .init(1, 0)])
-        emitter.colorOverLife = .constant([1, 0.9, 0.5, 1])
-        emitter.angularSpeed = 2
-        return PreviewEffect("Sparkles", emitter, sprite: .star, capacity: 100)
+        PreviewEffect("Sparkles", sprite: .star, capacity: 100) {
+            ShapeModule(position: [Float(Self.size.width) / 2, Float(Self.size.height) / 2, 0], shape: .box(size: [130, 50, 0]))
+            RateModule(birthRate: 14)
+            LifetimeModule(range: 0.6...1.2)
+            VelocityModule(velocity: .zero, spread: 6)
+            RotationModule(angularSpeed: 2)
+            DragModule(amount: 0.3)
+            PlaneConstraintModule()
+            SizeOverLifeModule(curve: ParticleCurve([.init(0, 0), .init(0.4, 14), .init(1, 0)]))
+            ColorOverLifeModule(color: .constant([1, 0.9, 0.5, 1]))
+        }
     }()
 
     var body: some View {
@@ -325,20 +313,18 @@ private struct DeleteIntoDustPreview: View {
     ]
     @State private var rowFrames: [InboxMessage.ID: CGRect] = [:]
     @State private var dust: PreviewEffect = {
-        var emitter = ParticleEmitter.default2D
-        emitter.shape = .points
-        emitter.birthRate = 0
-        // Blown away to the right and up, as if by a breeze.
-        emitter.velocity = [140, -50, 0]
-        emitter.velocitySpread = 70
-        emitter.speedVariation = 90
-        emitter.gravity = [40, -60, 0]
-        emitter.drag = 0.8
-        emitter.lifetime = 0.7...1.6
-        emitter.sizeOverLife = .linear(from: 2.5, to: 1)
-        emitter.opacityOverLife = .linear(from: 1, to: 0)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        return PreviewEffect("Dust", emitter, capacity: 20_000)
+        PreviewEffect("Dust", capacity: 20_000) {
+            ShapeModule(shape: .points)
+            RateModule(birthRate: 0)
+            LifetimeModule(range: 0.7...1.6)
+            // Blown away to the right and up, as if by a breeze.
+            VelocityModule(velocity: [140, -50, 0], spread: 70, speedVariation: 90)
+            GravityModule(acceleration: [40, -60, 0])
+            DragModule(amount: 0.8)
+            PlaneConstraintModule()
+            SizeOverLifeModule(curve: .linear(from: 2.5, to: 1))
+            ColorOverLifeModule(color: .constant([1, 1, 1, 1]), opacity: .linear(from: 1, to: 0))
+        }
     }()
 
     nonisolated static let space = "inbox"
@@ -403,17 +389,17 @@ private struct PullToRefreshPreview: View {
     @State private var isArmed = false
     @State private var refreshed = Date.now
     @State private var fountain: PreviewEffect = {
-        var emitter = ParticleEmitter.default2D
-        emitter.shape = .box(size: [60, 1, 0])
-        emitter.birthRate = 0
-        emitter.velocity = [0, -220, 0]
-        emitter.velocitySpread = 90
-        emitter.speedVariation = 60
-        emitter.gravity = [0, 600, 0]
-        emitter.lifetime = 0.5...0.9
-        emitter.sizeOverLife = .linear(from: 4, to: 1.5)
-        emitter.colorOverLife = .linear(from: [0.4, 0.8, 1, 1], to: [0.2, 0.4, 1, 0])
-        return PreviewEffect("Fountain", emitter)
+        PreviewEffect("Fountain") {
+            ShapeModule(shape: .box(size: [60, 1, 0]))
+            RateModule(birthRate: 0)
+            LifetimeModule(range: 0.5...0.9)
+            VelocityModule(velocity: [0, -220, 0], spread: 90, speedVariation: 60)
+            GravityModule(acceleration: [0, 600, 0])
+            DragModule(amount: 0.3)
+            PlaneConstraintModule()
+            SizeOverLifeModule(curve: .linear(from: 4, to: 1.5))
+            ColorOverLifeModule(color: .linear(from: [0.4, 0.8, 1, 1], to: [0.2, 0.4, 1, 0]))
+        }
     }()
 
     static let width: CGFloat = 360
@@ -487,27 +473,29 @@ private struct TypingSparksPreview: View {
     @State private var passwordWidth: CGFloat = 0
     @State private var fieldFrames: [Int: CGRect] = [:]
     @State private var sparks: PreviewEffect = {
-        var spark = ParticleEmitter.default2D
-        spark.birthRate = 0
-        spark.velocity = [0, -90, 0]
-        spark.velocitySpread = 140
-        spark.speedVariation = 50
-        spark.gravity = [0, 320, 0]
-        spark.drag = 1
-        spark.lifetime = 0.25...0.5
-        spark.sizeOverLife = .linear(from: 5, to: 1)
-        spark.colorOverLife = .linear(from: [1, 0.85, 0.4, 1], to: [1, 0.3, 0.1, 0])
-        var error = spark
-        error.shape = .box(size: [240, 24, 0])
-        error.velocity = .zero
-        error.velocitySpread = 120
-        error.gravity = [0, 200, 0]
-        error.lifetime = 0.4...0.8
-        error.sizeOverLife = .linear(from: 4, to: 1)
-        error.colorOverLife = .linear(from: [1, 0.2, 0.2, 1], to: [0.6, 0, 0, 0])
-        return PreviewEffect("Sparks", layers: [
-            EmitterDescription("Keystroke", settings: spark, sprite: .spark, capacity: 2_000),
-            EmitterDescription("Wrong Password", settings: error, capacity: 2_000),
+        PreviewEffect("Sparks", layers: [
+            EmitterDescription("Keystroke", sprite: .spark, capacity: 2_000) {
+                ShapeModule(shape: .point)
+                RateModule(birthRate: 0)
+                LifetimeModule(range: 0.25...0.5)
+                VelocityModule(velocity: [0, -90, 0], spread: 140, speedVariation: 50)
+                GravityModule(acceleration: [0, 320, 0])
+                DragModule(amount: 1)
+                PlaneConstraintModule()
+                SizeOverLifeModule(curve: .linear(from: 5, to: 1))
+                ColorOverLifeModule(color: .linear(from: [1, 0.85, 0.4, 1], to: [1, 0.3, 0.1, 0]))
+            },
+            EmitterDescription("Wrong Password", capacity: 2_000) {
+                ShapeModule(shape: .box(size: [240, 24, 0]))
+                RateModule(birthRate: 0)
+                LifetimeModule(range: 0.4...0.8)
+                VelocityModule(velocity: .zero, spread: 120, speedVariation: 50)
+                GravityModule(acceleration: [0, 200, 0])
+                DragModule(amount: 1)
+                PlaneConstraintModule()
+                SizeOverLifeModule(curve: .linear(from: 4, to: 1))
+                ColorOverLifeModule(color: .linear(from: [1, 0.2, 0.2, 1], to: [0.6, 0, 0, 0]))
+            },
         ])
     }()
 

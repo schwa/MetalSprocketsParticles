@@ -382,7 +382,7 @@ public final class ParticleSystemRuntime {
     }
 
     /// Creates a system with a single emitter.
-    public convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), capacity: Int, emitter: ParticleEmitter = ParticleEmitter(), seed: UInt32 = 0) throws {
+    public convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), capacity: Int, emitter: ParticleEmitter, seed: UInt32 = 0) throws {
         try self.init(device: device, emitters: [emitter], capacity: capacity, seed: seed)
     }
 

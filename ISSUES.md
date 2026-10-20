@@ -4371,6 +4371,7 @@ Gate: no regression in particles-bench --compare (#184) for presets and scenario
 Part of #197.
 
 - `2026-10-20T19:28:47Z`: Before ParticleEmitter goes internal, move its remaining public users to modules: ParticleView+Previews (8 previews use ParticleEmitter.default2D), particles-bench, ParticleSystemRuntime's public API (init(emitter:), emitters[].settings, setEmitters), SubEmitter.transition(into:), the demo (#203). Gotcha found in #202: EmitterDescription and SubEmitter cache modules.lowered() in a didSet, which doesn't fire inside initializers; set the cache in every init.
+- `2026-10-20T19:48:56Z`: Non-UI prep done: LoweredModule (internal) holds apply/lift; runtime has module APIs (init(modules:), init(capacity:modules:), setEmitters/addEmitter with modules, Emitter.modules); EmitterModules.default2D; SubEmitter.transition(into: EmitterModules); previews and particles-bench build modules. Left before flipping ParticleEmitter to internal: the demo app and its tests (#203), and MetalSprocketsParticlesUITests (no @testable).
 
 ---
 

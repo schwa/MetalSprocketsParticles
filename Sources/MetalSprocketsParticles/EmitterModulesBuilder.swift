@@ -63,6 +63,14 @@ public extension EmitterModules {
     }
 }
 
+public extension EmitterModules {
+    /// A starting point for 2D effects (`ParticleSystem.is2D`), in points: a fountain shooting up the screen at a few
+    /// hundred points a second, falling back down (+y), 8 points across, kept on its plane.
+    static var default2D: Self {
+        Self(ParticleEmitter.default2D)
+    }
+}
+
 public extension EmitterDescription {
     /// An emitter written as a list of modules; see `EmitterModulesBuilder`.
     init(

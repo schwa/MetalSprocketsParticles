@@ -75,7 +75,17 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         sprite: ParticleSprite = .softDot,
         continuesLife: Bool = false
     ) -> Self {
-        var transition = Self(occasion: occasion, countPerEvent: 1, velocityFactor: 1, settings: settings)
+        transition(on: occasion, into: EmitterModules(settings), sprite: sprite, continuesLife: continuesLife)
+    }
+
+    /// The parent turns into one particle with `modules` and `sprite` when `occasion` happens; see the settings version.
+    public static func transition(
+        on occasion: Occasion,
+        into modules: EmitterModules,
+        sprite: ParticleSprite = .softDot,
+        continuesLife: Bool = false
+    ) -> Self {
+        var transition = Self(occasion: occasion, countPerEvent: 1, velocityFactor: 1, modules: modules)
         transition.sprite = sprite
         transition.replacesParent = true
         transition.continuesParentLife = continuesLife

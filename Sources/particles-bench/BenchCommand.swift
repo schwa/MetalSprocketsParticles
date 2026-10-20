@@ -112,27 +112,26 @@ struct BenchCommand: ParsableCommand {
     }
 
     /// A typical effect: particles spread through the view at a moderate on-screen size, two colliders, one field.
-    private func emitter(_ scenario: Scenario) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.position = [0, 1.5, 0]
-        emitter.shape = .sphere(radius: 1)
-        emitter.velocity = .zero
-        emitter.velocitySpread = 1
-        emitter.gravity = [0, -1, 0]
-        emitter.drag = 0.5
+    private func emitter(_ scenario: Scenario, updateFunction: ParticleFunction?) -> EmitterModules {
         let lifetime: Float = 2
-        emitter.lifetime = lifetime...lifetime
-        emitter.birthRate = Float(scenario.alive) / lifetime
-        emitter.sizeOverLife = .constant(scenario.size)
-        emitter.sortMode = scenario.sortMode
-        return emitter
+        return EmitterModules {
+            ShapeModule(position: [0, 1.5, 0], shape: .sphere(radius: 1))
+            RateModule(birthRate: Float(scenario.alive) / lifetime)
+            LifetimeModule(range: lifetime...lifetime)
+            VelocityModule(velocity: .zero, spread: 1)
+            GravityModule(acceleration: [0, -1, 0])
+            DragModule(amount: 0.5)
+            if let updateFunction {
+                UpdateFunctionModule(function: updateFunction)
+            }
+            SizeOverLifeModule(curve: .constant(scenario.size))
+            SpriteModule(sortMode: scenario.sortMode)
+        }
     }
 
     private func measure(_ scenario: Scenario) throws -> (simulate: Double, render: Double, cpu: Double) {
         let renderer = try OffscreenRenderer(size: CGSize(width: width, height: height))
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: scenario.capacity, emitter: emitter(scenario), seed: 0)
-        system.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: [0, 0.5, 0], radius: 0.6)]
-        system.forceFields = scenario.turbulence ? [.turbulence(strength: 1, scale: 1, speed: 0.3)] : []
+        var function: ParticleFunction?
         if updateFunction == "noop" || updateFunction == "work" {
             let source = """
             [[visible]] void noop(thread ParticleState &p, float dt, float time, constant float4 *parameters) {}
@@ -142,8 +141,11 @@ struct BenchCommand: ParsableCommand {
                 p.position += normalize(p.velocity + 1e-4) * 0.001 * cos(p.age * 6.0);
             }
             """
-            system.emitters[0].settings.updateFunction = ParticleFunction(source: source, name: updateFunction, parameters: [[0.5, 0, 0, 0]])
+            function = ParticleFunction(source: source, name: updateFunction, parameters: [[0.5, 0, 0, 0]])
         }
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: scenario.capacity, modules: emitter(scenario, updateFunction: function), seed: 0)
+        system.colliders = [.plane(normal: [0, 1, 0], distance: 0), .sphere(center: [0, 0.5, 0], radius: 0.6)]
+        system.forceFields = scenario.turbulence ? [.turbulence(strength: 1, scale: 1, speed: 0.3)] : []
         let view = simd_float4x4(lookingFrom: [0, 2, 5], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(width) / Float(height), near: 0.1, far: 100)
 
