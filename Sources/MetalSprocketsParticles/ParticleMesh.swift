@@ -108,6 +108,53 @@ public enum ParticleMesh: Sendable, Hashable, Codable {
     }
 }
 
+/// Built-in shapes keep the synthesized form (`{"cube": {}}`); `triangles` is a PLY file next to the effect's JSON
+/// (see EffectResources), `{"triangles": "particle-mesh-<hash>.ply"}`. Inline triangles are not read (#169, #181).
+extension ParticleMesh {
+    private enum CodingKeys: String, CodingKey {
+        case cube, tetrahedron, coin, triangles
+    }
+
+    private enum NoKeys: CodingKey {}
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if container.contains(.triangles) {
+            guard (try? container.decode(String.self, forKey: .triangles)) != nil else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .triangles, in: container,
+                    debugDescription: "Inline particle meshes are not read; effects keep them in PLY files next to their JSON."
+                )
+            }
+            let (positions, normals) = try ParticleMeshFile.triangles(from: container.decodeResource(forKey: .triangles, decoder: decoder))
+            self = .triangles(positions: positions, normals: normals)
+        } else if container.contains(.cube) {
+            self = .cube
+        } else if container.contains(.tetrahedron) {
+            self = .tetrahedron
+        } else if container.contains(.coin) {
+            self = .coin
+        } else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Expected cube, tetrahedron, coin, or triangles"))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .cube:
+            _ = container.nestedContainer(keyedBy: NoKeys.self, forKey: .cube)
+        case .tetrahedron:
+            _ = container.nestedContainer(keyedBy: NoKeys.self, forKey: .tetrahedron)
+        case .coin:
+            _ = container.nestedContainer(keyedBy: NoKeys.self, forKey: .coin)
+        case let .triangles(positions, normals):
+            let data = try ParticleMeshFile.plyData(positions: positions, normals: normals)
+            try container.encodeResource(data, forKey: .triangles, encoder: encoder, prefix: "particle-mesh", fileExtension: "ply")
+        }
+    }
+}
+
 extension ParticleSystemRuntime {
     /// The GPU vertices for `mesh`, made once per system.
     func vertexBuffer(for mesh: ParticleMesh) throws -> (buffer: MTLBuffer, vertexCount: Int)? {

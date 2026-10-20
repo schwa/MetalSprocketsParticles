@@ -3837,12 +3837,13 @@ Approach: start with the gaps by impact; tests should check behavior, not just t
 ## 181: Custom particle meshes as mesh files via MeshFile/Model I/O, not inline arrays
 
 +++
-status: new
+status: closed
 priority: low
 kind: enhancement
 labels: area:api, effort:s
 created: 2026-10-20T17:48:04Z
-updated: 2026-10-20T17:59:15Z
+updated: 2026-10-20T18:17:44Z
+closed: 2026-10-20T18:17:44Z
 +++
 
 Split from #177. ParticleMesh.triangles(positions:normals:) (custom mesh particles) is still saved inline in effect JSON. No preset uses it yet.

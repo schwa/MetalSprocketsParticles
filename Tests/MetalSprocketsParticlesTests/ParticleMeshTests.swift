@@ -43,6 +43,83 @@ struct ParticleMeshTests {
         var emitter = ParticleEmitter()
         emitter.particleMesh = .coin
         #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).particleMesh == .coin)
+        let json = try #require(String(bytes: JSONEncoder().encode(ParticleMesh.cube), encoding: .utf8))
+        #expect(json == #"{"cube":{}}"#)
+    }
+
+    /// Custom meshes are saved as a PLY file (#181), exactly; shared corners are written once.
+    @Test func customMeshesRoundTripThroughPLYFiles() throws {
+        guard case let .triangles(positions, normals) = ParticleMesh(mesh: Mesh(
+            positions: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]], faces: [[0, 1, 2, 3]]
+        )) else {
+            Issue.record("Expected triangles")
+            return
+        }
+        var emitter = ParticleEmitter()
+        emitter.particleMesh = .triangles(positions: positions + [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]], normals: normals + [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let resources = EffectResources()
+        let json = try resources.encoder().encode(emitter)
+        let (name, data) = try #require(resources.files.first)
+        #expect(name.hasPrefix("particle-mesh-") && name.hasSuffix(".ply"))
+        #expect(String(bytes: json, encoding: .utf8)?.contains("\"\(name)\"") == true)
+        let end = try #require(data.range(of: Data("end_header".utf8)))
+        let header = try #require(String(bytes: data[..<end.lowerBound], encoding: .ascii))
+        // The square's two triangles share two corners: 4 vertices, plus 3 for the extra triangle.
+        #expect(header.contains("element vertex 7") && header.contains("element face 3"))
+        let decoded = try EffectResources(files: resources.files).decoder().decode(ParticleEmitter.self, from: json)
+        #expect(decoded.particleMesh == emitter.particleMesh)
+    }
+
+    /// Meshes from other tools: ASCII, quads (split into triangles), and no normals (flat normals are made).
+    @Test func customMeshesFromOtherToolsLoad() throws {
+        let text = """
+        ply
+        format ascii 1.0
+        element vertex 4
+        property float x
+        property float y
+        property float z
+        element face 1
+        property list uchar int vertex_indices
+        end_header
+        0 0 0
+        1 0 0
+        1 1 0
+        0 1 0
+        4 0 1 2 3
+
+        """
+        let (positions, normals) = try ParticleMeshFile.triangles(from: Data(text.utf8))
+        #expect(positions == [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 0], [1, 1, 0], [0, 1, 0]])
+        #expect(normals.allSatisfy { simd_normalize($0) == [0, 0, 1] })
+    }
+
+    @Test func badCustomMeshFilesAreErrors() {
+        let noFaces = "ply\nformat ascii 1.0\nelement vertex 1\nproperty float x\nproperty float y\nproperty float z\nend_header\n0 0 0\n"
+        #expect(throws: ParticleMeshFileError.noFaces) { try ParticleMeshFile.triangles(from: Data(noFaces.utf8)) }
+        let outOfRange = """
+        ply
+        format ascii 1.0
+        element vertex 1
+        property float x
+        property float y
+        property float z
+        element face 1
+        property list uchar int vertex_indices
+        end_header
+        0 0 0
+        3 0 1 2
+
+        """
+        #expect(throws: ParticleMeshFileError.indexOutOfRange) { try ParticleMeshFile.triangles(from: Data(outOfRange.utf8)) }
+        let noPositions = "ply\nformat ascii 1.0\nelement vertex 1\nproperty float a\nelement face 0\nproperty list uchar int vertex_indices\nend_header\n0\n"
+        #expect(throws: ParticleMeshFileError.noPositions) { try ParticleMeshFile.triangles(from: Data(noPositions.utf8)) }
+    }
+
+    /// Inline triangles (the old format) are not read, per #169's decision for inline data.
+    @Test func inlineCustomMeshesAreAnError() {
+        let json = #"{"triangles": {"positions": [[0, 0, 0], [1, 0, 0], [0, 1, 0]], "normals": [[0, 0, 1], [0, 0, 1], [0, 0, 1]]}}"#
+        #expect(throws: DecodingError.self) { try EffectResources().decoder().decode(ParticleMesh.self, from: Data(json.utf8)) }
     }
 
     /// One opaque cube particle, 0.5 across, in the middle: solid at the center, nothing near the corners of the view.
