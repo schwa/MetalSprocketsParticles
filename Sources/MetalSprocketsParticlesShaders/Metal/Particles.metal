@@ -1273,12 +1273,27 @@ static float4 applyColorVariation(float4 color, float4 offset) {
     return float4(hsvToRGB(hsv), saturate(color.a + offset.w));
 }
 
+// Whether the vertex shader calls the shading function (#172). False for draws that skip it (unlit sprites, trails,
+// ribbons) and for per-pixel shading: the call compiles out.
+constant bool particleHasShading [[function_constant(0)]];
+// Per-pixel shading (#174): the vertex shader passes the shading input on and the fragment shader calls the function.
+constant bool particleShadesPerPixel [[function_constant(1)]];
+
 struct VertexOut {
     float4 position [[position]];
     float4 color;
     float2 uv;       // Quad corner space, -1...1. Drives the procedural dot.
     float2 texcoord; // Sprite sheet cell coordinates.
     float viewDepth; // Distance in front of the camera, for soft particles.
+    // ShadingInput for per-pixel shading, interpolated; absent otherwise. `color` is the unshaded color.
+    float3 shadingPosition [[function_constant(particleShadesPerPixel)]];
+    float3 shadingNormal [[function_constant(particleShadesPerPixel)]];
+    float3 shadingSphereNormal [[function_constant(particleShadesPerPixel)]];
+    float3 shadingToCamera [[function_constant(particleShadesPerPixel)]];
+    float shadingAge [[function_constant(particleShadesPerPixel)]];
+    float shadingLifetime [[function_constant(particleShadesPerPixel)]];
+    uint shadingID [[flat, function_constant(particleShadesPerPixel)]];
+    uint shadingIsMesh [[flat, function_constant(particleShadesPerPixel)]];
     // Per-pixel foil glint on sprites (zero elsewhere): the card's normal and in-plane axes, the half vector toward the
     // first light (or foil's fixed light), and a per-particle seed for its crinkle.
     float3 foilNormal;
@@ -1320,6 +1335,7 @@ struct ShadingInput {
     float lifetime;
     uint id;
     uint isMesh;
+    float2 uv; // Sprites: quad corner space, -1...1 (per pixel, the pixel's spot on the quad). Trails and ribbons: along, across.
 };
 
 struct ShadingScene {
@@ -1395,10 +1411,6 @@ static float3 foilShade(float3 foil, ShadingScene scene, constant ParticleLightD
     return in.color;
 }
 
-// Whether this pipeline calls the shading function. False for draws that skip it (unlit sprites, trails, ribbons): the
-// shading code compiles out, so those vertex shaders are what they were before shading functions (#172).
-constant bool particleHasShading [[function_constant(0)]];
-
 // The emitter's shading function for `in`. Callers check particleHasShading first, so unlit sprites skip building the
 // input.
 static float4 callShading(constant RenderUniforms &uniforms, visible_function_table<ShadingFunction> table, constant float4 *parameters, constant ParticleLightData *lights, const device ParticleLightData *particleLights, ShadingInput in) {
@@ -1408,7 +1420,21 @@ static float4 callShading(constant RenderUniforms &uniforms, visible_function_ta
 // Trails and ribbons: shaded at `position`, facing the camera.
 static ShadingInput facingInput(constant RenderUniforms &uniforms, float3 position, float4 color, Particle p, uint index) {
     float3 normal = sphereNormal(uniforms, position, float3(0));
-    return { position, normal, normal, normalize(uniforms.cameraPosition - position), color, p.position.w, p.velocity.w, index, 0 };
+    return { position, normal, normal, normalize(uniforms.cameraPosition - position), color, p.position.w, p.velocity.w, index, 0, float2(0) };
+}
+
+// Per pixel: hands `in` to the fragment shader instead of calling the function here.
+static void storeShading(thread VertexOut &out, ShadingInput in) {
+    if (particleShadesPerPixel) {
+        out.shadingPosition = in.position;
+        out.shadingNormal = in.normal;
+        out.shadingSphereNormal = in.sphereNormal;
+        out.shadingToCamera = in.toCamera;
+        out.shadingAge = in.age;
+        out.shadingLifetime = in.lifetime;
+        out.shadingID = in.id;
+        out.shadingIsMesh = in.isMesh;
+    }
 }
 
 // One thread per light: the first live particle in this light's stretch of the slice becomes a point light, dimming
@@ -1569,6 +1595,8 @@ vertex VertexOut particleTrailVertex(
     }
     if (particleHasShading) {
         out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, facingInput(uniforms, here, out.color, p, index));
+    } else if (particleShadesPerPixel) {
+        storeShading(out, facingInput(uniforms, here, out.color, p, index));
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
@@ -1667,6 +1695,8 @@ vertex VertexOut particleRibbonVertex(
     }
     if (particleHasShading) {
         out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, facingInput(uniforms, here, out.color, p, index));
+    } else if (particleShadesPerPixel) {
+        storeShading(out, facingInput(uniforms, here, out.color, p, index));
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
@@ -1797,13 +1827,15 @@ vertex VertexOut particleVertex(
         out.color *= unpack_unorm4x8_to_float(tint);
     }
     bool isFoil = uniforms.foilGlint > 0 || uniforms.foilIridescence > 0;
-    if (particleHasShading || isFoil) {
+    if (particleHasShading || particleShadesPerPixel || isFoil) {
         // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one.
         float3 normal = normalize(cross(right, up));
         float3 viewDirection = normalize(toCamera);
+        ShadingInput input = { center, normal, sphereNormal(uniforms, center, right * offset.x + up * offset.y), viewDirection, out.color, age, lifetime, index, 0, corner };
         if (particleHasShading) {
-            ShadingInput input = { center, normal, sphereNormal(uniforms, center, right * offset.x + up * offset.y), viewDirection, out.color, age, lifetime, index, 0 };
             out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, input);
+        } else {
+            storeShading(out, input);
         }
         if (isFoil) {
             // Foil's color shift and edge darkening are per vertex (the shading function); its glint per pixel, in the
@@ -1932,9 +1964,11 @@ vertex VertexOut particleMeshVertex(
     float3 toCamera = normalize(uniforms.cameraPosition - world);
     // Meshes always call their shading function (particleHasShading is always true for them): even unlit ones shade
     // toward the camera.
+    ShadingInput input = { world, normal, normal, toCamera, out.color, age, lifetime, index, 1, float2(0) };
     if (particleHasShading) {
-        ShadingInput input = { world, normal, normal, toCamera, out.color, age, lifetime, index, 1 };
         out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, input);
+    } else {
+        storeShading(out, input);
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
@@ -1946,9 +1980,20 @@ fragment float4 particleFragment(
     constant RenderUniforms &uniforms [[buffer(0)]],
     texture2d<float, access::sample> sprite [[texture(0)]],
     sampler spriteSampler [[sampler(0)]],
-    texture2d<float, access::read> sceneDepth [[texture(1)]]
+    texture2d<float, access::read> sceneDepth [[texture(1)]],
+    constant ParticleLightData *lights [[buffer(5)]],
+    const device ParticleLightData *particleLights [[buffer(6)]],
+    visible_function_table<ShadingFunction> shadingFunction [[buffer(12)]],
+    constant float4 *shadingParameters [[buffer(13)]]
 ) {
     float4 color = in.color;
+    if (particleShadesPerPixel) {
+        ShadingInput input = {
+            in.shadingPosition, normalize(in.shadingNormal), normalize(in.shadingSphereNormal), normalize(in.shadingToCamera),
+            in.color, in.shadingAge, in.shadingLifetime, in.shadingID, in.shadingIsMesh, in.uv
+        };
+        color = shadingFunction[0](input, shadingScene(uniforms), lights, particleLights, shadingParameters);
+    }
     // Soft particles: fade out where the particle comes within `softness` of the scene behind it.
     if (uniforms.hasSceneDepth != 0 && uniforms.softness > 0) {
         uint2 pixel = uint2(in.position.xy);

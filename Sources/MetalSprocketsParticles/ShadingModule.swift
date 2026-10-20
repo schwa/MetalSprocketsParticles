@@ -28,12 +28,35 @@ public struct ShadingModule: LoweredModule {
     public static let kind = "shading"
     public static let isRequired = true
     public var model: ShadingModel
+    /// Call the function per pixel instead of per vertex (#174): smooth highlights across large faces, at the cost of a
+    /// call per pixel. The input is interpolated; `uv` is the pixel's spot on the quad.
+    public var perPixel: Bool
 
-    public init(model: ShadingModel = .unlit) {
+    public init(model: ShadingModel = .unlit, perPixel: Bool = false) {
         self.model = model
+        self.perPixel = perPixel
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model, perPixel
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        model = try container.decode(ShadingModel.self, forKey: .model)
+        perPixel = try container.decodeIfPresent(Bool.self, forKey: .perPixel) ?? false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(model, forKey: .model)
+        if perPixel {
+            try container.encode(perPixel, forKey: .perPixel)
+        }
     }
 
     init?(lifting emitter: ParticleEmitter) {
+        perPixel = emitter.shadesPerPixel
         if let function = emitter.shadingFunction {
             model = .custom(function: function)
         } else if let foil = emitter.foil {
@@ -47,6 +70,7 @@ public struct ShadingModule: LoweredModule {
         emitter.isLit = false
         emitter.foil = nil
         emitter.shadingFunction = nil
+        emitter.shadesPerPixel = perPixel
         switch model {
         case .unlit: break
         case .lit: emitter.isLit = true
@@ -70,6 +94,7 @@ public struct ShadingModule: LoweredModule {
         float lifetime;
         uint id;
         uint isMesh;
+        float2 uv;           // Sprites: the quad's corner space, -1...1 (per pixel: the pixel's spot). Trails, ribbons: along, across.
     };
 
     struct ShadingScene {
@@ -126,11 +151,19 @@ struct BuiltInShading {
 }
 
 extension ParticleSystemRuntime {
-    /// A particle vertex shader with the shading call compiled in or out (`particleHasShading`).
-    func vertexShader(_ name: String, shading: Bool) throws -> VertexShader {
+    /// A particle vertex shader that calls the shading function per vertex, hands it on per pixel, or neither.
+    func vertexShader(_ name: String, calls: Bool, perPixel: Bool) throws -> VertexShader {
         var constants = FunctionConstants()
-        constants["particleHasShading"] = .bool(shading)
+        constants["particleHasShading"] = .bool(calls && !perPixel)
+        constants["particleShadesPerPixel"] = .bool(calls && perPixel)
         return try library.function(type: VertexShader.self, named: name, constants: constants)
+    }
+
+    /// The particle fragment shader, calling the shading function per pixel or not.
+    func fragmentShader(perPixel: Bool) throws -> FragmentShader {
+        var constants = FunctionConstants()
+        constants["particleShadesPerPixel"] = .bool(perPixel)
+        return try library.function(type: FragmentShader.self, named: "particleFragment", constants: constants)
     }
 
     func builtInShadingFunctions() throws -> BuiltInShading {
@@ -149,7 +182,12 @@ extension ParticleSystemRuntime {
     /// The function `draw` calls per vertex, its parameters, and whether it is called at all. Matches the shading
     /// before #172: foil only when it glints or shifts color, and never on trails and ribbons; unlit sprites, trails,
     /// and ribbons skip the call.
-    func shading(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) {
+    func shading(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool, perPixel: Bool) {
+        let shading: (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) = try shadingPerVertex(for: settings, draw: draw)
+        return (shading.function, shading.parameters, shading.calls, shading.calls && settings.shadesPerPixel)
+    }
+
+    private func shadingPerVertex(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) {
         let builtIn = try builtInShadingFunctions()
         let isMesh = !draw.isRibbon && draw.mesh != nil
         let isStrip = draw.isRibbon || (draw.mesh == nil && draw.uniforms.trailPointCount > 1)

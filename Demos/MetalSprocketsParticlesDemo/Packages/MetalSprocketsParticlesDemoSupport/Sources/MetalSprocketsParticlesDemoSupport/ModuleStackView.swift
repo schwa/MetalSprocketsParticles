@@ -606,7 +606,12 @@ struct RenderModuleEditor: View {
         case let .imageSequence(value):
             ImageSequenceEditorView(sequence: payload($module, value, RenderModule.imageSequence).sequence)
         case let .shading(value):
-            ShadingModuleEditor(model: payload($module, value, RenderModule.shading).model)
+            let shading = payload($module, value, RenderModule.shading)
+            ShadingModuleEditor(model: shading.model)
+            if value.model != .unlit {
+                Toggle("Per Pixel", isOn: shading.perPixel)
+                    .help("Shade every pixel instead of every vertex: smooth highlights across large faces, at the cost of a function call per pixel.")
+            }
         case let .mesh(value):
             LabeledContent("Mesh", value: value.mesh.label)
             Text("Change it with Draw As in Appearance.").font(.caption)

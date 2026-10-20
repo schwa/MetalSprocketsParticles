@@ -221,6 +221,8 @@ struct ParticleEmitter: Sendable, Equatable, Codable {
     var spawnModules: [StitchedModule] = []
     /// A custom shading function (`ShadingModel.custom`), in place of the built-in unlit, lit, or foil.
     var shadingFunction: ParticleFunction?
+    /// Call the shading function per pixel instead of per vertex (`ShadingModule.perPixel`).
+    var shadesPerPixel = false
 
     init() {}
 }
@@ -336,6 +338,7 @@ extension ParticleEmitter {
         try container.update(&updateModules, .updateModules)
         try container.update(&spawnModules, .spawnModules)
         shadingFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .shadingFunction)
+        try container.update(&shadesPerPixel, .shadesPerPixel)
     }
 }
 

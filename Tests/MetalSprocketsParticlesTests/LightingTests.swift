@@ -88,7 +88,25 @@ struct LightingTests {
         let shaded = try centerBrightness { $0.shadingFunction = half }
         // 0.2 linear is about 0.48 in sRGB.
         #expect(shaded > 0.4 && shaded < 0.56)
+        // Per pixel (#174): the same function in the fragment shader.
+        let perPixel = try centerBrightness {
+            $0.shadingFunction = half
+            $0.shadesPerPixel = true
+        }
+        #expect(abs(perPixel - shaded) < 0.02)
         #expect(try ShadingModule.template.validateShading(device: try #require(MTLCreateSystemDefaultDevice())) == ())
+    }
+
+    /// Lit per pixel: the sphere normal is interpolated, so the center faces the light fully; per vertex, the center only
+    /// averages the corners, which lean away. Per pixel is brighter there.
+    @Test func litPerPixelIsBrighterAtTheCenter() throws {
+        let lights: (ParticleSystemRuntime) -> Void = { $0.lights = [.directional(direction: [0, 0, -1])] }
+        let perVertex = try centerBrightness({ $0.isLit = true }, system: lights)
+        let perPixel = try centerBrightness({
+            $0.isLit = true
+            $0.shadesPerPixel = true
+        }, system: lights)
+        #expect(perPixel > perVertex + 0.02, "per pixel \(perPixel), per vertex \(perVertex)")
     }
 
     @Test func pointLightRangeFallsOff() throws {
