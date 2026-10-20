@@ -215,7 +215,7 @@ public final class ParticleSystemRuntime {
     /// Textures for `ParticleEmitter.colorImage`, made once per image.
     var colorImageTextures: [Data: MTLTexture] = [:]
     /// User functions compiled by `visibleFunction(for:)`.
-    var compiledFunctions: [FunctionKey: VisibleFunction] = [:]
+    var compiledFunctions: [SlotFunction.Key: VisibleFunction] = [:]
 
     /// Instances for every emitter's `settings.subEmitters`, stored after all emitters in the shared buffer.
     private(set) var subEmitterInstances: [Emitter] = []

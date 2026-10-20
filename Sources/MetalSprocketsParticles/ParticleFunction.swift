@@ -72,9 +72,6 @@ public extension ParticleFunction {
     }
 
     internal func compile(device: MTLDevice) throws -> VisibleFunction {
-        if let modules = StitchedModule.modules(in: self) {
-            return try StitchedModule.stitch(modules, name: name, device: device)
-        }
         let library: MTLLibrary
         do {
             library = try device.makeLibrary(source: Self.prelude + source, options: nil)
@@ -128,9 +125,43 @@ enum ParticleFunctionSlot: CaseIterable {
     }
 }
 
+/// What fills a function slot: a user function, or the slot's stitched modules as one function.
+enum SlotFunction: Equatable {
+    case user(ParticleFunction)
+    case stitched([StitchedModule], slot: ParticleFunctionSlot)
+
+    /// What the compiled function depends on: not parameter values, which do not change what is linked.
+    enum Key: Hashable {
+        case user(source: String, name: String)
+        case stitched(modules: [StitchedModule.Identity], slot: ParticleFunctionSlot)
+    }
+
+    var key: Key {
+        switch self {
+        case let .user(function): .user(source: function.source, name: function.name)
+        case let .stitched(modules, slot): .stitched(modules: modules.map(\.identity), slot: slot)
+        }
+    }
+
+    /// The slot's parameters: the function's, or each module's padded to its `parameterCount`, in stack order.
+    var parameters: [SIMD4<Float>] {
+        switch self {
+        case let .user(function): function.parameters
+        case let .stitched(modules, _): modules.flatMap(\.paddedParameters)
+        }
+    }
+
+    func compile(device: MTLDevice) throws -> VisibleFunction {
+        switch self {
+        case let .user(function): try function.compile(device: device)
+        case let .stitched(modules, slot): try StitchedModule.stitch(modules, name: StitchedModule.functionName(for: modules, slot: slot), device: device)
+        }
+    }
+}
+
 extension ParticleEmitter {
     /// This emitter's and its sub-emitters' functions.
-    var allFunctions: [ParticleFunction] {
+    var allFunctions: [SlotFunction] {
         ([self] + subEmitters.map(\.settings)).flatMap { settings in
             ParticleFunctionSlot.allCases.compactMap { settings.function(for: $0) }
         }
@@ -138,15 +169,15 @@ extension ParticleEmitter {
 
     /// The slot's function: the user function, or the slot's stitched modules as one function. A function wins over
     /// modules; `validateFunctions` reports having both.
-    func function(for slot: ParticleFunctionSlot) -> ParticleFunction? {
+    func function(for slot: ParticleFunctionSlot) -> SlotFunction? {
         if let function = self[keyPath: slot.keyPath] {
-            return function
+            return .user(function)
         }
         guard let keyPath = slot.modulesKeyPath else {
             return nil
         }
         let modules = self[keyPath: keyPath]
-        return modules.isEmpty ? nil : StitchedModule.function(for: modules, slot: slot)
+        return modules.isEmpty ? nil : .stitched(modules, slot: slot)
     }
 }
 
@@ -162,7 +193,7 @@ public extension ParticleSystem {
             }
         }
         for function in layers.flatMap(\.settings.allFunctions) {
-            try function.validate(device: device)
+            _ = try function.compile(device: device)
         }
     }
 }
@@ -192,13 +223,12 @@ extension ParticleSystemRuntime {
     func functionTables(for dispatch: FramePlan.Dispatch) throws -> FunctionTables {
         var functions: [VisibleFunction] = []
         var linked: [VisibleFunction] = []
-        // By compiled function (source and name), not by value: parameters do not change what is linked.
-        var linkedKeys: Set<FunctionKey> = []
+        var linkedKeys: Set<SlotFunction.Key> = []
         for (slot, function) in zip(ParticleFunctionSlot.allCases, dispatch.functions) {
             if let function {
                 let compiled = try visibleFunction(for: function)
                 functions.append(compiled)
-                if linkedKeys.insert(FunctionKey(source: function.source, name: function.name)).inserted {
+                if linkedKeys.insert(function.key).inserted {
                     linked.append(compiled)
                 }
             } else {
@@ -214,19 +244,14 @@ extension ParticleSystemRuntime {
         return FunctionTables(functions: functions, linked: linked, parameters: parameters)
     }
 
-    /// The linked function for `function`, compiled once per source and name. Throws `ParticleFunctionError`.
-    func visibleFunction(for function: ParticleFunction) throws -> VisibleFunction {
-        let key = FunctionKey(source: function.source, name: function.name)
+    /// The linked function for `function`, compiled once per key. Throws `ParticleFunctionError`.
+    func visibleFunction(for function: SlotFunction) throws -> VisibleFunction {
+        let key = function.key
         if let cached = compiledFunctions[key] {
             return cached
         }
         let compiled = try function.compile(device: device)
         compiledFunctions[key] = compiled
         return compiled
-    }
-
-    struct FunctionKey: Hashable {
-        var source: String
-        var name: String
     }
 }

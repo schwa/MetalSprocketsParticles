@@ -2,30 +2,26 @@ import Foundation
 import Metal
 import MetalSprockets
 
-// A stack of stitched modules travels through the function-slot machinery as a ParticleFunction whose source is a
-// marker plus the modules. The runtime caches it by that source like any user function, and compile() stitches it.
-
 extension StitchedModule {
-    static let marker = "// particle-stitched-modules\n"
-    private static let separator = "\n// particle-stitched-module-separator\n"
-
-    static func function(for modules: [StitchedModule], slot: ParticleFunctionSlot) -> ParticleFunction {
-        let source = marker + modules.map { "\($0.name)\n\($0.source)" }.joined(separator: separator)
-        let parameters = modules.flatMap { module in
-            Array(module.parameters.prefix(module.parameterCount)) + Array(repeating: SIMD4<Float>.zero, count: max(module.parameterCount - module.parameters.count, 0))
-        }
-        return ParticleFunction(source: source, name: "particleStitched_\(slot)_\(stableHash(source))", parameters: parameters)
+    /// What the stitched code depends on: everything but parameter values.
+    struct Identity: Hashable {
+        var source: String
+        var name: String
     }
 
-    /// The modules (name and source only) a marker function stands for, or nil for an ordinary user function.
-    static func modules(in function: ParticleFunction) -> [StitchedModule]? { // swiftlint:disable:this discouraged_optional_collection
-        guard function.source.hasPrefix(marker) else {
-            return nil
-        }
-        return function.source.dropFirst(marker.count).components(separatedBy: separator).map { entry in
-            let parts = entry.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
-            return StitchedModule(source: parts.count > 1 ? String(parts[1]) : "", name: String(parts[0]))
-        }
+    var identity: Identity {
+        Identity(source: source, name: name)
+    }
+
+    /// `parameters` cut or padded with zeros to `parameterCount`.
+    var paddedParameters: [SIMD4<Float>] {
+        Array(parameters.prefix(parameterCount)) + Array(repeating: .zero, count: max(parameterCount - parameters.count, 0))
+    }
+
+    /// The stitched function's name: one per distinct stack, since linking two functions with one name fails.
+    static func functionName(for modules: [StitchedModule], slot: ParticleFunctionSlot) -> String {
+        let identity = modules.map { "\($0.name)\u{0}\($0.source)" }.joined(separator: "\u{1}")
+        return "particleStitched_\(slot)_\(stableHash(identity))"
     }
 
     /// One visible function named `name` that calls `modules` in order, each passing its returned parameter pointer on.

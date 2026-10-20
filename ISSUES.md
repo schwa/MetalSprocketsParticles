@@ -4224,11 +4224,13 @@ Part of #179 (plan for #178).
 ## 198: Stitched module stacks travel as a fake ParticleFunction with a marker in its source
 
 +++
-status: new
+status: closed
 priority: low
 kind: task
 labels: area:api, effort:s
 created: 2026-10-20T18:57:18Z
+updated: 2026-10-20T19:11:29Z
+closed: 2026-10-20T19:11:29Z
 +++
 
 StitchedModule.function(for:slot:) packs a stack of stitched modules into a ParticleFunction whose source is a marker string plus each module's name and source. ParticleFunction.compile checks for the marker and parses the modules back out (StitchedModule.modules(in:)). This reuses the function-slot cache and binding path, but it is fragile: a module source that contains the separator line breaks parsing, and the type does not say what the slot holds.
@@ -4236,6 +4238,8 @@ StitchedModule.function(for:slot:) packs a stack of stitched modules into a Part
 Fix: give FramePlan.Dispatch.functions a real type per slot (e.g. an enum: user function or stitched stack), key the compiled-function cache by it, and remove the marker. Tests: EmitterModulesTests, StitchingSpikeTests.
 
 Part of #179.
+
+- `2026-10-20T19:11:29Z`: SlotFunction (user function or stitched stack) replaces the marker ParticleFunction; the cache keys by SlotFunction.Key (sources and names, not parameter values).
 
 ---
 

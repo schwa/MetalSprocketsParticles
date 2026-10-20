@@ -48,8 +48,8 @@ struct StitchingInlineSpikeTests {
         using StackFunction = void(thread ParticleState &, float, float, constant float4 *);
         \(mode == "direct" ? "[[visible]] extern void particleStack(thread ParticleState &p, float dt, float time, constant float4 *parameters);" : "")
         kernel void step(device Stored *particles [[buffer(0)]], constant float4 *allParameters [[buffer(1)]],
-                         \(mode == "table" ? "visible_function_table<StackFunction> table [[buffer(2)]]," : "")
-                         uint id [[thread_position_in_grid]]) {
+            \(mode == "table" ? "visible_function_table<StackFunction> table [[buffer(2)]]," : "")
+            uint id [[thread_position_in_grid]]) {
             float dt = 1.0 / 60.0;
             float time = 1;
             Stored s = particles[id];

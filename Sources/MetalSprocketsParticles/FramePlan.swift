@@ -22,7 +22,7 @@ struct FramePlan {
         var subEmitters: [SubEmitterData]
         var subEmitterUniforms: [SimulationUniforms]
         /// The emitter's user functions, one per `ParticleFunctionSlot` in order; the uniforms' has-function flags match.
-        var functions: [ParticleFunction?]
+        var functions: [SlotFunction?]
         /// `colorByPosition` baked, for coloring at birth; one white entry when unused.
         var birthColorCurve: [SIMD4<Float>] = [.one]
     }

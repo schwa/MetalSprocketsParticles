@@ -34,10 +34,13 @@ struct EmitterModulesTests {
         var emitter = ParticleEmitter()
         emitter.updateModules = [StitchedModule(source: "x", name: "a", parameters: [[1, 0, 0, 0]]), StitchedModule(source: "y", name: "b", parameterCount: 2)]
         let function = try #require(emitter.function(for: .update))
-        #expect(function.parameters.count == 3)
-        #expect(StitchedModule.modules(in: function)?.map(\.name) == ["a", "b"])
-        #expect(StitchedModule.modules(in: function)?.map(\.source) == ["x", "y"])
+        #expect(function.parameters == [[1, 0, 0, 0], .zero, .zero])
+        #expect(function == .stitched(emitter.updateModules, slot: .update))
         #expect(emitter.function(for: .spawn) == nil)
+        // Parameter values do not change what is compiled.
+        var changed = emitter
+        changed.updateModules[0].parameters = [[9, 9, 9, 9]]
+        #expect(changed.function(for: .update)?.key == function.key)
     }
 
     @Test func editingSettingsKeepsModuleOrder() {

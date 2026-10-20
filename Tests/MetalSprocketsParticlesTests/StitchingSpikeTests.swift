@@ -95,7 +95,7 @@ struct StitchingSpikeTests {
         // The runtime caches compiled functions by source and name; put the stitched function where it will look.
         let placeholder = ParticleFunction(source: "// stitched", name: "stitchedUpdate", parameters: Self.parameters)
         let actual = try run(emitter(placeholder)) { system in
-            system.compiledFunctions[ParticleSystemRuntime.FunctionKey(source: placeholder.source, name: placeholder.name)] = stitched
+            system.compiledFunctions[SlotFunction.user(placeholder).key] = stitched
         }
         for (a, b) in zip(actual, expected) {
             #expect(a.position == b.position)
@@ -133,7 +133,7 @@ struct StitchingSpikeTests {
             let start = ContinuousClock.now
             let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1_000_000, emitter: settings)
             if let inject, let function {
-                system.compiledFunctions[ParticleSystemRuntime.FunctionKey(source: function.source, name: function.name)] = inject
+                system.compiledFunctions[SlotFunction.user(function).key] = inject
             }
             var times: [Double] = []
             var first: Duration?
