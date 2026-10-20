@@ -41,9 +41,9 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     /// restores them. For effects over an app's UI in points, use the `.overlay` camera and `ParticleEmitter.default2D`.
     public var is2D = false
     /// Saved with the effect. 1: emitters as flat `settings`. 2: emitters as `modules` (#186). 3: appearance modules in
-    /// the render stage. All load.
+    /// the render stage. 4: a shading module in place of the foil module and the sprite's isLit. All load.
     public private(set) var formatVersion = Self.currentFormatVersion
-    public static let currentFormatVersion = 3
+    public static let currentFormatVersion = 4
 
     public var id: String { name }
 

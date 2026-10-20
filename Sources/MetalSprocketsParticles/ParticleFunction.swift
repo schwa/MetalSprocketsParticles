@@ -71,10 +71,10 @@ public extension ParticleFunction {
         _ = try compile(device: device)
     }
 
-    internal func compile(device: MTLDevice) throws -> VisibleFunction {
+    internal func compile(device: MTLDevice, prelude: String = Self.prelude) throws -> VisibleFunction {
         let library: MTLLibrary
         do {
-            library = try device.makeLibrary(source: Self.prelude + source, options: nil)
+            library = try device.makeLibrary(source: prelude + source, options: nil)
         } catch {
             throw ParticleFunctionError(name: name, message: error.localizedDescription)
         }

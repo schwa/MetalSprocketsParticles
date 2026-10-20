@@ -26,7 +26,7 @@
       }
     }
   ],
-  "formatVersion": 3,
+  "formatVersion": 4,
   "is2D": false,
   "layers": [
     {
@@ -39,7 +39,6 @@
             "module": {
               "sprite": {
                 "blendMode": 1,
-                "isLit": false,
                 "minimumScreenSize": 0,
                 "orientation": {
                   "velocityAligned": {
@@ -87,6 +86,15 @@
                       "value": 0.025
                     }
                   ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "shading": {
+                "model": {
+                  "unlit": {}
                 }
               }
             }
@@ -194,7 +202,6 @@
                           "module": {
                             "sprite": {
                               "blendMode": 0,
-                              "isLit": false,
                               "minimumScreenSize": 0,
                               "orientation": {
                                 "billboard": {}
@@ -248,6 +255,15 @@
                                     "value": 0.018
                                   }
                                 ]
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "shading": {
+                              "model": {
+                                "unlit": {}
                               }
                             }
                           }
@@ -353,7 +369,6 @@
                                         "module": {
                                           "sprite": {
                                             "blendMode": 0,
-                                            "isLit": false,
                                             "minimumScreenSize": 0,
                                             "orientation": {
                                               "billboard": {}
@@ -403,6 +418,15 @@
                                                   "value": 0.09
                                                 }
                                               ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "shading": {
+                                            "model": {
+                                              "unlit": {}
                                             }
                                           }
                                         }

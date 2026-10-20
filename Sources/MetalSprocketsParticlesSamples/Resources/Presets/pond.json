@@ -15,7 +15,7 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
-  "formatVersion": 3,
+  "formatVersion": 4,
   "is2D": false,
   "layers": [
     {
@@ -28,7 +28,6 @@
             "module": {
               "sprite": {
                 "blendMode": 1,
-                "isLit": false,
                 "minimumScreenSize": 0,
                 "orientation": {
                   "fixed": {
@@ -80,6 +79,15 @@
                       "value": 0.7
                     }
                   ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "shading": {
+                "model": {
+                  "unlit": {}
                 }
               }
             }
@@ -176,7 +184,6 @@
             "module": {
               "sprite": {
                 "blendMode": 0,
-                "isLit": false,
                 "minimumScreenSize": 0,
                 "orientation": {
                   "billboard": {}
@@ -218,6 +225,15 @@
                       "value": 0.12
                     }
                   ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "shading": {
+                "model": {
+                  "unlit": {}
                 }
               }
             }

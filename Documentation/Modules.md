@@ -7,7 +7,7 @@ Design for #178 / #179. An emitter is module stacks per stage instead of one fla
 - `EmitterDescription.modules: EmitterModules` is the stored, saved model. It holds three stacks:
   - `spawn`: shape, rate, lifetime, velocity, rotation, variation, color image, spawn function, stitched modules.
   - `update` (physics and events): gravity, drag, flocking, collision, plane constraint, events, sub-emitters, triggers, update/collision/death functions, stitched modules.
-  - `render`: sprite (blend, sort, orientation, softness, lighting, minimum size), the appearance modules (color and size over life, color by speed, color by position, image sequence), foil, mesh, trail, ribbon, light, level of detail.
+  - `render`: sprite (blend, sort, orientation, softness, minimum size), the appearance modules (color and size over life, color by speed, color by position, image sequence), shading, mesh, trail, ribbon, light, level of detail.
 - `categoryMask` and `customAttributeCount` belong to no stage; they sit on `EmitterModules`.
 - `ModuleSlot` carries `isEnabled`, so a module can be turned off without losing its settings.
 - Each module is a struct conforming to `ParticleModule` (e.g. `GravityModule`): its settings, its `kind`, whether it is required, the instance editors add, `apply(to:)` onto `ParticleEmitter`, and `init?(lifting:)` back from one. `SpawnModule`, `UpdateModule`, and `RenderModule` are enums wrapping a stage's types (`StageModule`), saved as `{"module": {"gravity": {"acceleration": [...]}}}`.
@@ -44,10 +44,19 @@ Why built-ins don't follow stack order (#207, won't do): the appearance modules 
 
 Read your entries from `parameters` and return `parameters + parameterCount`. The runtime packs each module's parameters (padded to `parameterCount`) in stack order. A stage cannot have both a function and stitched modules; `validateFunctions` reports it.
 
+## Shading (#172)
+
+Every emitter has a `ShadingModule` with a model: `.unlit`, `.lit`, `.foil(settings:)`, or `.custom(function:)`. Each particle vertex shader calls the model's `[[visible]]` function once per vertex with a `ShadingInput` (position, normal, sphere normal for sprites, direction to the camera, color, age, lifetime, id, whether it is a mesh), the scene's lights, and a parameters buffer; the function returns the vertex color.
+
+- The built-ins (`particleShadeUnlit`, `particleShadeLit`, `particleShadeFoil`) hold the shading math that was inline before; golden images are unchanged. They are linked into every pipeline that calls a function, so switching between them never compiles a new pipeline.
+- Unlit sprites, trails, and ribbons do not call a function: their vertex shaders are compiled with `particleHasShading` false, so the call compiles out. Meshes always call one (unlit meshes shade toward the camera).
+- Foil sprites keep their per-pixel glint in the fragment shader; per-pixel shading functions are #174.
+- Custom functions compile after `ShadingModule.prelude`, which declares `ShadingInput`, `ShadingScene`, and `ShadingLight`.
+
 ## Effect files
 
-- Format 3: each layer and sub-emitter has `modules`; appearance modules are in `render`.
-- Format 2 (appearance modules in `update`) and format 1 (flat `settings`) still load. Saving writes format 3. `particles-migrate` rewrites files in place.
+- Format 4: each layer and sub-emitter has `modules`; appearance modules are in `render`; a shading module replaces the foil module and the sprite's `isLit`.
+- Formats 3 (foil module, `isLit`), 2 (appearance modules in `update`), and 1 (flat `settings`) still load. Saving writes format 4. `particles-migrate` rewrites files in place.
 
 ## Not modules
 
@@ -55,4 +64,4 @@ Colliders, force fields, lights, tracked objects, event bursts, and pointer bind
 
 ## Open
 
-- Render-stage stitching (per-pixel shading, #172/#174/#175).
+- Per-pixel shading functions (#174) and reflective foil as a shading model (#175).

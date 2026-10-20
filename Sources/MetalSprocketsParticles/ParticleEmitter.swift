@@ -219,6 +219,8 @@ struct ParticleEmitter: Sendable, Equatable, Codable {
     var updateModules: [StitchedModule] = []
     /// User modules stitched, in order, into the spawn slot. Not with `spawnFunction`.
     var spawnModules: [StitchedModule] = []
+    /// A custom shading function (`ShadingModel.custom`), in place of the built-in unlit, lit, or foil.
+    var shadingFunction: ParticleFunction?
 
     init() {}
 }
@@ -333,6 +335,7 @@ extension ParticleEmitter {
         colorImage = try container.decodeIfPresent(ParticleColorImage.self, forKey: .colorImage)
         try container.update(&updateModules, .updateModules)
         try container.update(&spawnModules, .spawnModules)
+        shadingFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .shadingFunction)
     }
 }
 

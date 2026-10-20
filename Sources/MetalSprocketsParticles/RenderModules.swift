@@ -5,7 +5,7 @@ public enum RenderModule: StageModule {
     case colorBySpeed(ColorBySpeedModule)
     case colorByPosition(ColorByPositionModule)
     case imageSequence(ImageSequenceModule)
-    case foil(FoilModule)
+    case shading(ShadingModule)
     case mesh(MeshModule)
     case trail(TrailModule)
     case ribbon(RibbonModule)
@@ -14,7 +14,7 @@ public enum RenderModule: StageModule {
 
     public static let types: [any ParticleModule.Type] = [
         SpriteModule.self, ColorOverLifeModule.self, SizeOverLifeModule.self, ColorBySpeedModule.self, ColorByPositionModule.self,
-        ImageSequenceModule.self, FoilModule.self, MeshModule.self, TrailModule.self, RibbonModule.self, LightModule.self, LevelOfDetailModule.self,
+        ImageSequenceModule.self, ShadingModule.self, MeshModule.self, TrailModule.self, RibbonModule.self, LightModule.self, LevelOfDetailModule.self,
     ]
 
     public init?(wrapping module: any ParticleModule) {
@@ -25,7 +25,7 @@ public enum RenderModule: StageModule {
         case let module as ColorBySpeedModule: self = .colorBySpeed(module)
         case let module as ColorByPositionModule: self = .colorByPosition(module)
         case let module as ImageSequenceModule: self = .imageSequence(module)
-        case let module as FoilModule: self = .foil(module)
+        case let module as ShadingModule: self = .shading(module)
         case let module as MeshModule: self = .mesh(module)
         case let module as TrailModule: self = .trail(module)
         case let module as RibbonModule: self = .ribbon(module)
@@ -43,7 +43,7 @@ public enum RenderModule: StageModule {
         case let .colorBySpeed(module): module
         case let .colorByPosition(module): module
         case let .imageSequence(module): module
-        case let .foil(module): module
+        case let .shading(module): module
         case let .mesh(module): module
         case let .trail(module): module
         case let .ribbon(module): module
@@ -61,20 +61,18 @@ public struct SpriteModule: LoweredModule {
     public var sortMode: ParticleSortMode
     public var orientation: ParticleOrientation
     public var softness: Float
-    public var isLit: Bool
     public var minimumScreenSize: Float
 
-    public init(blendMode: ParticleBlendMode = .alpha, sortMode: ParticleSortMode = .none, orientation: ParticleOrientation = .billboard, softness: Float = 0, isLit: Bool = false, minimumScreenSize: Float = 0) {
+    public init(blendMode: ParticleBlendMode = .alpha, sortMode: ParticleSortMode = .none, orientation: ParticleOrientation = .billboard, softness: Float = 0, minimumScreenSize: Float = 0) {
         self.blendMode = blendMode
         self.sortMode = sortMode
         self.orientation = orientation
         self.softness = softness
-        self.isLit = isLit
         self.minimumScreenSize = minimumScreenSize
     }
 
     init?(lifting emitter: ParticleEmitter) {
-        self.init(blendMode: emitter.blendMode, sortMode: emitter.sortMode, orientation: emitter.orientation, softness: emitter.softness, isLit: emitter.isLit, minimumScreenSize: emitter.minimumScreenSize)
+        self.init(blendMode: emitter.blendMode, sortMode: emitter.sortMode, orientation: emitter.orientation, softness: emitter.softness, minimumScreenSize: emitter.minimumScreenSize)
     }
 
     func apply(to emitter: inout ParticleEmitter) {
@@ -82,29 +80,7 @@ public struct SpriteModule: LoweredModule {
         emitter.sortMode = sortMode
         emitter.orientation = orientation
         emitter.softness = softness
-        emitter.isLit = isLit
         emitter.minimumScreenSize = minimumScreenSize
-    }
-}
-
-public struct FoilModule: LoweredModule {
-    public static let kind = "foil"
-    public static let added: Self? = Self(foil: ParticleFoil())
-    public var foil: ParticleFoil
-
-    public init(foil: ParticleFoil) {
-        self.foil = foil
-    }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard let foil = emitter.foil else {
-            return nil
-        }
-        self.foil = foil
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.foil = foil
     }
 }
 

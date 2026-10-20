@@ -838,7 +838,6 @@ static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *e
 }
 
 static float3 rotateAbout(float3 v, float3 axis, float angle);
-static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base, bool includesGlint);
 
 // Toward foil's light for a sprite's per-pixel glint: the first scene light, or foil's fixed light when there are none.
 static float3 foilLightDirection(constant RenderUniforms &uniforms, constant ParticleLightData *lights, float3 position) {
@@ -854,7 +853,7 @@ static float3 tumbleAxis(uint index) {
     return length_squared(axis) > 1e-6 ? normalize(axis) : float3(0, 1, 0);
 }
 
-// Foil's glint for a face with `normal` (either side), as in foilColor: 0 to 1.
+// Foil's glint for a face with `normal` (either side), as in foilShade: 0 to 1.
 static float glintAt(float3 normal, float3 toCamera, float3 halfway, float shininess) {
     float3 n = dot(normal, toCamera) < 0 ? -normal : normal;
     return pow(max(dot(n, halfway), 0.0), shininess);
@@ -1308,17 +1307,108 @@ static float3 diffuseLight(ParticleLightData source, float3 center, float3 norma
     return source.color * max(0.0, dot(normal, toLight)) * attenuation;
 }
 
-static float3 particleLight(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 center, float3 cornerDirection) {
+// MARK: - Shading (#172)
+
+// The shading-function ABI, mirrored by ShadingFunction.prelude in Swift. One call per vertex returns the vertex color.
+struct ShadingInput {
+    float3 position;     // World space: the particle's center (sprites, trails, ribbons) or the vertex (meshes).
+    float3 normal;       // The quad's plane (sprites), toward the camera (trails, ribbons), or the mesh normal.
+    float3 sphereNormal; // Sprites shaded like a small sphere: leaning from the camera toward the corner. Meshes: normal.
+    float3 toCamera;     // Unit length.
+    float4 color;        // The color before shading: curves, variation, and tint.
+    float age;
+    float lifetime;
+    uint id;
+    uint isMesh;
+};
+
+struct ShadingScene {
+    float3 ambient;
+    uint lightCount;         // Scene lights in `lights`.
+    uint particleLightCount; // Lights from emitting particles in `particleLights`.
+};
+
+using ShadingFunction = float4(ShadingInput, ShadingScene, constant ParticleLightData *, const device ParticleLightData *, constant float4 *);
+
+static ShadingScene shadingScene(constant RenderUniforms &uniforms) {
+    return { uniforms.ambientLight, min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)), min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS)) };
+}
+
+// The sphere normal particleLight uses: from the camera direction toward the corner.
+static float3 sphereNormal(constant RenderUniforms &uniforms, float3 center, float3 cornerDirection) {
     float3 toCamera = normalize(uniforms.cameraPosition - center);
-    float3 normal = normalize(cornerDirection + toCamera);
-    float3 light = uniforms.ambientLight;
-    for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
-        light += diffuseLight(lights[i], center, normal);
+    return normalize(cornerDirection + toCamera);
+}
+
+// Foil: shifts color with angle like a thin film, darkens edge-on, and gets a Blinn-Phong glint from each light, or from
+// a fixed light above and in front when there are none. `foil` is (glint, shininess, iridescence).
+static float3 foilShade(float3 foil, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base, bool includesGlint) {
+    float facing = dot(normal, toCamera);
+    float3 n = facing < 0 ? -normal : normal;
+    float cosine = abs(facing);
+    float3 film = 0.5 + 0.5 * cos(6.2831853 * ((1 - cosine) * 1.5 + float3(0, 0.33, 0.67)));
+    float3 color = base * mix(float3(1), film, saturate(foil.z)) * mix(0.2, 1.0, cosine);
+    if (!includesGlint) {
+        return color;
     }
-    for (uint i = 0; i < min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS)); i++) {
-        light += diffuseLight(particleLights[i], center, normal);
+    float glint = 0;
+    if (scene.lightCount + scene.particleLightCount == 0) {
+        float3 toLight = normalize(float3(0.3, 1, 0.6));
+        glint = pow(max(dot(n, normalize(toLight + toCamera)), 0.0), foil.y);
     }
-    return light;
+    for (uint i = 0; i < scene.lightCount; i++) {
+        float3 toLight = lights[i].kind == ParticleLightKindPoint ? normalize(lights[i].position - position) : -lights[i].direction;
+        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), foil.y) * max(max(lights[i].color.r, lights[i].color.g), lights[i].color.b);
+    }
+    for (uint i = 0; i < scene.particleLightCount; i++) {
+        float3 toLight = normalize(particleLights[i].position - position);
+        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), foil.y) * max(max(particleLights[i].color.r, particleLights[i].color.g), particleLights[i].color.b);
+    }
+    return color + glint * foil.x * mix(float3(1), film, 0.3);
+}
+
+// The built-in shading models. Unlit leaves sprites alone (and is not called for them); meshes get a little shading
+// toward the camera so the shape reads, both sides of a face counting.
+[[visible]] float4 particleShadeUnlit(ShadingInput in, ShadingScene, constant ParticleLightData *, const device ParticleLightData *, constant float4 *) {
+    if (in.isMesh != 0) {
+        in.color.rgb *= 0.55 + 0.45 * abs(dot(in.normal, in.toCamera));
+    }
+    return in.color;
+}
+
+// Ambient plus each light's diffuse light on the sphere normal.
+[[visible]] float4 particleShadeLit(ShadingInput in, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, constant float4 *) {
+    float3 light = scene.ambient;
+    for (uint i = 0; i < scene.lightCount; i++) {
+        light += diffuseLight(lights[i], in.position, in.sphereNormal);
+    }
+    for (uint i = 0; i < scene.particleLightCount; i++) {
+        light += diffuseLight(particleLights[i], in.position, in.sphereNormal);
+    }
+    in.color.rgb *= light;
+    return in.color;
+}
+
+// parameters[0] is (glint, shininess, iridescence). Sprites get their glint per pixel in the fragment shader instead.
+[[visible]] float4 particleShadeFoil(ShadingInput in, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, constant float4 *parameters) {
+    in.color.rgb = foilShade(parameters[0].xyz, scene, lights, particleLights, in.position, in.normal, in.toCamera, in.color.rgb, in.isMesh != 0);
+    return in.color;
+}
+
+// Whether this pipeline calls the shading function. False for draws that skip it (unlit sprites, trails, ribbons): the
+// shading code compiles out, so those vertex shaders are what they were before shading functions (#172).
+constant bool particleHasShading [[function_constant(0)]];
+
+// The emitter's shading function for `in`. Callers check particleHasShading first, so unlit sprites skip building the
+// input.
+static float4 callShading(constant RenderUniforms &uniforms, visible_function_table<ShadingFunction> table, constant float4 *parameters, constant ParticleLightData *lights, const device ParticleLightData *particleLights, ShadingInput in) {
+    return table[0](in, shadingScene(uniforms), lights, particleLights, parameters);
+}
+
+// Trails and ribbons: shaded at `position`, facing the camera.
+static ShadingInput facingInput(constant RenderUniforms &uniforms, float3 position, float4 color, Particle p, uint index) {
+    float3 normal = sphereNormal(uniforms, position, float3(0));
+    return { position, normal, normal, normalize(uniforms.cameraPosition - position), color, p.position.w, p.velocity.w, index, 0 };
 }
 
 // One thread per light: the first live particle in this light's stretch of the slice becomes a point light, dimming
@@ -1434,6 +1524,8 @@ vertex VertexOut particleTrailVertex(
     const device uint2 *sortRecords [[buffer(4)]],
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
+    visible_function_table<ShadingFunction> shadingFunction [[buffer(12)]],
+    constant float4 *shadingParameters [[buffer(13)]],
     constant float4 *extraColorCurves [[buffer(8)]],
     const device float4 *trails [[buffer(9)]],
     texture2d<float> colorImage [[texture(2)]]
@@ -1475,8 +1567,8 @@ vertex VertexOut particleTrailVertex(
     if (uniforms.trailFades != 0) {
         out.color *= 1 - along;
     }
-    if (uniforms.isLit != 0) {
-        out.color.rgb *= particleLight(uniforms, lights, particleLights, here, float3(0));
+    if (particleHasShading) {
+        out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, facingInput(uniforms, here, out.color, p, index));
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
@@ -1514,6 +1606,8 @@ vertex VertexOut particleRibbonVertex(
     constant float *sizeCurve [[buffer(3)]],
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
+    visible_function_table<ShadingFunction> shadingFunction [[buffer(12)]],
+    constant float4 *shadingParameters [[buffer(13)]],
     constant float4 *extraColorCurves [[buffer(8)]],
     texture2d<float> colorImage [[texture(2)]]
 ) {
@@ -1571,8 +1665,8 @@ vertex VertexOut particleRibbonVertex(
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
     }
-    if (uniforms.isLit != 0) {
-        out.color.rgb *= particleLight(uniforms, lights, particleLights, here, float3(0));
+    if (particleHasShading) {
+        out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, facingInput(uniforms, here, out.color, p, index));
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
@@ -1619,6 +1713,8 @@ vertex VertexOut particleVertex(
     const device uint2 *sortRecords [[buffer(4)]],
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
+    visible_function_table<ShadingFunction> shadingFunction [[buffer(12)]],
+    constant float4 *shadingParameters [[buffer(13)]],
     constant float4 *extraColorCurves [[buffer(8)]],
     texture2d<float> colorImage [[texture(2)]]
 ) {
@@ -1700,19 +1796,24 @@ vertex VertexOut particleVertex(
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
     }
-    if (uniforms.foilGlint > 0 || uniforms.foilIridescence > 0) {
-        // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one. Color shift and edge
-        // darkening per vertex; the glint per pixel, in the fragment shader, so it sparkles across the card.
+    bool isFoil = uniforms.foilGlint > 0 || uniforms.foilIridescence > 0;
+    if (particleHasShading || isFoil) {
+        // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one.
         float3 normal = normalize(cross(right, up));
         float3 viewDirection = normalize(toCamera);
-        out.color.rgb = foilColor(uniforms, lights, particleLights, center, normal, viewDirection, out.color.rgb, false);
-        out.foilNormal = dot(normal, viewDirection) < 0 ? -normal : normal;
-        out.foilRight = right;
-        out.foilUp = up;
-        out.foilHalfway = normalize(foilLightDirection(uniforms, lights, center) + viewDirection);
-        out.foilSeed = hash(index * 7u + 11u);
-    } else if (uniforms.isLit != 0) {
-        out.color.rgb *= particleLight(uniforms, lights, particleLights, center, right * offset.x + up * offset.y);
+        if (particleHasShading) {
+            ShadingInput input = { center, normal, sphereNormal(uniforms, center, right * offset.x + up * offset.y), viewDirection, out.color, age, lifetime, index, 0 };
+            out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, input);
+        }
+        if (isFoil) {
+            // Foil's color shift and edge darkening are per vertex (the shading function); its glint per pixel, in the
+            // fragment shader, so it sparkles across the card.
+            out.foilNormal = dot(normal, viewDirection) < 0 ? -normal : normal;
+            out.foilRight = right;
+            out.foilUp = up;
+            out.foilHalfway = normalize(foilLightDirection(uniforms, lights, center) + viewDirection);
+            out.foilSeed = hash(index * 7u + 11u);
+        }
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);
@@ -1779,38 +1880,8 @@ static float3 rotateAbout(float3 v, float3 axis, float angle) {
     return v * c + cross(axis, v) * s + axis * dot(axis, v) * (1 - c);
 }
 
-// ParticleEmitter.particleMesh: instanced triangles. Each particle tumbles about its own random axis (hashed from its
+// Mesh particles (MeshModule): instanced triangles. Each particle tumbles about its own random axis (hashed from its
 // slot) by its rotation angle, scaled by its size, at its position.
-// Metallic foil (ParticleEmitter.foil). Two-sided: the face toward the camera counts. The color shifts with the viewing
-// angle like a thin film, darkens edge-on, and gets a Blinn-Phong glint from each light, or from a fixed light above and
-// in front when there are none. Per vertex, so a flat piece flashes as a whole.
-static float3 foilColor(constant RenderUniforms &uniforms, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base, bool includesGlint) {
-    float facing = dot(normal, toCamera);
-    float3 n = facing < 0 ? -normal : normal;
-    float cosine = abs(facing);
-    float3 film = 0.5 + 0.5 * cos(6.2831853 * ((1 - cosine) * 1.5 + float3(0, 0.33, 0.67)));
-    float3 color = base * mix(float3(1), film, saturate(uniforms.foilIridescence)) * mix(0.2, 1.0, cosine);
-    if (!includesGlint) {
-        return color;
-    }
-    float glint = 0;
-    uint lightCount = min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS));
-    uint particleLightCount = min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS));
-    if (lightCount + particleLightCount == 0) {
-        float3 toLight = normalize(float3(0.3, 1, 0.6));
-        glint = pow(max(dot(n, normalize(toLight + toCamera)), 0.0), uniforms.foilShininess);
-    }
-    for (uint i = 0; i < lightCount; i++) {
-        float3 toLight = lights[i].kind == ParticleLightKindPoint ? normalize(lights[i].position - position) : -lights[i].direction;
-        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), uniforms.foilShininess) * max(max(lights[i].color.r, lights[i].color.g), lights[i].color.b);
-    }
-    for (uint i = 0; i < particleLightCount; i++) {
-        float3 toLight = normalize(particleLights[i].position - position);
-        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), uniforms.foilShininess) * max(max(particleLights[i].color.r, particleLights[i].color.g), particleLights[i].color.b);
-    }
-    return color + glint * uniforms.foilGlint * mix(float3(1), film, 0.3);
-}
-
 vertex VertexOut particleMeshVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
@@ -1821,6 +1892,8 @@ vertex VertexOut particleMeshVertex(
     const device uint2 *sortRecords [[buffer(4)]],
     constant ParticleLightData *lights [[buffer(5)]],
     const device ParticleLightData *particleLights [[buffer(6)]],
+    visible_function_table<ShadingFunction> shadingFunction [[buffer(12)]],
+    constant float4 *shadingParameters [[buffer(13)]],
     const device float4 *meshVertices [[buffer(7)]],
     constant float4 *extraColorCurves [[buffer(8)]],
     texture2d<float> colorImage [[texture(2)]]
@@ -1857,20 +1930,11 @@ vertex VertexOut particleMeshVertex(
         out.color *= unpack_unorm4x8_to_float(tint);
     }
     float3 toCamera = normalize(uniforms.cameraPosition - world);
-    if (uniforms.foilGlint > 0 || uniforms.foilIridescence > 0) {
-        out.color.rgb = foilColor(uniforms, lights, particleLights, world, normal, toCamera, out.color.rgb, true);
-    } else if (uniforms.isLit != 0) {
-        float3 light = uniforms.ambientLight;
-        for (uint i = 0; i < min(uniforms.lightCount, uint(PARTICLE_MAX_LIGHTS)); i++) {
-            light += diffuseLight(lights[i], world, normal);
-        }
-        for (uint i = 0; i < min(uniforms.particleLightCount, uint(PARTICLE_MAX_PARTICLE_LIGHTS)); i++) {
-            light += diffuseLight(particleLights[i], world, normal);
-        }
-        out.color.rgb *= light;
-    } else {
-        // Unlit: a little shading toward the camera so the shape reads. Both sides of a face count.
-        out.color.rgb *= 0.55 + 0.45 * abs(dot(normal, toCamera));
+    // Meshes always call their shading function (particleHasShading is always true for them): even unlit ones shade
+    // toward the camera.
+    if (particleHasShading) {
+        ShadingInput input = { world, normal, normal, toCamera, out.color, age, lifetime, index, 1 };
+        out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, input);
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
     out.viewDepth = dot(world - uniforms.cameraPosition, uniforms.cameraForward);

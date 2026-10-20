@@ -167,6 +167,126 @@ struct ModuleStackView<Module: StageModule, Editor: View>: View {
     }
 }
 
+/// The shading model (#172): unlit, lit, foil with its sliders, or a custom function with a code editor.
+struct ShadingModuleEditor: View {
+    @Binding var model: ShadingModel
+
+    var body: some View {
+        Picker("Model", selection: $model.kind) {
+            ForEach(ShadingModel.Kind.allCases) { kind in
+                Text(kind.rawValue).tag(kind)
+            }
+        }
+        .help("Unlit draws colors as they are; Lit adds the scene's lights; Foil shades like metallic foil (use with tumbling sprites or meshes); Custom runs your own Metal function per vertex.")
+        switch model {
+        case .unlit, .lit:
+            EmptyView()
+        case let .foil(foil):
+            let settings = Binding(get: { foil }, set: { model = .foil(settings: $0) })
+            ParameterSliderView("Glint", value: settings.glint, in: 0...10)
+            ParameterSliderView("Shininess", value: settings.shininess, in: 1...200, format: .number.precision(.fractionLength(0)))
+            ParameterSliderView("Iridescence", value: settings.iridescence, in: 0...1)
+        case let .custom(function):
+            ShadingFunctionEditor(function: Binding(get: { function }, set: { model = .custom(function: $0) }))
+        }
+    }
+}
+
+/// A custom shading function. Source and name are drafts until Compile & Apply, which compiles them first.
+struct ShadingFunctionEditor: View {
+    @Binding var function: ParticleFunction
+    @State private var draftSource = ""
+    @State private var draftName = ""
+    @State private var compileError: String?
+
+    var body: some View {
+        TextField("Function Name", text: $draftName)
+            .monospaced()
+        TextEditor(text: $draftSource)
+            .font(.system(.callout, design: .monospaced))
+            .frame(minHeight: 140)
+            .scrollContentBackground(.hidden)
+            .background(.quaternary, in: .rect(cornerRadius: 6))
+        if let compileError {
+            Text(compileError)
+                .font(.callout)
+                .foregroundStyle(.red)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        HStack {
+            Button("Compile & Apply") { apply() }
+                .disabled(isUnchanged)
+            Button("Revert") { loadDrafts() }
+                .disabled(isUnchanged)
+        }
+        ParametersEditorView(parameters: $function.parameters)
+        Text("Signature: [[visible]] float4 name(ShadingInput input, ShadingScene scene, constant ShadingLight *lights, const device ShadingLight *particleLights, constant float4 *parameters). Return the vertex color.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .onChange(of: function, initial: true) { _, _ in
+                if isUnchanged || draftSource.isEmpty {
+                    loadDrafts()
+                }
+            }
+    }
+
+    private var isUnchanged: Bool {
+        draftSource == function.source && draftName == function.name
+    }
+
+    private func loadDrafts() {
+        draftSource = function.source
+        draftName = function.name
+        compileError = nil
+    }
+
+    private func apply() {
+        let candidate = ParticleFunction(source: draftSource, name: draftName, parameters: function.parameters)
+        do {
+            try candidate.validateShading(device: ParticleSystemRuntime.defaultDevice())
+            compileError = nil
+            function = candidate
+        } catch {
+            compileError = error.localizedDescription
+        }
+    }
+}
+
+extension ShadingModel {
+    enum Kind: String, CaseIterable, Identifiable {
+        case unlit = "Unlit"
+        case lit = "Lit"
+        case foil = "Foil"
+        case custom = "Custom"
+
+        var id: Self { self }
+    }
+
+    /// Switching kind starts foil from its defaults and a custom function from the template.
+    var kind: Kind {
+        get {
+            switch self {
+            case .unlit: .unlit
+            case .lit: .lit
+            case .foil: .foil
+            case .custom: .custom
+            }
+        }
+        set {
+            guard newValue != kind else {
+                return
+            }
+            switch newValue {
+            case .unlit: self = .unlit
+            case .lit: self = .lit
+            case .foil: self = .foil(settings: ParticleFoil())
+            case .custom: self = .custom(function: ShadingModule.template)
+            }
+        }
+    }
+}
+
 /// A binding to the module inside an enum case.
 private func payload<Stage, Payload>(_ module: Binding<Stage>, _ value: Payload, _ wrap: @escaping (Payload) -> Stage) -> Binding<Payload> {
     Binding(get: { value }, set: { module.wrappedValue = wrap($0) })
@@ -456,7 +576,6 @@ struct RenderModuleEditor: View {
             if value.orientation.kind == .velocityAligned {
                 ParameterSliderView("Stretch", value: sprite.velocityStretch, in: 0...2)
             }
-            Toggle("Lit", isOn: sprite.isLit)
             ParameterSliderView("Softness", value: sprite.softness, in: 0...1)
                 .help("Soft particles: fade out over this distance in front of solid colliders instead of clipping hard. 0 turns it off.")
             ParameterSliderView("Minimum Screen Size", value: sprite.minimumScreenSize, in: 0...0.02, format: .number.precision(.fractionLength(4)))
@@ -486,11 +605,8 @@ struct RenderModuleEditor: View {
                 .help("Keep the color where each particle is born, instead of changing it as the particle moves.")
         case let .imageSequence(value):
             ImageSequenceEditorView(sequence: payload($module, value, RenderModule.imageSequence).sequence)
-        case let .foil(value):
-            let foil = payload($module, value, RenderModule.foil)
-            ParameterSliderView("Glint", value: foil.foil.glint, in: 0...10)
-            ParameterSliderView("Shininess", value: foil.foil.shininess, in: 1...200, format: .number.precision(.fractionLength(0)))
-            ParameterSliderView("Iridescence", value: foil.foil.iridescence, in: 0...1)
+        case let .shading(value):
+            ShadingModuleEditor(model: payload($module, value, RenderModule.shading).model)
         case let .mesh(value):
             LabeledContent("Mesh", value: value.mesh.label)
             Text("Change it with Draw As in Appearance.").font(.caption)

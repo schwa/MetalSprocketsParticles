@@ -77,6 +77,20 @@ struct LightingTests {
         #expect(abs(behind - ambientOnly) < 0.02)
     }
 
+    /// A custom shading function runs per vertex and gets its parameters (#172). Center pixel is the red channel.
+    @Test func customShadingFunctionRuns() throws {
+        let half = ParticleFunction(source: """
+        [[visible]] float4 halfRed(ShadingInput input, ShadingScene scene, constant ShadingLight *lights, const device ShadingLight *particleLights, constant float4 *parameters) {
+            return float4(input.color.rgb * parameters[0].x, input.color.a);
+        }
+        """, name: "halfRed", parameters: [[0.2, 0, 0, 0]])
+        try half.validateShading(device: try #require(MTLCreateSystemDefaultDevice()))
+        let shaded = try centerBrightness { $0.shadingFunction = half }
+        // 0.2 linear is about 0.48 in sRGB.
+        #expect(shaded > 0.4 && shaded < 0.56)
+        #expect(try ShadingModule.template.validateShading(device: try #require(MTLCreateSystemDefaultDevice())) == ())
+    }
+
     @Test func pointLightRangeFallsOff() throws {
         let near = try centerBrightness({ $0.isLit = true }, system: {
             $0.ambientLight = .zero

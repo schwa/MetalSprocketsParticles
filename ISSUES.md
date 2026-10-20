@@ -3608,11 +3608,13 @@ Workaround today: use mesh particles (Draw As Coin) for foil confetti, as the Fo
 ## 172: Pluggable shading: one shading function per emitter, with built-in models
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 created: 2026-10-19T22:40:03Z
+updated: 2026-10-20T21:52:32Z
+closed: 2026-10-20T21:52:32Z
 +++
 
 Today lighting is special cases in the vertex shaders (unlit, isLit diffuse, and foil for mesh particles, #155). Make it one shading function slot per emitter instead, like user functions (#167) for the simulation: the mesh and sprite vertex shaders call a visible function with a ShadingInput (world position, normal, to-camera, base color, ambient and lights, particle age and custom attributes) that returns a color.
@@ -3624,6 +3626,7 @@ Acceptance: every existing golden unchanged; foil and lit presets look the same;
 - `2026-10-19T22:40:04Z`: Related: #171 (foil for tumbling sprites, sparkles on glints) and #155 (foil, which becomes .foil here).
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 - `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
+- `2026-10-20T21:52:33Z`: ShadingModule (render, required) with ShadingModel .unlit/.lit/.foil(settings:)/.custom(function:). Vertex shaders call one [[visible]] function per vertex (ShadingInput, ShadingScene, lights, particle lights, parameters). Built-ins hold the old inline math: all goldens, FoilTests, LightingTests unchanged. Unlit sprites/trails/ribbons compile the call out (function constant particleHasShading), meshes always call. Custom functions compile after ShadingModule.prelude; demo has a model picker and code editor. Format 4: old foil module / sprite isLit load as .foil/.lit; presets migrated. Perf: render parameters collapsed into one .parameters modifier per pipeline (deep modifier chains cost CPU); on battery, Stress Test within ~0.2 ms of before (noisy), Lantern unchanged. Not done: per-pixel (#174); foil sprites' glint stays in the fragment shader.
 
 ---
 
@@ -4134,6 +4137,7 @@ Rendering (sprite/mesh/trail/ribbon drawing, shading models, foil) does not use 
 Part of #179 (plan for #178).
 
 - `2026-10-20T18:42:23Z`: Render modules exist at the API/file level (sprite, foil, mesh, trail, ribbon, light, LOD) and lower to current settings. Stitching render/shading functions still needs #172 first.
+- `2026-10-20T21:52:33Z`: Shading is now a render module (#172). What's left for render modules: per-pixel functions (#174) and reflective foil as a shading model (#175).
 
 ---
 

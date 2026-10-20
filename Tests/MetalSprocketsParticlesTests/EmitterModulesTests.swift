@@ -93,13 +93,14 @@ struct EmitterModulesTests {
             ShapeModule(shape: .disc(radius: 0.3))
             GravityModule(acceleration: [0, 1, 0])
             if windy {
-                FoilModule(foil: ParticleFoil())
+                ShadingModule(model: .foil(settings: ParticleFoil()))
             }
         }
         #expect(layer.modules.update.prefix(2).map(\.module.kind) == ["drag", "gravity"])
         #expect(layer.modules.update.map(\.module.kind) == ["drag", "gravity", "collision"])
         #expect(layer.modules.spawn.map(\.module.kind) == ["shape", "rate", "lifetime"])
-        #expect(layer.modules.render.map(\.module.kind) == ["foil", "sprite", "colorOverLife", "sizeOverLife"])
+        #expect(layer.modules.render.map(\.module.kind) == ["shading", "sprite", "colorOverLife", "sizeOverLife"])
+        #expect(layer.settings.foil == ParticleFoil())
         #expect(layer.settings.shape == .disc(radius: 0.3))
         #expect(layer.settings.gravity == [0, 1, 0])
         #expect(layer.settings.birthRate == ParticleEmitter().birthRate)
@@ -139,7 +140,7 @@ struct EmitterModulesTests {
         """
         let modules = try JSONDecoder().decode(EmitterModules.self, from: Data(json.utf8))
         #expect(modules.update.map(\.module.kind) == ["gravity"])
-        #expect(modules.render.map(\.module.kind) == ["sizeOverLife"])
+        #expect(modules.render.map(\.module.kind) == ["sizeOverLife", "shading"])
         let bad = #"{"update": [{"module": {"gravity": {"acceleration": "x"}}}]}"#
         #expect(throws: DecodingError.self) { try JSONDecoder().decode(EmitterModules.self, from: Data(bad.utf8)) }
     }
@@ -148,9 +149,10 @@ struct EmitterModulesTests {
         var modules = EmitterModules.standard
         modules[RateModule.self]?.birthRate = 7
         #expect(modules.lowered().birthRate == 7)
-        modules[FoilModule.self] = FoilModule(foil: ParticleFoil(glint: 2))
-        #expect(modules.render.contains { $0.module.kind == "foil" })
-        #expect(modules[FoilModule.self]?.foil.glint == 2)
+        modules[ShadingModule.self] = ShadingModule(model: .foil(settings: ParticleFoil(glint: 2)))
+        #expect(modules.render.filter { $0.module.kind == "shading" }.count == 1)
+        #expect(modules[ShadingModule.self]?.model == .foil(settings: ParticleFoil(glint: 2)))
+        #expect(modules.lowered().foil?.glint == 2)
         modules[GravityModule.self] = nil
         #expect(modules[GravityModule.self] == nil)
         #expect(modules.lowered().gravity == .zero)
@@ -162,6 +164,18 @@ struct EmitterModulesTests {
         try #require(StitchedSpawnModule.added).module.validate(device: device)
         let broken = StitchedModule(source: "not metal", name: "x")
         #expect(throws: ParticleFunctionError.self) { try broken.validate(device: device) }
+    }
+
+    /// Format 3 effects: a foil module or a lit sprite become the shading module (#172).
+    @Test func formatThreeFoilAndLitBecomeShading() throws {
+        func render(_ json: String) throws -> [RenderModule] {
+            try JSONDecoder().decode(EmitterModules.self, from: Data(json.utf8)).render.map(\.module)
+        }
+        let lit = try render(#"{"render": [{"module": {"sprite": {"blendMode": 0, "sortMode": "None", "orientation": {"billboard": {}}, "softness": 0, "isLit": true, "minimumScreenSize": 0}}}]}"#)
+        #expect(lit.last == .shading(ShadingModule(model: .lit)))
+        let foil = try render(#"{"render": [{"module": {"foil": {"foil": {"glint": 5, "shininess": 10, "iridescence": 0.25}}}}]}"#)
+        #expect(foil == [.shading(ShadingModule(model: .foil(settings: ParticleFoil(glint: 5, shininess: 10, iridescence: 0.25))))])
+        #expect(try render(#"{"render": []}"#) == [.shading(ShadingModule())])
     }
 
     @Test func jsonRoundTrips() throws {

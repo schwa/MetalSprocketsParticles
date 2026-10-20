@@ -37,7 +37,7 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
-  "formatVersion": 3,
+  "formatVersion": 4,
   "is2D": true,
   "layers": [
     {
@@ -50,7 +50,6 @@
             "module": {
               "sprite": {
                 "blendMode": 0,
-                "isLit": false,
                 "minimumScreenSize": 0,
                 "orientation": {
                   "billboard": {}
@@ -100,6 +99,15 @@
                       "value": 0.03
                     }
                   ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "shading": {
+                "model": {
+                  "unlit": {}
                 }
               }
             }
