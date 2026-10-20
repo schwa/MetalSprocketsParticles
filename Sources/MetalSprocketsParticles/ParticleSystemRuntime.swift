@@ -1072,10 +1072,7 @@ struct EmitterDraw {
             hasColorImage: 0,
             colorImageOrigin: .zero,
             colorImageU: .zero,
-            colorImageV: .zero,
-            foilGlint: max(settings.foil?.glint ?? 0, 0),
-            foilShininess: max(settings.foil?.shininess ?? 1, 1),
-            foilIridescence: max(settings.foil?.iridescence ?? 0, 0)
+            colorImageV: .zero
         )
     }
 }

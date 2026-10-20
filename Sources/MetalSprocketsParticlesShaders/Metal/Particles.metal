@@ -839,14 +839,6 @@ static void writeEvent(device atomic_uint *cursor, device ParticleEventRecord *e
 
 static float3 rotateAbout(float3 v, float3 axis, float angle);
 
-// Toward foil's light for a sprite's per-pixel glint: the first scene light, or foil's fixed light when there are none.
-static float3 foilLightDirection(constant RenderUniforms &uniforms, constant ParticleLightData *lights, float3 position) {
-    if (uniforms.lightCount == 0) {
-        return normalize(float3(0.3, 1, 0.6));
-    }
-    return lights[0].kind == ParticleLightKindPoint ? normalize(lights[0].position - position) : -lights[0].direction;
-}
-
 // A particle's own tumble axis, the same one mesh particles turn about.
 static float3 tumbleAxis(uint index) {
     float3 axis = float3(hash(index * 3u + 1u), hash(index * 3u + 2u), hash(index * 3u + 3u)) / 4294967295.0 * 2 - 1;
@@ -1294,13 +1286,6 @@ struct VertexOut {
     float shadingLifetime [[function_constant(particleShadesPerPixel)]];
     uint shadingID [[flat, function_constant(particleShadesPerPixel)]];
     uint shadingIsMesh [[flat, function_constant(particleShadesPerPixel)]];
-    // Per-pixel foil glint on sprites (zero elsewhere): the card's normal and in-plane axes, the half vector toward the
-    // first light (or foil's fixed light), and a per-particle seed for its crinkle.
-    float3 foilNormal;
-    float3 foilRight;
-    float3 foilUp;
-    float3 foilHalfway;
-    uint foilSeed [[flat]];
 };
 
 // Diffuse light at a quad corner. The quad is shaded like a small sphere: the normal leans from the camera direction
@@ -1356,31 +1341,61 @@ static float3 sphereNormal(constant RenderUniforms &uniforms, float3 center, flo
     return normalize(cornerDirection + toCamera);
 }
 
-// Foil: shifts color with angle like a thin film, darkens edge-on, and gets a Blinn-Phong glint from each light, or from
-// a fixed light above and in front when there are none. `foil` is (glint, shininess, iridescence).
-static float3 foilShade(float3 foil, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base, bool includesGlint) {
-    float facing = dot(normal, toCamera);
-    float3 n = facing < 0 ? -normal : normal;
-    float cosine = abs(facing);
-    float3 film = 0.5 + 0.5 * cos(6.2831853 * ((1 - cosine) * 1.5 + float3(0, 0.33, 0.67)));
-    float3 color = base * mix(float3(1), film, saturate(foil.z)) * mix(0.2, 1.0, cosine);
-    if (!includesGlint) {
-        return color;
-    }
-    float glint = 0;
-    if (scene.lightCount + scene.particleLightCount == 0) {
-        float3 toLight = normalize(float3(0.3, 1, 0.6));
-        glint = pow(max(dot(n, normalize(toLight + toCamera)), 0.0), foil.y);
+// Reflective foil (#175). Metal has no matte color of its own: it shows what it reflects, tinted by the metal. The view
+// direction reflects off the facet and samples a procedural environment (a sky band brightest near the horizon, a dark
+// floor, a few soft bright patches) plus the scene and particle lights as hot spots. Dark when it reflects nothing,
+// bright and saturated when it does; white only at the hottest core. `foil` is (glint, shininess, iridescence): glint
+// scales the bright patches and lights, shininess tightens them, iridescence shifts the tint's hue with angle.
+static float foilEnvironment(float3 r, float3 foil, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position) {
+    float horizon = smoothstep(-0.15, 0.1, r.y);
+    float sky = mix(0.25, 0.7, 1 - saturate(r.y));
+    float environment = mix(0.02, sky, horizon);
+    float highlights = 0;
+    const float3 patches[3] = { float3(0.53, 0.66, 0.53), float3(-0.79, 0.4, 0.46), float3(0.1, 0.24, -0.97) };
+    for (uint i = 0; i < 3; i++) {
+        highlights += pow(max(dot(r, patches[i]), 0.0), max(foil.y * 0.25, 2.0));
     }
     for (uint i = 0; i < scene.lightCount; i++) {
         float3 toLight = lights[i].kind == ParticleLightKindPoint ? normalize(lights[i].position - position) : -lights[i].direction;
-        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), foil.y) * max(max(lights[i].color.r, lights[i].color.g), lights[i].color.b);
+        highlights += pow(max(dot(r, toLight), 0.0), foil.y) * max(max(lights[i].color.r, lights[i].color.g), lights[i].color.b) * 2;
     }
     for (uint i = 0; i < scene.particleLightCount; i++) {
         float3 toLight = normalize(particleLights[i].position - position);
-        glint += pow(max(dot(n, normalize(toLight + toCamera)), 0.0), foil.y) * max(max(particleLights[i].color.r, particleLights[i].color.g), particleLights[i].color.b);
+        highlights += pow(max(dot(r, toLight), 0.0), foil.y) * max(max(particleLights[i].color.r, particleLights[i].color.g), particleLights[i].color.b) * 2;
     }
-    return color + glint * foil.x * mix(float3(1), film, 0.3);
+    return environment + highlights * foil.x * 0.5;
+}
+
+static float3 foilShade(float3 foil, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, float3 position, float3 normal, float3 toCamera, float3 base) {
+    // Two-sided: the face toward the camera reflects.
+    float3 n = dot(normal, toCamera) < 0 ? -normal : normal;
+    float3 r = reflect(-toCamera, n);
+    float environment = foilEnvironment(r, foil, scene, lights, particleLights, position);
+    float cosine = abs(dot(n, toCamera));
+    float3 film = 0.5 + 0.5 * cos(6.2831853 * ((1 - cosine) * 1.5 + float3(0, 0.33, 0.67)));
+    // The metal's color; brightened so a mid-tone base still reads as a bright metal.
+    float3 tint = saturate(base * mix(float3(1), film, saturate(foil.z)) * 1.6);
+    // Keep the hue when it gets bright: scale by the largest channel instead of clipping each one, then whiten only the
+    // hottest core.
+    float3 color = tint * environment;
+    float peak = max(max(color.r, color.g), color.b);
+    if (peak > 1) {
+        color /= peak;
+    }
+    return color + saturate((environment - 4) * 0.08);
+}
+
+// Crinkled foil: a grid of small facets, each tilted its own way, so a card breaks into patches that catch the
+// environment differently. Per pixel only (`uv` is the pixel's spot on the card).
+static float3 foilCrinkle(float3 normal, float2 uv, uint id) {
+    // An odd count, so the card's center sits mid-facet rather than on an edge.
+    float2 facet = floor((uv * 0.5 + 0.5) * 21);
+    uint h = hash(hash(id * 7u + 11u) ^ (uint(facet.x) * 73856093u) ^ (uint(facet.y) * 19349663u));
+    // Small tilts: the card's overall facing sets its brightness; facets only break it into patches.
+    float2 tilt = (float2(h & 0xFFFFu, h >> 16) / 65535.0 - 0.5) * 0.25;
+    float3 tangent = normalize(cross(normal, abs(normal.y) < 0.9 ? float3(0, 1, 0) : float3(1, 0, 0)));
+    float3 bitangent = cross(normal, tangent);
+    return normalize(normal + tangent * tilt.x + bitangent * tilt.y);
 }
 
 // The built-in shading models. Unlit leaves sprites alone (and is not called for them); meshes get a little shading
@@ -1405,9 +1420,10 @@ static float3 foilShade(float3 foil, ShadingScene scene, constant ParticleLightD
     return in.color;
 }
 
-// parameters[0] is (glint, shininess, iridescence). Sprites get their glint per pixel in the fragment shader instead.
+// parameters[0] is (glint, shininess, iridescence). Sprites run per pixel and crinkle; meshes run per vertex.
 [[visible]] float4 particleShadeFoil(ShadingInput in, ShadingScene scene, constant ParticleLightData *lights, const device ParticleLightData *particleLights, constant float4 *parameters) {
-    in.color.rgb = foilShade(parameters[0].xyz, scene, lights, particleLights, in.position, in.normal, in.toCamera, in.color.rgb, in.isMesh != 0);
+    float3 normal = in.isMesh == 0 ? foilCrinkle(in.normal, in.uv, in.id) : in.normal;
+    in.color.rgb = foilShade(parameters[0].xyz, scene, lights, particleLights, in.position, normal, in.toCamera, in.color.rgb);
     return in.color;
 }
 
@@ -1826,8 +1842,7 @@ vertex VertexOut particleVertex(
     if (tint != 0) {
         out.color *= unpack_unorm4x8_to_float(tint);
     }
-    bool isFoil = uniforms.foilGlint > 0 || uniforms.foilIridescence > 0;
-    if (particleHasShading || particleShadesPerPixel || isFoil) {
+    if (particleHasShading || particleShadesPerPixel) {
         // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one.
         float3 normal = normalize(cross(right, up));
         float3 viewDirection = normalize(toCamera);
@@ -1836,15 +1851,6 @@ vertex VertexOut particleVertex(
             out.color = callShading(uniforms, shadingFunction, shadingParameters, lights, particleLights, input);
         } else {
             storeShading(out, input);
-        }
-        if (isFoil) {
-            // Foil's color shift and edge darkening are per vertex (the shading function); its glint per pixel, in the
-            // fragment shader, so it sparkles across the card.
-            out.foilNormal = dot(normal, viewDirection) < 0 ? -normal : normal;
-            out.foilRight = right;
-            out.foilUp = up;
-            out.foilHalfway = normalize(foilLightDirection(uniforms, lights, center) + viewDirection);
-            out.foilSeed = hash(index * 7u + 11u);
         }
     }
     out.color = debugColor(uniforms, out.color, p, index, t);
@@ -2017,24 +2023,13 @@ fragment float4 particleFragment(
     if (uniforms.debugMode == ParticleDebugModeWireframe) {
         base = float4(1);
     }
-    // Foil sprites: crinkled foil is a grid of tiny facets, each tilted its own way, so as the card turns different
-    // facets catch the light and it sparkles across instead of flashing as a whole.
-    float3 glint = 0;
-    if (uniforms.foilGlint > 0 && length_squared(in.foilNormal) > 0) {
-        // Small facets, widely tilted, each with a tight highlight: a few bright points at a time.
-        float2 facet = floor((in.uv * 0.5 + 0.5) * float2(18, 18));
-        uint h = hash(in.foilSeed ^ (uint(facet.x) * 73856093u) ^ (uint(facet.y) * 19349663u));
-        float2 tilt = (float2(h & 0xFFFFu, h >> 16) / 65535.0 - 0.5) * 0.9;
-        float3 n = normalize(in.foilNormal + normalize(in.foilRight) * tilt.x + normalize(in.foilUp) * tilt.y);
-        glint = pow(max(dot(n, normalize(in.foilHalfway)), 0.0), uniforms.foilShininess * 2) * uniforms.foilGlint * 1.5;
-    }
     float alpha = base.a * color.a;
     if (uniforms.blendMode == ParticleBlendModeOpaque) {
         if (alpha < 0.5) {
             discard_fragment();
         }
         float3 unpremultiplied = base.a > 0 ? base.rgb / base.a : base.rgb;
-        return float4(unpremultiplied * color.rgb + glint, 1);
+        return float4(unpremultiplied * color.rgb, 1);
     }
-    return float4(base.rgb * color.rgb * color.a + glint * alpha, alpha);
+    return float4(base.rgb * color.rgb * color.a, alpha);
 }

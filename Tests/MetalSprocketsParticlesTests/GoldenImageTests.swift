@@ -339,6 +339,31 @@ struct GoldenImageTests {
         #expect(try image.matchesGolden(named: "emitter-shapes"))
     }
 
+    /// A large foil coin shaded per pixel (#174, #175): the reflection changes smoothly across its face instead of the
+    /// whole face taking one color.
+    @Test func largeFoilMeshPerPixel() throws {
+        var coin = ParticleEmitter()
+        coin.shape = .point
+        coin.position = [0, 1.5, 0]
+        coin.velocity = .zero
+        coin.velocitySpread = 0
+        coin.gravity = .zero
+        coin.birthRate = 0
+        coin.lifetime = 10...10
+        coin.angle = 0.9
+        coin.particleMesh = .coin
+        coin.sizeOverLife = .constant(1.2)
+        coin.colorOverLife = .constant([0.85, 0.65, 0.25, 1])
+        coin.blendMode = .opaque
+        coin.foil = ParticleFoil(glint: 3, shininess: 48, iridescence: 0.3)
+        coin.shadesPerPixel = true
+        let image = try render(emitter: coin, frames: 2, colliders: false, worldColliders: []) { system in
+            system.lights = [.directional(direction: simd_normalize([-0.3, -1, -0.6]))]
+            system.burst(1)
+        }
+        #expect(try image.matchesGolden(named: "foil-mesh-per-pixel"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }

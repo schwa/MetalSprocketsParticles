@@ -86,9 +86,9 @@ struct FoilTests {
         #expect(spread > 0.15, "balances \(balances)")
     }
 
-    /// The fraction of a tumbling foil card's pixels near white, at the angle where it glints most. Crinkled foil
-    /// sparkles in points across the card instead of flashing as a whole (the whole card went white before).
-    @Test func foilSpritesSparkleInPoints() throws {
+    /// Reflective foil on a tumbling card (#175): dark when it reflects nothing and bright when it does; crinkle breaks
+    /// the card into brighter and darker patches; and the reflection keeps the metal's hue instead of turning white.
+    @Test func foilCardsReflectInTheirOwnColor() throws {
         func render(angle: Float) throws -> [SIMD3<Float>] {
             var card = ParticleEmitter()
             card.shape = .point
@@ -102,7 +102,7 @@ struct FoilTests {
             card.sizeOverLife = .constant(0.9)
             card.colorOverLife = .constant([0.3, 0.25, 0.12, 1])
             card.blendMode = .opaque
-            card.foil = ParticleFoil(glint: 3, shininess: 48, iridescence: 0.6)
+            card.foil = ParticleFoil(glint: 3, shininess: 48, iridescence: 0)
             let system = ParticleSystem(
                 "Card", layers: [EmitterDescription("Card", settings: card, sprite: .confetti, capacity: 1)],
                 lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
@@ -125,12 +125,22 @@ struct FoilTests {
             return (0..<(image.width * image.height)).map { SIMD3(Float(pixels[$0 * 4]), Float(pixels[$0 * 4 + 1]), Float(pixels[$0 * 4 + 2])) / 255 }
         }
         let renders = try (0..<36).map { try render(angle: Float($0) / 36 * 2 * .pi) }
-        let brightest = try #require(renders.max { $0.map(brightness).reduce(0, +) < $1.map(brightness).reduce(0, +) })
-        let card = brightest.filter { brightness($0) > 0.02 }
-        let sparkling = card.filter { brightness($0) > 0.85 }
-        let fraction = Float(sparkling.count) / Float(max(card.count, 1))
-        #expect(sparkling.count > 3, "\(sparkling.count) bright pixels")
-        #expect(fraction < 0.6, "\(fraction) of the card is bright")
+        // The card covers the middle of the view at every angle it faces the camera; measure there.
+        func middle(_ pixels: [SIMD3<Float>]) -> [SIMD3<Float>] {
+            (36..<60).flatMap { y in (36..<60).map { x in pixels[y * 96 + x] } }
+        }
+        let totals = renders.map { middle($0).map(brightness).reduce(0, +) }
+        let brightest = try #require(renders.indices.max { totals[$0] < totals[$1] })
+        let darkest = try #require(renders.indices.min { totals[$0] < totals[$1] })
+        #expect(totals[brightest] > totals[darkest] * 3, "brightest \(totals[brightest]), darkest \(totals[darkest])")
+        // Crinkle: brightness varies across the card at its brightest.
+        let values = middle(renders[brightest]).map(brightness).sorted()
+        let spread = values[values.count * 9 / 10] - values[values.count / 10]
+        #expect(spread > 0.08, "spread \(spread)")
+        // Hue: the brightest pixels keep the gold base's balance (blue well below red), not white.
+        let top = middle(renders[brightest]).sorted { brightness($0) > brightness($1) }.prefix(50)
+        let mean = top.reduce(SIMD3<Float>.zero, +) / Float(top.count)
+        #expect(mean.z < mean.x * 0.75, "brightest pixels \(mean)")
     }
 
     /// Sparkles: an `.onGlint` sub-emitter fires as a spinning foil card flashes (#171), and only then.

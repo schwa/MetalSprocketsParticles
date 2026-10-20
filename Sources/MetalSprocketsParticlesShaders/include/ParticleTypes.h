@@ -546,10 +546,6 @@ typedef struct {
     simd_float3 colorImageOrigin;
     simd_float3 colorImageU;
     simd_float3 colorImageV;
-    // Foil's per-pixel glint for sprites, and the foil setup the fragment shader needs: glint and iridescence 0 is off.
-    float foilGlint;
-    float foilShininess;
-    float foilIridescence;
 } RenderUniforms;
 
 typedef struct {

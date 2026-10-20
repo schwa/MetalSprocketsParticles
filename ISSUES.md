@@ -3655,12 +3655,14 @@ Acceptance: a custom function that returns, say, a rim light compiles, renders (
 ## 174: Per-pixel shading functions
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, effort:m
 depends: 172
 created: 2026-10-19T22:40:04Z
+updated: 2026-10-20T22:53:10Z
+closed: 2026-10-20T22:53:10Z
 +++
 
 A fragment-stage variant of the shading function (#172): the same ShadingInput interpolated per pixel, so glints and rim light on large meshes are smooth instead of faceted (per vertex, a flat face flashes as a whole). Costs a function call per pixel; opt in per emitter.
@@ -3670,6 +3672,7 @@ Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 - `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
 - `2026-10-20T22:42:37Z`: Implemented: ShadingModule.perPixel; the vertex shader hands the ShadingInput on (function-constant varyings, absent otherwise) and the fragment shader calls the same function. ShadingInput gained uv. Tests: custom function per pixel matches per vertex; lit per pixel is brighter at the sprite center (interpolated sphere normal). Golden for a large foil mesh waits for #175's foil model.
+- `2026-10-20T22:53:10Z`: ShadingModule.perPixel: the fragment shader calls the shading function with the interpolated input. Golden foil-mesh-per-pixel: a large foil coin's reflection varies smoothly across its face. Per-vertex stays the default; all other goldens unchanged.
 
 ---
 
@@ -3702,6 +3705,7 @@ Related: #172 (pluggable shading; foil could become a built-in shading model the
 - `2026-10-20T02:27:15Z`: Blocked on #172 (user): build the reflective metal model as a built-in shading model on the pluggable shading slot, not as more special-case shader code.
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 - `2026-10-20T18:26:33Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
+- `2026-10-20T22:53:10Z`: Implemented the reflective model as the built-in foil shading function: procedural environment (sky band, dark floor, three soft patches) plus scene/particle lights as hot spots, tinted by the metal, hue-preserving clip, white only at the hottest core; iridescence shifts the tint with angle. Sprites shade per pixel with crinkled facets (21x21 grid, small tilts); meshes per vertex. The old special-case fragment glint is gone. FoilTests updated (brightness swings 3x+ with angle, crinkle spread across the card, brightest pixels keep the gold hue). Goldens: preset-foil-confetti re-recorded. Waiting on your review of Foil Confetti in motion before closing; the facets still read as a visible square grid up close.
 
 ---
 

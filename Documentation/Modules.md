@@ -50,7 +50,8 @@ Every emitter has a `ShadingModule` with a model: `.unlit`, `.lit`, `.foil(setti
 
 - The built-ins (`particleShadeUnlit`, `particleShadeLit`, `particleShadeFoil`) hold the shading math that was inline before; golden images are unchanged. They are linked into every pipeline that calls a function, so switching between them never compiles a new pipeline.
 - Unlit sprites, trails, and ribbons do not call a function: their vertex shaders are compiled with `particleHasShading` false, so the call compiles out. Meshes always call one (unlit meshes shade toward the camera).
-- Foil sprites keep their per-pixel glint in the fragment shader; per-pixel shading functions are #174.
+- `ShadingModule.perPixel` (#174) calls the function in the fragment shader instead, with the input interpolated (function-constant varyings, absent from other pipelines). Foil sprites always shade per pixel, for their crinkle (#175).
+- Foil (#175) reflects a procedural environment and the lights in the metal's color; see `ParticleFoil`.
 - Custom functions compile after `ShadingModule.prelude`, which declares `ShadingInput`, `ShadingScene`, and `ShadingLight`.
 
 ## Effect files
@@ -64,4 +65,4 @@ Colliders, force fields, lights, tracked objects, event bursts, and pointer bind
 
 ## Open
 
-- Per-pixel shading functions (#174) and reflective foil as a shading model (#175).
+- Nothing left from the module refactor besides #209 (first-frame pipeline stall, MetalSprockets #534).
