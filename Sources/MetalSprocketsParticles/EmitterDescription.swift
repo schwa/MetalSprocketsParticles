@@ -11,11 +11,15 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public let id: UUID
     public var name: String
     /// What the emitter does: module stacks per stage.
-    public var modules: EmitterModules
+    public var modules: EmitterModules {
+        didSet { lowered = modules.lowered() }
+    }
+    /// `modules.lowered()`, kept up to date so reading `settings` every frame costs nothing.
+    private var lowered: ParticleEmitter
     /// The modules lowered to flat settings, as the simulation runs them. Setting it replaces the modules with ones that
     /// lower to the new settings; disabled modules are kept.
     public var settings: ParticleEmitter {
-        get { modules.lowered() }
+        get { lowered }
         set { modules = modules.merging(EmitterModules(newValue)) }
     }
     public var sprite: ParticleSprite
@@ -45,7 +49,9 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     ) {
         id = UUID()
         self.name = name
-        self.modules = EmitterModules(settings)
+        let modules = EmitterModules(settings)
+        self.modules = modules
+        lowered = modules.lowered()
         self.sprite = sprite
         self.motion = motion
         self.simulationSpace = simulationSpace
@@ -77,8 +83,9 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
 public extension ParticleSystemRuntime {
     /// Makes the system's emitters match `descriptions`. Adding, removing, reordering, or resizing emitters (a change
     /// in ids or capacities), or `rebuild`, reallocates the particle buffer and removes all particles; otherwise
-    /// emitters are updated in place and keep their particles. Textures and GPU meshes are cached.
-    func apply(_ descriptions: [EmitterDescription], rebuild: Bool = false) throws {
+    /// emitters are updated in place and keep their particles. Textures and GPU meshes are cached. `constrainsToPlane`
+    /// keeps every emitter on its plane, as 2D systems do.
+    func apply(_ descriptions: [EmitterDescription], rebuild: Bool = false, constrainsToPlane: Bool = false) throws {
         let layout = descriptions.map { AppliedEmitter(id: $0.id, capacity: max($0.capacity, 1)) }
         if rebuild || layout != appliedLayout {
             try setEmitters(descriptions.map { ($0.settings, $0.capacity) })
@@ -89,6 +96,9 @@ public extension ParticleSystemRuntime {
         }
         for (emitter, description) in zip(emitters, descriptions) {
             emitter.settings = description.settings
+            if constrainsToPlane {
+                emitter.settings.constrainsToPlane = true
+            }
             emitter.simulationSpace = description.simulationSpace
             // Only a change in the description turns emission on or off, so start and stop triggers survive re-applying
             // the same description (as ParticlePlayer does every frame).
@@ -146,6 +156,7 @@ extension EmitterDescription: Codable {
         } else {
             modules = EmitterModules(try container.decode(ParticleEmitter.self, forKey: .settings))
         }
+        lowered = modules.lowered()
         sprite = try container.decode(ParticleSprite.self, forKey: .sprite)
         motion = try container.decode(EmitterMotion.self, forKey: .motion)
         simulationSpace = try container.decode(SimulationSpace.self, forKey: .simulationSpace)

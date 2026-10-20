@@ -46,18 +46,6 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
 
     public var id: String { name }
 
-    /// The layers as they run: in 2D, every emitter kept on its plane.
-    var effectiveLayers: [Layer] {
-        guard is2D else {
-            return layers
-        }
-        return layers.map { layer in
-            var layer = layer
-            layer.settings.constrainsToPlane = true
-            return layer
-        }
-    }
-
     public init(
         _ name: String,
         layers: [Layer],
@@ -150,7 +138,7 @@ public extension ParticleSystemRuntime {
     /// This is the one way a description reaches the runtime; per-frame changes (animation, pointer bindings, tracked
     /// objects) come from `ParticlePlayer` or the caller's `simulate` arguments.
     func apply(_ system: ParticleSystem, rebuild: Bool = false) throws {
-        try apply(system.effectiveLayers, rebuild: rebuild)
+        try apply(system.layers, rebuild: rebuild, constrainsToPlane: system.is2D)
         colliders = system.colliders
         forceFields = system.forceFields
         lights = system.lights

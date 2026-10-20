@@ -4243,16 +4243,17 @@ Part of #179.
 
 ---
 
-## 199: Modules lower straight to runtime state and GPU uniforms, not through ParticleEmitter
+## 199: Modules lower once when they change; runtime reads the cached result
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l
 depends: 206
 created: 2026-10-20T18:58:48Z
-updated: 2026-10-20T19:04:14Z
+updated: 2026-10-20T19:24:46Z
+closed: 2026-10-20T19:24:46Z
 +++
 
 Modules are lowered to the flat ParticleEmitter, and the runtime and FramePlan read that. Lower EmitterModules directly into the per-emitter runtime state and SimulationUniforms/RenderUniforms instead, so ParticleEmitter leaves the runtime path. Lower once when modules change and cache the result; today lowering runs every frame (about 0.01 ms per emitter of build time).
@@ -4260,6 +4261,8 @@ Modules are lowered to the flat ParticleEmitter, and the runtime and FramePlan r
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T19:24:46Z`: Done partly: EmitterDescription caches modules.lowered() on change (settings reads are free; mean preset build 0.026 → 0.0245 ms vs 0.0223 baseline), and 2D no longer re-lowers per frame (#212). Kept: the runtime's resolved per-emitter form is still ParticleEmitter. Lowering straight into SimulationUniforms isn't worth it: FramePlan builds uniforms per frame from time, transforms, and LOD anyway, and a flat resolved struct is the fast path. Making that struct internal and renaming it is #204.
 
 ---
 
@@ -4475,14 +4478,18 @@ The outline lists emitters, sub-emitters, and triggers, but not modules. Show ea
 ## 212: 2D effects lower and re-lift every emitter every frame
 
 +++
-status: new
+status: closed
 priority: low
 kind: bug
 labels: area:simulation, effort:s
 created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T19:24:46Z
+closed: 2026-10-20T19:24:46Z
 +++
 
 ParticleSystem.effectiveLayers sets layer.settings.constrainsToPlane in 2D, which lowers the modules, lifts them again, and merges, for every layer on every frame. Add the plane constraint module directly (or fold into #199's cached lowering).
+
+- `2026-10-20T19:24:46Z`: 2D now passes constrainsToPlane into apply(_:rebuild:constrainsToPlane:) instead of editing each layer's settings every frame.
 
 ---
 
