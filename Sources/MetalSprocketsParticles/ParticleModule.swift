@@ -11,6 +11,10 @@ public protocol ParticleModule: Sendable, Equatable, Codable {
     static var isRequired: Bool { get }
     /// What an editor adds, or nil if editors cannot add this kind.
     static var added: Self? { get }
+}
+
+/// How a module reaches the simulation: written onto the flat settings the runtime reads, and recovered from them.
+protocol LoweredModule: ParticleModule {
     /// Writes the module's settings onto `emitter`.
     func apply(to emitter: inout ParticleEmitter)
     /// The module that `emitter` implies, or nil when `emitter` has it at its neutral value.
@@ -42,13 +46,13 @@ public extension StageModule {
         types.compactMap { $0.added }.compactMap { Self(wrapping: $0) } // swiftlint:disable:this prefer_key_path
     }
 
-    func apply(to emitter: inout ParticleEmitter) {
-        module.apply(to: &emitter)
+    internal func apply(to emitter: inout ParticleEmitter) {
+        (module as? any LoweredModule)?.apply(to: &emitter)
     }
 
     /// The modules `emitter` implies, in lifting order.
-    static func lifted(from emitter: ParticleEmitter) -> [Self] {
-        types.compactMap { $0.init(lifting: emitter) }.compactMap { Self(wrapping: $0) }
+    internal static func lifted(from emitter: ParticleEmitter) -> [Self] {
+        types.compactMap { ($0 as? any LoweredModule.Type)?.init(lifting: emitter) }.compactMap { Self(wrapping: $0) }
     }
 
     /// Saved as `{"kind": {settings}}`.

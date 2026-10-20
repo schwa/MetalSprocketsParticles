@@ -55,7 +55,7 @@ public extension EmitterModules {
         let present = Set(stage.map(\.kind))
         let defaults = ParticleEmitter()
         for type in Stage.types where type.isRequired && !present.contains(type.kind) {
-            if let module = type.init(lifting: defaults), let wrapped = Stage(wrapping: module) {
+            if let module = (type as? any LoweredModule.Type)?.init(lifting: defaults), let wrapped = Stage(wrapping: module) {
                 stage.append(wrapped)
             }
         }

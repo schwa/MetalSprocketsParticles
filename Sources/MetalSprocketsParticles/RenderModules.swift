@@ -54,7 +54,7 @@ public enum RenderModule: StageModule {
 }
 
 /// How each particle is drawn.
-public struct SpriteModule: ParticleModule {
+public struct SpriteModule: LoweredModule {
     public static let kind = "sprite"
     public static let isRequired = true
     public var blendMode: ParticleBlendMode
@@ -73,11 +73,11 @@ public struct SpriteModule: ParticleModule {
         self.minimumScreenSize = minimumScreenSize
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(blendMode: emitter.blendMode, sortMode: emitter.sortMode, orientation: emitter.orientation, softness: emitter.softness, isLit: emitter.isLit, minimumScreenSize: emitter.minimumScreenSize)
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.blendMode = blendMode
         emitter.sortMode = sortMode
         emitter.orientation = orientation
@@ -87,7 +87,7 @@ public struct SpriteModule: ParticleModule {
     }
 }
 
-public struct FoilModule: ParticleModule {
+public struct FoilModule: LoweredModule {
     public static let kind = "foil"
     public static let added: Self? = Self(foil: ParticleFoil())
     public var foil: ParticleFoil
@@ -96,19 +96,19 @@ public struct FoilModule: ParticleModule {
         self.foil = foil
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let foil = emitter.foil else {
             return nil
         }
         self.foil = foil
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.foil = foil
     }
 }
 
-public struct MeshModule: ParticleModule {
+public struct MeshModule: LoweredModule {
     public static let kind = "mesh"
     public var mesh: ParticleMesh
 
@@ -116,19 +116,19 @@ public struct MeshModule: ParticleModule {
         self.mesh = mesh
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let mesh = emitter.particleMesh else {
             return nil
         }
         self.mesh = mesh
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.particleMesh = mesh
     }
 }
 
-public struct TrailModule: ParticleModule {
+public struct TrailModule: LoweredModule {
     public static let kind = "trail"
     public static let added: Self? = Self(trail: ParticleTrail())
     public var trail: ParticleTrail
@@ -137,19 +137,19 @@ public struct TrailModule: ParticleModule {
         self.trail = trail
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let trail = emitter.trail else {
             return nil
         }
         self.trail = trail
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.trail = trail
     }
 }
 
-public struct RibbonModule: ParticleModule {
+public struct RibbonModule: LoweredModule {
     public static let kind = "ribbon"
     public static let added: Self? = Self(ribbon: ParticleRibbon())
     public var ribbon: ParticleRibbon
@@ -158,19 +158,19 @@ public struct RibbonModule: ParticleModule {
         self.ribbon = ribbon
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let ribbon = emitter.ribbon else {
             return nil
         }
         self.ribbon = ribbon
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.ribbon = ribbon
     }
 }
 
-public struct LightModule: ParticleModule {
+public struct LightModule: LoweredModule {
     public static let kind = "light"
     public static let added: Self? = Self(light: ParticleLightEmission())
     public var light: ParticleLightEmission
@@ -179,20 +179,20 @@ public struct LightModule: ParticleModule {
         self.light = light
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let light = emitter.light else {
             return nil
         }
         self.light = light
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.light = light
     }
 }
 
 /// Fewer, or no, particles far from the camera.
-public struct LevelOfDetailModule: ParticleModule {
+public struct LevelOfDetailModule: LoweredModule {
     public static let kind = "levelOfDetail"
     public static let added: Self? = Self(near: 5, far: 20)
     public var near: Float
@@ -211,14 +211,14 @@ public struct LevelOfDetailModule: ParticleModule {
         self.simulatesWhenCulled = simulatesWhenCulled
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(near: emitter.lodNearDistance, far: emitter.lodFarDistance, farRateScale: emitter.lodFarRateScale, scalesSize: emitter.lodScalesSize, cullingRadius: emitter.cullingRadius, simulatesWhenCulled: emitter.simulatesWhenCulled)
         guard self != Self() else {
             return nil
         }
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.lodNearDistance = near
         emitter.lodFarDistance = far
         emitter.lodFarRateScale = farRateScale

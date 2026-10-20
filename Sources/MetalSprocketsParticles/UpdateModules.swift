@@ -55,7 +55,7 @@ public enum UpdateModule: StageModule {
     }
 }
 
-public struct GravityModule: ParticleModule {
+public struct GravityModule: LoweredModule {
     public static let kind = "gravity"
     public static let added: Self? = Self(acceleration: [0, -9.8, 0])
     public var acceleration: SIMD3<Float>
@@ -64,19 +64,19 @@ public struct GravityModule: ParticleModule {
         self.acceleration = acceleration
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard emitter.gravity != .zero else {
             return nil
         }
         acceleration = emitter.gravity
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.gravity = acceleration
     }
 }
 
-public struct DragModule: ParticleModule {
+public struct DragModule: LoweredModule {
     public static let kind = "drag"
     public static let added: Self? = Self(amount: 0.5)
     public var amount: Float
@@ -85,19 +85,19 @@ public struct DragModule: ParticleModule {
         self.amount = amount
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard emitter.drag != 0 else {
             return nil
         }
         amount = emitter.drag
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.drag = amount
     }
 }
 
-public struct FlockingModule: ParticleModule {
+public struct FlockingModule: LoweredModule {
     public static let kind = "flocking"
     public static let added: Self? = Self(flocking: ParticleFlocking())
     public var flocking: ParticleFlocking
@@ -106,20 +106,20 @@ public struct FlockingModule: ParticleModule {
         self.flocking = flocking
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let flocking = emitter.flocking else {
             return nil
         }
         self.flocking = flocking
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.flocking = flocking
     }
 }
 
 /// How particles bounce off colliders.
-public struct CollisionModule: ParticleModule {
+public struct CollisionModule: LoweredModule {
     public static let kind = "collision"
     public static let isRequired = true
     public var restitution: Float
@@ -140,11 +140,11 @@ public struct CollisionModule: ParticleModule {
         self.collidesWithSceneDepth = collidesWithSceneDepth
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(restitution: emitter.restitution, restitutionVariation: emitter.restitutionVariation, friction: emitter.friction, frictionVariation: emitter.frictionVariation, diesOnCollision: emitter.diesOnCollision, radius: emitter.collisionRadius, collidesWithSceneDepth: emitter.collidesWithSceneDepth)
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.restitution = restitution
         emitter.restitutionVariation = restitutionVariation
         emitter.friction = friction
@@ -156,25 +156,25 @@ public struct CollisionModule: ParticleModule {
 }
 
 /// Keeps particles on the emitter's XY plane.
-public struct PlaneConstraintModule: ParticleModule {
+public struct PlaneConstraintModule: LoweredModule {
     public static let kind = "planeConstraint"
     public static let added: Self? = Self()
 
     public init() {}
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard emitter.constrainsToPlane else {
             return nil
         }
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.constrainsToPlane = true
     }
 }
 
 /// Reports collisions and deaths to the app.
-public struct EventsModule: ParticleModule {
+public struct EventsModule: LoweredModule {
     public static let kind = "events"
     public static let added: Self? = Self(reportsCollisions: true, reportsDeaths: true)
     public var reportsCollisions: Bool
@@ -185,20 +185,20 @@ public struct EventsModule: ParticleModule {
         self.reportsDeaths = reportsDeaths
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard emitter.reportsCollisions || emitter.reportsDeaths else {
             return nil
         }
         self.init(reportsCollisions: emitter.reportsCollisions, reportsDeaths: emitter.reportsDeaths)
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.reportsCollisions = reportsCollisions
         emitter.reportsDeaths = reportsDeaths
     }
 }
 
-public struct SubEmittersModule: ParticleModule {
+public struct SubEmittersModule: LoweredModule {
     public static let kind = "subEmitters"
     public var emitters: [SubEmitter]
 
@@ -206,19 +206,19 @@ public struct SubEmittersModule: ParticleModule {
         self.emitters = emitters
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard !emitter.subEmitters.isEmpty else {
             return nil
         }
         emitters = emitter.subEmitters
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.subEmitters += emitters
     }
 }
 
-public struct TriggersModule: ParticleModule {
+public struct TriggersModule: LoweredModule {
     public static let kind = "triggers"
     public var triggers: [EmissionTrigger]
 
@@ -226,20 +226,20 @@ public struct TriggersModule: ParticleModule {
         self.triggers = triggers
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard !emitter.triggers.isEmpty else {
             return nil
         }
         triggers = emitter.triggers
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.triggers += triggers
     }
 }
 
 /// A user `[[visible]]` function run for every live particle each step.
-public struct UpdateFunctionModule: ParticleModule {
+public struct UpdateFunctionModule: LoweredModule {
     public static let kind = "function"
     public var function: ParticleFunction
 
@@ -247,20 +247,20 @@ public struct UpdateFunctionModule: ParticleModule {
         self.function = function
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let function = emitter.updateFunction else {
             return nil
         }
         self.function = function
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.updateFunction = function
     }
 }
 
 /// A user function run when a particle hits a collider.
-public struct CollisionFunctionModule: ParticleModule {
+public struct CollisionFunctionModule: LoweredModule {
     public static let kind = "collisionFunction"
     public var function: ParticleFunction
 
@@ -268,20 +268,20 @@ public struct CollisionFunctionModule: ParticleModule {
         self.function = function
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let function = emitter.collisionFunction else {
             return nil
         }
         self.function = function
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.collisionFunction = function
     }
 }
 
 /// A user function run on the step a particle dies.
-public struct DeathFunctionModule: ParticleModule {
+public struct DeathFunctionModule: LoweredModule {
     public static let kind = "deathFunction"
     public var function: ParticleFunction
 
@@ -289,20 +289,20 @@ public struct DeathFunctionModule: ParticleModule {
         self.function = function
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let function = emitter.deathFunction else {
             return nil
         }
         self.function = function
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.deathFunction = function
     }
 }
 
 /// A user `[[stitchable]]` module in the update stack. Lifting adds these separately, one per module.
-public struct StitchedUpdateModule: ParticleModule {
+public struct StitchedUpdateModule: LoweredModule {
     public static let kind = "stitched"
     public var module: StitchedModule
 
@@ -310,11 +310,11 @@ public struct StitchedUpdateModule: ParticleModule {
         self.module = module
     }
 
-    public init?(lifting _: ParticleEmitter) {
+    init?(lifting _: ParticleEmitter) {
         nil
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.updateModules.append(module)
     }
 }

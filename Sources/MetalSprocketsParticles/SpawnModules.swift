@@ -47,7 +47,7 @@ public enum SpawnModule: StageModule {
 }
 
 /// Where particles are born and which way they head.
-public struct ShapeModule: ParticleModule {
+public struct ShapeModule: LoweredModule {
     public static let kind = "shape"
     public static let isRequired = true
     public var position: SIMD3<Float>
@@ -64,11 +64,11 @@ public struct ShapeModule: ParticleModule {
         self.sweepAngle = sweepAngle
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(position: emitter.position, shape: emitter.shape, birthLocation: emitter.birthLocation, birthDirection: emitter.birthDirection, sweepAngle: emitter.sweepAngle)
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.position = position
         emitter.shape = shape
         emitter.birthLocation = birthLocation
@@ -78,7 +78,7 @@ public struct ShapeModule: ParticleModule {
 }
 
 /// How many particles are born, and when.
-public struct RateModule: ParticleModule {
+public struct RateModule: LoweredModule {
     public static let kind = "rate"
     public static let isRequired = true
     public var birthRate: Float
@@ -99,11 +99,11 @@ public struct RateModule: ParticleModule {
         self.overTime = overTime
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(birthRate: emitter.birthRate, variation: emitter.birthRateVariation, emissionDuration: emitter.emissionDuration, idleDuration: emitter.idleDuration, loops: emitter.loops, warmupDuration: emitter.warmupDuration, overTime: emitter.emissionOverTime)
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.birthRate = birthRate
         emitter.birthRateVariation = variation
         emitter.emissionDuration = emissionDuration
@@ -115,7 +115,7 @@ public struct RateModule: ParticleModule {
 }
 
 /// How long particles live, in seconds.
-public struct LifetimeModule: ParticleModule {
+public struct LifetimeModule: LoweredModule {
     public static let kind = "lifetime"
     public static let isRequired = true
     public var range: ClosedRange<Float>
@@ -124,17 +124,17 @@ public struct LifetimeModule: ParticleModule {
         self.range = range
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         range = emitter.lifetime
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.lifetime = range
     }
 }
 
 /// Initial velocity.
-public struct VelocityModule: ParticleModule {
+public struct VelocityModule: LoweredModule {
     public static let kind = "velocity"
     public static let added: Self? = Self(velocity: [0, 2, 0], spread: 0.5)
     public var velocity: SIMD3<Float>
@@ -149,14 +149,14 @@ public struct VelocityModule: ParticleModule {
         self.inherit = inherit
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(velocity: emitter.velocity, spread: emitter.velocitySpread, speedVariation: emitter.speedVariation, inherit: emitter.inheritVelocity)
         guard self != Self(velocity: .zero) else {
             return nil
         }
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.velocity = velocity
         emitter.velocitySpread = spread
         emitter.speedVariation = speedVariation
@@ -165,7 +165,7 @@ public struct VelocityModule: ParticleModule {
 }
 
 /// Initial angle and spin.
-public struct RotationModule: ParticleModule {
+public struct RotationModule: LoweredModule {
     public static let kind = "rotation"
     public static let added: Self? = Self(angleVariation: .pi, angularSpeed: 1)
     public var angle: Float
@@ -180,14 +180,14 @@ public struct RotationModule: ParticleModule {
         self.angularSpeedVariation = angularSpeedVariation
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(angle: emitter.angle, angleVariation: emitter.angleVariation, angularSpeed: emitter.angularSpeed, angularSpeedVariation: emitter.angularSpeedVariation)
         guard self != Self() else {
             return nil
         }
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.angle = angle
         emitter.angleVariation = angleVariation
         emitter.angularSpeed = angularSpeed
@@ -196,7 +196,7 @@ public struct RotationModule: ParticleModule {
 }
 
 /// Per-particle random size and color offsets.
-public struct VariationModule: ParticleModule {
+public struct VariationModule: LoweredModule {
     public static let kind = "variation"
     public static let added: Self? = Self(size: 0.2, color: [0.1, 0.1, 0.1, 0])
     public var size: Float
@@ -207,21 +207,21 @@ public struct VariationModule: ParticleModule {
         self.color = color
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         self.init(size: emitter.sizeVariation, color: emitter.colorVariation)
         guard self != Self() else {
             return nil
         }
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.sizeVariation = size
         emitter.colorVariation = color
     }
 }
 
 /// Multiplies color by an image laid over the world.
-public struct ColorImageModule: ParticleModule {
+public struct ColorImageModule: LoweredModule {
     public static let kind = "colorImage"
     public var image: ParticleColorImage
 
@@ -229,20 +229,20 @@ public struct ColorImageModule: ParticleModule {
         self.image = image
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let image = emitter.colorImage else {
             return nil
         }
         self.image = image
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.colorImage = image
     }
 }
 
 /// A user `[[visible]]` function run once per new particle.
-public struct SpawnFunctionModule: ParticleModule {
+public struct SpawnFunctionModule: LoweredModule {
     public static let kind = "function"
     public var function: ParticleFunction
 
@@ -250,20 +250,20 @@ public struct SpawnFunctionModule: ParticleModule {
         self.function = function
     }
 
-    public init?(lifting emitter: ParticleEmitter) {
+    init?(lifting emitter: ParticleEmitter) {
         guard let function = emitter.spawnFunction else {
             return nil
         }
         self.function = function
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.spawnFunction = function
     }
 }
 
 /// A user `[[stitchable]]` module in the spawn stack. Lifting adds these separately, one per module.
-public struct StitchedSpawnModule: ParticleModule {
+public struct StitchedSpawnModule: LoweredModule {
     public static let kind = "stitched"
     public var module: StitchedModule
 
@@ -271,11 +271,11 @@ public struct StitchedSpawnModule: ParticleModule {
         self.module = module
     }
 
-    public init?(lifting _: ParticleEmitter) {
+    init?(lifting _: ParticleEmitter) {
         nil
     }
 
-    public func apply(to emitter: inout ParticleEmitter) {
+    func apply(to emitter: inout ParticleEmitter) {
         emitter.spawnModules.append(module)
     }
 }
