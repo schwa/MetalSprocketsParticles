@@ -3623,6 +3623,7 @@ Acceptance: every existing golden unchanged; foil and lit presets look the same;
 
 - `2026-10-19T22:40:04Z`: Related: #171 (foil for tumbling sprites, sparkles on glints) and #155 (foil, which becomes .foil here).
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
+- `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
 
 ---
 
@@ -3644,6 +3645,8 @@ Inspector: a Shading picker (Unlit, Lit, Foil, Custom) with the Custom source ed
 
 Acceptance: a custom function that returns, say, a rim light compiles, renders (golden), round-trips; bad source is rejected before it reaches the runtime.
 
+- `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
+
 ---
 
 ## 174: Per-pixel shading functions
@@ -3662,6 +3665,7 @@ A fragment-stage variant of the shading function (#172): the same ShadingInput i
 Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex stays the default and unchanged.
 
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
+- `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
 
 ---
 
@@ -3693,6 +3697,7 @@ Related: #172 (pluggable shading; foil could become a built-in shading model the
 
 - `2026-10-20T02:27:15Z`: Blocked on #172 (user): build the reflective metal model as a built-in shading model on the pluggable shading slot, not as more special-case shader code.
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
+- `2026-10-20T18:26:33Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
 
 ---
 
@@ -3768,8 +3773,9 @@ status: open
 priority: medium
 kind: task
 labels: area:api, effort:xl, needs-design
-depends: 178
+depends: 178, 182, 197
 created: 2026-10-20T02:31:43Z
+updated: 2026-10-20T18:19:58Z
 +++
 
 Goal: refactor particle behavior and rendering so emitters are built from composable modules instead of one large settings struct and special-case kernel code. Implementation path for #178.
@@ -3792,6 +3798,8 @@ Related: #178 (why), #172, #174, #175, #167, #122 (custom attributes), #100.
 - Effect JSON: an emitter becomes its module stacks per stage (an ordered list of modules, each with a type and its settings) instead of one flat settings object. A new format version; existing effects and presets need a migration (a converter from today's flat settings to modules), and the decision on reading old files (after #169/#170, references only; here likely a one-time migration tool rather than reading both forever).
 - Demo UI: the inspector becomes a module stack per stage (add, remove, reorder, enable modules; each module has its own section), replacing the fixed sections built in #159-#168. The outline may show modules under emitters. Effect packages (#169) carry user module sources.
 Steps 2 and 6 cover these; split them into their own issues after the spike.
+
+- `2026-10-20T18:19:58Z`: Split into sub-tickets (user: plan the big refactor first). Order: #182 spike (gates everything) and #184 perf baseline; #183 MetalSprockets stitching API; #185 design; #186 JSON format; #187 Swift module types; #188 runtime; #189-#191 update modules; #192 spawn; #193 render (with #172/#175/#174); #194 migration tool; #195 presets; #196 demo inspector; #197 retire flat settings. Dependencies are recorded on each issue.
 
 ---
 
@@ -3851,5 +3859,306 @@ Split from #177. ParticleMesh.triangles(positions:normals:) (custom mesh particl
 Store it through EffectResources as a mesh file, reusing MeshFile (#170): write OBJ, read OBJ ourselves and other formats (PLY, USD) through Model I/O. References only, no inline reading (#169).
 
 Open point: MeshFile keeps positions and faces only. Normals must either be written (OBJ vn) and read back, or be rebuilt as flat normals, as ParticleMesh(mesh:) does now.
+
+---
+
+## 182: Spike: stitch update behaviors into one function with MTLFunctionStitchingGraph
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:m, needs-design
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+Nothing yet shows that Metal function stitching works for particle behaviors in this library.
+
+Spike: write gravity, drag, and color over life as [[stitchable]] functions, stitch them into the update slot, and compare against the built-in path (same particles after N steps; goldens).
+
+Answer and write up on #179:
+- What stitchable functions can take and return (values, vectors, pointers, structs); whether ParticleState passes whole or must be split into fields.
+- Whether stitching works with the Metal 4 pipeline and compiler APIs the library uses (MTL4Compiler, linked functions, visible function tables).
+- Cost: Stress Test GPU time vs. today's kernel; time to build a graph; how many distinct graphs a typical effect needs.
+- Go / no-go, and the fallback if no-go (e.g. generated Metal source per stack, or fixed kernels with module flags).
+
+Part of #179 (plan for #178).
+
+---
+
+## 183: MetalSprockets has no API for stitched functions
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:s
+depends: 182
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+MetalSprockets' VisibleFunctionTable docs mention stitched functions, but there is no way to build one (MTLFunctionStitchingGraph / stitched function descriptor) and get a VisibleFunction from it. The module runtime needs this. Check after the spike what is missing and file it in MetalSprockets if the work belongs there.
+
+Part of #179 (plan for #178).
+
+---
+
+## 184: No performance gate for the module refactor
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:tooling, effort:s
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+The module refactor must not slow the simulation, but there is no recorded baseline to compare against. Record particles-bench numbers (Stress Test and every preset: GPU ms, frame ms) on the current code, and a way to re-run and compare them after each migration step (a script or a bench mode that diffs against the baseline).
+
+Part of #179 (plan for #178).
+
+---
+
+## 185: Design the module model: stages, per-particle data, parameters, events
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m, needs-design
+depends: 182
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+The module model is not designed. Decide and write down (a design doc in the repo, linked from #178):
+- Stages and what belongs in each: spawn, update, collision/events, render/shading.
+- Module identity and settings: a type per module or one enum; enable flag; order = application order.
+- How modules share per-particle data: fixed ParticleState fields vs. declared attributes (builds on custom attributes, #122).
+- How a module's settings reach the GPU (parameter buffer layout per module in a stack).
+- Where colliders, force fields, events, sub-emitters, triggers, trails, ribbons, LOD, and lights fit (module, system-level, or unchanged).
+- What of today's ParticleEmitter API stays as convenience (builders, presets DSL).
+- Performance rules from the spike (e.g. what must stay in the kernel).
+
+Part of #179 (plan for #178).
+
+---
+
+## 186: Effect JSON format for module stacks, with a version and migration path
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m, needs-design
+depends: 185
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+Effect files store one flat ParticleEmitter settings object. With modules, an emitter is ordered module stacks per stage. The new format needs: a format version, the shape of a module entry (type + settings), how user modules' sources are carried in effect packages (#169), and the decision on old files (per #169/#170: likely a one-time migration tool, not reading both forever).
+
+Part of #179 (plan for #178).
+
+---
+
+## 187: Swift module types per stage (Codable, ordered stacks)
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:l
+depends: 185, 186
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+There are no Swift types for modules. Per the design: module value types per stage, each Codable on its own, an ordered stack per stage on EmitterDescription, and an enabled flag. Equatable/Hashable so the runtime can cache stitched graphs by stack shape.
+
+Part of #179 (plan for #178).
+
+---
+
+## 188: Runtime: build, cache, and bind stitched functions from module stacks
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:l
+depends: 187, 183
+created: 2026-10-20T18:19:52Z
+updated: 2026-10-20T18:26:31Z
++++
+
+The runtime cannot turn a module stack into GPU code. Needed: build a stitching graph per stage from a stack, cache the result by stack shape (not by parameter values), pack module parameters, and link/bind the functions in the stage's visible function table, sharing the path user functions (#167) use today. Errors from bad user modules surface like ParticleFunctionError.
+
+Part of #179 (plan for #178).
+
+---
+
+## 189: Update modules: gravity, drag, force fields, plane constraint
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:l
+depends: 188, 184
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:31Z
++++
+
+Gravity, drag, force fields, and the plane constraint are hard-coded in updateParticles. Move them to update modules. Every golden stays identical and the performance gate does not regress.
+
+Part of #179 (plan for #178).
+
+---
+
+## 190: Update modules: color, size, rotation over life, image sequences
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:l
+depends: 189
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:31Z
++++
+
+Color, size, and rotation over life and image sequence playback are fixed emitter settings sampled in the kernel/vertex shader. Move them to modules. Goldens identical; no performance regression.
+
+Part of #179 (plan for #178).
+
+---
+
+## 191: Update modules: collisions, flocking, and user update functions
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:l
+depends: 190
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:32Z
++++
+
+Collisions (analytic, SDF, scene depth, with events), flocking steering, and the user update function are separate code paths in the kernel. Move them into the module stack (or document why some stay in the kernel, per the design). User functions become user modules. Goldens identical; no performance regression.
+
+Part of #179 (plan for #178).
+
+---
+
+## 192: Spawn modules: shape, rate, initial velocity, color, user spawn functions
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:simulation, effort:l
+depends: 188, 184
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:32Z
++++
+
+Spawn behavior (emitter shape, birth location and direction, velocity and spread, variations, birth color gradient, user spawn function) is fixed code in spawnParticle. Move it to spawn modules. Goldens identical; no performance regression.
+
+Part of #179 (plan for #178).
+
+---
+
+## 193: Render modules: shading, foil, and per-pixel functions through the module stack
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:rendering, effort:l
+depends: 188
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:32Z
++++
+
+Rendering (sprite/mesh/trail/ribbon drawing, shading models, foil) does not use modules. Bring the render stage onto the same mechanism, building on #172 (pluggable shading), then #175 (foil) and #174 (per-pixel functions).
+
+Part of #179 (plan for #178).
+
+---
+
+## 194: Migration tool: convert flat effect files to module stacks
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m
+depends: 186, 191, 192
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:32Z
++++
+
+Existing effects (presets, user files, packages) use flat settings. Needed: a converter from today's settings to module stacks (library function + particles-render or a CLI subcommand), round-trip tested so every preset renders identically after conversion.
+
+Part of #179 (plan for #178).
+
+---
+
+## 195: Migrate bundled presets to the module format
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:s
+depends: 194
+created: 2026-10-20T18:19:53Z
+updated: 2026-10-20T18:26:32Z
++++
+
+The bundled presets are in the flat format. Convert them with the migration tool; every golden stays identical.
+
+Part of #179 (plan for #178).
+
+---
+
+## 196: Demo inspector: module stack per stage
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:demo, effort:l
+depends: 187, 194
+created: 2026-10-20T18:19:54Z
+updated: 2026-10-20T18:26:32Z
++++
+
+The demo inspector has fixed sections (#159-#168) for the flat settings. It needs a module stack per stage: add, remove, reorder, enable/disable modules, each with its own section; the outline may show modules under emitters. User modules reuse the user-function editor (#167).
+
+Part of #179 (plan for #178).
+
+---
+
+## 197: Retire the flat ParticleEmitter settings
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:m
+depends: 195, 196, 193
+created: 2026-10-20T18:19:54Z
+updated: 2026-10-20T18:26:32Z
++++
+
+After migration, the flat settings and the kernel branches behind them remain. Remove them or keep a thin convenience layer per the design decision; update the presets DSL (ParticlePresetBuilder), README, and docs.
+
+Part of #179 (plan for #178).
 
 ---
