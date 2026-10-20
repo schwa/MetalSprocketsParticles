@@ -1,5 +1,6 @@
 import Metal
 import MetalSprockets
+import Synchronization
 
 /// A user-supplied Metal function that runs for each particle, for behavior the built-in settings cannot express.
 ///
@@ -160,7 +161,19 @@ enum SlotFunction: Equatable {
         }
     }
 
+    /// Remembered by source: frame planning asks every frame, and the regexes cost about 0.1 ms per function.
     static func usesCustomAttributes(_ source: String) -> Bool {
+        if let known = customAttributeUse.withLock({ $0[source] }) {
+            return known
+        }
+        let uses = scanForCustomAttributes(source)
+        customAttributeUse.withLock { $0[source] = uses }
+        return uses
+    }
+
+    private static let customAttributeUse = Mutex<[String: Bool]>([:])
+
+    private static func scanForCustomAttributes(_ source: String) -> Bool {
         let withoutComments = source
             .replacing(/\/\*[\s\S]*?\*\//, with: " ")
             .replacing(/\/\/[^\n]*/, with: " ")
