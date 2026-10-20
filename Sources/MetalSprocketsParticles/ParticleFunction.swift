@@ -151,6 +151,14 @@ enum SlotFunction: Equatable {
         }
     }
 
+    /// Whether the code may touch `ParticleState.custom` through `custom3`. A plain text search, so it errs toward yes.
+    var usesCustomAttributes: Bool {
+        switch self {
+        case let .user(function): function.source.contains("custom")
+        case let .stitched(modules, _): modules.contains { $0.source.contains("custom") }
+        }
+    }
+
     func compile(device: MTLDevice) throws -> VisibleFunction {
         switch self {
         case let .user(function): try function.compile(device: device)
@@ -169,6 +177,11 @@ extension ParticleEmitter {
 
     /// The slot's function: the user function, or the slot's stitched modules as one function. A function wins over
     /// modules; `validateFunctions` reports having both.
+    /// Whether any of this emitter's own functions may use custom attributes, so the kernel must keep them.
+    var usesCustomAttributes: Bool {
+        ParticleFunctionSlot.allCases.contains { function(for: $0)?.usesCustomAttributes ?? false }
+    }
+
     func function(for slot: ParticleFunctionSlot) -> SlotFunction? {
         if let function = self[keyPath: slot.keyPath] {
             return .user(function)

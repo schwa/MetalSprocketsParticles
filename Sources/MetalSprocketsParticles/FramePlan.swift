@@ -261,7 +261,8 @@ extension ParticleSystemRuntime {
         uniforms.trailPointInterval = max(settings.trail?.pointInterval ?? 0, 0)
         uniforms.collisionRadius = max(settings.collisionRadius, 0)
         uniforms.ordersBirths = settings.ribbon == nil ? 0 : 1
-        uniforms.customAttributeCount = UInt32(min(max(settings.customAttributeCount, 1), ParticleFunction.maximumCustomAttributes))
+        // 0 when no function reads or writes ParticleState.custom: then the kernel skips the attribute traffic (#206).
+        uniforms.customAttributeCount = settings.usesCustomAttributes ? UInt32(min(max(settings.customAttributeCount, 1), ParticleFunction.maximumCustomAttributes)) : 0
         if settings.colorByPositionAtBirth, settings.colorByPosition != nil {
             uniforms.colorsByBirthPosition = 1
             uniforms.birthColorStart = settings.colorByPositionStart

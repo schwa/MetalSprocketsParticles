@@ -905,9 +905,9 @@ kernel void updateParticles(
     Particle p = particles[id];
     float dt = uniforms.deltaTime;
     // ParticleState.custom through custom3. The buffer only covers every particle when some emitter has user functions;
-    // each particle has attributeStride entries, of which this emitter keeps customAttributeCount.
-    bool hasAttributes = id < attributeCount;
-    uint customCount = max(uniforms.customAttributeCount, 1u);
+    // each particle has attributeStride entries, of which this emitter keeps customAttributeCount (0: none, no traffic).
+    uint customCount = uniforms.customAttributeCount;
+    bool hasAttributes = id < attributeCount && customCount > 0;
     CustomAttributes custom = loadAttributes(attributes, id, attributeStride, customCount, hasAttributes);
 
     if (spawn.kill != 0) {

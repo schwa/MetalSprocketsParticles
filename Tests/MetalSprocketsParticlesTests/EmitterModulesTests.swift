@@ -71,6 +71,15 @@ struct EmitterModulesTests {
         }
     }
 
+    @Test func customAttributesOnlyWhenAFunctionMentionsThem() {
+        var emitter = ParticleEmitter()
+        #expect(!emitter.usesCustomAttributes)
+        emitter.updateFunction = ParticleFunction(source: "[[visible]] void f(thread ParticleState &p, float, float, constant float4 *) {}", name: "f")
+        #expect(!emitter.usesCustomAttributes)
+        emitter.spawnModules = [StitchedModule(source: "p.custom.x = 1;", name: "g")]
+        #expect(emitter.usesCustomAttributes)
+    }
+
     @Test func jsonRoundTrips() throws {
         for system in ParticleSystem.all {
             let (json, files) = try system.encoded()

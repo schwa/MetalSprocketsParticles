@@ -4383,13 +4383,17 @@ Part of #197.
 ## 206: Custom attribute buffer is read and written whenever an emitter has any user function
 
 +++
-status: new
+status: closed
 priority: medium
 kind: enhancement
 labels: area:simulation, effort:s
 created: 2026-10-20T19:04:14Z
+updated: 2026-10-20T19:13:44Z
+closed: 2026-10-20T19:13:44Z
 +++
 
 When any emitter has a user function or stitched module, the update kernel loads and stores ParticleState.custom for every particle (16+ bytes each way). On 1M particles that costs about 0.07 ms of simulate GPU time (0.28 → 0.35 ms), even for a no-op function. With the attribute traffic off, a no-op function costs the same as none (#205 spike). Only keep attributes for emitters whose functions or modules use them: e.g. a declared customAttributeCount of 0 meaning none, or modules declaring what they read and write. This matters for #205: if built-ins become stitched modules, every emitter has a function, and this cost would apply everywhere.
+
+- `2026-10-20T19:13:44Z`: Emitters whose functions/modules never mention 'custom' get customAttributeCount 0; the kernel then skips attribute load/store and no buffer is made. 1M particles with a no-op update function: 0.35 → 0.27 ms simulate, same as no function.
 
 ---
