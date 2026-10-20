@@ -461,9 +461,12 @@ static void fieldContact(texture3d<float> field, ColliderData c, float3 start, t
     float3 startLocal = fieldLocal(c, start);
     float distance = fieldDistance(field, c, local);
     if (distance < 0) {
+        // Came in this step: respond where the path went in, plus the rest of the step's motion along the surface.
+        // Pushing out to the nearest surface from where the step ended can pick a side of a thin part, or its far
+        // face, so particles slid off or sank in (#157). Stopping at the entry point alone threw away motion along
+        // the surface, so sliding particles (Marble Run's marbles) crawled; the along-surface part is kept, and only
+        // the part into the surface is dropped.
         if (fieldDistance(field, c, startLocal) >= 0) {
-            // Came in this step: respond where the path went in. Pushing out to the nearest surface from where it
-            // ended can pick a side of a thin part, or its far face, when the step went several cells deep (#157).
             float low = 0;
             float high = 1;
             for (int refine = 0; refine < 6; refine++) {
@@ -472,7 +475,15 @@ static void fieldContact(texture3d<float> field, ColliderData c, float3 start, t
             }
             float3 contact = mix(startLocal, local, low);
             float3 normal = fieldNormal(field, c, contact);
-            position = c.center + rotate(c.rotation, contact) + normal * 1e-4;
+            // Coulomb friction on the carried motion: it holds unless the along-surface part beats friction times the
+            // part into the surface. Resting particles stay put (a thin part's tilted normal would otherwise walk them
+            // off its edge), and sliding ones keep their speed.
+            float3 rest = rotate(c.rotation, local - contact);
+            float into = max(-dot(rest, normal), 0.0);
+            float3 along = rest - normal * dot(rest, normal);
+            float alongLength = length(along);
+            float kept = alongLength > 1e-7 ? max(0.0, 1 - friction * into / alongLength) : 0;
+            position = c.center + rotate(c.rotation, contact) + along * kept + normal * 1e-4;
             collide(position, velocity, c, normal, 0, restitution, friction, hit);
             return;
         }

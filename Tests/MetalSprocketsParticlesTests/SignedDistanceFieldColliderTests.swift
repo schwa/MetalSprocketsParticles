@@ -361,6 +361,43 @@ struct SignedDistanceFieldColliderTests {
         }
     }
 
+    /// A particle sliding down a slope keeps its speed: a distance field slab and an analytic box tilted the same way
+    /// carry it about as far. The entry-point response (#157) put sliding particles back where their step entered,
+    /// throwing away their motion along the surface, so Marble Run's marbles crawled.
+    @Test func particlesSlideDownSlopesAtFullSpeed() throws {
+        let tilt = simd_quatf(angle: 0.4, axis: [0, 0, 1])
+        let slab = field { point in
+            let q = abs(point) - SIMD3<Float>(0.9, 0.08, 0.5)
+            return simd_length(simd_max(q, .zero)) + min(max(q.x, max(q.y, q.z)), 0)
+        }
+        func slide(on collider: Collider) throws -> Float {
+            let runner = try Runner()
+            var emitter = ParticleEmitter()
+            emitter.shape = .point
+            // Just above the slab's top near its high end (the slope falls toward -x).
+            emitter.position = tilt.act([0.6, 0.1, 0])
+            emitter.velocity = .zero
+            emitter.velocitySpread = 0
+            emitter.gravity = [0, -9.8, 0]
+            emitter.lifetime = 10...10
+            emitter.birthRate = 0
+            emitter.restitution = 0
+            emitter.friction = 0
+            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: emitter)
+            runtime.colliders = [collider]
+            runtime.burst(1)
+            for _ in 0..<20 {
+                try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))
+            }
+            let particle = runtime.buffer.contents().bindMemory(to: Particle.self, capacity: 1)[0]
+            return 0.6 * cos(0.4) - particle.position.x
+        }
+        let box = try slide(on: .box(center: .zero, halfExtents: [0.9, 0.08, 0.5], rotation: tilt))
+        let distanceField = try slide(on: .signedDistanceField(slab, rotation: tilt))
+        #expect(box > 0.1)
+        #expect(distanceField > box * 0.8, "distance field \(distanceField), box \(box)")
+    }
+
     @Test func collisionRadiusGrowsTheSurface() throws {
         let landed = try land(on: [.signedDistanceField(ball)], radius: 0.1)
         #expect(landed.allSatisfy { abs($0.y - 0.6) < cell })

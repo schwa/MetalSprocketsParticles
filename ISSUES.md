@@ -3293,6 +3293,8 @@ Ideas: entry-point response with the collider's motion accounted for (so resting
 
 - `2026-10-19T21:40:28Z`: Related: #166 (distance field colliders in the inspector): its bake resolution setting is one of the levers here.
 - `2026-10-19T21:47:12Z`: Fixed. Two changes in fieldContact: (1) a particle that ends a step inside the field but started outside responds where its path went in (bisected), not at the nearest surface to where it ended; (2) the step's start is carried by the collider's spin as well as its velocity (start + (v + w x (start - pivot)) dt). (2) is why the earlier entry-point attempt broke aSpinningFieldFlingsParticles: without the spin, a grain resting on a turning collider seemed to start off its surface, so every step counted as a new entry and reset it. Test fastParticlesRestOnTopOfThinParts (9 m/s onto a fin two cells wide; failed at 2 of 3 drop points before). Sand on Letters: grains on the letter tops 8 000 -> 15 900, inside the letters 3 400 -> 1 160 (not zero; some still get in, likely at stroke edges). Goldens moved for the five distance-field scenes: sand now rests on the baked teapot's spout and handle, and the umbrella's dry patch is crisp.
+- `2026-10-20T00:07:26Z`: Fixed: on entry, the particle goes to the entry point plus the rest of the step's motion along the surface, under Coulomb friction (kept only beyond friction times the part into the surface). Sliding particles keep their speed; resting ones stay put, so thin parts still hold sand (a tilted normal near a thin part would otherwise walk grains off its edge, which a first attempt at pushing shallow dips straight out did). Test particlesSlideDownSlopesAtFullSpeed: a ball slides as far down a tilted distance-field slab as down the same analytic box (0.047 vs 0.23 before, about five times slower). Marble Run measured: mean marble speed 1.55-1.70 m/s over 6 s, matching the pre-#157 behavior (1.54-1.68). The #157 thin-part and spinning-fling tests still pass; five distance-field goldens moved slightly (reviewed: sand still rests on the teapot's spout and handle).
+- `2026-10-20T00:08:00Z`: Correction: the 'Fixed: on entry...' comment above belongs to #176 (a regression from this issue's fix); posted here by mistake.
 
 ---
 
@@ -3657,7 +3659,6 @@ priority: medium
 kind: enhancement
 labels: area:rendering, effort:m
 created: 2026-10-19T23:59:01Z
-updated: 2026-10-19T23:59:01Z
 +++
 
 Foil (ParticleFoil, #155/#171) shades a card with its own matte color, darkens it edge-on, and adds a Blinn-Phong glint from one light. On tumbling confetti that reads as colored rectangles that turn white (per-vertex glint) or get white dots (per-pixel crinkled glint, uncommitted experiment) instead of foil. User: 'that's just white dots on the foil'.
@@ -3673,5 +3674,23 @@ What real foil does, and the model to build:
 Acceptance: Foil Confetti reads as metallic foil in renders and in motion (cards go from near-black to bright tint as they turn, with patchy facet variation), reviewed by the user; FoilTests updated (brightness swings with angle, highlight hue follows the base color rather than white, crinkle varies brightness across a card).
 
 Related: #172 (pluggable shading; foil could become a built-in shading model there), #174 (per-pixel shading).
+
+---
+
+## 176: Marble Run marbles crawl down the track (regression from #157)
+
++++
+status: closed
+priority: high
+kind: bug
+labels: area:collision, effort:s
+created: 2026-10-20T00:07:26Z
+updated: 2026-10-20T00:08:00Z
+closed: 2026-10-20T00:08:00Z
++++
+
+Since #157, marbles in Marble Run roll very slowly. #157 made a particle that enters a distance field during a step respond at the entry point on its path; a particle sliding along the surface starts each step at the surface and dips in under gravity, so every step counted as an entry and put it back near where it started, throwing away its motion along the surface.
+
+- `2026-10-20T00:08:00Z`: Fixed: on entry, the particle goes to the entry point plus the rest of the step's motion along the surface, under Coulomb friction (kept only beyond friction times the part into the surface). Sliding particles keep their speed; resting ones stay put, so thin parts still hold sand (a first attempt, pushing shallow dips straight out, let a thin part's tilted normal walk grains off its edge). Test particlesSlideDownSlopesAtFullSpeed: a ball slides as far down a tilted distance-field slab as down the same analytic box (0.047 vs 0.23 before). Marble Run: mean marble speed 1.55-1.70 m/s over 6 s, matching pre-#157 (1.54-1.68). The #157 thin-part and spinning-fling tests still pass; five distance-field goldens moved slightly (reviewed).
 
 ---
