@@ -10,7 +10,20 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     /// Identifies the emitter across edits. `apply(_:)` rebuilds the particle buffer when the ids change.
     public let id: UUID
     public var name: String
-    public var settings: ParticleEmitter
+    /// What the emitter does: module stacks per stage.
+    public var modules: EmitterModules
+    /// The modules lowered to flat settings, as the simulation runs them. Setting it replaces the modules with ones that
+    /// lower to the new settings; disabled modules are kept.
+    public var settings: ParticleEmitter {
+        get { modules.lowered() }
+        set {
+            var lifted = EmitterModules(newValue)
+            lifted.spawn += modules.spawn.filter { !$0.isEnabled }
+            lifted.update += modules.update.filter { !$0.isEnabled }
+            lifted.render += modules.render.filter { !$0.isEnabled }
+            modules = lifted
+        }
+    }
     public var sprite: ParticleSprite
     public var motion: EmitterMotion
     public var simulationSpace: SimulationSpace
@@ -38,7 +51,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     ) {
         id = UUID()
         self.name = name
-        self.settings = settings
+        self.modules = EmitterModules(settings)
         self.sprite = sprite
         self.motion = motion
         self.simulationSpace = simulationSpace
@@ -59,6 +72,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
             mesh: mesh,
             isEmitting: isEmitting
         )
+        copy.modules = modules
         copy.meshDeformation = meshDeformation
         copy.points = points
         copy.image = image
@@ -125,14 +139,19 @@ public extension ParticleSystemRuntime {
 /// emission uses) and loads back as a triangle mesh.
 extension EmitterDescription: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, settings, sprite, motion, simulationSpace, capacity, isEmitting, mesh, meshPositions, meshTriangles, meshDeformation, points, image
+        case id, name, settings, modules, sprite, motion, simulationSpace, capacity, isEmitting, mesh, meshPositions, meshTriangles, meshDeformation, points, image
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        settings = try container.decode(ParticleEmitter.self, forKey: .settings)
+        // Files before modules (format 1) have flat settings; they lift to modules.
+        if container.contains(.modules) {
+            modules = try container.decode(EmitterModules.self, forKey: .modules)
+        } else {
+            modules = EmitterModules(try container.decode(ParticleEmitter.self, forKey: .settings))
+        }
         sprite = try container.decode(ParticleSprite.self, forKey: .sprite)
         motion = try container.decode(EmitterMotion.self, forKey: .motion)
         simulationSpace = try container.decode(SimulationSpace.self, forKey: .simulationSpace)
@@ -170,7 +189,7 @@ extension EmitterDescription: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
-        try container.encode(settings, forKey: .settings)
+        try container.encode(modules, forKey: .modules)
         try container.encode(sprite, forKey: .sprite)
         try container.encode(motion, forKey: .motion)
         try container.encode(simulationSpace, forKey: .simulationSpace)

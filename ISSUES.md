@@ -3943,13 +3943,14 @@ Part of #179 (plan for #178).
 ## 185: Design the module model: stages, per-particle data, parameters, events
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m, needs-design
 depends: 182
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:40:48Z
+closed: 2026-10-20T18:40:48Z
 +++
 
 The module model is not designed. Decide and write down (a design doc in the repo, linked from #178):
@@ -3963,59 +3964,70 @@ The module model is not designed. Decide and write down (a design doc in the rep
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:40:48Z`: Done: see Documentation/Modules.md. Modules are the stored model (EmitterDescription.modules), lowered to ParticleEmitter for the kernel; user [[stitchable]] modules stitch into the update/spawn slots; effect format 2 with format-1 loading.
+
 ---
 
 ## 186: Effect JSON format for module stacks, with a version and migration path
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m, needs-design
 depends: 185
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:40:48Z
+closed: 2026-10-20T18:40:48Z
 +++
 
 Effect files store one flat ParticleEmitter settings object. With modules, an emitter is ordered module stacks per stage. The new format needs: a format version, the shape of a module entry (type + settings), how user modules' sources are carried in effect packages (#169), and the decision on old files (per #169/#170: likely a one-time migration tool, not reading both forever).
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:40:48Z`: Done: see Documentation/Modules.md. Modules are the stored model (EmitterDescription.modules), lowered to ParticleEmitter for the kernel; user [[stitchable]] modules stitch into the update/spawn slots; effect format 2 with format-1 loading.
+
 ---
 
 ## 187: Swift module types per stage (Codable, ordered stacks)
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:l
 depends: 185, 186
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:40:48Z
+closed: 2026-10-20T18:40:48Z
 +++
 
 There are no Swift types for modules. Per the design: module value types per stage, each Codable on its own, an ordered stack per stage on EmitterDescription, and an enabled flag. Equatable/Hashable so the runtime can cache stitched graphs by stack shape.
 
 Part of #179 (plan for #178).
 
+- `2026-10-20T18:40:48Z`: Done: see Documentation/Modules.md. Modules are the stored model (EmitterDescription.modules), lowered to ParticleEmitter for the kernel; user [[stitchable]] modules stitch into the update/spawn slots; effect format 2 with format-1 loading.
+
 ---
 
 ## 188: Runtime: build, cache, and bind stitched functions from module stacks
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l
 depends: 187, 183
 created: 2026-10-20T18:19:52Z
-updated: 2026-10-20T18:26:31Z
+updated: 2026-10-20T18:40:48Z
+closed: 2026-10-20T18:40:48Z
 +++
 
 The runtime cannot turn a module stack into GPU code. Needed: build a stitching graph per stage from a stack, cache the result by stack shape (not by parameter values), pack module parameters, and link/bind the functions in the stage's visible function table, sharing the path user functions (#167) use today. Errors from bad user modules surface like ParticleFunctionError.
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:40:48Z`: Done: see Documentation/Modules.md. Modules are the stored model (EmitterDescription.modules), lowered to ParticleEmitter for the kernel; user [[stitchable]] modules stitch into the update/spawn slots; effect format 2 with format-1 loading.
 
 ---
 

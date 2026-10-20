@@ -72,6 +72,9 @@ public extension ParticleFunction {
     }
 
     internal func compile(device: MTLDevice) throws -> VisibleFunction {
+        if let modules = StitchedModule.modules(in: self) {
+            return try StitchedModule.stitch(modules, name: name, device: device)
+        }
         let library: MTLLibrary
         do {
             library = try device.makeLibrary(source: Self.prelude + source, options: nil)
@@ -104,6 +107,14 @@ enum ParticleFunctionSlot: CaseIterable {
         }
     }
 
+    var modulesKeyPath: KeyPath<ParticleEmitter, [StitchedModule]>? {
+        switch self {
+        case .update: \.updateModules
+        case .spawn: \.spawnModules
+        case .collision, .death: nil
+        }
+    }
+
     /// The kernel's function table and parameter buffer names, and the built-in no-op.
     var tableName: String { "\(self)Function" }
     var parametersName: String { "\(self)Parameters" }
@@ -121,14 +132,35 @@ extension ParticleEmitter {
     /// This emitter's and its sub-emitters' functions.
     var allFunctions: [ParticleFunction] {
         ([self] + subEmitters.map(\.settings)).flatMap { settings in
-            ParticleFunctionSlot.allCases.compactMap { settings[keyPath: $0.keyPath] }
+            ParticleFunctionSlot.allCases.compactMap { settings.function(for: $0) }
         }
+    }
+
+    /// The slot's function: the user function, or the slot's stitched modules as one function. A function wins over
+    /// modules; `validateFunctions` reports having both.
+    func function(for slot: ParticleFunctionSlot) -> ParticleFunction? {
+        if let function = self[keyPath: slot.keyPath] {
+            return function
+        }
+        guard let keyPath = slot.modulesKeyPath else {
+            return nil
+        }
+        let modules = self[keyPath: keyPath]
+        return modules.isEmpty ? nil : StitchedModule.function(for: modules, slot: slot)
     }
 }
 
 public extension ParticleSystem {
     /// Compiles every layer's functions, so a bad effect file fails when opened rather than when it first runs.
     func validateFunctions(device: MTLDevice) throws {
+        for settings in layers.map(\.settings) {
+            if settings.updateFunction != nil, !settings.updateModules.isEmpty {
+                throw ParticleFunctionError(name: settings.updateFunction?.name ?? "", message: "An emitter cannot have both an update function and stitched update modules.")
+            }
+            if settings.spawnFunction != nil, !settings.spawnModules.isEmpty {
+                throw ParticleFunctionError(name: settings.spawnFunction?.name ?? "", message: "An emitter cannot have both a spawn function and stitched spawn modules.")
+            }
+        }
         for function in layers.flatMap(\.settings.allFunctions) {
             try function.validate(device: device)
         }

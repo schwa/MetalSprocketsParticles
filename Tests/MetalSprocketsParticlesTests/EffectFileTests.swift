@@ -59,8 +59,10 @@ struct EffectFileTests {
             #expect(text.contains("\"\(name)\""), "\(name) is named in the JSON")
         }
         // No inline data: no long strings left in the JSON.
-        let longest = text.components(separatedBy: "\"").map(\.count).max() ?? 0
-        #expect(longest < 200, "longest string \(longest)")
+        // Odd pieces are inside quotes; even ones are JSON structure and indentation.
+        let pieces = text.components(separatedBy: "\"")
+        let longestString = stride(from: 1, to: pieces.count, by: 2).map { pieces[$0] }.max { $0.count < $1.count } ?? ""
+        #expect(longestString.count < 200, "longest string \(longestString.prefix(300))")
         // Stable names: the same data saves under the same name.
         #expect(try Set(effectWithFiles().encoded().files.keys) == Set(files.keys))
     }

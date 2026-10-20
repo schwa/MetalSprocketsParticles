@@ -394,10 +394,11 @@ extension ParticleSystemRuntime {
             // Count each emitter once a frame, on its last step (after any warmup steps).
             uniforms.countsAlive = index == steps.count - 1 ? 1 : 0
             uniforms.aliveCounterSlot = aliveCounterSlot
-            uniforms.hasUpdateFunction = emitter.settings.updateFunction == nil ? 0 : 1
-            uniforms.hasSpawnFunction = emitter.settings.spawnFunction == nil ? 0 : 1
-            uniforms.hasCollisionFunction = emitter.settings.collisionFunction == nil ? 0 : 1
-            uniforms.hasDeathFunction = emitter.settings.deathFunction == nil ? 0 : 1
+            let functions = ParticleFunctionSlot.allCases.map { emitter.settings.function(for: $0) }
+            uniforms.hasUpdateFunction = functions[0] == nil ? 0 : 1
+            uniforms.hasSpawnFunction = functions[1] == nil ? 0 : 1
+            uniforms.hasCollisionFunction = functions[2] == nil ? 0 : 1
+            uniforms.hasDeathFunction = functions[3] == nil ? 0 : 1
             uniforms.reportsCollisions = emitter.settings.reportsCollisions ? 1 : 0
             uniforms.reportsDeaths = emitter.settings.reportsDeaths ? 1 : 0
             uniforms.eventEmitterIndex = UInt32(emitterIndex)
@@ -412,7 +413,7 @@ extension ParticleSystemRuntime {
                 followsSameEmitter: index > 0 || emitter.isSubEmitter,
                 subEmitters: subEmitters.data,
                 subEmitterUniforms: subEmitters.uniforms,
-                functions: ParticleFunctionSlot.allCases.map { emitter.settings[keyPath: $0.keyPath] },
+                functions: functions,
                 birthColorCurve: uniforms.colorsByBirthPosition != 0 ? emitter.settings.colorByPosition?.baked() ?? [.one] : [.one]
             )
         }

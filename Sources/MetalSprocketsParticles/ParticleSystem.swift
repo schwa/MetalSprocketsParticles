@@ -40,6 +40,9 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     /// is kept on its plane. The 3D camera and each emitter's own `constrainsToPlane` are kept, so turning it off
     /// restores them. For effects over an app's UI in points, use the `.overlay` camera and `ParticleEmitter.default2D`.
     public var is2D = false
+    /// Saved with the effect. 1: emitters as flat `settings`. 2: emitters as `modules` (#186). Both load.
+    public private(set) var formatVersion = Self.currentFormatVersion
+    public static let currentFormatVersion = 2
 
     public var id: String { name }
 
@@ -98,6 +101,10 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
         try container.update(&cameraTarget, .cameraTarget)
         try container.update(&eventBursts, .eventBursts)
         try container.update(&is2D, .is2D)
+        let version = try container.decodeIfPresent(Int.self, forKey: .formatVersion) ?? 1
+        guard version <= Self.currentFormatVersion else {
+            throw DecodingError.dataCorruptedError(forKey: .formatVersion, in: container, debugDescription: "Effect format \(version) is newer than this library reads (\(Self.currentFormatVersion)).")
+        }
     }
 
     /// The same system with `comment` set.

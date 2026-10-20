@@ -209,6 +209,10 @@ public struct ParticleEmitter: Sendable, Equatable, Codable {
     /// Multiplies each particle's color by an image laid over the world, under the particle's current position, so
     /// particles change color as they move across it.
     public var colorImage: ParticleColorImage?
+    /// User modules stitched, in order, into the update slot. Not with `updateFunction`, which uses the same slot.
+    public var updateModules: [StitchedModule] = []
+    /// User modules stitched, in order, into the spawn slot. Not with `spawnFunction`.
+    public var spawnModules: [StitchedModule] = []
 
     public init() {}
 }
@@ -321,6 +325,8 @@ extension ParticleEmitter {
         try container.update(&colorByPositionAtBirth, .colorByPositionAtBirth)
         try container.update(&customAttributeCount, .customAttributeCount)
         colorImage = try container.decodeIfPresent(ParticleColorImage.self, forKey: .colorImage)
+        try container.update(&updateModules, .updateModules)
+        try container.update(&spawnModules, .spawnModules)
     }
 }
 

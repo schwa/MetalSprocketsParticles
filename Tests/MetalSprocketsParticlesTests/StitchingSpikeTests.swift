@@ -151,6 +151,26 @@ struct StitchingSpikeTests {
         }
     }
 
+    /// The public path: `updateModules` on the emitter.
+    @Test func updateModulesMatchHandWrittenFunction() throws {
+        let source = String(Self.moduleSource.dropFirst(ParticleFunction.prelude.count))
+        let parameters = Self.parameters
+        var settings = emitter(Self.handWritten)
+        settings.updateFunction = nil
+        settings.updateModules = [
+            StitchedModule(source: source, name: "gravityModule", parameters: [parameters[0]]),
+            StitchedModule(source: source, name: "dragModule", parameters: [parameters[1]]),
+            StitchedModule(source: source, name: "colorOverLifeModule", parameters: [parameters[2], parameters[3]]),
+        ]
+        let expected = try run(emitter(Self.handWritten))
+        let actual = try run(settings)
+        for (a, b) in zip(actual, expected) {
+            #expect(a.position == b.position)
+            #expect(a.velocity == b.velocity)
+            #expect(a.properties == b.properties)
+        }
+    }
+
     /// Records which kinds of arguments a [[stitchable]] function accepts.
     @Test func stitchableSignatures() throws {
         let cases: [(String, String)] = [
