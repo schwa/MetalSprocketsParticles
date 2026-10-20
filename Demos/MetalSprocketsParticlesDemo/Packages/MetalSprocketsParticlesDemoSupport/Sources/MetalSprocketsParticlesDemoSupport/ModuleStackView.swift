@@ -14,7 +14,7 @@ struct ModuleStacksSectionView: View {
         } header: {
             Text("Modules")
         } footer: {
-            Text("Built-in modules run in the simulation's fixed order; stitched user modules run in stack order.")
+            Text("Built-in modules run at fixed points in the simulation. Stitched user modules run in their order, after the particles move.")
         }
     }
 }
@@ -30,10 +30,15 @@ struct ModuleStackView<Module: StageModule>: View {
                     Toggle(Self.label(stack[index].module), isOn: $stack[index].isEnabled)
                         .disabled(stack[index].module.isRequired)
                     Spacer()
-                    Button("Move Up", systemImage: "chevron.up") { stack.swapAt(index, index - 1) }
-                        .disabled(index == 0)
-                    Button("Move Down", systemImage: "chevron.down") { stack.swapAt(index, index + 1) }
-                        .disabled(index == stack.count - 1)
+                    // Only user modules have an order; built-ins run at fixed points (Documentation/Modules.md).
+                    if stack[index].module.kind == "stitched" {
+                        let previous = stack[..<index].lastIndex { $0.module.kind == "stitched" }
+                        let next = stack[(index + 1)...].firstIndex { $0.module.kind == "stitched" }
+                        Button("Move Up", systemImage: "chevron.up") { previous.map { stack.swapAt(index, $0) } }
+                            .disabled(previous == nil)
+                        Button("Move Down", systemImage: "chevron.down") { next.map { stack.swapAt(index, $0) } }
+                            .disabled(next == nil)
+                    }
                     Button("Remove", systemImage: "minus.circle", role: .destructive) { stack.remove(at: index) }
                         .disabled(stack[index].module.isRequired)
                 }

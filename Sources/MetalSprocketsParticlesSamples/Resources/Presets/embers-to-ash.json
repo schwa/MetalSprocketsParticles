@@ -26,7 +26,7 @@
       }
     }
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -48,6 +48,46 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 0.85, 0.4, 1]
+                    },
+                    {
+                      "time": 0.28,
+                      "value": [1, 0.35, 0.1, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.025
+                    }
+                  ]
+                }
               }
             }
           }
@@ -143,46 +183,6 @@
           },
           {
             "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [1, 0.85, 0.4, 1]
-                    },
-                    {
-                      "time": 0.28,
-                      "value": [1, 0.35, 0.1, 1]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.025
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
               "subEmitters": {
                 "emitters": [
                   {
@@ -201,6 +201,54 @@
                               },
                               "softness": 0,
                               "sortMode": "None"
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "colorOverLife": {
+                              "color": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": [0.35, 0.33, 0.32, 1]
+                                  },
+                                  {
+                                    "time": 1,
+                                    "value": [0.18, 0.18, 0.18, 1]
+                                  }
+                                ]
+                              },
+                              "opacity": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": 1
+                                  },
+                                  {
+                                    "time": 0.8,
+                                    "value": 1
+                                  },
+                                  {
+                                    "time": 1,
+                                    "value": 0
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "module": {
+                            "sizeOverLife": {
+                              "curve": {
+                                "keyframes": [
+                                  {
+                                    "time": 0,
+                                    "value": 0.018
+                                  }
+                                ]
+                              }
                             }
                           }
                         }
@@ -294,54 +342,6 @@
                         },
                         {
                           "module": {
-                            "colorOverLife": {
-                              "color": {
-                                "keyframes": [
-                                  {
-                                    "time": 0,
-                                    "value": [0.35, 0.33, 0.32, 1]
-                                  },
-                                  {
-                                    "time": 1,
-                                    "value": [0.18, 0.18, 0.18, 1]
-                                  }
-                                ]
-                              },
-                              "opacity": {
-                                "keyframes": [
-                                  {
-                                    "time": 0,
-                                    "value": 1
-                                  },
-                                  {
-                                    "time": 0.8,
-                                    "value": 1
-                                  },
-                                  {
-                                    "time": 1,
-                                    "value": 0
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "module": {
-                            "sizeOverLife": {
-                              "curve": {
-                                "keyframes": [
-                                  {
-                                    "time": 0,
-                                    "value": 0.018
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "module": {
                             "subEmitters": {
                               "emitters": [
                                 {
@@ -360,6 +360,50 @@
                                             },
                                             "softness": 0,
                                             "sortMode": "None"
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "colorOverLife": {
+                                            "color": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": [0.45, 0.43, 0.41, 1]
+                                                }
+                                              ]
+                                            },
+                                            "opacity": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": 0.75
+                                                },
+                                                {
+                                                  "time": 1,
+                                                  "value": 0
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "module": {
+                                          "sizeOverLife": {
+                                            "curve": {
+                                              "keyframes": [
+                                                {
+                                                  "time": 0,
+                                                  "value": 0.03
+                                                },
+                                                {
+                                                  "time": 1,
+                                                  "value": 0.09
+                                                }
+                                              ]
+                                            }
                                           }
                                         }
                                       }
@@ -458,50 +502,6 @@
                                             "radius": 0,
                                             "restitution": 0,
                                             "restitutionVariation": 0
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "module": {
-                                          "colorOverLife": {
-                                            "color": {
-                                              "keyframes": [
-                                                {
-                                                  "time": 0,
-                                                  "value": [0.45, 0.43, 0.41, 1]
-                                                }
-                                              ]
-                                            },
-                                            "opacity": {
-                                              "keyframes": [
-                                                {
-                                                  "time": 0,
-                                                  "value": 0.75
-                                                },
-                                                {
-                                                  "time": 1,
-                                                  "value": 0
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "module": {
-                                          "sizeOverLife": {
-                                            "curve": {
-                                              "keyframes": [
-                                                {
-                                                  "time": 0,
-                                                  "value": 0.03
-                                                },
-                                                {
-                                                  "time": 1,
-                                                  "value": 0.09
-                                                }
-                                              ]
-                                            }
                                           }
                                         }
                                       }

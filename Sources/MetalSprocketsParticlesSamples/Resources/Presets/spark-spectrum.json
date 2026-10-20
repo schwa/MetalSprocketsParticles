@@ -15,7 +15,7 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -37,86 +37,6 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
-              }
-            }
-          }
-        ],
-        "spawn": [
-          {
-            "module": {
-              "shape": {
-                "birthDirection": 0,
-                "birthLocation": 0,
-                "position": [0, 0.05, 0],
-                "shape": {
-                  "point": {}
-                },
-                "sweepAngle": 6.283185
-              }
-            }
-          },
-          {
-            "module": {
-              "rate": {
-                "birthRate": 1500,
-                "idleDuration": 0,
-                "loops": true,
-                "overTime": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                },
-                "variation": 0,
-                "warmupDuration": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "lifetime": {
-                "range": [1.2, 2]
-              }
-            }
-          },
-          {
-            "module": {
-              "velocity": {
-                "inherit": 0,
-                "speedVariation": 1.5,
-                "spread": 1.8,
-                "velocity": [0, 5.5, 0]
-              }
-            }
-          }
-        ],
-        "update": [
-          {
-            "module": {
-              "gravity": {
-                "acceleration": [0, -6, 0]
-              }
-            }
-          },
-          {
-            "module": {
-              "drag": {
-                "amount": 0.4
-              }
-            }
-          },
-          {
-            "module": {
-              "collision": {
-                "collidesWithSceneDepth": false,
-                "diesOnCollision": false,
-                "friction": 0.3,
-                "frictionVariation": 0,
-                "radius": 0,
-                "restitution": 0.35,
-                "restitutionVariation": 0.15
               }
             }
           },
@@ -229,6 +149,86 @@
                 },
                 "end": [0, 3, 0],
                 "start": [0, 0, 0]
+              }
+            }
+          }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 0.05, 0],
+                "shape": {
+                  "point": {}
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 1500,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 0
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [1.2, 2]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 1.5,
+                "spread": 1.8,
+                "velocity": [0, 5.5, 0]
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "gravity": {
+                "acceleration": [0, -6, 0]
+              }
+            }
+          },
+          {
+            "module": {
+              "drag": {
+                "amount": 0.4
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.3,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.35,
+                "restitutionVariation": 0.15
               }
             }
           }

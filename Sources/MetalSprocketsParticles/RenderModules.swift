@@ -1,5 +1,10 @@
 public enum RenderModule: StageModule {
     case sprite(SpriteModule)
+    case colorOverLife(ColorOverLifeModule)
+    case sizeOverLife(SizeOverLifeModule)
+    case colorBySpeed(ColorBySpeedModule)
+    case colorByPosition(ColorByPositionModule)
+    case imageSequence(ImageSequenceModule)
     case foil(FoilModule)
     case mesh(MeshModule)
     case trail(TrailModule)
@@ -8,12 +13,18 @@ public enum RenderModule: StageModule {
     case levelOfDetail(LevelOfDetailModule)
 
     public static let types: [any ParticleModule.Type] = [
-        SpriteModule.self, FoilModule.self, MeshModule.self, TrailModule.self, RibbonModule.self, LightModule.self, LevelOfDetailModule.self,
+        SpriteModule.self, ColorOverLifeModule.self, SizeOverLifeModule.self, ColorBySpeedModule.self, ColorByPositionModule.self,
+        ImageSequenceModule.self, FoilModule.self, MeshModule.self, TrailModule.self, RibbonModule.self, LightModule.self, LevelOfDetailModule.self,
     ]
 
     public init?(wrapping module: any ParticleModule) {
         switch module {
         case let module as SpriteModule: self = .sprite(module)
+        case let module as ColorOverLifeModule: self = .colorOverLife(module)
+        case let module as SizeOverLifeModule: self = .sizeOverLife(module)
+        case let module as ColorBySpeedModule: self = .colorBySpeed(module)
+        case let module as ColorByPositionModule: self = .colorByPosition(module)
+        case let module as ImageSequenceModule: self = .imageSequence(module)
         case let module as FoilModule: self = .foil(module)
         case let module as MeshModule: self = .mesh(module)
         case let module as TrailModule: self = .trail(module)
@@ -27,6 +38,11 @@ public enum RenderModule: StageModule {
     public var module: any ParticleModule {
         switch self {
         case let .sprite(module): module
+        case let .colorOverLife(module): module
+        case let .sizeOverLife(module): module
+        case let .colorBySpeed(module): module
+        case let .colorByPosition(module): module
+        case let .imageSequence(module): module
         case let .foil(module): module
         case let .mesh(module): module
         case let .trail(module): module

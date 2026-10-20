@@ -81,8 +81,22 @@ public struct EmitterModules: Sendable, Equatable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try container.update(&spawn, .spawn)
-        try container.update(&update, .update)
         try container.update(&render, .render)
+        // Format 2 had the appearance modules (color and size over life...) in update; they move to render.
+        if container.contains(.update) {
+            var entries = try container.nestedUnkeyedContainer(forKey: .update)
+            while !entries.isAtEnd {
+                let entry = try entries.superDecoder()
+                do {
+                    update.append(try ModuleSlot<UpdateModule>(from: entry))
+                } catch {
+                    guard let moved = try? ModuleSlot<RenderModule>(from: entry) else {
+                        throw error
+                    }
+                    render.append(moved)
+                }
+            }
+        }
         try container.update(&categoryMask, .categoryMask)
         try container.update(&customAttributeCount, .customAttributeCount)
     }

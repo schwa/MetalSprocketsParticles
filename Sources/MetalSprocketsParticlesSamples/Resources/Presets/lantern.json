@@ -20,7 +20,7 @@
       }
     }
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -40,6 +40,54 @@
                 },
                 "softness": 0,
                 "sortMode": "Back to Front"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.9, 0.9, 0.9, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0
+                    },
+                    {
+                      "time": 0.15,
+                      "value": 0.7
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.25
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.9
+                    }
+                  ]
+                }
               }
             }
           }
@@ -127,54 +175,6 @@
                 "restitutionVariation": 0
               }
             }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [0.9, 0.9, 0.9, 1]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0
-                    },
-                    {
-                      "time": 0.15,
-                      "value": 0.7
-                    },
-                    {
-                      "time": 1,
-                      "value": 0
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.25
-                    },
-                    {
-                      "time": 1,
-                      "value": 0.9
-                    }
-                  ]
-                }
-              }
-            }
           }
         ]
       },
@@ -210,6 +210,50 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 1, 1, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0
+                    },
+                    {
+                      "time": 0.3,
+                      "value": 0.02
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
               }
             }
           }
@@ -287,50 +331,6 @@
                 "restitutionVariation": 0
               }
             }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [1, 1, 1, 1]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0
-                    },
-                    {
-                      "time": 0.3,
-                      "value": 0.02
-                    },
-                    {
-                      "time": 1,
-                      "value": 0
-                    }
-                  ]
-                }
-              }
-            }
           }
         ]
       },
@@ -366,6 +366,42 @@
                 },
                 "softness": 0,
                 "sortMode": "Back to Front"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 0.65, 0.25, 0.8]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.18
+                    }
+                  ]
+                }
               }
             }
           }
@@ -429,42 +465,6 @@
                 "radius": 0,
                 "restitution": 0.4,
                 "restitutionVariation": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [1, 0.65, 0.25, 0.8]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.18
-                    }
-                  ]
-                }
               }
             }
           }

@@ -31,7 +31,7 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -53,6 +53,46 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.75, 0.88, 1, 0.5]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.6, 0.75, 1, 0.15]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.01
+                    }
+                  ]
+                }
               }
             }
           }
@@ -137,46 +177,6 @@
                 "restitutionVariation": 0
               }
             }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [0.75, 0.88, 1, 0.5]
-                    },
-                    {
-                      "time": 1,
-                      "value": [0.6, 0.75, 1, 0.15]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.01
-                    }
-                  ]
-                }
-              }
-            }
           }
         ]
       },
@@ -212,6 +212,54 @@
                 },
                 "softness": 0,
                 "sortMode": "Back to Front"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.8, 0.9, 1, 0]
+                    },
+                    {
+                      "time": 0.2,
+                      "value": [0.8, 0.9, 1, 0.12]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.8, 0.9, 1, 0]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.2
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.6
+                    }
+                  ]
+                }
               }
             }
           }
@@ -297,54 +345,6 @@
                 "radius": 0,
                 "restitution": 0.4,
                 "restitutionVariation": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [0.8, 0.9, 1, 0]
-                    },
-                    {
-                      "time": 0.2,
-                      "value": [0.8, 0.9, 1, 0.12]
-                    },
-                    {
-                      "time": 1,
-                      "value": [0.8, 0.9, 1, 0]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.2
-                    },
-                    {
-                      "time": 1,
-                      "value": 0.6
-                    }
-                  ]
-                }
               }
             }
           }

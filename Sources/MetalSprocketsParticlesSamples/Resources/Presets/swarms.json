@@ -9,7 +9,7 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -29,81 +29,6 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
-              }
-            }
-          }
-        ],
-        "spawn": [
-          {
-            "module": {
-              "shape": {
-                "birthDirection": 0,
-                "birthLocation": 0,
-                "position": [0, 0, 0],
-                "shape": {
-                  "sphere": {
-                    "radius": 0.25
-                  }
-                },
-                "sweepAngle": 6.283185
-              }
-            }
-          },
-          {
-            "module": {
-              "rate": {
-                "birthRate": 300,
-                "idleDuration": 0,
-                "loops": true,
-                "overTime": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                },
-                "variation": 0,
-                "warmupDuration": 2
-              }
-            }
-          },
-          {
-            "module": {
-              "lifetime": {
-                "range": [1.5, 2]
-              }
-            }
-          },
-          {
-            "module": {
-              "velocity": {
-                "inherit": 0,
-                "speedVariation": 0,
-                "spread": 0.4,
-                "velocity": [0, 0, 0]
-              }
-            }
-          }
-        ],
-        "update": [
-          {
-            "module": {
-              "drag": {
-                "amount": 1
-              }
-            }
-          },
-          {
-            "module": {
-              "collision": {
-                "collidesWithSceneDepth": false,
-                "diesOnCollision": false,
-                "friction": 0.2,
-                "frictionVariation": 0,
-                "radius": 0,
-                "restitution": 0.4,
-                "restitutionVariation": 0
               }
             }
           },
@@ -151,6 +76,81 @@
               }
             }
           }
+        ],
+        "spawn": [
+          {
+            "module": {
+              "shape": {
+                "birthDirection": 0,
+                "birthLocation": 0,
+                "position": [0, 0, 0],
+                "shape": {
+                  "sphere": {
+                    "radius": 0.25
+                  }
+                },
+                "sweepAngle": 6.283185
+              }
+            }
+          },
+          {
+            "module": {
+              "rate": {
+                "birthRate": 300,
+                "idleDuration": 0,
+                "loops": true,
+                "overTime": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                },
+                "variation": 0,
+                "warmupDuration": 2
+              }
+            }
+          },
+          {
+            "module": {
+              "lifetime": {
+                "range": [1.5, 2]
+              }
+            }
+          },
+          {
+            "module": {
+              "velocity": {
+                "inherit": 0,
+                "speedVariation": 0,
+                "spread": 0.4,
+                "velocity": [0, 0, 0]
+              }
+            }
+          }
+        ],
+        "update": [
+          {
+            "module": {
+              "drag": {
+                "amount": 1
+              }
+            }
+          },
+          {
+            "module": {
+              "collision": {
+                "collidesWithSceneDepth": false,
+                "diesOnCollision": false,
+                "friction": 0.2,
+                "frictionVariation": 0,
+                "radius": 0,
+                "restitution": 0.4,
+                "restitutionVariation": 0
+              }
+            }
+          }
         ]
       },
       "motion": {
@@ -185,6 +185,50 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.3, 0.7, 1, 1]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0
+                    },
+                    {
+                      "time": 0.2,
+                      "value": 0.04
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
               }
             }
           }
@@ -260,50 +304,6 @@
                 "radius": 0,
                 "restitution": 0.4,
                 "restitutionVariation": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [0.3, 0.7, 1, 1]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0
-                    },
-                    {
-                      "time": 0.2,
-                      "value": 0.04
-                    },
-                    {
-                      "time": 1,
-                      "value": 0
-                    }
-                  ]
-                }
               }
             }
           }

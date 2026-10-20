@@ -42,7 +42,7 @@
       }
     }
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -62,6 +62,62 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 0.8, 0.4, 1]
+                    },
+                    {
+                      "time": 0.3,
+                      "value": [0.6, 0.4, 1, 1]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.2, 0.5, 1, 0]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0
+                    },
+                    {
+                      "time": 0.05,
+                      "value": 1
+                    },
+                    {
+                      "time": 1,
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.035
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.015
+                    }
+                  ]
+                }
               }
             }
           }
@@ -138,62 +194,6 @@
                 "radius": 0,
                 "restitution": 0.4,
                 "restitutionVariation": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [1, 0.8, 0.4, 1]
-                    },
-                    {
-                      "time": 0.3,
-                      "value": [0.6, 0.4, 1, 1]
-                    },
-                    {
-                      "time": 1,
-                      "value": [0.2, 0.5, 1, 0]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0
-                    },
-                    {
-                      "time": 0.05,
-                      "value": 1
-                    },
-                    {
-                      "time": 1,
-                      "value": 0
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.035
-                    },
-                    {
-                      "time": 1,
-                      "value": 0.015
-                    }
-                  ]
-                }
               }
             }
           }

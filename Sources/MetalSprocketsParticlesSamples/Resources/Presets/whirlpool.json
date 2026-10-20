@@ -31,7 +31,7 @@
       }
     }
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": true,
   "layers": [
     {
@@ -51,6 +51,54 @@
                 },
                 "softness": 0,
                 "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [0.1, 0.3, 0.9, 0]
+                    },
+                    {
+                      "time": 0.2,
+                      "value": [0.2, 0.5, 1, 1]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.9, 0.95, 1, 0]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.025
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.012
+                    }
+                  ]
+                }
               }
             }
           }
@@ -136,6 +184,43 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Right Stream",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Soft Dot"
+    },
+    {
+      "capacity": 60000,
+      "id": "2A82A736-7AF2-440A-89CB-E7DF3EF93482",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 0,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
           },
           {
             "module": {
@@ -182,43 +267,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Right Stream",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Soft Dot"
-    },
-    {
-      "capacity": 60000,
-      "id": "2A82A736-7AF2-440A-89CB-E7DF3EF93482",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 0,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
               }
             }
           }
@@ -302,54 +350,6 @@
                 "radius": 0,
                 "restitution": 0.4,
                 "restitutionVariation": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [0.1, 0.3, 0.9, 0]
-                    },
-                    {
-                      "time": 0.2,
-                      "value": [0.2, 0.5, 1, 1]
-                    },
-                    {
-                      "time": 1,
-                      "value": [0.9, 0.95, 1, 0]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.025
-                    },
-                    {
-                      "time": 1,
-                      "value": 0.012
-                    }
-                  ]
-                }
               }
             }
           }

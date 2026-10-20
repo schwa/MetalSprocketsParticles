@@ -91,9 +91,9 @@ struct EmitterModulesTests {
             }
         }
         #expect(layer.modules.update.prefix(2).map(\.module.kind) == ["drag", "gravity"])
-        #expect(Set(layer.modules.update.map(\.module.kind)).isSuperset(of: ["collision", "colorOverLife", "sizeOverLife"]))
+        #expect(layer.modules.update.map(\.module.kind) == ["drag", "gravity", "collision"])
         #expect(layer.modules.spawn.map(\.module.kind) == ["shape", "rate", "lifetime"])
-        #expect(layer.modules.render.map(\.module.kind) == ["foil", "sprite"])
+        #expect(layer.modules.render.map(\.module.kind) == ["foil", "sprite", "colorOverLife", "sizeOverLife"])
         #expect(layer.settings.shape == .disc(radius: 0.3))
         #expect(layer.settings.gravity == [0, 1, 0])
         #expect(layer.settings.birthRate == ParticleEmitter().birthRate)
@@ -124,6 +124,18 @@ struct EmitterModulesTests {
             """, name: "swirl", parameters: [[2, 0, 0, 0]])))))
         #expect(description.settings.blendMode == .additive)
         #expect(description.settings.updateModules.count == 1)
+    }
+
+    @Test func formatTwoAppearanceModulesMoveToRender() throws {
+        let json = """
+        {"update": [{"module": {"gravity": {"acceleration": [0, -1, 0]}}}, {"module": {"sizeOverLife": {"curve": {"keyframes": [{"time": 0, "value": 0.5}]}}}}],
+        "render": [], "spawn": []}
+        """
+        let modules = try JSONDecoder().decode(EmitterModules.self, from: Data(json.utf8))
+        #expect(modules.update.map(\.module.kind) == ["gravity"])
+        #expect(modules.render.map(\.module.kind) == ["sizeOverLife"])
+        let bad = #"{"update": [{"module": {"gravity": {"acceleration": "x"}}}]}"#
+        #expect(throws: DecodingError.self) { try JSONDecoder().decode(EmitterModules.self, from: Data(bad.utf8)) }
     }
 
     @Test func jsonRoundTrips() throws {

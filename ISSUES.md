@@ -4218,6 +4218,7 @@ Part of #179 (plan for #178).
 
 - `2026-10-20T18:48:40Z`: Decision: ParticleEmitter stays public as the lowered/flat convenience form (EmitterDescription.settings converts both ways); modules are the stored and saved model. Kernel branches stay (perf rule, Documentation/Modules.md). README, docs, and the 'adding a setting' checklist updated; the preset builder works unchanged through settings.
 - `2026-10-20T18:58:49Z`: Reopened: closing it with 'ParticleEmitter stays' was a shortcut, not the design. Redo properly, perf-neutral: #199 #200 #201 #202 #203 #204, plus #205 for real ordering.
+- `2026-10-20T19:39:30Z`: Revised: built-ins stay at fixed points (#207 won't do, #208 decided). Appearance modules moved to the render stage (format 3).
 
 ---
 
@@ -4416,30 +4417,37 @@ When any emitter has a user function or stitched module, the update kernel loads
 ## 207: Built-in update modules don't run in stack order
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:l, needs-design
 depends: 208
 created: 2026-10-20T19:20:17Z
-updated: 2026-10-20T19:20:18Z
+updated: 2026-10-20T19:39:30Z
+closed: 2026-10-20T19:39:30Z
 +++
 
 #205 showed a stitched stack costs the same as inline kernel code (once #206 removed the attribute traffic), but nothing implements it yet: gravity, drag, color/size over life, color by speed/position, and the plane constraint still run in the kernel's fixed order whatever the stack says. Write them as [[stitchable]] built-in modules (compiled with the library), stitch each emitter's update stack into one function, and drop the matching kernel code. Gate: particles-bench --compare (#184), goldens identical for presets whose order matches today's. Part of #197.
+
+- `2026-10-20T19:39:30Z`: Won't do. Appearance modules (color/size over life, by speed/position, image sequence) are evaluated in the vertex shaders, not the simulation, and multiply, so order is meaningless; they moved to the render stage. Force fields, flocking, and collisions need system data (#208). That leaves gravity, drag, plane constraint, where order barely matters. Built-ins run at fixed, documented points (Documentation/Modules.md 'Order'); only stitched modules are ordered; the inspector only offers moving those.
 
 ---
 
 ## 208: Stitched modules can't read system data (colliders, force fields, textures, events)
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:m, needs-design
 created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T19:39:30Z
+closed: 2026-10-20T19:39:30Z
 +++
 
 The stitched module ABI is (thread ParticleState &, dt, time, constant float4 *parameters). Collisions, force fields, SDF and scene-depth textures, events, and sub-emitters need buffers and textures the kernel has, so they can't be modules in a stack. Decide: keep them as fixed kernel stages around the stitched stack, or widen the ABI with a context struct of pointers (and check what stitching allows for textures). Blocks moving those behaviors into the stack (#207).
+
+- `2026-10-20T19:39:30Z`: Decided: behaviors that need system data (force fields, flocking, collisions, scene depth, SDFs, events, sub-emitters) stay fixed kernel stages. Stitched modules keep the (state, dt, time, parameters) ABI and run at one point: after the move, before the plane constraint and collisions. Revisit with a context-struct ABI if a user module needs system data.
 
 ---
 

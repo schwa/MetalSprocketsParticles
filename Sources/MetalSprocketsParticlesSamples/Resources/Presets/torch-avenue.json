@@ -9,7 +9,7 @@
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "is2D": false,
   "layers": [
     {
@@ -41,6 +41,58 @@
                 "near": 4,
                 "scalesSize": false,
                 "simulatesWhenCulled": true
+              }
+            }
+          },
+          {
+            "module": {
+              "colorOverLife": {
+                "color": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": [1, 0.85, 0.45, 0.35]
+                    },
+                    {
+                      "time": 0.3,
+                      "value": [1, 0.45, 0.08, 0.3]
+                    },
+                    {
+                      "time": 0.7,
+                      "value": [0.6, 0.12, 0.03, 0.15]
+                    },
+                    {
+                      "time": 1,
+                      "value": [0.2, 0.03, 0.01, 0]
+                    }
+                  ]
+                },
+                "opacity": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "module": {
+              "sizeOverLife": {
+                "curve": {
+                  "keyframes": [
+                    {
+                      "time": 0,
+                      "value": 0.22
+                    },
+                    {
+                      "time": 1,
+                      "value": 0.05
+                    }
+                  ]
+                }
               }
             }
           }
@@ -143,6 +195,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 1",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000001",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -193,55 +294,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 1",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000001",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -344,6 +396,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 2",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000002",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -394,55 +495,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 2",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000002",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -545,6 +597,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 3",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000003",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -595,55 +696,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 3",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000003",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -746,6 +798,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 4",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000004",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -796,55 +897,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 4",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000004",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -947,6 +999,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 5",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000005",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -997,55 +1098,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 5",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000005",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -1148,6 +1200,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 6",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000006",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -1198,55 +1299,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 6",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000006",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -1349,6 +1401,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 7",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000007",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -1399,55 +1500,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 7",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000007",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -1550,6 +1602,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 8",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000008",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -1600,55 +1701,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 8",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000008",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -1751,6 +1803,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 9",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000009",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -1801,55 +1902,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 9",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000009",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -1952,6 +2004,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 10",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000010",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -2002,55 +2103,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 10",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000010",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -2153,6 +2205,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 11",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000011",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -2203,55 +2304,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 11",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000011",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -2354,6 +2406,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 12",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000012",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -2404,55 +2505,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 12",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000012",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -2555,6 +2607,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 13",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000013",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -2605,55 +2706,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 13",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000013",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -2756,6 +2808,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 14",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000014",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -2806,55 +2907,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 14",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000014",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -2957,6 +3009,55 @@
                 "restitutionVariation": 0
               }
             }
+          }
+        ]
+      },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
+      "name": "Torch 15",
+      "simulationSpace": {
+        "world": {}
+      },
+      "sprite": "Smoke Puff"
+    },
+    {
+      "capacity": 1200,
+      "id": "A1B2C3D4-0000-4000-8000-000000000015",
+      "isEmitting": true,
+      "modules": {
+        "render": [
+          {
+            "module": {
+              "sprite": {
+                "blendMode": 1,
+                "isLit": false,
+                "minimumScreenSize": 0,
+                "orientation": {
+                  "billboard": {}
+                },
+                "softness": 0,
+                "sortMode": "None"
+              }
+            }
+          },
+          {
+            "module": {
+              "levelOfDetail": {
+                "cullingRadius": 1,
+                "far": 22,
+                "farRateScale": 0.2,
+                "near": 4,
+                "scalesSize": false,
+                "simulatesWhenCulled": true
+              }
+            }
           },
           {
             "module": {
@@ -3007,55 +3108,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        ]
-      },
-      "motion": {
-        "kind": "Still",
-        "offset": [0, 0, 0],
-        "pitch": 0,
-        "radius": 1.5,
-        "speed": 1,
-        "spin": 0,
-        "yaw": 0
-      },
-      "name": "Torch 15",
-      "simulationSpace": {
-        "world": {}
-      },
-      "sprite": "Smoke Puff"
-    },
-    {
-      "capacity": 1200,
-      "id": "A1B2C3D4-0000-4000-8000-000000000015",
-      "isEmitting": true,
-      "modules": {
-        "render": [
-          {
-            "module": {
-              "sprite": {
-                "blendMode": 1,
-                "isLit": false,
-                "minimumScreenSize": 0,
-                "orientation": {
-                  "billboard": {}
-                },
-                "softness": 0,
-                "sortMode": "None"
-              }
-            }
-          },
-          {
-            "module": {
-              "levelOfDetail": {
-                "cullingRadius": 1,
-                "far": 22,
-                "farRateScale": 0.2,
-                "near": 4,
-                "scalesSize": false,
-                "simulatesWhenCulled": true
               }
             }
           }
@@ -3156,58 +3208,6 @@
                 "radius": 0,
                 "restitution": 0.4,
                 "restitutionVariation": 0
-              }
-            }
-          },
-          {
-            "module": {
-              "colorOverLife": {
-                "color": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": [1, 0.85, 0.45, 0.35]
-                    },
-                    {
-                      "time": 0.3,
-                      "value": [1, 0.45, 0.08, 0.3]
-                    },
-                    {
-                      "time": 0.7,
-                      "value": [0.6, 0.12, 0.03, 0.15]
-                    },
-                    {
-                      "time": 1,
-                      "value": [0.2, 0.03, 0.01, 0]
-                    }
-                  ]
-                },
-                "opacity": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "module": {
-              "sizeOverLife": {
-                "curve": {
-                  "keyframes": [
-                    {
-                      "time": 0,
-                      "value": 0.22
-                    },
-                    {
-                      "time": 1,
-                      "value": 0.05
-                    }
-                  ]
-                }
               }
             }
           }
