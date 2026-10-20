@@ -3722,4 +3722,6 @@ Follow-up to #169 and #170, which moved images, distance fields, and emitter mes
 
 Store them through EffectResources like the others: points as a small binary or PLY file, custom particle meshes as OBJ (with normals). Same decisions as #169: references only, no inline reading.
 
+- `2026-10-20T02:22:48Z`: Decision (user): use PLY for both (point caches: x y z, nx ny nz, red green blue alpha; custom particle meshes: positions, normals, faces). Do it later, with one shared PLY implementation: move PLYReader from MetalSprocketsGaussianSplats into SwiftMesh and add a writer there (SwiftMesh #187), rather than depending on the Splats target or copying it. Waiting on SwiftMesh #187.
+
 ---
