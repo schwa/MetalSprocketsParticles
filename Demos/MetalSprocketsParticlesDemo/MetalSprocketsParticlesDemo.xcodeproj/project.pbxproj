@@ -26,6 +26,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"MetalSprocketsParticlesDemo-Debug.xcconfig",
+				"MetalSprocketsParticlesDemo-Info.plist",
 				"MetalSprocketsParticlesDemo-Release.xcconfig",
 				"MetalSprocketsParticlesDemo-Shared.xcconfig",
 				"Project-Debug.xcconfig",

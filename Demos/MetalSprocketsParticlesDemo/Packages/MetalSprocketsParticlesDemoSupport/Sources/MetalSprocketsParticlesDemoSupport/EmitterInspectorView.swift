@@ -134,7 +134,7 @@ struct SceneSectionView: View {
                 Button("Save Effect", systemImage: "square.and.arrow.down") { isExporting = true }
             }
             VideoExportView()
-            .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
+            .fileImporter(isPresented: $isImporting, allowedContentTypes: [.particleEffect, .json]) { result in
                 do {
                     try model.openEffect(at: try result.get())
                 } catch {
@@ -142,7 +142,7 @@ struct SceneSectionView: View {
                     isShowingError = true
                 }
             }
-            .fileExporter(isPresented: $isExporting, item: model.currentEffect, contentTypes: [.json], defaultFilename: model.presetName) { result in
+            .fileExporter(isPresented: $isExporting, document: ParticleEffectDocument(effect: model.currentEffect), contentType: .particleEffect, defaultFilename: model.presetName) { result in
                 if case let .failure(error) = result {
                     errorMessage = error.localizedDescription
                     isShowingError = true

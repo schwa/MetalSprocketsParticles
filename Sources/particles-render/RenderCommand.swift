@@ -34,10 +34,10 @@ struct RenderCommand: AsyncParsableCommand {
     @Option(help: "Folder of effect files to choose --preset from, instead of the sample presets.")
     var presets: String?
 
-    @Option(help: "Render a saved effect (JSON) instead of a preset.")
+    @Option(help: "Render a saved effect (a .particles package, or JSON with its files next to it) instead of a preset.")
     var effect: String?
 
-    @Option(help: "Write the effect as JSON to this path and exit.")
+    @Option(help: "Save the effect to this path and exit: a .particles package, or JSON with its image and field files next to it.")
     var saveEffect: String?
 
     @Flag(help: "List the preset names and exit.")

@@ -15,6 +15,27 @@ public struct ParticleColorImage: Sendable, Equatable, Codable {
     public var width: SIMD3<Float>
     public var height: SIMD3<Float>
 
+    private enum CodingKeys: String, CodingKey {
+        case data, origin, width, height
+    }
+
+    /// The image is a file next to the effect's JSON (see `EffectResources`).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        data = try container.decodeResource(forKey: .data, decoder: decoder)
+        origin = try container.decode(SIMD3<Float>.self, forKey: .origin)
+        width = try container.decode(SIMD3<Float>.self, forKey: .width)
+        height = try container.decode(SIMD3<Float>.self, forKey: .height)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeResource(data, forKey: .data, encoder: encoder, prefix: "color-image", fileExtension: data.imageFileExtension)
+        try container.encode(origin, forKey: .origin)
+        try container.encode(width, forKey: .width)
+        try container.encode(height, forKey: .height)
+    }
+
     public init(data: Data, origin: SIMD3<Float>, width: SIMD3<Float>, height: SIMD3<Float>) {
         self.data = data
         self.origin = origin

@@ -7,11 +7,13 @@ import Testing
 
 @Suite(.requiresMetal4)
 struct EffectFileTests {
-    /// Every built-in preset survives JSON. Meshes come back triangulated, so they are compared by geometry.
+    /// Every built-in preset survives saving, files and all. Meshes come back triangulated, so they are compared by
+    /// geometry.
     @Test(arguments: ParticleSystem.all.map(\.name))
     func presetRoundTrips(name: String) throws {
         let preset = try #require(ParticleSystem.named(name))
-        let decoded = try JSONDecoder().decode(ParticleSystem.self, from: try preset.jsonData())
+        let (json, files) = try preset.encoded()
+        let decoded = try ParticleSystem(json: json, resources: EffectResources(files: files))
         #expect(decoded.name == preset.name)
         #expect(decoded.colliders == preset.colliders)
         #expect(decoded.forceFields == preset.forceFields)
@@ -27,6 +29,94 @@ struct EffectFileTests {
             #expect(saved.mesh?.positions == original.mesh?.positions)
             #expect(saved.mesh.map(triangles) == original.mesh.map(triangles))
         }
+    }
+
+    // MARK: Files next to the JSON (#169)
+
+    /// A small effect with an emitter image, a color image, and a distance field: everything kept in files.
+    func effectWithFiles() throws -> ParticleSystem {
+        let image = try #require(ParticleSystem.named("Butterfly Dust")?.layers.first?.image)
+        var settings = ParticleEmitter()
+        settings.colorImage = ParticleColorImage(data: image.data, center: .zero, size: 2)
+        var layer = EmitterDescription("Dust", settings: settings)
+        layer.image = image
+        let field = SignedDistanceField(origin: .zero, spacing: [1, 1, 1], resolution: [2, 2, 2], values: (0..<8).map(Float.init))
+        return ParticleSystem("Files", layers: [layer], colliders: [.signedDistanceField(field)])
+    }
+
+    func temporaryFolder() throws -> URL {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "effect-files-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder
+    }
+
+    @Test func dataIsSavedAsFilesNotInline() throws {
+        let (json, files) = try effectWithFiles().encoded()
+        let text = try #require(String(bytes: json, encoding: .utf8))
+        // Two images (the same data, so one file) and one field.
+        #expect(Set(files.keys.map { $0.components(separatedBy: "-").first ?? "" }) == ["emitter", "color", "field"])
+        for name in files.keys {
+            #expect(text.contains("\"\(name)\""), "\(name) is named in the JSON")
+        }
+        // No inline data: no long strings left in the JSON.
+        let longest = text.components(separatedBy: "\"").map(\.count).max() ?? 0
+        #expect(longest < 200, "longest string \(longest)")
+        // Stable names: the same data saves under the same name.
+        #expect(try Set(effectWithFiles().encoded().files.keys) == Set(files.keys))
+    }
+
+    @Test func packagesRoundTripOnDisk() throws {
+        let effect = try effectWithFiles()
+        let package = try temporaryFolder().appending(path: "Files.particles")
+        try effect.write(to: package)
+        let names = try FileManager.default.contentsOfDirectory(atPath: package.path)
+        #expect(names.contains(ParticleSystem.packageJSONName))
+        #expect(names.count == 1 + (try effect.encoded().files.count))
+        let loaded = try ParticleSystem(contentsOf: package)
+        #expect(loaded.layers.first?.image == effect.layers.first?.image)
+        #expect(loaded.layers.first?.settings.colorImage == effect.layers.first?.settings.colorImage)
+        #expect(loaded.colliders == effect.colliders)
+        // A package file wrapper (for documents) reads back the same.
+        #expect(try ParticleSystem(packageFileWrapper: effect.packageFileWrapper()).colliders == effect.colliders)
+    }
+
+    /// A plain JSON file keeps its files next to it, as the bundled presets do.
+    @Test func jsonFilesKeepTheirFilesNextToThem() throws {
+        let effect = try effectWithFiles()
+        let url = try temporaryFolder().appending(path: "files.json")
+        try effect.write(to: url)
+        #expect(try ParticleSystem(contentsOf: url).colliders == effect.colliders)
+    }
+
+    /// Inline base64 (the old format), paths out of the folder, and missing files are errors, not crashes.
+    @Test func badReferencesAreErrors() throws {
+        let (json, files) = try effectWithFiles().encoded()
+        let fieldName = try #require(files.keys.first { $0.hasPrefix("field") })
+        func load(replacing name: String, with reference: String, files: [String: Data] = files) throws -> ParticleSystem {
+            let text = try #require(String(bytes: json, encoding: .utf8)).replacingOccurrences(of: "\"\(name)\"", with: "\"\(reference)\"")
+            return try ParticleSystem(json: Data(text.utf8), resources: EffectResources(files: files))
+        }
+        #expect(throws: EffectResourceError.self) { try load(replacing: fieldName, with: "AAAAAAAAgD8AAABA") }
+        #expect(throws: EffectResourceError.self) { try load(replacing: fieldName, with: "../../secret.bin") }
+        #expect(throws: EffectResourceError.self) { try load(replacing: fieldName, with: "gone.bin") }
+        // No store at all.
+        #expect(throws: EffectResourceError.self) { try JSONDecoder().decode(ParticleSystem.self, from: json) }
+        #expect(throws: EffectResourceError.self) { try JSONEncoder().encode(effectWithFiles()) }
+    }
+
+    /// Absolute file URLs work too.
+    @Test func fileURLReferencesLoad() throws {
+        let (json, files) = try effectWithFiles().encoded()
+        let folder = try temporaryFolder()
+        for (name, data) in files {
+            try data.write(to: folder.appending(path: name))
+        }
+        var text = try #require(String(bytes: json, encoding: .utf8))
+        for name in files.keys {
+            text = text.replacingOccurrences(of: "\"\(name)\"", with: "\"\(folder.appending(path: name).absoluteString)\"")
+        }
+        let loaded = try ParticleSystem(json: Data(text.utf8), resources: EffectResources())
+        #expect(loaded.colliders == (try effectWithFiles()).colliders)
     }
 
     func triangles(_ mesh: Mesh) -> [[Int]] {

@@ -23,6 +23,29 @@ public struct EmitterImage: Sendable, Equatable, Codable {
     /// Whether particles take the pixel's color.
     public var usesColors: Bool
 
+    private enum CodingKeys: String, CodingKey {
+        case data, width, pointCount, weighting, usesColors
+    }
+
+    /// The image is a file next to the effect's JSON (see `EffectResources`).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        data = try container.decodeResource(forKey: .data, decoder: decoder)
+        width = try container.decode(Float.self, forKey: .width)
+        pointCount = try container.decode(Int.self, forKey: .pointCount)
+        weighting = try container.decode(Weighting.self, forKey: .weighting)
+        usesColors = try container.decode(Bool.self, forKey: .usesColors)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeResource(data, forKey: .data, encoder: encoder, prefix: "emitter-image", fileExtension: data.imageFileExtension)
+        try container.encode(width, forKey: .width)
+        try container.encode(pointCount, forKey: .pointCount)
+        try container.encode(weighting, forKey: .weighting)
+        try container.encode(usesColors, forKey: .usesColors)
+    }
+
     public init(data: Data, width: Float = 2, pointCount: Int = 20_000, weighting: Weighting = .alpha, usesColors: Bool = true) {
         self.data = data
         self.width = width

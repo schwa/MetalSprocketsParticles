@@ -8,7 +8,8 @@ import Testing
 @Suite(.requiresMetal4)
 struct EnumKeyTests {
     func json<T: Encodable>(_ value: T) throws -> String {
-        let encoder = JSONEncoder()
+        // A store, for presets with images and distance fields.
+        let encoder = EffectResources().encoder()
         encoder.outputFormatting = .sortedKeys
         return try #require(String(bytes: encoder.encode(value), encoding: .utf8))
     }

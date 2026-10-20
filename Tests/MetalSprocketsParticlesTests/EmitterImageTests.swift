@@ -83,7 +83,8 @@ struct EmitterImageTests {
     @Test func imagesRoundTripThroughEffectFiles() throws {
         var description = EmitterDescription("Image", settings: ParticleEmitter())
         description.image = EmitterImage(data: try png(left: red, right: nil), width: 3, pointCount: 10, weighting: .brightness, usesColors: false)
-        let decoded = try JSONDecoder().decode(EmitterDescription.self, from: JSONEncoder().encode(description))
+        let resources = EffectResources()
+        let decoded = try resources.decoder().decode(EmitterDescription.self, from: resources.encoder().encode(description))
         #expect(decoded.image == description.image)
     }
 }

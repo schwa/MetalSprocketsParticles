@@ -205,27 +205,27 @@ struct SignedDistanceFieldColliderTests {
         let collider = Collider.signedDistanceField(
             sphereField(), center: [1, 2, 3], rotation: simd_quatf(angle: 0.5, axis: [0, 1, 0]), categoryBitMask: 0b101
         )
-        let decoded = try JSONDecoder().decode(Collider.self, from: JSONEncoder().encode(collider))
+        let resources = EffectResources()
+        let decoded = try resources.decoder().decode(Collider.self, from: resources.encoder().encode(collider))
         #expect(decoded == collider)
     }
 
     /// What SignedDistanceField's initializer traps on, and sizes a hostile file could ask for, are decoding errors.
     @Test func badFieldsDoNotLoad() throws {
-        func json(resolution: [Int], byteCount: Int) throws -> Data {
+        // The values are a file next to the JSON (#169); here, in memory.
+        func decode(resolution: [Int], byteCount: Int) throws -> Collider {
             let object: [String: Any] = [
                 "kind": "signedDistanceField",
-                "field": [
-                    "origin": [0, 0, 0], "spacing": [1, 1, 1], "resolution": resolution,
-                    "values": Data(count: byteCount).base64EncodedString(),
-                ],
+                "field": ["origin": [0, 0, 0], "spacing": [1, 1, 1], "resolution": resolution, "values": "values.bin"],
             ]
-            return try JSONSerialization.data(withJSONObject: object)
+            let resources = EffectResources(files: ["values.bin": Data(count: byteCount)])
+            return try resources.decoder().decode(Collider.self, from: JSONSerialization.data(withJSONObject: object))
         }
-        #expect(throws: DecodingError.self) { try JSONDecoder().decode(Collider.self, from: json(resolution: [2, 2, 2], byteCount: 4 * 7)) }
-        #expect(throws: DecodingError.self) { try JSONDecoder().decode(Collider.self, from: json(resolution: [1, 2, 2], byteCount: 4 * 4)) }
-        #expect(throws: DecodingError.self) { try JSONDecoder().decode(Collider.self, from: json(resolution: [1_000, 1_000, 1_000], byteCount: 4)) }
-        #expect(throws: DecodingError.self) { try JSONDecoder().decode(Collider.self, from: json(resolution: [Int.max, 2, 2], byteCount: 4)) }
-        #expect(try JSONDecoder().decode(Collider.self, from: json(resolution: [2, 2, 2], byteCount: 4 * 8)).categoryBitMask == .max)
+        #expect(throws: DecodingError.self) { try decode(resolution: [2, 2, 2], byteCount: 4 * 7) }
+        #expect(throws: DecodingError.self) { try decode(resolution: [1, 2, 2], byteCount: 4 * 4) }
+        #expect(throws: DecodingError.self) { try decode(resolution: [1_000, 1_000, 1_000], byteCount: 4) }
+        #expect(throws: DecodingError.self) { try decode(resolution: [Int.max, 2, 2], byteCount: 4) }
+        #expect(try decode(resolution: [2, 2, 2], byteCount: 4 * 8).categoryBitMask == .max)
     }
 
     @Test func runtimeUploadsEachGridOnceAndReusesIt() throws {

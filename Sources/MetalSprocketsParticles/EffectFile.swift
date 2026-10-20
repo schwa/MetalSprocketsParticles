@@ -1,4 +1,3 @@
-import CoreTransferable
 import Foundation
 import MetalSprocketsParticlesShaders
 import simd
@@ -68,7 +67,7 @@ extension Collider.Shape: Codable {
         case "signedDistanceField":
             let rotation = try container.decodeIfPresent(SIMD4<Float>.self, forKey: .rotation) ?? [0, 0, 0, 1]
             self = .signedDistanceField(
-                try Self.decodeField(container.nestedContainer(keyedBy: FieldKeys.self, forKey: .field)),
+                try Self.decodeField(container.nestedContainer(keyedBy: FieldKeys.self, forKey: .field), decoder: decoder),
                 center: try container.decodeIfPresent(SIMD3<Float>.self, forKey: .center) ?? .zero,
                 rotation: simd_quatf(vector: rotation)
             )
@@ -107,15 +106,15 @@ extension Collider.Shape: Codable {
             try fieldContainer.encode(field.origin, forKey: .origin)
             try fieldContainer.encode(field.spacing, forKey: .spacing)
             try fieldContainer.encode(field.resolution, forKey: .resolution)
-            // Little-endian Float32s, base64 in JSON: compact, and exact.
-            try fieldContainer.encode(field.values.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .values)
+            // Little-endian Float32s in a file next to the JSON, x fastest, then y, then z.
+            try fieldContainer.encodeResource(field.values.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .values, encoder: encoder, prefix: "field", fileExtension: "bin")
         }
     }
 
     /// Checks what SignedDistanceField's initializer would trap on, and sizes a hostile file could abuse.
-    private static func decodeField(_ container: KeyedDecodingContainer<FieldKeys>) throws -> SignedDistanceField {
+    private static func decodeField(_ container: KeyedDecodingContainer<FieldKeys>, decoder: Decoder) throws -> SignedDistanceField {
         let resolution = try container.decode(SIMD3<Int>.self, forKey: .resolution)
-        let data = try container.decode(Data.self, forKey: .values)
+        let data = try container.decodeResource(forKey: .values, decoder: decoder)
         let (samples, overflow) = resolution.x.multipliedReportingOverflow(by: resolution.y)
         let (total, overflow2) = samples.multipliedReportingOverflow(by: resolution.z)
         guard all(resolution .>= 2), !overflow, !overflow2, total <= maximumFieldSamples else {
@@ -137,31 +136,68 @@ extension Collider.Shape: Codable {
     }
 }
 
-public extension ParticleSystem {
-    /// Loads a saved effect (JSON). Emitter meshes are not saved, so mesh emitters load without one.
-    init(contentsOf url: URL) throws {
-        self = try JSONDecoder().decode(ParticleSystem.self, from: try Data(contentsOf: url))
-    }
-
-    /// The effect as pretty-printed JSON.
-    func jsonData() throws -> Data {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return try encoder.encode(self)
-    }
-
-    func write(to url: URL) throws {
-        try jsonData().write(to: url, options: .atomic)
-    }
+public extension UTType {
+    /// A saved effect: a package (folder) holding `effect.json` and the image and distance field files it names.
+    static let particleEffect = UTType(filenameExtension: ParticleSystem.packageExtension, conformingTo: .package) ?? .package
 }
 
-/// Saved effects as JSON, for file export and import, drag and drop, and sharing.
-extension ParticleSystem: Transferable {
-    public static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(contentType: .json) { system in
-            try system.jsonData()
-        } importing: { data in
-            try JSONDecoder().decode(ParticleSystem.self, from: data)
+public extension ParticleSystem {
+    /// The file extension of effect packages.
+    static let packageExtension = "particles"
+    /// The JSON's name inside a package.
+    static let packageJSONName = "effect.json"
+
+    /// Loads a saved effect: a package (`Name.particles`, a folder holding `effect.json`), or a JSON file whose
+    /// images and distance fields are files next to it, as the bundled presets are.
+    init(contentsOf url: URL) throws {
+        let isPackage = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        let json = isPackage ? url.appending(path: Self.packageJSONName) : url
+        let resources = EffectResources(folder: json.deletingLastPathComponent())
+        self = try resources.decoder().decode(ParticleSystem.self, from: Data(contentsOf: json))
+    }
+
+    /// Decodes `json`, reading named files from `resources`.
+    init(json: Data, resources: EffectResources) throws {
+        self = try resources.decoder().decode(ParticleSystem.self, from: json)
+    }
+
+    /// The effect as pretty-printed JSON, and the files it names (images and distance fields), by name.
+    func encoded() throws -> (json: Data, files: [String: Data]) {
+        let resources = EffectResources()
+        let json = try resources.encoder().encode(self)
+        return (json, resources.files)
+    }
+
+    /// Saves the effect. A `.particles` URL gets a package: a folder holding `effect.json` and the files it names.
+    /// Other URLs get the JSON there and its files next to it.
+    func write(to url: URL) throws {
+        let (json, files) = try encoded()
+        let isPackage = url.pathExtension == Self.packageExtension
+        let folder = isPackage ? url : url.deletingLastPathComponent()
+        if isPackage {
+            // A fresh folder, so files the effect no longer names do not linger.
+            try? FileManager.default.removeItem(at: url)
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         }
+        try json.write(to: isPackage ? url.appending(path: Self.packageJSONName) : url, options: .atomic)
+        try EffectResources(files: files).write(into: folder)
+    }
+
+    /// The effect as a package's folder contents, for file documents.
+    func packageFileWrapper() throws -> FileWrapper {
+        let (json, files) = try encoded()
+        var wrappers = files.mapValues { FileWrapper(regularFileWithContents: $0) }
+        wrappers[Self.packageJSONName] = FileWrapper(regularFileWithContents: json)
+        return FileWrapper(directoryWithFileWrappers: wrappers)
+    }
+
+    /// Reads a package's folder contents.
+    init(packageFileWrapper wrapper: FileWrapper) throws {
+        let contents = wrapper.fileWrappers ?? [:]
+        guard let json = contents[Self.packageJSONName]?.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let files = contents.compactMapValues(\.regularFileContents)
+        try self.init(json: json, resources: EffectResources(files: files))
     }
 }

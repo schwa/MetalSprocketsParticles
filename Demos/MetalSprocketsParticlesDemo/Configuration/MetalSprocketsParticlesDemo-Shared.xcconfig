@@ -15,6 +15,8 @@ ENABLE_HARDENED_RUNTIME = YES
 ENABLE_PREVIEWS = YES
 ENABLE_USER_SELECTED_FILES = readwrite
 GENERATE_INFOPLIST_FILE = YES
+// Merged with the generated keys: declares the .particles effect package type.
+INFOPLIST_FILE = Configuration/MetalSprocketsParticlesDemo-Info.plist
 INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*] = YES
 INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*] = YES
 INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*] = YES

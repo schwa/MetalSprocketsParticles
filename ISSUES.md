@@ -3532,12 +3532,13 @@ Found by an audit of every public setting in the description types against the d
 ## 169: No base64 blobs in effect JSON; reference external files
 
 +++
-status: open
+status: closed
 priority: medium
 kind: enhancement
 labels: area:api, effort:l
 created: 2026-10-19T21:50:25Z
-updated: 2026-10-20T01:44:21Z
+updated: 2026-10-20T02:01:06Z
+closed: 2026-10-20T02:01:06Z
 +++
 
 Effect JSON embeds large binary data as base64 strings:
@@ -3553,6 +3554,7 @@ Replace these with references to files. A reference is either:
 Move the existing blobs out to files (e.g. raw float32 `.bin` for fields, `.png` for images) and update the presets. Consider doing the same for inline mesh arrays (`meshPositions`/`meshTriangles`), which make inside-the-teapot.json ~9800 lines.
 
 - `2026-10-20T01:44:21Z`: Decisions (user): (1) the app saves effects as a package (a folder, e.g. Name.particles/ with effect.json plus image and field files); bundle presets use the same layout, resources next to their JSON. (2) No inline base64 any more: references only; old files with inline data fail with a clear error. (3) URL references are file URLs only, loaded during decoding; remote http(s) deferred. Plan: library reference type and coding plumbing (encoder collects named resources, decoder resolves names against the effect's folder), applied to distance field values, EmitterImage.data, ParticleColorImage.data; then migrate the presets; then the demo's open/save as packages.
+- `2026-10-20T02:01:06Z`: Done. EffectResources stores binary data as files: encoding names each by a prefix and the first 8 hex digits of its SHA-256 (stable across saves), decoding resolves plain names in the effect's folder (no paths, nothing outside it) or absolute file URLs; in-memory stores for tests. Applied to distance field values (raw little-endian Float32, .bin; origin, spacing, resolution stay in the JSON), EmitterImage.data and ParticleColorImage.data (extension from the image's bytes). ParticleSystem(contentsOf:) reads a .particles package (folder with effect.json) or a JSON file with its files next to it; write(to:) writes either; encoded(), init(json:resources:), and package FileWrappers for documents. Inline base64 is no longer read (a clear error, per the decision). Presets migrated: 6 fields and 2 images moved to files, preset JSON 1.9 MB -> about 0.35 MB plus 1.1 MB of binary files; every golden unchanged. Demo: Open accepts packages and JSON; Save writes a package via a FileDocument (ParticleEffectDocument); the app declares the io.schwa.metalsprocketsparticles.effect package type (.particles). ParticleSystem's Transferable conformance is removed: its FileRepresentation of a directory failed to export (CoreTransferable 'unknown reason'), so it would not have worked. Tests: data saved as files, stable names, package and side-file round trips on disk, file wrapper round trip, bad references (inline base64, ../, missing, no store) are errors, file URLs load. CLI checked: --save-effect to a .particles package and --effect from it renders pixel-identical. Meshes (meshPositions/meshTriangles) remain inline; that is #170.
 
 ---
 

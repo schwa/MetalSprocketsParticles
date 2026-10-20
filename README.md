@@ -38,7 +38,7 @@ It comes with sample presets. To see them, look at the [demos](Documentation/Dem
   hand, or an object in your scene.
 - **Debugging.** Show particles as wireframes or in false colors by emitter, age, speed, or overlap. See how many
   particles are born and die each second.
-- **Effect files.** Save and load effects as JSON, including your Metal code and images. Sample presets to start from.
+- **Effect files.** Save and load effects as packages: JSON with your Metal code, plus image and distance field files next to it. Sample presets to start from.
 - **Video export.** Render any effect to a movie, offscreen.
 
 ## Usage

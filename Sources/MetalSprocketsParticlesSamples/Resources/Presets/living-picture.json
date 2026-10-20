@@ -6,15 +6,40 @@
   "colliders": [],
   "comment": "Shows: color from a screen-space image (ParticleEmitter.colorImage), so each particle takes the picture's color wherever it is. A sunset painted with drifting particles.",
   "forceFields": [
-    { "categoryBitMask": 4294967295, "effect": { "wind": { "velocity": [0.4, 0, 0], "strength": 0.5 } } },
-    { "categoryBitMask": 4294967295, "effect": { "turbulence": { "scale": 1.5, "speed": 0.3, "strength": 0.3 } } }
+    {
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "wind": {
+          "velocity": [0.4, 0, 0],
+          "strength": 0.5
+        }
+      }
+    },
+    {
+      "categoryBitMask": 4294967295,
+      "effect": {
+        "turbulence": {
+          "scale": 1.5,
+          "speed": 0.3,
+          "strength": 0.3
+        }
+      }
+    }
   ],
   "layers": [
     {
       "capacity": 20000,
       "id": "D3A6E9C1-5B2F-4C84-A7D0-8E1F2B3C4D5E",
       "isEmitting": true,
-      "motion": { "kind": "Still", "offset": [0, 0, 0], "pitch": 0, "radius": 1.5, "speed": 1, "spin": 0, "yaw": 0 },
+      "motion": {
+        "kind": "Still",
+        "offset": [0, 0, 0],
+        "pitch": 0,
+        "radius": 1.5,
+        "speed": 1,
+        "spin": 0,
+        "yaw": 0
+      },
       "name": "Paint",
       "settings": {
         "angle": 0,
@@ -26,11 +51,25 @@
         "birthRate": 3500,
         "birthRateVariation": 0,
         "blendMode": 0,
-        "colorOverLife": { "keyframes": [{ "time": 0, "value": [1, 1, 1, 1] }] },
+        "colorOverLife": {
+          "keyframes": [
+            {
+              "time": 0,
+              "value": [1, 1, 1, 1]
+            }
+          ]
+        },
         "colorVariation": [0, 0, 0, 0],
         "diesOnCollision": false,
         "drag": 0.3,
-        "emissionOverTime": { "keyframes": [{ "time": 0, "value": 1 }] },
+        "emissionOverTime": {
+          "keyframes": [
+            {
+              "time": 0,
+              "value": 1
+            }
+          ]
+        },
         "friction": 0.2,
         "frictionVariation": 0,
         "gravity": [0, 0, 0],
@@ -41,18 +80,43 @@
         "loops": true,
         "opacityOverLife": {
           "keyframes": [
-            { "time": 0, "value": 0 },
-            { "time": 0.15, "value": 1 },
-            { "time": 0.8, "value": 1 },
-            { "time": 1, "value": 0 }
+            {
+              "time": 0,
+              "value": 0
+            },
+            {
+              "time": 0.15,
+              "value": 1
+            },
+            {
+              "time": 0.8,
+              "value": 1
+            },
+            {
+              "time": 1,
+              "value": 0
+            }
           ]
         },
-        "orientation": { "billboard": {} },
+        "orientation": {
+          "billboard": {}
+        },
         "position": [0, 1.5, 0],
         "restitution": 0.4,
         "restitutionVariation": 0,
-        "shape": { "box": { "size": [3.9, 1.9, 0.1] } },
-        "sizeOverLife": { "keyframes": [{ "time": 0, "value": 0.034 }] },
+        "shape": {
+          "box": {
+            "size": [3.9, 1.9, 0.1]
+          }
+        },
+        "sizeOverLife": {
+          "keyframes": [
+            {
+              "time": 0,
+              "value": 0.034
+            }
+          ]
+        },
         "sizeVariation": 0.4,
         "softness": 0,
         "sortMode": "None",
@@ -64,14 +128,16 @@
         "velocitySpread": 0.05,
         "warmupDuration": 3,
         "colorImage": {
-          "data": "iVBORw0KGgoAAAANSUhEUgAAAQAAAACAEAYAAAC0JWtJAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGYktHRP///////wlY99wAAAAHdElNRQfqChMMMCMHLMxxAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTEwLTE5VDEyOjQ4OjM1KzAwOjAwwz2NpgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0xMC0xOVQxMjo0ODozNSswMDowMLJgNRoAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMTAtMTlUMTI6NDg6MzUrMDA6MDDldRTFAAASpklEQVR42u3deXQVZZ7G8e9bVTd7CFsCIZAFZGnZRQQEBbFdCNoSREXGxkZcGqRR0WlHdETHpd0al0ZUkG5xWlABVyAuCAiIgCA7ssoaAoQlAUK2e6vmn+ljT0/bipJUkno+f3Jy7n1unXOrnvP+7vti2ratW/eaazwPERERCQzHzDIlnPI7hoiIiFQlx5qFCoCIiEjAOJZWAERERAJHIwAREZEAcqxZ5hTFfscQERGRqqQRgIiISABpBCAiIhJAWgEQEREJIMeaZUo8FQAREZFA0QhAREQkgDQCEBERCSAVABERkQByjM4BEBERCRytAIiIiASQCoCIiEgAaReAiIhIAGkFQEREJIBUAERERAJIBUBERCSA9BsAERGRANIKgIiISAA5lg4CEhERCRyNAERERAJIIwAREZEAUgEQEREJII0AREREAkgrACIiIgGkAiAiIhJAGgGIiIgEkGPNQucAiIiIBIxGACIiIgGkEYCIiEgAaQVAREQkgBxrlinxVABEREQCRSMAERGRANIIQEREJIBUAERERAJIIwAREZEAcqxZRgcBiYiIBIxGACIiIgGkEYCIiEgAaQVAREQkgFQAREREAkgjABERkQDSCoCIiEgAqQCIiIgEkGN0DoCIiEjgaAVAREQkgFQAREREAki7AERERAJIKwAiIiIBpAIgIiISQBoBiIiIBJBWAERERAJIBUBERCSAHEsHAYmIiASOfgMgIiISQI41CxUAERGRgNFvAERERALIMbNMiacCICIiEihaARAREQkgFQAREZEA0i4AERGRAHKsd3QOgIiISNBoBCAiIhJAGgGIiIgEkFYAREREAkgF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",
+          "data": "color-image-a28527af.png",
           "origin": [-2, 0.5, 0],
           "width": [4, 0, 0],
           "height": [0, 2, 0]
         },
         "categoryMask": 4294967295
       },
-      "simulationSpace": { "world": {} },
+      "simulationSpace": {
+        "world": {}
+      },
       "sprite": "Soft Dot"
     }
   ],

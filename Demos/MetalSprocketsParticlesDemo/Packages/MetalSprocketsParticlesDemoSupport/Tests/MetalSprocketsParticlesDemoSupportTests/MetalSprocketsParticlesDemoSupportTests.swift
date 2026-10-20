@@ -572,7 +572,8 @@ struct ModelTests {
     /// editor without a test failing. Layer ids differ on purpose (load renews them).
     @Test func currentEffectRoundTripsEveryPreset() throws {
         func normalized(_ system: ParticleSystem) throws -> NSDictionary {
-            let encoder = JSONEncoder()
+            // A store for images and distance fields; equal data gets equal file names, so they compare too.
+            let encoder = EffectResources().encoder()
             encoder.outputFormatting = .sortedKeys
             var object = try #require(try JSONSerialization.jsonObject(with: encoder.encode(system)) as? [String: Any])
             object["layers"] = (object["layers"] as? [[String: Any]])?.map { layer in
