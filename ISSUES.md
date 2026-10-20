@@ -4207,9 +4207,9 @@ status: open
 priority: medium
 kind: task
 labels: area:api, effort:m
-depends: 195, 196, 193, 199, 200, 201, 202, 203, 205, 204
+depends: 195, 196, 193, 199, 200, 201, 202, 203, 205, 204, 207
 created: 2026-10-20T18:19:54Z
-updated: 2026-10-20T18:58:50Z
+updated: 2026-10-20T19:20:18Z
 +++
 
 After migration, the flat settings and the kernel branches behind them remain. Remove them or keep a thin convenience layer per the design decision; update the presets DSL (ParticlePresetBuilder), README, and docs.
@@ -4397,5 +4397,134 @@ closed: 2026-10-20T19:13:44Z
 When any emitter has a user function or stitched module, the update kernel loads and stores ParticleState.custom for every particle (16+ bytes each way). On 1M particles that costs about 0.07 ms of simulate GPU time (0.28 → 0.35 ms), even for a no-op function. With the attribute traffic off, a no-op function costs the same as none (#205 spike). Only keep attributes for emitters whose functions or modules use them: e.g. a declared customAttributeCount of 0 meaning none, or modules declaring what they read and write. This matters for #205: if built-ins become stitched modules, every emitter has a function, and this cost would apply everywhere.
 
 - `2026-10-20T19:13:44Z`: Emitters whose functions/modules never mention 'custom' get customAttributeCount 0; the kernel then skips attribute load/store and no buffer is made. 1M particles with a no-op update function: 0.35 → 0.27 ms simulate, same as no function.
+
+---
+
+## 207: Built-in update modules don't run in stack order
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:simulation, effort:l, needs-design
+depends: 208
+created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T19:20:18Z
++++
+
+#205 showed a stitched stack costs the same as inline kernel code (once #206 removed the attribute traffic), but nothing implements it yet: gravity, drag, color/size over life, color by speed/position, and the plane constraint still run in the kernel's fixed order whatever the stack says. Write them as [[stitchable]] built-in modules (compiled with the library), stitch each emitter's update stack into one function, and drop the matching kernel code. Gate: particles-bench --compare (#184), goldens identical for presets whose order matches today's. Part of #197.
+
+---
+
+## 208: Stitched modules can't read system data (colliders, force fields, textures, events)
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:simulation, effort:m, needs-design
+created: 2026-10-20T19:20:17Z
++++
+
+The stitched module ABI is (thread ParticleState &, dt, time, constant float4 *parameters). Collisions, force fields, SDF and scene-depth textures, events, and sub-emitters need buffers and textures the kernel has, so they can't be modules in a stack. Decide: keep them as fixed kernel stages around the stitched stack, or widen the ABI with a context struct of pointers (and check what stitching allows for textures). Blocks moving those behaviors into the stack (#207).
+
+---
+
+## 209: First frame with a new stitched stack stalls ~400 ms building the pipeline
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:simulation, effort:m
+created: 2026-10-20T19:20:17Z
++++
+
+#182 measured about 420 ms for the first frame after a stitched function is linked (vs ~60 ms for a source user function); graph build itself is ~2 ms. Editing a module stack in the demo will hitch. Build stitched pipelines off the frame path (keep the old one until ready) and consider a binary archive cache.
+
+---
+
+## 210: Demo has no editor for stitched user modules
+
++++
+status: new
+priority: low
+kind: feature
+labels: area:demo, effort:m
+created: 2026-10-20T19:20:17Z
++++
+
+The Modules section lists stitched modules but can't add or edit them. Reuse the user-function editor (UserFunctionEditor, #167) for a stitched module: source, name, parameters, parameterCount, with compile errors shown.
+
+---
+
+## 211: Outline doesn't show modules under emitters
+
++++
+status: new
+priority: low
+kind: feature
+labels: area:demo, effort:s
+created: 2026-10-20T19:20:17Z
++++
+
+The outline lists emitters, sub-emitters, and triggers, but not modules. Show each emitter's modules by stage, selecting one to edit it (pairs with #203).
+
+---
+
+## 212: 2D effects lower and re-lift every emitter every frame
+
++++
+status: new
+priority: low
+kind: bug
+labels: area:simulation, effort:s
+created: 2026-10-20T19:20:17Z
++++
+
+ParticleSystem.effectiveLayers sets layer.settings.constrainsToPlane in 2D, which lowers the modules, lifts them again, and merges, for every layer on every frame. Add the plane constraint module directly (or fold into #199's cached lowering).
+
+---
+
+## 213: Custom attribute detection is a text search for 'custom'
+
++++
+status: new
+priority: low
+kind: enhancement
+labels: area:simulation, effort:s
+created: 2026-10-20T19:20:17Z
++++
+
+#206 keeps attributes only when a function's source contains 'custom'. Comments or names with 'custom' turn them on needlessly; macros could hide a real use (unlikely). Consider an explicit declaration on functions and modules (e.g. reads/writes custom attributes) once #200-style module metadata exists.
+
+---
+
+## 214: Benchmark baseline has drifted
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:tooling, effort:s
+created: 2026-10-20T19:20:18Z
++++
+
+Benchmarks/baseline-presets.json was recorded before the module work; pre-module code now also measures Torch Avenue GPU ~20% slower, so --compare flags noise. Re-record baselines on a quiet machine from a known commit, and note the commit and machine in Benchmarks/README.md.
+
+---
+
+## 215: Swift compiler crash: key path to a static property on an existential metatype
+
++++
+status: new
+priority: low
+kind: task
+labels: area:tooling, effort:s
+created: 2026-10-20T19:20:18Z
+updated: 2026-10-20T19:20:22Z
++++
+
+In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any ParticleModule.Type] crashes swift-frontend (Xcode 27 RC). Worked around with a closure. Reduce to a minimal repro and report to Swift (swiftlang/swift).
 
 ---
