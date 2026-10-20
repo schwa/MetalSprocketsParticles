@@ -304,6 +304,7 @@ public struct DeathFunctionModule: LoweredModule {
 /// A user `[[stitchable]]` module in the update stack. Lifting adds these separately, one per module.
 public struct StitchedUpdateModule: LoweredModule {
     public static let kind = "stitched"
+    public static let added: Self? = Self(module: .template)
     public var module: StitchedModule
 
     public init(module: StitchedModule) {

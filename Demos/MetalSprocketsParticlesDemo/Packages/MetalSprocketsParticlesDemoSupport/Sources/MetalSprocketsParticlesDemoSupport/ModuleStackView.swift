@@ -29,13 +29,51 @@ struct ModuleStacksView: View {
     }
 }
 
+/// A module stack's stage, for the outline and for selecting one module.
+enum ModuleStage: String, CaseIterable, Identifiable {
+    case spawn = "Spawn"
+    case update = "Update"
+    case render = "Render"
+
+    var id: Self { self }
+
+    /// Each module's title and whether it is on, in stack order.
+    func labels(of modules: EmitterModules) -> [(title: String, isEnabled: Bool)] {
+        switch self {
+        case .spawn: modules.spawn.map { (ModuleStackView<SpawnModule, EmptyView>.label($0.module), $0.isEnabled) }
+        case .update: modules.update.map { (ModuleStackView<UpdateModule, EmptyView>.label($0.module), $0.isEnabled) }
+        case .render: modules.render.map { (ModuleStackView<RenderModule, EmptyView>.label($0.module), $0.isEnabled) }
+        }
+    }
+}
+
+/// One module's section, for a module selected in the outline.
+struct SingleModuleView: View {
+    @Binding var modules: EmitterModules
+    let stage: ModuleStage
+    let index: Int
+
+    var body: some View {
+        switch stage {
+        case .spawn:
+            ModuleStackView(title: stage.rawValue, stack: $modules.spawn, only: index) { SpawnModuleEditor(module: $0) }
+        case .update:
+            ModuleStackView(title: stage.rawValue, stack: $modules.update, only: index) { UpdateModuleEditor(module: $0) }
+        case .render:
+            ModuleStackView(title: stage.rawValue, stack: $modules.render, only: index) { RenderModuleEditor(module: $0) }
+        }
+    }
+}
+
 struct ModuleStackView<Module: StageModule, Editor: View>: View {
     let title: String
     @Binding var stack: [ModuleSlot<Module>]
+    /// Show only this slot, without the Add menu.
+    var only: Int?
     @ViewBuilder var editor: (Binding<Module>) -> Editor
 
     var body: some View {
-        ForEach(stack.indices, id: \.self) { index in
+        ForEach(only.map { $0 < stack.count ? [$0] : [] } ?? Array(stack.indices), id: \.self) { index in
             Section {
                 if stack[index].isEnabled {
                     editor($stack[index].module)
@@ -45,8 +83,9 @@ struct ModuleStackView<Module: StageModule, Editor: View>: View {
             }
         }
         let present = Set(stack.map(\.module.kind))
-        let missing = Module.addable.filter { !present.contains($0.kind) }
-        if !missing.isEmpty {
+        // Stitched user modules can be added any number of times; built-ins once.
+        let missing = Module.addable.filter { $0.kind == "stitched" || !present.contains($0.kind) }
+        if only == nil, !missing.isEmpty {
             Section {
                 Menu("Add \(title) Module") {
                     ForEach(missing.indices, id: \.self) { index in
@@ -147,7 +186,7 @@ struct SpawnModuleEditor: View {
             LabeledContent("Function", value: value.function.name)
             Text("Edit in User Functions below.").font(.caption)
         case let .stitched(value):
-            StitchedModuleSummary(module: value.module)
+            StitchedModuleEditor(module: payload($module, value, SpawnModule.stitched).module)
         }
     }
 }
@@ -236,12 +275,69 @@ struct ColorImageModuleEditor: View {
     }
 }
 
-struct StitchedModuleSummary: View {
-    let module: StitchedModule
+/// Edits a stitched user module. Source and name are drafts until Compile & Apply, which stitches the module on its
+/// own first, so typing does not recompile the effect on every key. Parameters apply at once.
+struct StitchedModuleEditor: View {
+    @Binding var module: StitchedModule
+    @State private var draftSource = ""
+    @State private var draftName = ""
+    @State private var compileError: String?
 
     var body: some View {
-        LabeledContent("Function", value: module.name)
-        LabeledContent("Parameters", value: "\(module.parameterCount)")
+        TextField("Function Name", text: $draftName)
+            .monospaced()
+        TextEditor(text: $draftSource)
+            .font(.system(.callout, design: .monospaced))
+            .frame(minHeight: 140)
+            .scrollContentBackground(.hidden)
+            .background(.quaternary, in: .rect(cornerRadius: 6))
+        if let compileError {
+            Text(compileError)
+                .font(.callout)
+                .foregroundStyle(.red)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        HStack {
+            Button("Compile & Apply") { apply() }
+                .disabled(isUnchanged)
+            Button("Revert") { loadDrafts() }
+                .disabled(isUnchanged)
+        }
+        ParametersEditorView(parameters: $module.parameters)
+        Stepper("Reads \(module.parameterCount) Parameters", value: $module.parameterCount, in: 0...ParticleFunction.minimumParameterCount)
+            .help("Entries this module reads and skips. The code must return parameters + this count.")
+        Text("Signature: [[stitchable]] constant float4 *name(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters). Return parameters + the count it reads.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .onChange(of: module, initial: true) { _, _ in
+                if isUnchanged || draftSource.isEmpty {
+                    loadDrafts()
+                }
+            }
+    }
+
+    private var isUnchanged: Bool {
+        draftSource == module.source && draftName == module.name
+    }
+
+    private func loadDrafts() {
+        draftSource = module.source
+        draftName = module.name
+        compileError = nil
+    }
+
+    private func apply() {
+        var candidate = module
+        candidate.source = draftSource
+        candidate.name = draftName
+        do {
+            try candidate.validate(device: ParticleSystemRuntime.defaultDevice())
+            compileError = nil
+            module = candidate
+        } catch {
+            compileError = error.localizedDescription
+        }
     }
 }
 
@@ -293,7 +389,7 @@ struct UpdateModuleEditor: View {
             LabeledContent("Function", value: value.function.name)
             Text("Edit in User Functions below.").font(.caption)
         case let .stitched(value):
-            StitchedModuleSummary(module: value.module)
+            StitchedModuleEditor(module: payload($module, value, UpdateModule.stitched).module)
         }
     }
 }

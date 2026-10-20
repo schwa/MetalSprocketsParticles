@@ -2,6 +2,25 @@ import Foundation
 import Metal
 import MetalSprockets
 
+public extension StitchedModule {
+    /// Compiles and stitches the module on its own. Throws `ParticleFunctionError` if it does not compile, is missing,
+    /// or does not have the stitched module signature.
+    func validate(device: MTLDevice) throws {
+        _ = try Self.stitch([self], name: "particleValidate_\(name)", device: device)
+    }
+
+    /// A module that compiles as is, with an example that reads one parameter: a swirl around the Y axis.
+    static var template: Self {
+        Self(source: """
+        [[stitchable]] constant float4 *swirl(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+            // Turns particles around the Y axis; parameters[0].x sets how fast.
+            particle.velocity += cross(float3(0, 1, 0), particle.position) * parameters[0].x * deltaTime;
+            return parameters + 1;
+        }
+        """, name: "swirl", parameters: [[1, 0, 0, 0]])
+    }
+}
+
 extension StitchedModule {
     /// What the stitched code depends on: everything but parameter values.
     struct Identity: Hashable {

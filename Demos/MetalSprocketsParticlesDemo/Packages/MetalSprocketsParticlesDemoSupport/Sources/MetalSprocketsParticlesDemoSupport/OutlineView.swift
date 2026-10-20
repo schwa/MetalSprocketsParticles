@@ -9,13 +9,15 @@ enum OutlineItem: Hashable {
     case emitter(EmitterDescription.ID)
     case subEmitter(EmitterDescription.ID, Int)
     case trigger(EmitterDescription.ID, Int)
+    /// A module in one of the emitter's stacks, by index.
+    case module(EmitterDescription.ID, ModuleStage, Int)
     case collider(ColliderItem.ID)
     case forceField(ForceFieldItem.ID)
 
     /// The emitter this item belongs to, if any.
     var emitterID: EmitterDescription.ID? {
         switch self {
-        case let .emitter(id), let .subEmitter(id, _), let .trigger(id, _): id
+        case let .emitter(id), let .subEmitter(id, _), let .trigger(id, _), let .module(id, _, _): id
         default: nil
         }
     }
@@ -91,23 +93,28 @@ struct EmitterOutlineRow: View {
     @State private var isExpanded = true
 
     var body: some View {
-        let children = emitter.modules.subEmitters.count + emitter.modules.triggers.count
-        if children == 0 {
-            EmitterOutlineLabelView(emitter: emitter)
-        } else {
-            DisclosureGroup(isExpanded: $isExpanded) {
-                ForEach(emitter.modules.subEmitters.indices, id: \.self) { index in
-                    Label(emitter.modules.subEmitters[index].occasion.kind.name, systemImage: "sparkles")
-                        .tag(OutlineItem.subEmitter(emitter.id, index))
+        DisclosureGroup(isExpanded: $isExpanded) {
+            // Collapsed at first: every emitter has several modules.
+            DisclosureGroup("Modules") {
+                ForEach(ModuleStage.allCases) { stage in
+                    let labels = stage.labels(of: emitter.modules)
+                    ForEach(labels.indices, id: \.self) { index in
+                        Label("\(stage.rawValue): \(labels[index].title)", systemImage: labels[index].isEnabled ? "square.stack.3d.up" : "square.stack.3d.up.slash")
+                            .tag(OutlineItem.module(emitter.id, stage, index))
+                    }
                 }
-                ForEach(emitter.modules.triggers.indices, id: \.self) { index in
-                    let trigger = emitter.modules.triggers[index]
-                    Label("\(trigger.condition.kind.name) → \(trigger.action.kind.name)", systemImage: "bolt")
-                        .tag(OutlineItem.trigger(emitter.id, index))
-                }
-            } label: {
-                EmitterOutlineLabelView(emitter: emitter)
             }
+            ForEach(emitter.modules.subEmitters.indices, id: \.self) { index in
+                Label(emitter.modules.subEmitters[index].occasion.kind.name, systemImage: "sparkles")
+                    .tag(OutlineItem.subEmitter(emitter.id, index))
+            }
+            ForEach(emitter.modules.triggers.indices, id: \.self) { index in
+                let trigger = emitter.modules.triggers[index]
+                Label("\(trigger.condition.kind.name) → \(trigger.action.kind.name)", systemImage: "bolt")
+                    .tag(OutlineItem.trigger(emitter.id, index))
+            }
+        } label: {
+            EmitterOutlineLabelView(emitter: emitter)
         }
     }
 }

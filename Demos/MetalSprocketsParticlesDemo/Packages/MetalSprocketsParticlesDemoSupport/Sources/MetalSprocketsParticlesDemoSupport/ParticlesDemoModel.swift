@@ -435,6 +435,11 @@ final class ParticlesDemoModel {
                 emitters[emitter].modules.triggers.remove(at: index)
             }
             selection = .emitter(emitterID)
+        case let .module(emitterID, stage, index):
+            if let emitter = emitters.firstIndex(where: { $0.id == emitterID }) {
+                emitters[emitter].modules.removeModule(stage: stage, at: index)
+            }
+            selection = .emitter(emitterID)
         case let .collider(id):
             colliders.removeAll { $0.id == id }
             selection = .scene

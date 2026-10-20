@@ -1,4 +1,5 @@
 import Foundation
+import Metal
 @testable import MetalSprocketsParticles
 import MetalSprocketsParticlesSamples
 import Testing
@@ -148,6 +149,14 @@ struct EmitterModulesTests {
         modules[GravityModule.self] = nil
         #expect(modules[GravityModule.self] == nil)
         #expect(modules.lowered().gravity == .zero)
+    }
+
+    @Test(.requiresMetal4) func stitchedTemplatesCompile() throws {
+        let device = try #require(MTLCreateSystemDefaultDevice())
+        try StitchedModule.template.validate(device: device)
+        try #require(StitchedSpawnModule.added).module.validate(device: device)
+        let broken = StitchedModule(source: "not metal", name: "x")
+        #expect(throws: ParticleFunctionError.self) { try broken.validate(device: device) }
     }
 
     @Test func jsonRoundTrips() throws {

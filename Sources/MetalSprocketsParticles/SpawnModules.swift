@@ -265,6 +265,15 @@ public struct SpawnFunctionModule: LoweredModule {
 /// A user `[[stitchable]]` module in the spawn stack. Lifting adds these separately, one per module.
 public struct StitchedSpawnModule: LoweredModule {
     public static let kind = "stitched"
+    /// Spawn modules run with a deltaTime of 0, so the template sets a value instead of integrating one.
+    public static let added: Self? = Self(module: StitchedModule(source: """
+    [[stitchable]] constant float4 *tint(thread ParticleState &particle, float deltaTime, float time, constant float4 *parameters) {
+        // A random tint per particle; parameters[0].x mixes it in.
+        float hue = fract(float(particle.id) * 0.618034);
+        particle.color.rgb = mix(float3(1), float3(hue, 1 - hue, 0.5), parameters[0].x);
+        return parameters + 1;
+    }
+    """, name: "tint", parameters: [[0.5, 0, 0, 0]]))
     public var module: StitchedModule
 
     public init(module: StitchedModule) {

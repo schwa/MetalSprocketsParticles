@@ -43,6 +43,9 @@ struct EmitterInspectorView: View {
                     ModuleStacksView(modules: $model.selectedSubEmitter.modules)
                     RemoveSectionView(title: "Remove Sub-Emitter")
                 }
+            case let .module(_, stage, index):
+                // Just this module; select the emitter for the rest.
+                SingleModuleView(modules: $model.selectedEmitter.modules, stage: stage, index: index)
             case let .trigger(_, index):
                 if index < model.selectedEmitter.modules.triggers.count {
                     Section("Trigger on \(model.selectedEmitter.name)") {

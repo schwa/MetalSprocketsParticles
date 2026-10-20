@@ -97,6 +97,26 @@ extension EmitterModules {
     }
 }
 
+extension EmitterModules {
+    /// Removes the module at `index` in `stage`, unless it is required or out of range.
+    mutating func removeModule(stage: ModuleStage, at index: Int) {
+        switch stage {
+        case .spawn:
+            if spawn.indices.contains(index), !spawn[index].module.isRequired {
+                spawn.remove(at: index)
+            }
+        case .update:
+            if update.indices.contains(index), !update[index].module.isRequired {
+                update.remove(at: index)
+            }
+        case .render:
+            if render.indices.contains(index), !render[index].module.isRequired {
+                render.remove(at: index)
+            }
+        }
+    }
+}
+
 extension UserFunctionSlot {
     func matches(_ module: UpdateModule) -> Bool {
         switch (self, module) {

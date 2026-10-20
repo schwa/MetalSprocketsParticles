@@ -4482,28 +4482,36 @@ updated: 2026-10-20T19:40:59Z
 ## 210: Demo has no editor for stitched user modules
 
 +++
-status: new
+status: closed
 priority: low
 kind: feature
 labels: area:demo, effort:m
 created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T20:24:39Z
+closed: 2026-10-20T20:24:39Z
 +++
 
 The Modules section lists stitched modules but can't add or edit them. Reuse the user-function editor (UserFunctionEditor, #167) for a stitched module: source, name, parameters, parameterCount, with compile errors shown.
+
+- `2026-10-20T20:24:39Z`: Stitched modules: Add menu offers them any number of times (update template 'swirl', spawn template 'tint'); StitchedModuleEditor edits name/source as drafts with Compile & Apply (StitchedModule.validate), parameters, and parameterCount. Library: public StitchedModule.validate(device:) and .template.
 
 ---
 
 ## 211: Outline doesn't show modules under emitters
 
 +++
-status: new
+status: closed
 priority: low
 kind: feature
 labels: area:demo, effort:s
 created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T20:24:39Z
+closed: 2026-10-20T20:24:39Z
 +++
 
 The outline lists emitters, sub-emitters, and triggers, but not modules. Show each emitter's modules by stage, selecting one to edit it (pairs with #203).
+
+- `2026-10-20T20:24:39Z`: Outline: each emitter has a collapsed Modules group listing modules by stage (slashed icon when off). Selecting one shows only its section (OutlineItem.module); Delete removes it unless required.
 
 ---
 
@@ -4587,5 +4595,19 @@ closed: 2026-10-20T19:42:37Z
 StitchedModule.stitch concatenates every distinct module source into one Metal library. Two modules from different sources that define the same function (a helper, or two versions of a module with one name) fail with 'redefinition of ...'. Found while writing StitchingSpikeTests.firstFrameCost. Fix: compile each distinct source into its own library and pass functions from several libraries to MTLStitchedLibraryDescriptor (check that stitching accepts that), and report two modules with the same name in one stack clearly.
 
 - `2026-10-20T19:42:37Z`: Each distinct module source compiles into its own library; the stitched descriptor takes functions from several libraries. Two modules with one name but different sources now fail with a clear error. Test: StitchingSpikeTests.modulesWithSameHelperNameStitch.
+
+---
+
+## 217: Two stitched modules with the same name but edited sources break the emitter
+
++++
+status: new
+priority: low
+kind: bug
+labels: area:demo,effort:s
+created: 2026-10-20T20:24:39Z
++++
+
+Adding the stitched template twice gives two modules named 'swirl'. Editing one's source but keeping the name makes the stack fail to stitch ('Two stitched modules in one stack are named ... but have different sources', #216), so the emitter's functions fail at runtime. The editor's Compile & Apply only validates the module alone. Fix: validate against the whole stack before applying, or give added templates unique names (swirl2...).
 
 ---

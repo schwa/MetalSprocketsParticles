@@ -32,6 +32,37 @@ struct OutlineTests {
         #expect(model.selectedEmitter.modules.subEmitters.isEmpty)
     }
 
+    /// Modules in the outline (#211): selecting one selects its emitter; deleting removes it unless required.
+    @Test func selectAndRemoveModules() throws {
+        let model = ParticlesDemoModel()
+        let id = model.emitters[0].id
+        model.selectedEmitter.modules[GravityModule.self] = GravityModule(acceleration: [0, -1, 0])
+        let gravity = try #require(model.selectedEmitter.modules.update.firstIndex { $0.module.kind == "gravity" })
+        model.selection = .module(id, .update, gravity)
+        #expect(model.selectedEmitter.id == id)
+        #expect(ModuleStage.update.labels(of: model.selectedEmitter.modules)[gravity].title == "Gravity")
+        model.removeSelection()
+        #expect(model.selection == .emitter(id))
+        #expect(model.selectedEmitter.modules[GravityModule.self] == nil)
+        // Required modules stay.
+        let collision = try #require(model.selectedEmitter.modules.update.firstIndex { $0.module.kind == "collision" })
+        model.selection = .module(id, .update, collision)
+        model.removeSelection()
+        #expect(model.selectedEmitter.modules[CollisionModule.self] != nil)
+    }
+
+    /// Stitched modules can be added more than once, from compiling templates (#210).
+    @Test func stitchedModulesAddRepeatedlyAndCompile() throws {
+        let addable = UpdateModule.addable.filter { $0.kind == "stitched" }
+        #expect(addable.count == 1)
+        var modules = EmitterModules.standard
+        modules.update.append(ModuleSlot(addable[0]))
+        modules.update.append(ModuleSlot(addable[0]))
+        #expect(modules.update.filter { $0.module.kind == "stitched" }.count == 2)
+        let player = try ParticlePlayer(system: ParticleSystem("Stitched", layers: [EmitterDescription("A", modules: modules, capacity: 100)]))
+        _ = try player.frame(deltaTime: 1.0 / 60.0, size: CGSize(width: 16, height: 16))
+    }
+
     @Test func addAndRemoveWorldItems() throws {
         let model = ParticlesDemoModel()
         let colliders = model.colliders.count
