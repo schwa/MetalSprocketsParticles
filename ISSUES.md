@@ -4466,6 +4466,7 @@ updated: 2026-10-20T19:40:59Z
 #182 measured about 420 ms for the first frame after a stitched function is linked (vs ~60 ms for a source user function); graph build itself is ~2 ms. Editing a module stack in the demo will hitch. Build stitched pipelines off the frame path (keep the old one until ready) and consider a binary archive cache.
 
 - `2026-10-20T19:40:59Z`: Measured (StitchingSpikeTests.firstFrameCost, STITCHING_TIMINGS=1): not stitching-specific. Fresh source user function: compile 4 ms, first frame ~360 ms; fresh stitched stack: stitch 7 ms, first frame ~360 ms. The cost is the Metal 4 compute pipeline for updateParticles being rebuilt with a new linked function (MetalSprockets PipelineCache.computePipeline, static linking). The earlier 60 ms for user functions was a warm cache. Options, both need MetalSprockets: (1) build the pipeline off the frame path and keep the previous one (or no function) until it's ready; (2) Metal's binary-function path: link visible functions into an existing pipeline without recompiling the kernel (MTL4 dynamic linking / pipelines with additional binary functions). Option 2 is the real fix if MTL4 supports it for compute.
+- `2026-10-20T20:03:59Z`: Filed upstream: MetalSprockets #534 (async pipeline builds / linking into an existing pipeline).
 
 ---
 
