@@ -4578,6 +4578,24 @@ updated: 2026-10-20T19:20:22Z
 
 In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any ParticleModule.Type] crashes swift-frontend (Xcode 27 RC). Worked around with a closure. Reduce to a minimal repro and report to Swift (swiftlang/swift).
 
+- `2026-10-20T20:29:01Z`: Minimal repro (crashes swift-frontend in SILGen, signal 5, Apple Swift 6.4 swiftlang-6.4.0.34.1, Xcode 27 RC, `swiftc -swift-version 6 repro.swift`):
+
+```swift
+protocol P {
+    static var added: Self? { get }
+}
+
+struct S: P {
+    static let added: Self? = S()
+}
+
+let types: [any P.Type] = [S.self]
+let values = types.compactMap(\.added)
+print(values.count)
+```
+
+Crash: ASTLoweringRequest; Transform::transform during Conversion::emit, on an opened existential (`@opened(...) any P`). A closure `{ $0.added }` compiles. Not yet reported upstream (needs a swiftlang/swift GitHub issue).
+
 ---
 
 ## 216: Stitched modules whose sources define the same function name fail to compile together
