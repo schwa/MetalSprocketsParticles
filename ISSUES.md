@@ -4337,11 +4337,13 @@ Part of #197.
 ## 203: Demo inspector sections edit modules directly
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:demo, effort:l
 created: 2026-10-20T18:58:48Z
+updated: 2026-10-20T20:12:42Z
+closed: 2026-10-20T20:12:42Z
 +++
 
 The inspector's sections (#159-#168) bind to EmitterDescription.settings, which converts both ways and merges to keep module order (EmitterModules.merging). Give each module its own section bound to its slot, shown in stack order, and drop the settings bridge.
@@ -4349,6 +4351,8 @@ The inspector's sections (#159-#168) bind to EmitterDescription.settings, which 
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T20:12:42Z`: Emitter inspector is now one section per module in stack order (Spawn/Update/Render), each bound to its module struct; enable/remove in headers; Add menus per stage; stitched modules reorder. Description-level sections: Emitter (with capacity), Appearance (sprite, Draw As via the mesh module, Add Color Image), Emitter Motion, Shape Source. Sub-emitters edit their own module stacks. Old ParticleEmitter adapters removed; their tests ported to module adapters (77 demo tests pass). Not built by eye: I haven't run the app.
 
 ---
 
@@ -4372,6 +4376,7 @@ Part of #197.
 
 - `2026-10-20T19:28:47Z`: Before ParticleEmitter goes internal, move its remaining public users to modules: ParticleView+Previews (8 previews use ParticleEmitter.default2D), particles-bench, ParticleSystemRuntime's public API (init(emitter:), emitters[].settings, setEmitters), SubEmitter.transition(into:), the demo (#203). Gotcha found in #202: EmitterDescription and SubEmitter cache modules.lowered() in a didSet, which doesn't fire inside initializers; set the cache in every init.
 - `2026-10-20T19:48:56Z`: Non-UI prep done: LoweredModule (internal) holds apply/lift; runtime has module APIs (init(modules:), init(capacity:modules:), setEmitters/addEmitter with modules, Emitter.modules); EmitterModules.default2D; SubEmitter.transition(into: EmitterModules); previews and particles-bench build modules. Left before flipping ParticleEmitter to internal: the demo app and its tests (#203), and MetalSprocketsParticlesUITests (no @testable).
+- `2026-10-20T20:12:42Z`: After #203 the demo still uses .settings in: UserFunctionEditor (functions), OutlineView (sub-emitters/triggers lists), ParticlesDemoModel (add sub-emitter/trigger, pointer), Inspector+Events, SceneAnimationViews, ParticleKind (an extension on ParticleEmitter); and demo tests construct EmitterDescription(settings:).
 
 ---
 

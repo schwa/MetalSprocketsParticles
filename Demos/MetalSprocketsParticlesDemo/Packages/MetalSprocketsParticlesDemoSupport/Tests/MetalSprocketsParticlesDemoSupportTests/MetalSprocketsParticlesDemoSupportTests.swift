@@ -21,15 +21,14 @@ struct ColorPipelineTests {
 @Suite(.requiresMetal4)
 struct EmitterAdapterTests {
     @Test func lifetimeSlidersMoveTheRangeAndKeepTheSpread() {
-        var emitter = ParticleEmitter()
-        emitter.lifetime = 1...2
-        #expect(emitter.lifetimeAverage == 1.5)
-        #expect(emitter.lifetimeVariation == 0.5)
+        var lifetime = LifetimeModule(range: 1...2)
+        #expect(lifetime.average == 1.5)
+        #expect(lifetime.variation == 0.5)
         // One slider makes particles live longer, and the spread stays.
-        emitter.lifetimeAverage = 10
-        #expect(emitter.lifetime == 9.5...10.5)
-        emitter.lifetimeVariation = 2
-        #expect(emitter.lifetime == 8...12)
+        lifetime.average = 10
+        #expect(lifetime.range == 9.5...10.5)
+        lifetime.variation = 2
+        #expect(lifetime.range == 8...12)
     }
 
     @Test func categorySummariesShowEveryBit() {
@@ -63,16 +62,6 @@ struct EmitterAdapterTests {
         #expect(CommittedNumberField.parse("") == nil)
         #expect(CommittedNumberField.parse("12a") == nil)
         #expect(CommittedNumberField.parse("-5") == nil)
-    }
-
-    /// Foil in the inspector (#155).
-    @Test func foilTurnsOnAndOff() {
-        var emitter = ParticleEmitter()
-        emitter.hasFoil = true
-        #expect(emitter.foil == ParticleFoil())
-        emitter.editableFoil.glint = 7
-        emitter.hasFoil = false
-        #expect(emitter.foil == nil)
     }
 
     /// Scene-level animation and events (#168). Kept by id, so removing or reordering items keeps them pointing at the
@@ -190,17 +179,19 @@ struct EmitterAdapterTests {
 
     /// Draw As, shape meshes, point sources, and the sprite sheet's start frame (#165).
     @Test func drawAsMapsToParticleMeshes() {
-        var emitter = ParticleEmitter()
-        #expect(emitter.drawing == .sprite)
-        emitter.drawing = .coin
-        #expect(emitter.particleMesh == .coin)
-        emitter.particleMesh = .triangles(positions: [.zero, [1, 0, 0], [0, 1, 0]], normals: [[0, 0, 1], [0, 0, 1], [0, 0, 1]])
-        #expect(emitter.drawing == .custom)
+        var modules = EmitterModules()
+        #expect(modules.drawing == .sprite)
+        modules.drawing = .coin
+        #expect(modules.particleMesh == .coin)
+        modules.drawing = .cube
+        #expect(modules.render.count == 1)
+        modules.render = [ModuleSlot(.mesh(MeshModule(mesh: .triangles(positions: [.zero, [1, 0, 0], [0, 1, 0]], normals: [[0, 0, 1], [0, 0, 1], [0, 0, 1]]))))]
+        #expect(modules.drawing == .custom)
         // A custom mesh is kept, never made here.
-        emitter.drawing = .custom
-        #expect(emitter.drawing == .custom)
-        emitter.drawing = .sprite
-        #expect(emitter.particleMesh == nil)
+        modules.drawing = .custom
+        #expect(modules.drawing == .custom)
+        modules.drawing = .sprite
+        #expect(modules.particleMesh == nil)
     }
 
     @Test func demoMeshesHaveTriangles() {
@@ -269,14 +260,10 @@ struct EmitterAdapterTests {
     }
 
     /// Particle lights and the scene's lights and ambient light (#164).
-    @Test func particleLightsTurnOnAndOff() {
-        var emitter = ParticleEmitter()
-        emitter.emitsLight = true
-        #expect(emitter.light == ParticleLightEmission())
-        emitter.editableLight.editableCount = 0
-        #expect(emitter.light?.count == 1)
-        emitter.emitsLight = false
-        #expect(emitter.light == nil)
+    @Test func particleLightCountStaysPositive() {
+        var light = ParticleLightEmission()
+        light.editableCount = 0
+        #expect(light.count == 1)
     }
 
     @Test func lightAccessorsKeepTheOtherFields() {
@@ -304,78 +291,50 @@ struct EmitterAdapterTests {
         #expect(model.currentEffect.lights.isEmpty)
     }
 
-    /// The Trails and Ribbons group edits ParticleEmitter.trail and ribbon (#161).
-    @Test func trailsAndRibbonsTurnOnAndOff() {
-        var emitter = ParticleEmitter()
-        emitter.hasTrail = true
-        #expect(emitter.trail == ParticleTrail())
-        emitter.editableTrail.editablePointCount = 100
-        #expect(emitter.trail?.pointCount == 64)
-        emitter.editableTrail.editablePointCount = 0
-        #expect(emitter.trail?.pointCount == 2)
-        emitter.editableTrail.fades = false
-        emitter.hasTrail = false
-        #expect(emitter.trail == nil)
-        emitter.hasRibbon = true
-        emitter.editableRibbon.tapers = false
-        #expect(emitter.ribbon == ParticleRibbon(tapers: false))
-        emitter.hasRibbon = false
-        #expect(emitter.ribbon == nil)
+    /// Trail points stay within what the library records (#161).
+    @Test func trailPointCountIsClamped() {
+        var trail = ParticleTrail()
+        trail.editablePointCount = 100
+        #expect(trail.pointCount == 64)
+        trail.editablePointCount = 0
+        #expect(trail.pointCount == 2)
     }
 
     /// The Color Effects group edits color by speed, by position, alternate colors, and the color image (#160).
-    @Test func colorEffectsTurnOnAndOff() throws {
-        var emitter = ParticleEmitter()
-        emitter.hasColorBySpeed = true
-        #expect(emitter.colorBySpeed == ParticleEmitter.defaultSpeedGradient)
-        emitter.colorBySpeedMaximum = 9
-        emitter.colorBySpeedMinimum = 12
-        #expect(emitter.colorBySpeedRange == 12...12)
-        emitter.hasColorBySpeed = false
-        #expect(emitter.colorBySpeed == nil)
-
-        emitter.hasColorByPosition = true
-        #expect(emitter.colorByPosition == ParticleEmitter.defaultPositionGradient)
-        emitter.hasColorByPosition = false
-        #expect(emitter.colorByPosition == nil)
+    @Test func colorEffectsAdapters() throws {
+        var speed = ColorBySpeedModule(curve: nil)
+        #expect(speed.editableCurve == ColorBySpeedModule.defaultGradient)
+        speed.maximum = 9
+        speed.minimum = 12
+        #expect(speed.range == 12...12)
 
         // Alternate colors start as a copy of the main gradient, so turning them on changes nothing until edited.
-        emitter.hasAlternateColors = true
-        #expect(emitter.alternateColorOverLife == emitter.colorOverLife)
+        var color = ColorOverLifeModule(color: .linear(from: [1, 0, 0, 1], to: [0, 0, 1, 1]))
+        color.hasAlternateColors = true
+        #expect(color.alternate == color.color)
+        color.hasAlternateColors = false
+        #expect(color.alternate == nil)
 
-        // Placement edits do nothing without an image; a chosen image keeps the old placement.
-        emitter.editableColorImage.origin = [9, 9, 9]
-        #expect(emitter.colorImage == nil)
+        // A replacement image keeps the old placement.
         let png = try #require(NSImage(size: NSSize(width: 4, height: 2), flipped: false) { rect in
             NSColor.red.setFill()
             rect.fill()
             return true
         }.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0)?.representation(using: .png, properties: [:]) })
-        emitter.colorImage = try ParticleColorImage.choosing(data: png, replacing: nil)
-        emitter.editableColorImage.origin = [1, 2, 3]
-        emitter.colorImage = try ParticleColorImage.choosing(data: png, replacing: emitter.colorImage)
-        #expect(emitter.colorImage?.origin == [1, 2, 3])
+        var image = try ParticleColorImage.choosing(data: png, replacing: nil)
+        image.origin = [1, 2, 3]
+        image = try ParticleColorImage.choosing(data: png, replacing: image)
+        #expect(image.origin == [1, 2, 3])
         #expect(throws: (any Error).self) { try ParticleColorImage.choosing(data: Data("not an image".utf8), replacing: nil) }
-        emitter.hasColorImage = false
-        #expect(emitter.colorImage == nil)
     }
 
-    /// The Flocking section edits ParticleEmitter.flocking (#159).
-    @Test func flockingTurnsOnAndOffAndKeepsItsSettings() {
-        var emitter = ParticleEmitter()
-        #expect(!emitter.isFlocking)
-        emitter.isFlocking = true
-        #expect(emitter.flocking == ParticleFlocking())
-        emitter.editableFlocking.alignment = 0
-        emitter.editableFlocking.neighborLimit = 7.6
-        #expect(emitter.flocking?.maxNeighbors == 8)
-        emitter.editableFlocking.neighborLimit = 0
-        #expect(emitter.flocking?.maxNeighbors == 1)
-        emitter.isFlocking = false
-        #expect(emitter.flocking == nil)
-        // Editing while off turns it on.
-        emitter.editableFlocking.cohesion = 3
-        #expect(emitter.flocking?.cohesion == 3)
+    /// Flocking's neighbor slider rounds and stays positive (#159).
+    @Test func flockingNeighborLimit() {
+        var flocking = ParticleFlocking()
+        flocking.neighborLimit = 7.6
+        #expect(flocking.maxNeighbors == 8)
+        flocking.neighborLimit = 0
+        #expect(flocking.maxNeighbors == 1)
     }
 
     @Test func flockingSpeedBoundsStayOrdered() {
@@ -417,15 +376,15 @@ struct EmitterAdapterTests {
     }
 
     @Test func warnsWhenRateAndLifetimeNeedMoreParticles() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 1_000
-        emitter.birthRateVariation = 0
-        emitter.lifetime = 1...2
+        var modules = EmitterModules {
+            RateModule(birthRate: 1_000)
+            LifetimeModule(range: 1...2)
+        }
         // 1,000 a second for up to 2 seconds: 2,000 alive at most.
-        #expect(emitter.particlesNeeded(capacity: 2_000) == nil)
-        #expect(emitter.particlesNeeded(capacity: 1_500) == 2_000)
-        emitter.birthRateVariation = 500
-        #expect(emitter.particlesNeeded(capacity: 2_000) == 3_000)
+        #expect(modules.particlesNeeded(capacity: 2_000) == nil)
+        #expect(modules.particlesNeeded(capacity: 1_500) == 2_000)
+        modules.spawn[0] = ModuleSlot(.rate(RateModule(birthRate: 1_000, variation: 500)))
+        #expect(modules.particlesNeeded(capacity: 2_000) == 3_000)
     }
 
     @MainActor
@@ -439,60 +398,57 @@ struct EmitterAdapterTests {
     }
 
     @Test func lifetimesNeverGoBelowTheMinimum() {
-        var emitter = ParticleEmitter()
-        emitter.lifetime = 1...3
+        var lifetime = LifetimeModule(range: 1...3)
+        let minimum = LifetimeModule.minimumEditableLifetime
         // Shorter than the spread allows: the spread narrows instead of going below the minimum.
-        emitter.lifetimeAverage = 0.5
-        #expect(emitter.lifetime.lowerBound >= ParticleEmitter.minimumEditableLifetime)
-        #expect(abs(emitter.lifetimeAverage - 0.5) < 1e-6)
-        emitter.lifetimeVariation = 100
-        #expect(emitter.lifetime.lowerBound >= ParticleEmitter.minimumEditableLifetime - 1e-6)
-        emitter.lifetimeAverage = -1
-        #expect(emitter.lifetime == ParticleEmitter.minimumEditableLifetime...ParticleEmitter.minimumEditableLifetime)
+        lifetime.average = 0.5
+        #expect(lifetime.range.lowerBound >= minimum)
+        #expect(abs(lifetime.average - 0.5) < 1e-6)
+        lifetime.variation = 100
+        #expect(lifetime.range.lowerBound >= minimum - 1e-6)
+        lifetime.average = -1
+        #expect(lifetime.range == minimum...minimum)
     }
 
     @Test func limitedEmissionToggle() {
-        var emitter = ParticleEmitter()
-        #expect(!emitter.hasLimitedEmission)
-        emitter.hasLimitedEmission = true
-        #expect(emitter.emissionDuration == 1)
-        emitter.limitedEmissionDuration = 4
-        emitter.hasLimitedEmission = true
-        #expect(emitter.emissionDuration == 4)
-        emitter.hasLimitedEmission = false
-        #expect(emitter.emissionDuration == nil)
+        var rate = RateModule()
+        #expect(!rate.hasLimitedEmission)
+        rate.hasLimitedEmission = true
+        #expect(rate.emissionDuration == 1)
+        rate.limitedEmissionDuration = 4
+        rate.hasLimitedEmission = true
+        #expect(rate.emissionDuration == 4)
+        rate.hasLimitedEmission = false
+        #expect(rate.emissionDuration == nil)
     }
 
     @Test func velocityStretch() {
-        var emitter = ParticleEmitter()
-        emitter.velocityStretch = 0.7
-        #expect(emitter.orientation == .velocityAligned(stretch: 0.7))
-        emitter.orientation.kind = .yAligned
-        #expect(emitter.velocityStretch == 0)
+        var sprite = SpriteModule()
+        sprite.velocityStretch = 0.7
+        #expect(sprite.orientation == .velocityAligned(stretch: 0.7))
+        sprite.orientation.kind = .yAligned
+        #expect(sprite.velocityStretch == 0)
     }
 
     @Test func shapeParameters() {
-        var emitter = ParticleEmitter()
-        emitter.shape.kind = .cone
-        emitter.shapeRadius = 0.7
-        emitter.shapeSecondary = 2
-        #expect(emitter.shape == .cone(radius: 0.7, height: 2))
-        emitter.shape.kind = .plane
-        emitter.shapeSize = [2, 9, 3]
-        #expect(emitter.shape == .plane(size: [2, 3]))
+        var shape = EmitterShape.point
+        shape.kind = .cone
+        shape.radius = 0.7
+        shape.secondary = 2
+        #expect(shape == .cone(radius: 0.7, height: 2))
+        shape.kind = .plane
+        shape.size = [2, 9, 3]
+        #expect(shape == .plane(size: [2, 3]))
         // Parameters that do not apply are ignored.
-        emitter.shapeRadius = 5
-        #expect(emitter.shape == .plane(size: [2, 3]))
+        shape.radius = 5
+        #expect(shape == .plane(size: [2, 3]))
     }
 
-    @Test func imageSequenceToggleAndGrid() {
-        var emitter = ParticleEmitter()
-        emitter.hasImageSequence = true
-        #expect(emitter.imageSequence?.frameCount == 4)
-        emitter.editableImageSequence.gridColumns = 4
-        #expect(emitter.imageSequence?.frameCount == 8)
-        emitter.hasImageSequence = false
-        #expect(emitter.imageSequence == nil)
+    @Test func imageSequenceGrid() {
+        var sequence = ImageSequence(rows: 2, columns: 2)
+        #expect(sequence.frameCount == 4)
+        sequence.gridColumns = 4
+        #expect(sequence.frameCount == 8)
     }
 
     @Test func colorKeyframeRoundTripsThroughLinearSRGB() {

@@ -22,17 +22,12 @@ struct EmitterInspectorView: View {
                 ScriptedPointerSectionView()
             case .emitter:
                 EmitterSectionView()
-                ModuleStacksSectionView(modules: $model.selectedEmitter.modules)
-                EmissionSectionView(settings: $model.selectedEmitter.settings, capacity: $model.selectedEmitter.editableCapacity)
-                ShapeSectionView(settings: $model.selectedEmitter.settings)
-                if [.mesh, .points].contains(model.selectedEmitter.settings.shape.kind) {
+                AppearanceSectionView(emitter: $model.selectedEmitter)
+                EmitterMotionSectionView(emitter: $model.selectedEmitter)
+                if [.mesh, .points].contains(model.selectedEmitter.modules.shape?.kind) {
                     ShapeSourceSectionView(emitter: $model.selectedEmitter)
                 }
-                MotionSectionView(emitter: $model.selectedEmitter)
-                AppearanceSectionView(emitter: $model.selectedEmitter)
-                CollisionSectionView(settings: $model.selectedEmitter.settings)
-                FlockingSectionView(settings: $model.selectedEmitter.settings)
-                LevelOfDetailSectionView(settings: $model.selectedEmitter.settings)
+                ModuleStacksView(modules: $model.selectedEmitter.modules)
                 UserFunctionsSectionView(settings: $model.selectedEmitter.settings)
                     // Fresh drafts when another emitter is selected.
                     .id(model.selectedEmitter.id)
@@ -43,8 +38,9 @@ struct EmitterInspectorView: View {
                     } header: {
                         Text("Sub-Emitter of \(model.selectedEmitter.name)")
                     } footer: {
-                        Text("Adding, removing, or resizing a sub-emitter clears the particles.")
+                        Text("Adding, removing, or resizing a sub-emitter clears the particles. Its shape is centered on the parent particle; birth rate and timing are ignored.")
                     }
+                    ModuleStacksView(modules: $model.selectedSubEmitter.modules)
                     RemoveSectionView(title: "Remove Sub-Emitter")
                 }
             case let .trigger(_, index):
@@ -297,57 +293,12 @@ struct EmitterSectionView: View {
                 Spacer()
                 Button("Burst", systemImage: "sparkles") { model.burstSelectedEmitter() }
             }
+            CapacityView(emitter: $model.selectedEmitter)
         }
     }
 }
 
 // MARK: - Selected emitter
-
-struct EmissionSectionView: View {
-    @Environment(ParticlesDemoModel.self) private var model
-    @Binding var settings: ParticleEmitter
-    /// The emitter's capacity. Changing it rebuilds the particle buffer and restarts the effect, so it applies when the
-    /// field is committed, not per keystroke.
-    @Binding var capacity: Int
-
-    var body: some View {
-        Section("Emission") {
-            LabeledContent("Max Particles") {
-                // Each new capacity rebuilds the buffer and restarts the effect, so only a finished number is applied.
-                CommittedNumberField("Max Particles", value: $capacity)
-                    .frame(width: 110)
-            }
-            .help("Particles this emitter can have alive at once. Changing it restarts the effect. The limit is the GPU's largest buffer (80 bytes a particle).")
-            if let capacityError = model.capacityError {
-                Label(capacityError, systemImage: "xmark.octagon")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-            if let needed = settings.particlesNeeded(capacity: capacity) {
-                Label("Needs about \(needed.formatted()) at this rate and lifetime; newest particles replace the oldest early.", systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-            ParameterSliderView("Birth Rate", value: $settings.birthRate, in: 0...100_000, format: .number.precision(.fractionLength(0)))
-            ParameterSliderView("Lifetime", value: $settings.lifetimeAverage, in: 0.1...30)
-                .help("Seconds each particle lives, on average. Type a value for longer lives.")
-            ParameterSliderView("Lifetime Variation", value: $settings.lifetimeVariation, in: 0...15)
-                .help("Each particle lives this many seconds more or less than Lifetime, at random.")
-            DisclosureGroup("Timing") {
-                ParameterSliderView("Rate Variation", value: $settings.birthRateVariation, in: 0...50_000, format: .number.precision(.fractionLength(0)))
-                ParameterSliderView("Warmup", value: $settings.warmupDuration, in: 0...5)
-                Toggle("Limited Duration", isOn: $settings.hasLimitedEmission)
-                if settings.hasLimitedEmission {
-                    ParameterSliderView("Duration", value: $settings.limitedEmissionDuration, in: 0.1...10)
-                    ParameterSliderView("Idle", value: $settings.idleDuration, in: 0...10)
-                    Toggle("Loops", isOn: $settings.loops)
-                }
-                // Birth-rate multiplier over seconds since the emitter started; ending at 0 makes a finite effect.
-                FloatCurveEditorView(title: "Emission Over Time", curve: $settings.emissionOverTime, range: 0...1, timeRange: 0...30)
-            }
-        }
-    }
-}
 
 /// Where the Mesh and Point Cache shapes get their data: a mesh (built in, or a model file) with an optional wave, or
 /// points from an image (or a point cache from a saved effect).
@@ -365,7 +316,7 @@ struct ShapeSourceSectionView: View {
 
     var body: some View {
         Section("Shape Source") {
-            if emitter.settings.shape.kind == .mesh {
+            if emitter.modules.shape?.kind == .mesh {
                 LabeledContent("Mesh") {
                     Menu(emitter.mesh.map { "\($0.positions.count) vertices" } ?? "None") {
                         ForEach(DemoMesh.allCases) { choice in
@@ -447,242 +398,6 @@ struct ShapeSourceSectionView: View {
     }
 }
 
-struct ShapeSectionView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        Section("Shape") {
-            KindPicker("Shape", selection: $settings.shape.kind)
-            switch settings.shape.kind {
-            case .sphere, .disc:
-                ParameterSliderView("Radius", value: $settings.shapeRadius, in: 0...3)
-            case .cylinder, .cone:
-                ParameterSliderView("Radius", value: $settings.shapeRadius, in: 0...3)
-                ParameterSliderView("Height", value: $settings.shapeSecondary, in: 0...3)
-            case .torus:
-                ParameterSliderView("Radius", value: $settings.shapeRadius, in: 0...3)
-                ParameterSliderView("Tube Radius", value: $settings.shapeSecondary, in: 0...1)
-            case .box, .plane:
-                VectorEditorView("Size", value: $settings.shapeSize, in: 0...5)
-            default:
-                EmptyView()
-            }
-            DisclosureGroup("Placement") {
-                if settings.shape.kind != .point {
-                    KindPicker("Birth Location", selection: $settings.birthLocation)
-                    ParameterSliderView("Sweep", value: $settings.sweepAngle, in: 0...(2 * .pi))
-                }
-                KindPicker("Birth Direction", selection: $settings.birthDirection)
-                VectorEditorView("Position", value: $settings.position, in: -5...5)
-            }
-        }
-    }
-}
-
-struct MotionSectionView: View {
-    @Environment(ParticlesDemoModel.self) private var model
-    @Binding var emitter: EmitterDescription
-
-    var body: some View {
-        @Bindable var model = model
-        Section("Motion") {
-            VectorEditorView("Velocity", value: $emitter.settings.velocity, in: -20...20)
-            ParameterSliderView("Spread", value: $emitter.settings.velocitySpread, in: 0...10)
-            VectorEditorView("Gravity", value: $emitter.settings.gravity, in: -20...20)
-            ParameterSliderView("Drag", value: $emitter.settings.drag, in: 0...5)
-            Toggle("Constrain to Plane", isOn: $emitter.settings.constrainsToPlane)
-                .help("Keep particles on the emitter's XY plane, for 2D effects or flat sheets.")
-            DisclosureGroup("Emitter Motion") {
-                Toggle("Follow Pointer", isOn: $model.selectedEmitterFollowsPointer)
-                KindPicker("Path", selection: $emitter.motion.kind)
-                if emitter.motion.kind != .still {
-                    ParameterSliderView("Path Radius", value: $emitter.motion.radius, in: 0...4)
-                    ParameterSliderView("Path Speed", value: $emitter.motion.speed, in: 0...5)
-                }
-                VectorEditorView("Offset", value: $emitter.motion.offset, in: -5...5)
-                ParameterSliderView("Yaw", value: $emitter.motion.yaw, in: -.pi ... .pi)
-                ParameterSliderView("Pitch", value: $emitter.motion.pitch, in: -.pi ... .pi)
-                ParameterSliderView("Spin", value: $emitter.motion.spin, in: -10...10)
-                KindPicker("Simulation Space", selection: $emitter.simulationSpace)
-                ParameterSliderView("Inherit Velocity", value: $emitter.settings.inheritVelocity, in: 0...1)
-            }
-        }
-    }
-}
-
-struct AppearanceSectionView: View {
-    @Binding var emitter: EmitterDescription
-
-    var body: some View {
-        Section("Appearance") {
-            Picker("Draw As", selection: $emitter.settings.drawing) {
-                ForEach(ParticleDrawing.allCases.filter { $0 != .custom || emitter.settings.drawing == .custom }) { drawing in
-                    Text(drawing.rawValue).tag(drawing)
-                }
-            }
-            .help("Sprites, or a small mesh per particle (lit, turned by the particle's orientation and spin).")
-            Toggle("Foil", isOn: $emitter.settings.hasFoil)
-                .help("Shade like metallic foil: pieces flash as they turn to catch the light and shift color with the angle. Use with Tumbling sprites or meshes; a billboard always faces the camera, so it does not flash.")
-            if emitter.settings.hasFoil {
-                ParameterSliderView("Glint", value: $emitter.settings.editableFoil.glint, in: 0...10)
-                ParameterSliderView("Shininess", value: $emitter.settings.editableFoil.shininess, in: 1...200, format: .number.precision(.fractionLength(0)))
-                ParameterSliderView("Iridescence", value: $emitter.settings.editableFoil.iridescence, in: 0...1)
-            }
-            KindPicker("Sprite", selection: $emitter.sprite)
-            KindPicker("Blend", selection: $emitter.settings.blendMode)
-            KindPicker("Sort", selection: $emitter.settings.sortMode)
-            KindPicker("Orientation", selection: $emitter.settings.orientation.kind)
-            Toggle("Lit", isOn: $emitter.settings.isLit)
-            ParameterSliderView("Softness", value: $emitter.settings.softness, in: 0...1)
-                .help("Soft particles: fade out over this distance in front of solid colliders instead of clipping hard. 0 turns it off.")
-            if emitter.settings.orientation.kind == .velocityAligned {
-                ParameterSliderView("Stretch", value: $emitter.settings.velocityStretch, in: 0...2)
-            }
-            DisclosureGroup("Curves") {
-                ColorCurveEditorView(title: "Color", curve: $emitter.settings.colorOverLife)
-                FloatCurveEditorView(title: "Opacity", curve: $emitter.settings.opacityOverLife, range: 0...1)
-                FloatCurveEditorView(title: "Size", curve: $emitter.settings.sizeOverLife, range: 0...0.5)
-            }
-            DisclosureGroup("Rotation") {
-                ParameterSliderView("Angle", value: $emitter.settings.angle, in: -.pi ... .pi)
-                ParameterSliderView("Spin", value: $emitter.settings.angularSpeed, in: -20...20)
-            }
-            if emitter.sprite != .softDot {
-                DisclosureGroup("Sprite Sheet") {
-                    Toggle("Animate Frames", isOn: $emitter.settings.hasImageSequence)
-                    if emitter.settings.hasImageSequence {
-                        ImageSequenceEditorView(sequence: $emitter.settings.editableImageSequence)
-                    }
-                }
-            }
-            DisclosureGroup("Particle Lights") {
-                ParticleLightsView(settings: $emitter.settings)
-            }
-            DisclosureGroup("Trails and Ribbons") {
-                TrailsAndRibbonsView(settings: $emitter.settings)
-            }
-            DisclosureGroup("Color Effects") {
-                ColorEffectsView(settings: $emitter.settings)
-            }
-            DisclosureGroup("Variation") {
-                VariationControlsView(settings: $emitter.settings)
-            }
-        }
-    }
-}
-
-/// Some of the emitter's particles light the scene (and other emitters' lit particles).
-struct ParticleLightsView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        Toggle("Emit Light", isOn: $settings.emitsLight)
-            .help("Turns some of this emitter's particles into point lights each frame: sparks lighting smoke, fireflies on leaves.")
-        if settings.emitsLight {
-            ParameterSliderView("Lights", value: $settings.editableLight.editableCount, in: 1...32, format: .number.precision(.fractionLength(0)))
-                .help("How many particles become lights, picked evenly across the emitter.")
-            ColorPicker("Color", selection: $settings.editableLight.color.color, supportsOpacity: false)
-            ParameterSliderView("Intensity", value: $settings.editableLight.intensity, in: 0...10)
-            ParameterSliderView("Range", value: $settings.editableLight.range, in: 0...10)
-            Toggle("Brightest Particles", isOn: $settings.editableLight.picksBrightest)
-                .help("Each light takes the brightest particle in its share, so lights sit on the hottest sparks. Off is cheaper.")
-        }
-    }
-}
-
-/// Draw particles as ribbons: each through its own recent positions (a trail), or all joined in birth order (a ribbon).
-struct TrailsAndRibbonsView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        Toggle("Trail", isOn: $settings.hasTrail)
-            .help("Each particle draws as a ribbon through its recent positions instead of a sprite.")
-        if settings.hasTrail {
-            ParameterSliderView("Points", value: $settings.editableTrail.editablePointCount, in: 2...64, format: .number.precision(.fractionLength(0)))
-                .help("Positions kept per particle. Memory is 16 bytes per point per particle of every emitter.")
-            ParameterSliderView("Point Interval", value: $settings.editableTrail.pointInterval, in: 0...0.2, format: .number.precision(.fractionLength(3)))
-                .help("Seconds between recorded points, so trails cover the same time at any frame rate. 0 records one every step.")
-            Toggle("Trail Tapers", isOn: $settings.editableTrail.tapers)
-            Toggle("Trail Fades", isOn: $settings.editableTrail.fades)
-        }
-        Toggle("Ribbon", isOn: $settings.hasRibbon)
-            .help("Joins the live particles into one ribbon in birth order. Takes the place of trails and mesh particles.")
-        if settings.hasRibbon {
-            Toggle("Ribbon Tapers", isOn: $settings.editableRibbon.tapers)
-        }
-    }
-}
-
-/// Colors on top of color over life: by speed, by position, a second gradient to blend toward, and an image.
-struct ColorEffectsView: View {
-    @Binding var settings: ParticleEmitter
-    @State private var isChoosingImage = false
-    @State private var isShowingImageError = false
-    @State private var imageError = ""
-
-    var body: some View {
-        Toggle("Color by Speed", isOn: $settings.hasColorBySpeed)
-            .help("Multiplies the color by a gradient sampled by speed: the slow end at the minimum speed and below, the fast end at the maximum and above.")
-        if settings.hasColorBySpeed {
-            ColorCurveEditorView(title: "Speed Gradient", curve: $settings.editableColorBySpeed)
-            ParameterSliderView("Slow Speed", value: $settings.colorBySpeedMinimum, in: 0...20)
-            ParameterSliderView("Fast Speed", value: $settings.colorBySpeedMaximum, in: 0...20)
-        }
-        Toggle("Color by Position", isOn: $settings.hasColorByPosition)
-            .help("Multiplies the color by a gradient across the world, from Start to End.")
-        if settings.hasColorByPosition {
-            ColorCurveEditorView(title: "Position Gradient", curve: $settings.editableColorByPosition)
-            VectorEditorView("Start", value: $settings.colorByPositionStart, in: -5...5)
-            VectorEditorView("End", value: $settings.colorByPositionEnd, in: -5...5)
-            Toggle("Sample at Birth", isOn: $settings.colorByPositionAtBirth)
-                .help("Keep the color where each particle is born, instead of changing it as the particle moves.")
-        }
-        Toggle("Alternate Colors", isOn: $settings.hasAlternateColors)
-            .help("Each particle blends between Color and this second gradient by its own random amount.")
-        if settings.hasAlternateColors {
-            ColorCurveEditorView(title: "Alternate", curve: $settings.editableAlternateColorOverLife)
-        }
-        LabeledContent("Color Image") {
-            HStack {
-                Button(settings.hasColorImage ? "Replace…" : "Choose…") { isChoosingImage = true }
-                if settings.hasColorImage {
-                    Button("Remove", role: .destructive) { settings.hasColorImage = false }
-                }
-            }
-        }
-        .help("Multiplies each particle's color by an image laid over the world, under the particle.")
-        .fileImporter(isPresented: $isChoosingImage, allowedContentTypes: [.image]) { result in
-            chooseImage(result)
-        }
-        .alert("Color Image", isPresented: $isShowingImageError) {
-            Button("OK") {}
-        } message: {
-            Text(imageError)
-        }
-        if settings.hasColorImage {
-            VectorEditorView("Origin", value: $settings.editableColorImage.origin, in: -5...5)
-            VectorEditorView("Width", value: $settings.editableColorImage.width, in: -5...5)
-            VectorEditorView("Height", value: $settings.editableColorImage.height, in: -5...5)
-        }
-    }
-
-    private func chooseImage(_ result: Result<URL, Error>) {
-        do {
-            let url = try result.get()
-            let accessing = url.startAccessingSecurityScopedResource()
-            defer {
-                if accessing {
-                    url.stopAccessingSecurityScopedResource()
-                }
-            }
-            settings.colorImage = try ParticleColorImage.choosing(data: Data(contentsOf: url), replacing: settings.colorImage)
-        } catch {
-            imageError = error.localizedDescription
-            isShowingImageError = true
-        }
-    }
-}
-
 struct ImageSequenceEditorView: View {
     @Binding var sequence: ImageSequence
 
@@ -694,101 +409,6 @@ struct ImageSequenceEditorView: View {
         ParameterSliderView("Start Frame", value: $sequence.initialFrame, in: 0...16)
         ParameterSliderView("Start Frame Variation", value: $sequence.initialFrameVariation, in: 0...16)
         KindPicker("Playback", selection: $sequence.mode)
-    }
-}
-
-struct VariationControlsView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        ParameterSliderView("Size", value: $settings.sizeVariation, in: 0...1)
-        ParameterSliderView("Speed", value: $settings.speedVariation, in: 0...10)
-        ParameterSliderView("Hue", value: $settings.colorVariation.x, in: 0...0.5)
-        ParameterSliderView("Saturation", value: $settings.colorVariation.y, in: 0...1)
-        ParameterSliderView("Brightness", value: $settings.colorVariation.z, in: 0...1)
-        ParameterSliderView("Alpha", value: $settings.colorVariation.w, in: 0...1)
-        ParameterSliderView("Angle", value: $settings.angleVariation, in: 0 ... .pi)
-        ParameterSliderView("Spin", value: $settings.angularSpeedVariation, in: 0...20)
-        ParameterSliderView("Bounce", value: $settings.restitutionVariation, in: 0...1)
-        ParameterSliderView("Friction", value: $settings.frictionVariation, in: 0...1)
-    }
-}
-
-struct CollisionSectionView: View {
-    @Binding var settings: ParticleEmitter
-    @Environment(ParticlesDemoModel.self) private var model
-
-    var body: some View {
-        Section("Collision") {
-            ParameterSliderView("Bounce", value: $settings.restitution, in: 0...1.5)
-            ParameterSliderView("Friction", value: $settings.friction, in: 0...1)
-            Toggle("Die on Collision", isOn: $settings.diesOnCollision)
-            ParameterSliderView("Radius", value: $settings.collisionRadius, in: 0...0.5, format: .number.precision(.fractionLength(3)))
-                .help("Particles collide as spheres of this radius instead of points, so large sprites and mesh particles rest on colliders instead of sinking in.")
-            Toggle("Collide with Scene Depth", isOn: $settings.collidesWithSceneDepth)
-                .help("Bounce off whatever was drawn into the scene depth last frame (here, solid colliders). Only works on screen.")
-            Toggle("Report Collisions", isOn: $settings.reportsCollisions)
-                .help("Report each collider hit to the app (ParticleSystemRuntime.recentEvents), for sounds, decals, or event bursts.")
-            Toggle("Report Deaths", isOn: $settings.reportsDeaths)
-                .help("Report each particle death to the app (ParticleSystemRuntime.recentEvents).")
-            CategoryMaskView(
-                "Categories",
-                mask: $settings.categoryMask,
-                detail: "Matches \(categoryMatchCount(settings.categoryMask, categories: model.colliders.map(\.collider.categoryBitMask), noun: "collider")) and "
-                    + categoryMatchCount(settings.categoryMask, categories: model.forceFields.map(\.field.categoryBitMask), noun: "field")
-            )
-            .help("Colliders and force fields apply when they share a category with the emitter. Give them different categories to feel one but not the other.")
-        }
-    }
-}
-
-/// Fewer or no particles where they matter less: distance LOD, culling, and a floor on on-screen size.
-struct LevelOfDetailSectionView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        Section("Level of Detail") {
-            ParameterSliderView("Full Rate Within", value: $settings.lodNearDistance, in: 0...50)
-                .help("Distance from the camera within which the emitter emits at its full rate.")
-            ParameterSliderView("Reduced Rate At", value: $settings.lodFarDistance, in: 0...100)
-                .help("Distance at which emission falls to the far rate. LOD is off unless this is farther than Full Rate Within.")
-            ParameterSliderView("Far Rate", value: $settings.lodFarRateScale, in: 0...1)
-                .help("Birth rate at the far distance, as a fraction of the full rate.")
-            Toggle("Grow When Thinned", isOn: $settings.lodScalesSize)
-                .help("Grows particles as LOD thins them, so the effect covers about the same area with fewer particles.")
-            ParameterSliderView("Minimum Screen Size", value: $settings.minimumScreenSize, in: 0...0.02, format: .number.precision(.fractionLength(4)))
-                .help("Far particles never draw smaller than this: half their size as a fraction of the view height (0.002 is about two pixels at 1080p). 0 lets them shrink.")
-            ParameterSliderView("Culling Radius", value: $settings.cullingRadius, in: 0...20)
-                .help("A sphere around the emitter that holds its particles; when it is out of view the emitter is not drawn. 0 never culls.")
-            if settings.cullingRadius > 0 {
-                Toggle("Simulate When Culled", isOn: $settings.simulatesWhenCulled)
-                    .help("Keep simulating out of view, so the effect is right when it comes back. Off saves the work but freezes it.")
-            }
-        }
-    }
-}
-
-struct FlockingSectionView: View {
-    @Binding var settings: ParticleEmitter
-
-    var body: some View {
-        Section("Flocking") {
-            Toggle("Flocks", isOn: $settings.isFlocking)
-                .help("Particles steer by their neighbors: away from close ones, along with their heading, and toward their center. Costs a neighbor search each frame.")
-            if settings.isFlocking {
-                ParameterSliderView("Neighbor Radius", value: $settings.editableFlocking.radius, in: 0.01...2)
-                    .help("How far a particle sees its neighbors. Smaller is faster.")
-                ParameterSliderView("Separation Radius", value: $settings.editableFlocking.separationRadius, in: 0...1)
-                    .help("Closer than this, neighbors push apart.")
-                ParameterSliderView("Separation", value: $settings.editableFlocking.separation, in: 0...0.2, format: .number.precision(.fractionLength(3)))
-                ParameterSliderView("Alignment", value: $settings.editableFlocking.alignment, in: 0...5)
-                ParameterSliderView("Cohesion", value: $settings.editableFlocking.cohesion, in: 0...5)
-                ParameterSliderView("Minimum Speed", value: $settings.editableFlocking.minimumSpeed, in: 0...10)
-                ParameterSliderView("Maximum Speed", value: $settings.editableFlocking.maximumSpeed, in: 0...10)
-                ParameterSliderView("Neighbors", value: $settings.editableFlocking.neighborLimit, in: 1...64, format: .number.precision(.fractionLength(0)))
-                    .help("Neighbors counted per particle, to bound the cost in dense crowds.")
-            }
-        }
     }
 }
 
@@ -820,14 +440,6 @@ struct SubEmitterEditorView: View {
             KindPicker("Sprite", selection: $subEmitter.sprite)
             Stepper("Per Event: \(subEmitter.countPerEvent)", value: $subEmitter.countPerEvent, in: 1...1_000, step: 10)
             ParameterSliderView("Inherit Velocity", value: $subEmitter.velocityFactor, in: 0...1)
-            ParameterSliderView("Lifetime", value: $subEmitter.settings.lifetimeAverage, in: 0.05...10)
-            ParameterSliderView("Lifetime Variation", value: $subEmitter.settings.lifetimeVariation, in: 0...5)
-            VectorEditorView("Velocity", value: $subEmitter.settings.velocity, in: -10...10)
-            ParameterSliderView("Spread", value: $subEmitter.settings.velocitySpread, in: 0...10)
-            VectorEditorView("Gravity", value: $subEmitter.settings.gravity, in: -20...20)
-            KindPicker("Blend", selection: $subEmitter.settings.blendMode)
-            ColorCurveEditorView(title: "Color", curve: $subEmitter.settings.colorOverLife)
-            FloatCurveEditorView(title: "Size", curve: $subEmitter.settings.sizeOverLife, range: 0...0.5)
         }
     }
 }

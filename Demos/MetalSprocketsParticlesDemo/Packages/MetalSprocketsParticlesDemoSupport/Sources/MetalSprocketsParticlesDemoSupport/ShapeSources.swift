@@ -19,42 +19,6 @@ enum ParticleDrawing: String, CaseIterable, Identifiable {
     var id: Self { self }
 }
 
-extension ParticleEmitter {
-    var drawing: ParticleDrawing {
-        get {
-            switch particleMesh {
-            case nil: .sprite
-            case .cube: .cube
-            case .tetrahedron: .tetrahedron
-            case .coin: .coin
-            case .triangles: .custom
-            }
-        }
-        set {
-            switch newValue {
-            case .sprite: particleMesh = nil
-            case .cube: particleMesh = .cube
-            case .tetrahedron: particleMesh = .tetrahedron
-            case .coin: particleMesh = .coin
-            case .custom: break // Only kept, never made here.
-            }
-        }
-    }
-}
-
-extension ParticleEmitter {
-    var hasFoil: Bool {
-        get { foil != nil }
-        set { foil = newValue ? (foil ?? ParticleFoil()) : nil }
-    }
-
-    /// The foil settings, or the defaults when off. Setting them turns foil on.
-    var editableFoil: ParticleFoil {
-        get { foil ?? ParticleFoil() }
-        set { foil = newValue }
-    }
-}
-
 /// Meshes to emit from (`EmitterShape.mesh`), from SwiftMesh, about two units across.
 enum DemoMesh: String, CaseIterable, Identifiable {
     case teapot = "Teapot"
