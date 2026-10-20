@@ -4203,13 +4203,14 @@ Part of #179 (plan for #178).
 ## 197: Retire the flat ParticleEmitter settings
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 depends: 195, 196, 193, 199, 200, 201, 202, 203, 205, 204, 207
 created: 2026-10-20T18:19:54Z
-updated: 2026-10-20T19:20:18Z
+updated: 2026-10-20T20:20:36Z
+closed: 2026-10-20T20:20:36Z
 +++
 
 After migration, the flat settings and the kernel branches behind them remain. Remove them or keep a thin convenience layer per the design decision; update the presets DSL (ParticlePresetBuilder), README, and docs.
@@ -4219,6 +4220,7 @@ Part of #179 (plan for #178).
 - `2026-10-20T18:48:40Z`: Decision: ParticleEmitter stays public as the lowered/flat convenience form (EmitterDescription.settings converts both ways); modules are the stored and saved model. Kernel branches stay (perf rule, Documentation/Modules.md). README, docs, and the 'adding a setting' checklist updated; the preset builder works unchanged through settings.
 - `2026-10-20T18:58:49Z`: Reopened: closing it with 'ParticleEmitter stays' was a shortcut, not the design. Redo properly, perf-neutral: #199 #200 #201 #202 #203 #204, plus #205 for real ordering.
 - `2026-10-20T19:39:30Z`: Revised: built-ins stay at fixed points (#207 won't do, #208 decided). Appearance modules moved to the render stage (format 3).
+- `2026-10-20T20:20:36Z`: Done: flat settings are retired from the public API (#204); modules are the model (#199-#203). Built-ins stay at fixed points by design (#207/#208).
 
 ---
 
@@ -4359,13 +4361,14 @@ Part of #197.
 ## 204: Remove ParticleEmitter and EmitterDescription.settings
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:m
 depends: 199, 200, 201, 202, 203
 created: 2026-10-20T18:58:48Z
-updated: 2026-10-20T18:58:50Z
+updated: 2026-10-20T20:20:35Z
+closed: 2026-10-20T20:20:35Z
 +++
 
 After the other #197 tasks, ParticleEmitter has no users. Remove it, the settings bridge, lifting (EmitterModules.init(_:)) except inside particles-migrate for format-1 files, and update docs (Documentation/Modules.md, README, the adding-a-setting checklist).
@@ -4377,6 +4380,7 @@ Part of #197.
 - `2026-10-20T19:28:47Z`: Before ParticleEmitter goes internal, move its remaining public users to modules: ParticleView+Previews (8 previews use ParticleEmitter.default2D), particles-bench, ParticleSystemRuntime's public API (init(emitter:), emitters[].settings, setEmitters), SubEmitter.transition(into:), the demo (#203). Gotcha found in #202: EmitterDescription and SubEmitter cache modules.lowered() in a didSet, which doesn't fire inside initializers; set the cache in every init.
 - `2026-10-20T19:48:56Z`: Non-UI prep done: LoweredModule (internal) holds apply/lift; runtime has module APIs (init(modules:), init(capacity:modules:), setEmitters/addEmitter with modules, Emitter.modules); EmitterModules.default2D; SubEmitter.transition(into: EmitterModules); previews and particles-bench build modules. Left before flipping ParticleEmitter to internal: the demo app and its tests (#203), and MetalSprocketsParticlesUITests (no @testable).
 - `2026-10-20T20:12:42Z`: After #203 the demo still uses .settings in: UserFunctionEditor (functions), OutlineView (sub-emitters/triggers lists), ParticlesDemoModel (add sub-emitter/trigger, pointer), Inspector+Events, SceneAnimationViews, ParticleKind (an extension on ParticleEmitter); and demo tests construct EmitterDescription(settings:).
+- `2026-10-20T20:20:36Z`: ParticleEmitter is internal, as are EmitterDescription.settings, SubEmitter.settings, the runtime's flat-settings API, lifting, and lowering. Public code builds modules (builder, .standard/.default2D, modules[SomeModule.self]). Demo, previews, CLI tools, and UI tests use modules; library tests keep the flat form via @testable. Preset comments and Demos.md name modules instead of ParticleEmitter fields. Lifting stays (internal) because format-1 files still load.
 
 ---
 

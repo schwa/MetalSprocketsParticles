@@ -1,7 +1,7 @@
 import CoreGraphics
 import Metal
 import MetalSprockets
-import MetalSprocketsParticles
+@testable import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
 import simd
 import Testing

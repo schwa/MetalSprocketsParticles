@@ -22,18 +22,16 @@ enum ReadmeExamples {
     }
 
     static func buildEffect() -> ParticleSystem {
-        var flame = ParticleEmitter()
-        flame.shape = .disc(radius: 0.3)
-        flame.birthRate = 400
-        flame.lifetime = 0.6...1.2
-        flame.velocity = [0, 1.5, 0]
-        flame.velocitySpread = 0.3
-        flame.blendMode = .additive
-        flame.sizeOverLife = .linear(from: 0.15, to: 0.4)
-        flame.colorOverLife = .linear(from: [1, 0.8, 0.3, 1], to: [1, 0.1, 0, 0])
-
-        return ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6, 0]) {
-            EmitterDescription("Flame", settings: flame, sprite: .smoke)
+        ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6, 0]) {
+            EmitterDescription("Flame", sprite: .smoke) {
+                ShapeModule(shape: .disc(radius: 0.3))
+                RateModule(birthRate: 400)
+                LifetimeModule(range: 0.6...1.2)
+                VelocityModule(velocity: [0, 1.5, 0], spread: 0.3)
+                SizeOverLifeModule(curve: .linear(from: 0.15, to: 0.4))
+                ColorOverLifeModule(color: .linear(from: [1, 0.8, 0.3, 1], to: [1, 0.1, 0, 0]))
+                SpriteModule(blendMode: .additive)
+            }
             Collider.plane(normal: [0, 1, 0], distance: 0)
             ForceField.turbulence(strength: 1.5, scale: 1, speed: 0.5)
         }
@@ -55,7 +53,7 @@ enum ReadmeExamples {
         @State private var camera = simd_float4x4(lookingFrom: [0, 2, 5], at: [0, 1, 0])
 
         init(system: ParticleSystem) throws {
-            runtime = try ParticleSystemRuntime(emitters: [], capacity: 1)
+            runtime = try ParticleSystemRuntime()
             try runtime.load(system)
         }
 
@@ -81,7 +79,7 @@ enum ReadmeExamples {
 @Suite(.requiresMetal4)
 struct ReadmeExampleTests {
     @Test func builtEffectLoads() throws {
-        let system = try ParticleSystemRuntime(emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime()
         try system.load(ReadmeExamples.buildEffect())
         #expect(system.emitters.count == 1)
     }

@@ -286,13 +286,13 @@ Shows: distance LOD (full emission up close, a fifth far away) and culling of em
 
 ## Ember Glow
 
-Shows: particles as lights (ParticleEmitter.light): twelve embers become point lights each frame and light the smoke. Smoke rises in the dark.
+Shows: particles as lights (LightModule): twelve embers become point lights each frame and light the smoke. Smoke rises in the dark.
 
 ![ember-glow](previews/ember-glow.webp)
 
 ## Coin Shower
 
-Shows: mesh particles (ParticleEmitter.particleMesh) lit with real normals, random spin, and bounce. Gold coins rain down and tumble.
+Shows: mesh particles (MeshModule) lit with real normals, random spin, and bounce. Gold coins rain down and tumble.
 
 ![coin-shower](previews/coin-shower.webp)
 
@@ -310,25 +310,25 @@ Shows: three color modes at once: color by speed (colorBySpeed), a second palett
 
 ## Light Ribbons
 
-Shows: per-particle tapered trails (ParticleEmitter.trail) through the last 48 positions, and a vortex. Glowing particles swirl like light painting.
+Shows: per-particle tapered trails (TrailModule) through the last 48 positions, and a vortex. Glowing particles swirl like light painting.
 
 ![light-ribbons](previews/light-ribbons.webp)
 
 ## Murmuration
 
-Shows: GPU flocking (ParticleEmitter.flocking) with separation, alignment, and cohesion over a spatial grid rebuilt every frame, plus an attractor. Twelve thousand starlings.
+Shows: GPU flocking (FlockingModule) with separation, alignment, and cohesion over a spatial grid rebuilt every frame, plus an attractor. Twelve thousand starlings.
 
 ![murmuration](previews/murmuration.webp)
 
 ## Streamers
 
-Shows: emitter ribbons (ParticleEmitter.ribbon) that join particles in birth order, shaped by size and color over life. Two emitters fly a figure eight and a circle.
+Shows: emitter ribbons (RibbonModule) that join particles in birth order, shaped by size and color over life. Two emitters fly a figure eight and a circle.
 
 ![streamers](previews/streamers.webp)
 
 ## Living Picture
 
-Shows: color from a screen-space image (ParticleEmitter.colorImage), so each particle takes the picture's color wherever it is. A sunset painted with drifting particles.
+Shows: color from a screen-space image (ColorImageModule), so each particle takes the picture's color wherever it is. A sunset painted with drifting particles.
 
 ![living-picture](previews/living-picture.webp)
 

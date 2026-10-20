@@ -133,7 +133,7 @@ struct SceneView: View {
     @State private var camera = simd_float4x4(lookingFrom: [0, 2, 5], at: [0, 1, 0])
 
     init(system: ParticleSystem) throws {
-        runtime = try ParticleSystemRuntime(emitters: [], capacity: 1)
+        runtime = try ParticleSystemRuntime()
         try runtime.load(system)
     }
 

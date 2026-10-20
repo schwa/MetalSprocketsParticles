@@ -3,7 +3,7 @@ import Foundation
 import GoldenImage
 import ImageIO
 import MetalSprockets
-import MetalSprocketsParticles
+@testable import MetalSprocketsParticles
 import MetalSprocketsParticlesShaders
 import simd
 import SwiftMesh

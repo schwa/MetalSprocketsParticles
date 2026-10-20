@@ -1,6 +1,6 @@
 import simd
 
-public extension ParticleEmitter {
+extension ParticleEmitter {
     /// The demo fountain. Pair it with `fountainColliders(time:)` on the system.
     static var fountain: ParticleEmitter {
         var emitter = ParticleEmitter()

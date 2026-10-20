@@ -24,7 +24,7 @@ public final class ParticleSystemRuntime {
 
     /// One emitter in a system: its settings plus the runtime state that does not belong in a value type.
     public final class Emitter {
-        public var settings: ParticleEmitter
+        var settings: ParticleEmitter
         /// Premultiplied-alpha sprite, or a sprite sheet when `settings.imageSequence` is set. `nil` draws a soft dot.
         public var texture: MTLTexture?
         /// Emitter-to-world transform. Emitter position, velocity, and shape are in this space.
@@ -311,7 +311,7 @@ public final class ParticleSystemRuntime {
     }
 
     /// Creates a system with one emitter per entry in `emitters`, each with room for `capacity` particles.
-    public init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), emitters: [ParticleEmitter], capacity: Int, seed: UInt32 = 0) throws {
+    init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), emitters: [ParticleEmitter], capacity: Int, seed: UInt32 = 0) throws {
         self.device = device
         self.seed = seed
         library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
@@ -382,7 +382,7 @@ public final class ParticleSystemRuntime {
     }
 
     /// Creates a system with a single emitter.
-    public convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), capacity: Int, emitter: ParticleEmitter, seed: UInt32 = 0) throws {
+    convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), capacity: Int, emitter: ParticleEmitter, seed: UInt32 = 0) throws {
         try self.init(device: device, emitters: [emitter], capacity: capacity, seed: seed)
     }
 
@@ -416,7 +416,7 @@ public final class ParticleSystemRuntime {
 
     /// Replaces every emitter. Reallocates the particle buffer, so all particles are removed.
     @discardableResult
-    public func setEmitters(_ emitters: [(settings: ParticleEmitter, capacity: Int)]) throws -> [Emitter] {
+    func setEmitters(_ emitters: [(settings: ParticleEmitter, capacity: Int)]) throws -> [Emitter] {
         var start = 0
         var created: [Emitter] = []
         for (index, entry) in emitters.enumerated() {
@@ -498,7 +498,7 @@ public final class ParticleSystemRuntime {
 
     /// Adds an emitter. Reallocates the particle buffer, so all particles are removed.
     @discardableResult
-    public func addEmitter(_ settings: ParticleEmitter, capacity: Int) throws -> Emitter {
+    func addEmitter(_ settings: ParticleEmitter, capacity: Int) throws -> Emitter {
         try rebuild(adding: [(settings, capacity)])
         return emitters[emitters.count - 1]
     }
@@ -515,7 +515,7 @@ public final class ParticleSystemRuntime {
 
     // MARK: Single-emitter conveniences. These act on the first emitter.
 
-    public var emitter: ParticleEmitter {
+    var emitter: ParticleEmitter {
         get { emitters[0].settings }
         set { emitters[0].settings = newValue }
     }

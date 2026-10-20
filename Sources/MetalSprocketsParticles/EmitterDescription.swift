@@ -18,7 +18,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     private var lowered: ParticleEmitter
     /// The modules lowered to flat settings, as the simulation runs them. Setting it replaces the modules with ones that
     /// lower to the new settings; disabled modules are kept.
-    public var settings: ParticleEmitter {
+    var settings: ParticleEmitter {
         get { lowered }
         set { modules = modules.merging(EmitterModules(newValue)) }
     }
@@ -37,7 +37,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public var image: EmitterImage?
     public var isEmitting: Bool
 
-    public init(
+    init(
         _ name: String,
         settings: ParticleEmitter,
         sprite: ParticleSprite = .softDot,

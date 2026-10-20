@@ -5,7 +5,7 @@
   "cameraTarget": [0, 1.8, 0],
   "colliderSpins": [],
   "colliders": [],
-  "comment": "Shows: GPU flocking (ParticleEmitter.flocking) with separation, alignment, and cohesion over a spatial grid rebuilt every frame, plus an attractor. Twelve thousand starlings.",
+  "comment": "Shows: GPU flocking (FlockingModule) with separation, alignment, and cohesion over a spatial grid rebuilt every frame, plus an attractor. Twelve thousand starlings.",
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [

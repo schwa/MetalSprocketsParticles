@@ -5,7 +5,7 @@
   "cameraTarget": [0, 1.5, 0],
   "colliderSpins": [],
   "colliders": [],
-  "comment": "Shows: color from a screen-space image (ParticleEmitter.colorImage), so each particle takes the picture's color wherever it is. A sunset painted with drifting particles.",
+  "comment": "Shows: color from a screen-space image (ColorImageModule), so each particle takes the picture's color wherever it is. A sunset painted with drifting particles.",
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [

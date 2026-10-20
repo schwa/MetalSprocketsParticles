@@ -92,7 +92,7 @@ struct RenderCommand: AsyncParsableCommand {
         }
         if noSort {
             for index in preset.layers.indices {
-                preset.layers[index].settings.sortMode = .none
+                preset.layers[index].modules[SpriteModule.self]?.sortMode = .none
             }
         }
         if let saveEffect {

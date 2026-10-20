@@ -451,11 +451,11 @@ private struct PullToRefreshPreview: View {
     }
 
     private func moveFountain(to newPull: CGFloat) {
-        var settings = fountain.system.layers[0].settings
-        settings.position = [Float(Self.width / 2), Float(newPull), 0]
-        settings.birthRate = Float(newPull) * 8
-        settings.velocity = [0, -Float(120 + newPull * 3), 0]
-        fountain.system.layers[0].settings = settings
+        var modules = fountain.system.layers[0].modules
+        modules[ShapeModule.self]?.position = [Float(Self.width / 2), Float(newPull), 0]
+        modules[RateModule.self]?.birthRate = Float(newPull) * 8
+        modules[VelocityModule.self]?.velocity = [0, -Float(120 + newPull * 3), 0]
+        fountain.system.layers[0].modules = modules
     }
 }
 

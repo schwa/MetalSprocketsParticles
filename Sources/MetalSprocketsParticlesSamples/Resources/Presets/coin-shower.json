@@ -11,7 +11,7 @@
       "normal": [0, 1, 0]
     }
   ],
-  "comment": "Shows: mesh particles (ParticleEmitter.particleMesh) lit with real normals, random spin, and bounce. Gold coins rain down and tumble.",
+  "comment": "Shows: mesh particles (MeshModule) lit with real normals, random spin, and bounce. Gold coins rain down and tumble.",
   "drawsColliders": true,
   "eventBursts": [],
   "forceFields": [],

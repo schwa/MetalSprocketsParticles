@@ -26,7 +26,7 @@ struct ParticleViewTests {
 
     @Test func usesTheCallersRuntime() throws {
         let state = ParticleViewState()
-        let runtime = try ParticleSystemRuntime(emitters: [], capacity: 1)
+        let runtime = try ParticleSystemRuntime()
         try runtime.load(.campfire)
         #expect(try player(state, .campfire, runtime: runtime).runtime === runtime)
     }

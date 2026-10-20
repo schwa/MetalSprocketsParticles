@@ -5,7 +5,7 @@
   "cameraTarget": [0, 1.2, 0],
   "colliderSpins": [],
   "colliders": [],
-  "comment": "Shows: emitter ribbons (ParticleEmitter.ribbon) that join particles in birth order, shaped by size and color over life. Two emitters fly a figure eight and a circle.",
+  "comment": "Shows: emitter ribbons (RibbonModule) that join particles in birth order, shaped by size and color over life. Two emitters fly a figure eight and a circle.",
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [],

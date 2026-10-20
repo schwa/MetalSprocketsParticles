@@ -37,7 +37,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// `modules.lowered()`, kept up to date.
     private var lowered: ParticleEmitter
     /// The children's modules as flat settings. Setting it replaces the modules; disabled modules are kept.
-    public var settings: ParticleEmitter {
+    var settings: ParticleEmitter {
         get { lowered }
         set { modules = modules.merging(EmitterModules(newValue)) }
     }
@@ -49,7 +49,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// where the parent was and the child dies when the parent would have.
     public var continuesParentLife = false
 
-    public init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, settings: ParticleEmitter) {
+    init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, settings: ParticleEmitter) {
         self.occasion = occasion
         self.countPerEvent = countPerEvent
         self.velocityFactor = velocityFactor
@@ -69,7 +69,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// The parent turns into one particle with `settings` and `sprite` when `occasion` happens, keeping its position
     /// and velocity. Set the child's own velocity and spread to zero to keep exactly the parent's motion.
     /// With `continuesLife`, the child also keeps the parent's age and lifetime (see `continuesParentLife`).
-    public static func transition(
+    static func transition(
         on occasion: Occasion,
         into settings: ParticleEmitter,
         sprite: ParticleSprite = .softDot,

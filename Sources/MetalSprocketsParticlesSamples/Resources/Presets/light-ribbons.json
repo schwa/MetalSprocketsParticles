@@ -5,7 +5,7 @@
   "cameraTarget": [0, 1.3, 0],
   "colliderSpins": [],
   "colliders": [],
-  "comment": "Shows: per-particle tapered trails (ParticleEmitter.trail) through the last 48 positions, and a vortex. Glowing particles swirl like light painting.",
+  "comment": "Shows: per-particle tapered trails (TrailModule) through the last 48 positions, and a vortex. Glowing particles swirl like light painting.",
   "drawsColliders": false,
   "eventBursts": [],
   "forceFields": [

@@ -25,10 +25,10 @@ Why built-ins don't follow stack order (#207, won't do): the appearance modules 
 
 ## Lowering
 
-- `EmitterModules.lowered()` produces `ParticleEmitter`, the flat form the runtime reads. It starts from `ParticleEmitter.neutral` (no motion, no color change) and applies each enabled module.
+- `EmitterModules.lowered()` produces `ParticleEmitter`, the internal flat form the runtime reads. It starts from `ParticleEmitter.neutral` (no motion, no color change) and applies each enabled module.
 - `EmitterDescription` and `SubEmitter` cache the lowered form when modules change, so reading `settings` every frame is free.
 - `EmitterModules(_ emitter:)` lifts flat settings to modules. Every preset lifts and lowers back unchanged (`EmitterModulesTests`).
-- `EmitterDescription.settings` sets by lifting and merging, keeping module order and disabled modules. #204 makes the flat form internal.
+- `ParticleEmitter`, `EmitterDescription.settings`, `SubEmitter.settings`, and the runtime's flat-settings API are internal (#204). Code outside the library builds modules: the `EmitterModulesBuilder` list, `EmitterModules.standard` / `.default2D`, and `modules[SomeModule.self]` to read or change one module.
 
 ## Performance
 

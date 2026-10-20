@@ -51,7 +51,7 @@ extension StitchedModule {
         let end = MTLFunctionStitchingFunctionNode(name: "particleEndModules", arguments: [previous], controlDependencies: [])
         let descriptor = MTLStitchedLibraryDescriptor()
         descriptor.functionGraphs = [MTLFunctionStitchingGraph(functionName: name, nodes: nodes, outputNode: end, attributes: [])]
-        var functions: [MTLFunction] = try endLibrary.makeFunction(name: "particleEndModules").map { [$0] } ?? []
+        var functions: [MTLFunction] = endLibrary.makeFunction(name: "particleEndModules").map { [$0] } ?? []
         for (functionName, source) in sourceByName {
             guard let function = libraries[source]?.makeFunction(name: functionName) else {
                 throw ParticleFunctionError(name: functionName, message: "The source defines no [[stitchable]] function with that name.")

@@ -233,7 +233,7 @@ final class ParticlesDemoModel {
     private(set) var cameraTarget: SIMD3<Float> = [0, 1.5, 0]
 
     init(preset: ParticleSystem = .fountain) {
-        system = try? ParticleSystemRuntime(emitters: [], capacity: 1)
+        system = try? ParticleSystemRuntime()
         presetName = preset.name
         load(preset)
     }

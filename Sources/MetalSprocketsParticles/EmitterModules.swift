@@ -194,7 +194,7 @@ public extension EmitterModules {
 
 // MARK: - Lowering and lifting
 
-public extension ParticleEmitter {
+extension ParticleEmitter {
     /// What an emitter does with no modules: nothing moves, colors, or grows; it just spawns with the shape's defaults.
     /// Modules are applied on top of this.
     static var neutral: Self {
@@ -209,7 +209,7 @@ public extension ParticleEmitter {
     }
 }
 
-public extension EmitterModules {
+extension EmitterModules {
     /// The flat settings the simulation runs. Disabled modules are skipped.
     func lowered() -> ParticleEmitter {
         var emitter = ParticleEmitter.neutral
