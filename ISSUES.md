@@ -3622,6 +3622,7 @@ Port the built-ins onto it: ShadingModel.unlit, .lit (today's isLit), .foil(glin
 Acceptance: every existing golden unchanged; foil and lit presets look the same; ShadingModel round-trips in effect files; old files with isLit or foil load as .lit or .foil. Per vertex only; a fragment variant is a separate issue.
 
 - `2026-10-19T22:40:04Z`: Related: #171 (foil for tumbling sprites, sparkles on glints) and #155 (foil, which becomes .foil here).
+- `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 
 ---
 
@@ -3660,6 +3661,8 @@ A fragment-stage variant of the shading function (#172): the same ShadingInput i
 
 Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex stays the default and unchanged.
 
+- `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
+
 ---
 
 ## 175: Foil should look like reflective metal, not a matte card with white highlights
@@ -3669,7 +3672,9 @@ status: open
 priority: medium
 kind: enhancement
 labels: area:rendering, effort:m
+depends: 172
 created: 2026-10-19T23:59:01Z
+updated: 2026-10-20T02:27:15Z
 +++
 
 Foil (ParticleFoil, #155/#171) shades a card with its own matte color, darkens it edge-on, and adds a Blinn-Phong glint from one light. On tumbling confetti that reads as colored rectangles that turn white (per-vertex glint) or get white dots (per-pixel crinkled glint, uncommitted experiment) instead of foil. User: 'that's just white dots on the foil'.
@@ -3685,6 +3690,9 @@ What real foil does, and the model to build:
 Acceptance: Foil Confetti reads as metallic foil in renders and in motion (cards go from near-black to bright tint as they turn, with patchy facet variation), reviewed by the user; FoilTests updated (brightness swings with angle, highlight hue follows the base color rather than white, crinkle varies brightness across a card).
 
 Related: #172 (pluggable shading; foil could become a built-in shading model there), #174 (per-pixel shading).
+
+- `2026-10-20T02:27:15Z`: Blocked on #172 (user): build the reflective metal model as a built-in shading model on the pluggable shading slot, not as more special-case shader code.
+- `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 
 ---
 
@@ -3723,5 +3731,99 @@ Follow-up to #169 and #170, which moved images, distance fields, and emitter mes
 Store them through EffectResources like the others: points as a small binary or PLY file, custom particle meshes as OBJ (with normals). Same decisions as #169: references only, no inline reading.
 
 - `2026-10-20T02:22:48Z`: Decision (user): use PLY for both (point caches: x y z, nx ny nz, red green blue alpha; custom particle meshes: positions, normals, faces). Do it later, with one shared PLY implementation: move PLYReader from MetalSprocketsGaussianSplats into SwiftMesh and add a writer there (SwiftMesh #187), rather than depending on the Splats target or copying it. Waiting on SwiftMesh #187.
+
+---
+
+## 178: Make particle behavior composable (modules instead of one large settings struct)
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:xl, needs-design
+created: 2026-10-20T02:29:21Z
++++
+
+Particle systems are complex, and ParticleEmitter has grown into one flat struct with dozens of settings (motion, color, size, collision, foil, flocking, trails, ribbons, lights, LOD, user functions...). Every feature adds fields, kernel branches, uniforms, inspector controls, and Codable keys in several places. Make behavior composable instead.
+
+Direction to design (not decided):
+- An emitter is a stack of small modules in stages, like Niagara and VFX Graph: Spawn (shape, rate, initial velocity, color), Update (gravity, drag, forces, collision, flocking, color/size over life), Render (sprite, mesh, trail, ribbon, shading).
+- Each module is a small value type with its own settings, Codable on its own, and its own inspector view; order in the stack is the order applied.
+- On the GPU, modules are visible functions in stage tables (as user functions #167 and pluggable shading #172 already do), so built-in and user modules are the same thing.
+- Existing settings become built-in modules; effect files and presets migrate.
+
+Questions to answer first: per-module function calls vs. generated kernels (performance; the stress test must not regress); how modules share per-particle data (fixed fields vs. declared attributes, see custom attributes #122); where events and sub-emitters fit; how much of today's API stays as convenience.
+
+Related: #172 (pluggable shading, the Render-stage version of this), #167 (user functions), #100 (document-based editor).
+
+- `2026-10-20T02:31:43Z`: Implementation path: #179 (refactor to composable modules via Metal function stitching).
+
+---
+
+## 179: Refactor behavior and rendering into composable modules (stitched Metal functions)
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:api, effort:xl, needs-design
+depends: 178
+created: 2026-10-20T02:31:43Z
++++
+
+Goal: refactor particle behavior and rendering so emitters are built from composable modules instead of one large settings struct and special-case kernel code. Implementation path for #178.
+
+Approach: Metal function stitching. Each module is a small [[stitchable]] function compiled ahead of time with the library (applyGravity, applyDrag, colorOverLife, collide, foil shading...). An emitter's module stack per stage (spawn, update, render/shading) becomes an MTLFunctionStitchingGraph, turned at runtime into one function without compiling Metal source, and placed in the stage's visible function table (the mechanism user functions #167 already use). User modules compile once from source as stitchable functions and join graphs like built-ins. A node editor (#100) could build graphs directly.
+
+Steps:
+1. Spike: stitch gravity, drag, and color over life into the update slot; compare output with the built-in path and measure the Stress Test and graph build time. Answer: what stitchable functions can pass (values, vectors, pointers; whether ParticleState must be split), and whether stitching works with the Metal 4 pipeline and compiler APIs the library uses.
+2. Module model in Swift: module value types per stage, Codable, with inspector views; stack order is application order.
+3. Move update behaviors to modules, keeping goldens identical.
+4. Move spawn behaviors.
+5. Rendering/shading through the same mechanism (#172, then #175 foil as a module, #174 per pixel).
+6. Migrate effect files and presets; decide what of today's ParticleEmitter API stays as convenience.
+
+Each step to be split into its own issue once the spike answers the open questions.
+
+Related: #178 (why), #172, #174, #175, #167, #122 (custom attributes), #100.
+
+\- `2026-10-20T02:35:19Z`: Scope note (user): the JSON and the UI change too, as part of this refactor, not as follow-ups.
+- Effect JSON: an emitter becomes its module stacks per stage (an ordered list of modules, each with a type and its settings) instead of one flat settings object. A new format version; existing effects and presets need a migration (a converter from today's flat settings to modules), and the decision on reading old files (after #169/#170, references only; here likely a one-time migration tool rather than reading both forever).
+- Demo UI: the inspector becomes a module stack per stage (add, remove, reorder, enable modules; each module has its own section), replacing the fixed sections built in #159-#168. The outline may show modules under emitters. Effect packages (#169) carry user module sources.
+Steps 2 and 6 cover these; split them into their own issues after the spike.
+
+---
+
+## 180: Raise unit test coverage
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:tooling, effort:m
+created: 2026-10-20T02:41:02Z
++++
+
+Measure with: xcb test --coverage-summary --coverage-sort-by-impact
+
+Baseline (library package, 2026-10-19): 85.0% of lines (5701/6711), 83.5% of functions (830/994). Biggest gaps by uncovered lines:
+- MetalSprocketsParticlesUI/ParticleView+Previews.swift: 629, 0% (SwiftUI #Previews; exclude from coverage or accept, rather than test)
+- MetalSprocketsParticlesUI/ParticleView.swift: 61, 30% (the view itself; ParticleViewState is partly tested)
+- ParticleFlocking.swift: 51, 75%
+- MetalSprocketsParticlesSamples/SamplePresets.swift: 28, 56% (convenience accessors for presets)
+- DebugWireframes.swift: 23, 89%
+- ParticleSystemRuntime.swift: 22, 98%
+- EffectResources.swift: 17, 83%; MeshFile.swift: 14, 83% (new in #169/#170: error paths, Model I/O path)
+- ParticleDebugView.swift: 12, 62%; ParticleColorImage.swift: 11; ParticleSprite.swift: 11
+- ParticleSystemRuntimeError.swift: 8, 0% (error descriptions)
+- EventBurst.swift: 6, 70%; ParticleSystemFolder.swift: 6, 62%
+Everything else is above 90%.
+
+Also measure the demo package (MetalSprocketsParticlesDemoSupport), which this baseline does not include.
+
+Approach: start with the gaps by impact; tests should check behavior, not just touch lines; decide what to exclude (previews) instead of writing tests for them. Set a target once the previews question is settled (excluding them, the library is about 93%).
+
+- `2026-10-20T02:42:09Z`: Decision (user): exclude code that is not testable or not worth testing rather than writing tests for it. Candidates: ParticleView+Previews.swift (SwiftUI #Previews), and review the rest case by case (e.g. thin SwiftUI glue in ParticleView.swift). Tooling gap: xcb test has no option to exclude files from the coverage summary (only --coverage-include-tests), so exclusions need either an xcb option (file a request) or a project-side list the summary is filtered by.
+- `2026-10-20T02:43:33Z`: Filed xcb #96: --coverage-exclude <glob> and coverage_exclude in .xcb.toml.
 
 ---
