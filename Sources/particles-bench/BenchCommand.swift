@@ -47,6 +47,9 @@ struct BenchCommand: ParsableCommand {
     @Option(help: "Write the results as JSON to this path, to use later as a baseline.")
     var saveBaseline: String?
 
+    @Option(help: "Measure each preset or scenario this many times and keep the best median of each metric.")
+    var repeats = 1
+
     @Option(help: "Compare the results with a baseline JSON file written by --save-baseline.")
     var compare: String?
 
@@ -88,7 +91,11 @@ struct BenchCommand: ParsableCommand {
         print("----------------------|--------------|------------|----------")
         var rows: [BenchRow] = []
         for scenario in selected {
-            let result = try measure(scenario)
+            var result = try measure(scenario)
+            for _ in 1..<max(repeats, 1) {
+                let again = try measure(scenario)
+                result = (min(result.simulate, again.simulate), min(result.render, again.render), min(result.cpu, again.cpu))
+            }
             let name = scenario.name.padding(toLength: 21, withPad: " ", startingAt: 0)
             print("\(name) | \(milliseconds(result.simulate)) | \(milliseconds(result.render)) | \(milliseconds(result.cpu))")
             rows.append(BenchRow(name: scenario.name, metrics: [

@@ -4520,14 +4520,18 @@ created: 2026-10-20T19:20:17Z
 ## 214: Benchmark baseline has drifted
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:tooling, effort:s
 created: 2026-10-20T19:20:18Z
+updated: 2026-10-20T19:34:49Z
+closed: 2026-10-20T19:34:49Z
 +++
 
 Benchmarks/baseline-presets.json was recorded before the module work; pre-module code now also measures Torch Avenue GPU ~20% slower, so --compare flags noise. Re-record baselines on a quiet machine from a known commit, and note the commit and machine in Benchmarks/README.md.
+
+- `2026-10-20T19:34:49Z`: Re-recorded both baselines at dc0ee23aefd2 on M5 Max with new --repeats 3 (best median of 3 runs); identical code had shown ±25% frame noise with 1 run, now compares clean twice. Benchmarks/README.md updated.
 
 ---
 
