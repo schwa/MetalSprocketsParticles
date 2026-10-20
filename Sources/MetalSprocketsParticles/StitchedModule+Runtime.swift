@@ -18,7 +18,7 @@ extension StitchedModule {
     }
 
     /// The modules (name and source only) a marker function stands for, or nil for an ordinary user function.
-    static func modules(in function: ParticleFunction) -> [StitchedModule]? {
+    static func modules(in function: ParticleFunction) -> [StitchedModule]? { // swiftlint:disable:this discouraged_optional_collection
         guard function.source.hasPrefix(marker) else {
             return nil
         }

@@ -172,7 +172,7 @@ struct StitchingSpikeTests {
     }
 
     /// Records which kinds of arguments a [[stitchable]] function accepts.
-    @Test func stitchableSignatures() throws {
+    @Test func stitchableSignatures() {
         let cases: [(String, String)] = [
             ("thread reference to struct", "[[stitchable]] void f(thread ParticleState &p) {}"),
             ("struct by value, returned", "[[stitchable]] ParticleState f(ParticleState p) { return p; }"),

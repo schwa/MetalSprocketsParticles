@@ -1,5 +1,8 @@
 import simd
 
+// Module payloads mirror the settings they lower to; labeled cases keep the JSON readable.
+// swiftlint:disable enum_case_associated_values_count
+
 // An emitter as ordered module stacks per stage (#178). See Documentation/Modules.md.
 //
 // Built-in modules lower to ParticleEmitter, which the simulation kernel reads as uniforms, so they cost nothing per
@@ -99,6 +102,8 @@ public enum RenderModule: Sendable, Equatable, Codable {
     case levelOfDetail(near: Float, far: Float, farRateScale: Float, scalesSize: Bool, cullingRadius: Float, simulatesWhenCulled: Bool)
 }
 
+// swiftlint:enable enum_case_associated_values_count
+
 /// One emitter's behavior: a module stack per stage, applied in order, plus settings that belong to no stage.
 public struct EmitterModules: Sendable, Equatable, Codable {
     public var spawn: [ModuleSlot<SpawnModule>] = []
@@ -139,6 +144,109 @@ public struct EmitterModules: Sendable, Equatable, Codable {
         if customAttributeCount != 1 {
             try container.encode(customAttributeCount, forKey: .customAttributeCount)
         }
+    }
+}
+
+// MARK: - Kinds and merging
+
+/// A module enum whose cases have names, for matching modules across edits and listing them in editors.
+public protocol EmitterModule: Sendable, Equatable, Codable {
+    /// Modules every emitter has; lifting always produces them, so editors should not offer to remove them.
+    var isRequired: Bool { get }
+    /// A new module of each kind an editor can add, by kind.
+    static var addable: [Self] { get }
+}
+
+public extension EmitterModule {
+    /// The case name, e.g. "gravity".
+    var kind: String {
+        Mirror(reflecting: self).children.first?.label ?? String(describing: self)
+    }
+}
+
+extension SpawnModule: EmitterModule {
+    public var isRequired: Bool {
+        switch self {
+        case .shape, .rate, .lifetime: true
+        default: false
+        }
+    }
+
+    public static var addable: [Self] {
+        [
+            .velocity(velocity: [0, 2, 0], spread: 0.5, speedVariation: 0, inherit: 0),
+            .rotation(angle: 0, angleVariation: .pi, angularSpeed: 1, angularSpeedVariation: 0),
+            .variation(size: 0.2, color: [0.1, 0.1, 0.1, 0]),
+        ]
+    }
+}
+
+extension UpdateModule: EmitterModule {
+    public var isRequired: Bool {
+        switch self {
+        case .collision, .colorOverLife, .sizeOverLife: true
+        default: false
+        }
+    }
+
+    public static var addable: [Self] {
+        [
+            .gravity(acceleration: [0, -9.8, 0]),
+            .drag(amount: 0.5),
+            .flocking(flocking: ParticleFlocking()),
+            .planeConstraint,
+            .colorBySpeed(curve: .linear(from: [0.2, 0.4, 1, 1], to: [1, 0.3, 0.1, 1]), range: 0...5),
+            .colorByPosition(curve: .linear(from: [1, 0.2, 0.2, 1], to: [0.2, 0.2, 1, 1]), start: [0, 0, 0], end: [0, 2, 0], atBirth: false),
+            .imageSequence(sequence: ImageSequence(rows: 2, columns: 2)),
+            .events(reportsCollisions: true, reportsDeaths: true),
+        ]
+    }
+}
+
+extension RenderModule: EmitterModule {
+    public var isRequired: Bool {
+        if case .sprite = self {
+            return true
+        }
+        return false
+    }
+
+    public static var addable: [Self] {
+        [
+            .foil(foil: ParticleFoil()),
+            .trail(trail: ParticleTrail()),
+            .ribbon(ribbon: ParticleRibbon()),
+            .light(light: ParticleLightEmission()),
+            .levelOfDetail(near: 5, far: 20, farRateScale: 0.25, scalesSize: false, cullingRadius: 0, simulatesWhenCulled: true),
+        ]
+    }
+}
+
+extension Array {
+    /// `lifted` in this stack's order: each enabled slot takes the next lifted module of its kind; disabled slots stay
+    /// where they are; lifted modules of new kinds go at the end.
+    func merging<Module: EmitterModule>(_ lifted: [ModuleSlot<Module>]) -> [ModuleSlot<Module>] where Element == ModuleSlot<Module> {
+        var pool = lifted
+        var result: [ModuleSlot<Module>] = []
+        for slot in self {
+            if !slot.isEnabled {
+                result.append(slot)
+            } else if let index = pool.firstIndex(where: { $0.module.kind == slot.module.kind }) {
+                result.append(pool.remove(at: index))
+            }
+        }
+        return result + pool
+    }
+}
+
+public extension EmitterModules {
+    /// `lifted`'s modules in this one's order, keeping this one's disabled modules.
+    func merging(_ lifted: EmitterModules) -> EmitterModules {
+        var merged = lifted
+        merged.spawn = spawn.merging(lifted.spawn)
+        merged.update = update.merging(lifted.update)
+        merged.render = render.merging(lifted.render)
+        return merged
     }
 }
 

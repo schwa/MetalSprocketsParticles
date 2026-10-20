@@ -16,13 +16,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     /// lower to the new settings; disabled modules are kept.
     public var settings: ParticleEmitter {
         get { modules.lowered() }
-        set {
-            var lifted = EmitterModules(newValue)
-            lifted.spawn += modules.spawn.filter { !$0.isEnabled }
-            lifted.update += modules.update.filter { !$0.isEnabled }
-            lifted.render += modules.render.filter { !$0.isEnabled }
-            modules = lifted
-        }
+        set { modules = modules.merging(EmitterModules(newValue)) }
     }
     public var sprite: ParticleSprite
     public var motion: EmitterMotion

@@ -4180,18 +4180,21 @@ Part of #179 (plan for #178).
 ## 196: Demo inspector: module stack per stage
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:demo, effort:l
 depends: 187, 194
 created: 2026-10-20T18:19:54Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-20T18:44:36Z
+closed: 2026-10-20T18:44:36Z
 +++
 
 The demo inspector has fixed sections (#159-#168) for the flat settings. It needs a module stack per stage: add, remove, reorder, enable/disable modules, each with its own section; the outline may show modules under emitters. User modules reuse the user-function editor (#167).
 
 Part of #179 (plan for #178).
+
+- `2026-10-20T18:44:36Z`: Inspector has a Modules section: per-stage stacks with enable toggles, move up/down, add (menu of addable kinds) and remove; required modules can't be removed. The existing sections still edit values; editing settings keeps the user's module order (EmitterModules.merging).
 
 ---
 

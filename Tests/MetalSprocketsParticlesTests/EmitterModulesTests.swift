@@ -5,7 +5,7 @@ import Testing
 
 struct EmitterModulesTests {
     /// Every preset's emitters (sub-emitters too) lift to modules and lower back unchanged.
-    @Test func presetsRoundTrip() throws {
+    @Test func presetsRoundTrip() {
         for system in ParticleSystem.all {
             for layer in system.layers {
                 let settings = layer.settings
@@ -38,6 +38,34 @@ struct EmitterModulesTests {
         #expect(StitchedModule.modules(in: function)?.map(\.name) == ["a", "b"])
         #expect(StitchedModule.modules(in: function)?.map(\.source) == ["x", "y"])
         #expect(emitter.function(for: .spawn) == nil)
+    }
+
+    @Test func editingSettingsKeepsModuleOrder() {
+        var layer = EmitterDescription("Test", settings: ParticleEmitter())
+        layer.modules.update.reverse()
+        let order = layer.modules.update.map(\.module.kind)
+        layer.settings.gravity = [0, -1, 0]
+        #expect(layer.modules.update.map(\.module.kind) == order)
+        layer.settings.flocking = ParticleFlocking()
+        #expect(layer.modules.update.map(\.module.kind) == order + ["flocking"])
+    }
+
+    @Test func addableModulesLowerAndLiftToTheirKind() {
+        for module in UpdateModule.addable {
+            var modules = EmitterModules(ParticleEmitter.neutral)
+            modules.update.append(ModuleSlot(module))
+            #expect(EmitterModules(modules.lowered()).update.contains { $0.module.kind == module.kind }, "\(module.kind)")
+        }
+        for module in SpawnModule.addable {
+            var modules = EmitterModules(ParticleEmitter.neutral)
+            modules.spawn.append(ModuleSlot(module))
+            #expect(EmitterModules(modules.lowered()).spawn.contains { $0.module.kind == module.kind }, "\(module.kind)")
+        }
+        for module in RenderModule.addable {
+            var modules = EmitterModules(ParticleEmitter.neutral)
+            modules.render.append(ModuleSlot(module))
+            #expect(EmitterModules(modules.lowered()).render.contains { $0.module.kind == module.kind }, "\(module.kind)")
+        }
     }
 
     @Test func jsonRoundTrips() throws {

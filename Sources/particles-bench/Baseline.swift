@@ -34,7 +34,7 @@ extension BenchCommand {
 
     /// Prints each metric against the baseline. Returns false when any metric is slower beyond tolerance and noise.
     private func compareWithBaseline(_ report: BenchReport, _ baseline: BenchReport) -> Bool {
-        let baselineRows = Dictionary(baseline.rows.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+        let baselineRows = Dictionary(baseline.rows.map { ($0.name, $0) }) { first, _ in first }
         var regressions: [String] = []
         print("")
         print("Compared with baseline (tolerance \(tolerance)%, noise floor \(noiseFloor) ms):")

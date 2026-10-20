@@ -22,6 +22,7 @@ struct EmitterInspectorView: View {
                 ScriptedPointerSectionView()
             case .emitter:
                 EmitterSectionView()
+                ModuleStacksSectionView(modules: $model.selectedEmitter.modules)
                 EmissionSectionView(settings: $model.selectedEmitter.settings, capacity: $model.selectedEmitter.editableCapacity)
                 ShapeSectionView(settings: $model.selectedEmitter.settings)
                 if [.mesh, .points].contains(model.selectedEmitter.settings.shape.kind) {
