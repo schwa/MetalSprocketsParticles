@@ -3798,11 +3798,13 @@ Steps 2 and 6 cover these; split them into their own issues after the spike.
 ## 180: Raise unit test coverage
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:tooling, effort:m
 created: 2026-10-20T02:41:02Z
+updated: 2026-10-20T18:06:15Z
+closed: 2026-10-20T18:06:15Z
 +++
 
 Measure with: xcb test --coverage-summary --coverage-sort-by-impact
@@ -3828,6 +3830,7 @@ Approach: start with the gaps by impact; tests should check behavior, not just t
 - `2026-10-20T02:43:33Z`: Filed xcb #96: --coverage-exclude <glob> and coverage_exclude in .xcb.toml.
 - `2026-10-20T11:40:40Z`: xcb #96 landed. .xcb.toml now has [defaults.test] coverage_exclude = ["Sources/**/*+Previews.swift"]. New baseline: 93.7% of lines (5701/6082), 90.5% of functions (830/917); 1 file (629 lines) excluded. Next gaps: ParticleView.swift 61, ParticleFlocking.swift 51, SamplePresets.swift 28, DebugWireframes.swift 23.
 - `2026-10-20T18:03:34Z`: Progress: 97.4% of lines (5989/6148), 94.9% of functions. ParticleViewState moved to its own file; ParticleView.swift (SwiftUI glue) excluded in .xcb.toml. New tests: two flocking emitters (covers the multi-flock pass), debug wireframes (paths, box/plane shapes, tracked objects), error descriptions, OBJ/PLY/image-extension edge cases, folders without index.json, sample preset accessors, pointer projection misses, color image unpremultiply. Left: mostly preconditionFailure and GPU-allocation-failure paths, plus a long tail of 4-6 lines per file; demo package not yet measured. No target set yet.
+- `2026-10-20T18:06:13Z`: Closed for now (user) at 97.4% lines / 94.9% functions. Demo package coverage and a target were not done.
 
 ---
 
