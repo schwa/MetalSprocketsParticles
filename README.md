@@ -65,18 +65,16 @@ let torch = try ParticleSystem(contentsOf: url)
 let campfire = ParticleSystem.campfire
 
 // An effect built in code.
-var flame = ParticleEmitter()
-flame.shape = .disc(radius: 0.3)
-flame.birthRate = 400
-flame.lifetime = 0.6...1.2
-flame.velocity = [0, 1.5, 0]
-flame.velocitySpread = 0.3
-flame.blendMode = .additive
-flame.sizeOverLife = .linear(from: 0.15, to: 0.4)
-flame.colorOverLife = .linear(from: [1, 0.8, 0.3, 1], to: [1, 0.1, 0, 0])
-
 let built = ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6, 0]) {
-    EmitterDescription("Flame", settings: flame, sprite: .smoke)
+    EmitterDescription("Flame", sprite: .smoke) {
+        ShapeModule(shape: .disc(radius: 0.3))
+        RateModule(birthRate: 400)
+        LifetimeModule(range: 0.6...1.2)
+        VelocityModule(velocity: [0, 1.5, 0], spread: 0.3)
+        SizeOverLifeModule(curve: .linear(from: 0.15, to: 0.4))
+        ColorOverLifeModule(color: .linear(from: [1, 0.8, 0.3, 1], to: [1, 0.1, 0, 0]))
+        SpriteModule(blendMode: .additive)
+    }
     Collider.plane(normal: [0, 1, 0], distance: 0)
     ForceField.turbulence(strength: 1.5, scale: 1, speed: 0.5)
 }
@@ -84,12 +82,12 @@ let built = ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6,
 
 ### Modules
 
-Each emitter is stored as module stacks per stage (`EmitterDescription.modules`): spawn, update, and render. Modules can be turned off, reordered, added, and removed, and effect files save them. `ParticleEmitter` is the same emitter as flat settings; `EmitterDescription.settings` converts both ways, so code like the example above keeps working.
+Each emitter is stored as module stacks per stage (`EmitterDescription.modules`): spawn, update, and render. Write them as a list, as above: each module goes to its stage, and required ones you leave out (shape, rate, lifetime, collision, color and size over life, sprite) get defaults. Modules can be turned off, reordered, added, and removed, and effect files save them.
 
 For behavior the built-in modules lack, add a stitched user module. It is a `[[stitchable]]` Metal function, and the stage's user modules run in stack order:
 
 ```swift
-var description = EmitterDescription("Flame", settings: flame)
+var description = built.layers[0]
 description.modules.update.append(ModuleSlot(.stitched(StitchedUpdateModule(module: StitchedModule(source: """
     [[stitchable]] constant float4 *swirl(thread ParticleState &p, float dt, float time, constant float4 *parameters) {
         p.velocity += cross(float3(0, 1, 0), p.position) * parameters[0].x * dt;

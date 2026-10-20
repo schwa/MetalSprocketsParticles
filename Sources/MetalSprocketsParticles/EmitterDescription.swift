@@ -47,9 +47,21 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
         mesh: Mesh? = nil,
         isEmitting: Bool = true
     ) {
+        self.init(name, modules: EmitterModules(settings), sprite: sprite, motion: motion, simulationSpace: simulationSpace, capacity: capacity, mesh: mesh, isEmitting: isEmitting)
+    }
+
+    public init(
+        _ name: String,
+        modules: EmitterModules,
+        sprite: ParticleSprite = .softDot,
+        motion: EmitterMotion = EmitterMotion(),
+        simulationSpace: SimulationSpace = .world,
+        capacity: Int = 50_000,
+        mesh: Mesh? = nil,
+        isEmitting: Bool = true
+    ) {
         id = UUID()
         self.name = name
-        let modules = EmitterModules(settings)
         self.modules = modules
         lowered = modules.lowered()
         self.sprite = sprite

@@ -4314,11 +4314,13 @@ Part of #197.
 ## 202: Preset builder, tests, and samples build modules, not ParticleEmitter
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:l
 created: 2026-10-20T18:58:48Z
+updated: 2026-10-20T19:28:47Z
+closed: 2026-10-20T19:28:47Z
 +++
 
 ParticleSystemBuilder, the sample presets in code, the README example, and many tests build ParticleEmitter and pass it as settings. Move them to modules (with convenient builders so code stays short).
@@ -4326,6 +4328,8 @@ ParticleSystemBuilder, the sample presets in code, the README example, and many 
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T19:28:47Z`: EmitterModulesBuilder: EmitterDescription(name) { ShapeModule(...); GravityModule(...) } places each module in its stage and fills missing required ones; EmitterDescription(_:modules:) designated init. README example uses it (compiled by EmitterModulesTests.readmeExample). Tests keep building the flat form via @testable: that becomes the internal resolved form in #204.
 
 ---
 
@@ -4364,6 +4368,8 @@ After the other #197 tasks, ParticleEmitter has no users. Remove it, the setting
 Gate: no regression in particles-bench --compare (#184) for presets and scenarios; goldens identical.
 
 Part of #197.
+
+- `2026-10-20T19:28:47Z`: Before ParticleEmitter goes internal, move its remaining public users to modules: ParticleView+Previews (8 previews use ParticleEmitter.default2D), particles-bench, ParticleSystemRuntime's public API (init(emitter:), emitters[].settings, setEmitters), SubEmitter.transition(into:), the demo (#203). Gotcha found in #202: EmitterDescription and SubEmitter cache modules.lowered() in a didSet, which doesn't fire inside initializers; set the cache in every init.
 
 ---
 

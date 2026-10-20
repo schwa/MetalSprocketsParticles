@@ -80,6 +80,52 @@ struct EmitterModulesTests {
         #expect(emitter.usesCustomAttributes)
     }
 
+    @Test func builderPlacesModulesAndFillsRequiredOnes() {
+        let windy = true
+        let layer = EmitterDescription("Flame", sprite: .smoke) {
+            DragModule(amount: 0.3)
+            ShapeModule(shape: .disc(radius: 0.3))
+            GravityModule(acceleration: [0, 1, 0])
+            if windy {
+                FoilModule(foil: ParticleFoil())
+            }
+        }
+        #expect(layer.modules.update.prefix(2).map(\.module.kind) == ["drag", "gravity"])
+        #expect(Set(layer.modules.update.map(\.module.kind)).isSuperset(of: ["collision", "colorOverLife", "sizeOverLife"]))
+        #expect(layer.modules.spawn.map(\.module.kind) == ["shape", "rate", "lifetime"])
+        #expect(layer.modules.render.map(\.module.kind) == ["foil", "sprite"])
+        #expect(layer.settings.shape == .disc(radius: 0.3))
+        #expect(layer.settings.gravity == [0, 1, 0])
+        #expect(layer.settings.birthRate == ParticleEmitter().birthRate)
+        #expect(layer.settings.velocity == .zero)
+    }
+
+    /// The README's example, kept compiling.
+    @Test func readmeExample() {
+        let built = ParticleSystem("Torch", cameraEye: [0, 1, 3], cameraTarget: [0, 0.6, 0]) {
+            EmitterDescription("Flame", sprite: .smoke) {
+                ShapeModule(shape: .disc(radius: 0.3))
+                RateModule(birthRate: 400)
+                LifetimeModule(range: 0.6...1.2)
+                VelocityModule(velocity: [0, 1.5, 0], spread: 0.3)
+                SizeOverLifeModule(curve: .linear(from: 0.15, to: 0.4))
+                ColorOverLifeModule(color: .linear(from: [1, 0.8, 0.3, 1], to: [1, 0.1, 0, 0]))
+                SpriteModule(blendMode: .additive)
+            }
+            Collider.plane(normal: [0, 1, 0], distance: 0)
+            ForceField.turbulence(strength: 1.5, scale: 1, speed: 0.5)
+        }
+        var description = built.layers[0]
+        description.modules.update.append(ModuleSlot(.stitched(StitchedUpdateModule(module: StitchedModule(source: """
+            [[stitchable]] constant float4 *swirl(thread ParticleState &p, float dt, float time, constant float4 *parameters) {
+                p.velocity += cross(float3(0, 1, 0), p.position) * parameters[0].x * dt;
+                return parameters + 1;
+            }
+            """, name: "swirl", parameters: [[2, 0, 0, 0]])))))
+        #expect(description.settings.blendMode == .additive)
+        #expect(description.settings.updateModules.count == 1)
+    }
+
     @Test func jsonRoundTrips() throws {
         for system in ParticleSystem.all {
             let (json, files) = try system.encoded()
