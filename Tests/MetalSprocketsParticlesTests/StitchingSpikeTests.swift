@@ -171,6 +171,38 @@ struct StitchingSpikeTests {
         }
     }
 
+    /// First-frame cost of a new function in the update slot (#209): a fresh source user function vs a fresh stitched
+    /// stack, each with names nothing has compiled before.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["STITCHING_TIMINGS"] != nil)) func firstFrameCost() throws {
+        let source = String(Self.moduleSource.dropFirst(ParticleFunction.prelude.count))
+        func firstFrame(_ configure: (inout ParticleEmitter) -> Void) throws -> (compile: Duration, frame: Duration) {
+            var settings = emitter(Self.handWritten)
+            settings.updateFunction = nil
+            configure(&settings)
+            let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: settings)
+            let start = ContinuousClock.now
+            try system.compileFunctions()
+            let compiled = ContinuousClock.now
+            try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
+            return (compiled - start, ContinuousClock.now - compiled)
+        }
+        // Warm everything that is not the function.
+        _ = try firstFrame { _ in }
+        for run in 0..<3 {
+            let unique = "\(run)_\(UInt32.random(in: 0...UInt32.max))"
+            let user = try firstFrame {
+                $0.updateFunction = ParticleFunction(source: Self.handWritten.source.replacingOccurrences(of: "handWritten", with: "user\(unique)"), name: "user\(unique)", parameters: Self.parameters)
+            }
+            let stitched = try firstFrame {
+                let renamed = source.replacingOccurrences(of: "Module(", with: "Module\(unique)(")
+                $0.updateModules = ["gravityModule", "dragModule", "colorOverLifeModule"].map { name in
+                    StitchedModule(source: renamed, name: name + unique, parameters: [[0, -9.8, 0, 0]])
+                }
+            }
+            print("first-frame user: compile \(user.compile), frame \(user.frame); stitched: compile \(stitched.compile), frame \(stitched.frame)")
+        }
+    }
+
     /// Records which kinds of arguments a [[stitchable]] function accepts.
     @Test func stitchableSignatures() {
         let cases: [(String, String)] = [

@@ -4451,17 +4451,20 @@ The stitched module ABI is (thread ParticleState &, dt, time, constant float4 *p
 
 ---
 
-## 209: First frame with a new stitched stack stalls ~400 ms building the pipeline
+## 209: First frame with a new user function or stitched stack stalls ~360 ms building the pipeline
 
 +++
 status: new
 priority: medium
 kind: task
-labels: area:simulation, effort:m
+labels: area:simulation, effort:m, needs-design
 created: 2026-10-20T19:20:17Z
+updated: 2026-10-20T19:40:59Z
 +++
 
 #182 measured about 420 ms for the first frame after a stitched function is linked (vs ~60 ms for a source user function); graph build itself is ~2 ms. Editing a module stack in the demo will hitch. Build stitched pipelines off the frame path (keep the old one until ready) and consider a binary archive cache.
+
+- `2026-10-20T19:40:59Z`: Measured (StitchingSpikeTests.firstFrameCost, STITCHING_TIMINGS=1): not stitching-specific. Fresh source user function: compile 4 ms, first frame ~360 ms; fresh stitched stack: stitch 7 ms, first frame ~360 ms. The cost is the Metal 4 compute pipeline for updateParticles being rebuilt with a new linked function (MetalSprockets PipelineCache.computePipeline, static linking). The earlier 60 ms for user functions was a warm cache. Options, both need MetalSprockets: (1) build the pipeline off the frame path and keep the previous one (or no function) until it's ready; (2) Metal's binary-function path: link visible functions into an existing pipeline without recompiling the kernel (MTL4 dynamic linking / pipelines with additional binary functions). Option 2 is the real fix if MTL4 supports it for compute.
 
 ---
 
@@ -4555,5 +4558,19 @@ updated: 2026-10-20T19:20:22Z
 +++
 
 In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any ParticleModule.Type] crashes swift-frontend (Xcode 27 RC). Worked around with a closure. Reduce to a minimal repro and report to Swift (swiftlang/swift).
+
+---
+
+## 216: Stitched modules whose sources define the same function name fail to compile together
+
++++
+status: new
+priority: medium
+kind: bug
+labels: area:simulation,effort:s
+created: 2026-10-20T19:40:59Z
++++
+
+StitchedModule.stitch concatenates every distinct module source into one Metal library. Two modules from different sources that define the same function (a helper, or two versions of a module with one name) fail with 'redefinition of ...'. Found while writing StitchingSpikeTests.firstFrameCost. Fix: compile each distinct source into its own library and pass functions from several libraries to MTLStitchedLibraryDescriptor (check that stitching accepts that), and report two modules with the same name in one stack clearly.
 
 ---
