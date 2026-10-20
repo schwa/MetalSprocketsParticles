@@ -3825,5 +3825,6 @@ Approach: start with the gaps by impact; tests should check behavior, not just t
 
 - `2026-10-20T02:42:09Z`: Decision (user): exclude code that is not testable or not worth testing rather than writing tests for it. Candidates: ParticleView+Previews.swift (SwiftUI #Previews), and review the rest case by case (e.g. thin SwiftUI glue in ParticleView.swift). Tooling gap: xcb test has no option to exclude files from the coverage summary (only --coverage-include-tests), so exclusions need either an xcb option (file a request) or a project-side list the summary is filtered by.
 - `2026-10-20T02:43:33Z`: Filed xcb #96: --coverage-exclude <glob> and coverage_exclude in .xcb.toml.
+- `2026-10-20T11:40:40Z`: xcb #96 landed. .xcb.toml now has [defaults.test] coverage_exclude = ["Sources/**/*+Previews.swift"]. New baseline: 93.7% of lines (5701/6082), 90.5% of functions (830/917); 1 file (629 lines) excluded. Next gaps: ParticleView.swift 61, ParticleFlocking.swift 51, SamplePresets.swift 28, DebugWireframes.swift 23.
 
 ---

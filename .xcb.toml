@@ -7,6 +7,8 @@ scheme = "MetalSprocketsParticlesDemo"
 
 [defaults.test]
 scheme = "MetalSprocketsParticles"
+# Not worth unit testing: SwiftUI previews (#180).
+coverage_exclude = ["Sources/**/*+Previews.swift"]
 
 [defaults.run]
 scheme = "MetalSprocketsParticlesDemo"
