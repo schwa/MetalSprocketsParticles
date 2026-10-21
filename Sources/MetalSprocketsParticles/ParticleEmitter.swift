@@ -7,7 +7,7 @@ import simd
 //    UpdateModules.swift, or RenderModules.swift (a case and an entry in `types`), with `apply` and `init?(lifting:)`.
 //    Modules are what effect files save. EmitterModulesTests fails if presets stop round-tripping.
 // 3. If the GPU needs it: a field in SimulationUniforms or RenderUniforms (ParticleTypes.h), set in
-//    FramePlan.uniforms(for:) or the render draw, and used in Particles.metal.
+//    FramePlan.uniforms(for:) or the render draw, and used in Simulation.metal or Rendering.metal.
 // 4. A control in the demo's module editors, and in ParticleKind.swift if it is a new enum kind.
 
 /// The flat form of an emitter: what `EmitterModules` lowers to and the simulation reads. Internal: code outside the

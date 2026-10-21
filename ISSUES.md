@@ -4802,17 +4802,20 @@ Tests: the lift/lower round trips (presetsRoundTrip, Tests/RoundTrip.swift users
 ## 224: Particles.metal is one 2,000-line file; the four vertex shaders repeat their setup
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: area:architecture, area:rendering, effort:m
 created: 2026-10-21T02:03:07Z
-updated: 2026-10-21T02:03:43Z
+updated: 2026-10-21T12:16:39Z
+closed: 2026-10-21T12:16:39Z
 +++
 
 Particles.metal holds the update kernel, spawning, collisions, sorting helpers, lights, shading, four particle vertex shaders, and the fragment shader. The sprite, mesh, trail, and ribbon vertex shaders each repeat dead-particle handling, color/tint, ShadingInput building, and the shade-or-store step.
 
 Split by concern into several files, and share the common vertex setup. Goldens must stay identical.
+
+- `2026-10-21T12:16:39Z`: Split Particles.metal (2,035 lines) by concern: Simulation.metal (spawn, forces, collision, update kernel, 1.2K), Rendering.metal (vertex/fragment shaders, shading functions, particle lights), Colliders.metal (wireframe/solid), and ParticleCommon.h for the five helpers both halves use (hash, sampleCurve, particleTint, rotateAbout, tumbleAxis). The four particle vertex shaders now share particleIndex, isDead/deadVertex, particleColor (base color, variation, tint), and finishVertex (shade or store for per-pixel, debug color, view depth); the mesh shader uses tumbleAxis instead of its own copy. Goldens identical; 477 lib + 80 demo tests pass. Benchmarks: machine on battery, so the AC baseline gate could not run; an A/B against the previous commit under the same conditions showed no regressions (Stress Test alone varied 5.4-10.6 ms run to run).
 
 ---
 
