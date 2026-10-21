@@ -647,8 +647,9 @@ public final class ParticleSystemRuntime {
         let functionTables = try dispatches.map(functionTables)
         let sortKernels = sortKernels
         return try ComputePass {
-            // Previous frame's vertex stage reads the buffer we are about to write.
-            QueueBarrier(after: .vertex, before: .dispatch)
+            // The previous frame's draws read, and an earlier step's dispatches in the same submission write, the
+            // buffers we are about to write.
+            QueueBarrier(after: [.vertex, .fragment, .dispatch], before: .dispatch)
             if let flockingBuffers, !flocks.isEmpty {
                 try flockingPasses(flocks, buffers: flockingBuffers, particles: buffer)
                 // The update reads the steering.

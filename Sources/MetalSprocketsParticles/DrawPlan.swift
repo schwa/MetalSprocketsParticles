@@ -181,23 +181,16 @@ extension ParticleSystemRuntime {
 
         return ForEach(Array(draws.indices), id: \.self) { index in
             let draw = draws[index]
-            if draw.kind.isMesh {
-                // Shapes hide each other; only opaque ones write depth, so blended ones still show what is behind.
-                try pipeline(draw)
-                    .depthCompare(function: depthCompare, writes: draw.blendMode == .opaque)
-                    .renderPipelineDescriptorTransformer { descriptor in
-                        if let attachment = descriptor.colorAttachments[0] {
-                            draw.blendMode.configure(attachment)
-                        }
+            // Set depth state here rather than inherit the host pass's. Opaque shapes hide each other. Sprites,
+            // ribbons, and trails are unsorted quads with transparent edges, so they never write depth.
+            let writesDepth = draw.kind.isMesh && draw.blendMode == .opaque
+            try pipeline(draw)
+                .depthCompare(function: depthCompare, writes: writesDepth)
+                .renderPipelineDescriptorTransformer { descriptor in
+                    if let attachment = descriptor.colorAttachments[0] {
+                        draw.blendMode.configure(attachment)
                     }
-            } else {
-                try pipeline(draw)
-                    .renderPipelineDescriptorTransformer { descriptor in
-                        if let attachment = descriptor.colorAttachments[0] {
-                            draw.blendMode.configure(attachment)
-                        }
-                    }
-            }
+                }
         }
     }
 }

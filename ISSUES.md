@@ -5032,3 +5032,33 @@ created: 2026-10-21T16:45:01Z
 The demo lists xros in SUPPORTED_PLATFORMS but has never been built or run on visionOS (#233 skipped it). Build for a visionOS device, run it, fix what breaks, then add generic/platform=xrOS to the Buildkite demo step.
 
 ---
+
+## 236: Sprite draws inherit the enclosing pass's depth state
+
++++
+status: closed
+priority: medium
+kind: bug
+created: 2026-10-21T17:40:02Z
+updated: 2026-10-21T17:43:51Z
+closed: 2026-10-21T17:43:51Z
++++
+
+In DrawPlan.encode, mesh draws set .depthCompare(function: depthCompare, writes: blendMode == .opaque), but sprite (and other non-mesh) draws set nothing, so they use whatever depth state the host's pass sets. MetalSprocketsSceneGraph's scene pass writes depth, so unsorted additive sprites wrote depth and hid each other, cutting dark squares into a fire effect. Hosts can work around it with .depthCompare(function:writes: false) around render(). Fix: give non-mesh draws .depthCompare(function: depthCompare, writes: false) (or writes only when opaque), like the mesh path.
+
+---
+
+## 237: Several simulate calls in one frame give nondeterministic results
+
++++
+status: closed
+priority: medium
+kind: bug
+created: 2026-10-21T17:40:02Z
+updated: 2026-10-21T17:43:51Z
+closed: 2026-10-21T17:43:51Z
++++
+
+Calling runtime.simulate(deltaTime:) more than about 4 times before one GPU submission completes (for example sub-stepping a long frame in steps of maximumStep) makes the output differ from run to run with the same seed. 4 or fewer steps per frame are deterministic; 8 or more are not. I think planFrame reads aliveCounters slots (PARTICLE_ALIVE_COUNTER_SLOTS) that the GPU has not written yet, but this is not verified. Found by MetalSprocketsSceneGraph, which now steps once per frame. Support sub-stepping, or document that one simulate per submitted frame is required.
+
+---
