@@ -87,7 +87,7 @@ struct StitchingInlineSpikeTests {
     func measure(mode: String, device: MTLDevice, queue: MTLCommandQueue, count: Int) throws -> (Double, [SIMD4<Float>]) {
         let library = try device.makeLibrary(source: Self.kernelSource(mode: mode), options: nil)
         let descriptor = MTLComputePipelineDescriptor()
-        descriptor.computeFunction = try #require(library.makeFunction(name: "step"))
+        descriptor.computeFunction = library.makeFunction(name: "step")
         let stack = mode == "inline" ? nil : try stitchedStack(device: device)
         if let stack {
             let linked = MTLLinkedFunctions()
