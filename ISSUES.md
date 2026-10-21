@@ -4964,3 +4964,17 @@ Two sources:
 The flood hides real validation messages in the console. Fix here: only set the fill mode for wireframe draws (draw.wireframe), and let the encoder default (.fill) stand otherwise; after a wireframe draw, either rely on MetalSprockets' reset or reset once. Fixing #472 upstream removes the other half. Done when a normal demo run under validation prints no setTriangleFillMode warnings.
 
 ---
+
+## 232: Demo: ModuleStage.labels(of:) calls main-actor ModuleStackView.label from nonisolated code (3 warnings)
+
++++
+status: new
+priority: low
+kind: bug
+labels: area:demo, effort:s
+created: 2026-10-21T15:59:16Z
++++
+
+ModuleStackView.swift lines 43-45: 'call to main actor-isolated static method label in a synchronous nonisolated context [#ActorIsolatedCall]'. ModuleStackView is a View, so @MainActor, including its static label(_:); ModuleStage.labels(of:) is a nonisolated enum method that calls it per module. Only visible when the file recompiles (touch it); incremental builds hide it. Fix: mark label(_:) nonisolated (it is a pure string function), or move it out of the view. Done when a clean demo build has no warnings.
+
+---
