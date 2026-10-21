@@ -51,11 +51,11 @@ struct TwoDModeTests {
         let runtime = try ParticleSystemRuntime(capacity: 1, emitter: ParticleEmitter())
         try runtime.load(flat)
         // swiftlint:disable:next prefer_key_path
-        #expect(runtime.emitters.allSatisfy { $0.settings.constrainsToPlane })
+        #expect(runtime.emitters.allSatisfy { $0.forcesPlane })
         // The stored layer is untouched, so turning 2D off restores it.
         #expect(flat.layers.allSatisfy { !$0.settings.constrainsToPlane })
         try runtime.apply(system(is2D: false))
-        #expect(runtime.emitters.allSatisfy { !$0.settings.constrainsToPlane })
+        #expect(runtime.emitters.allSatisfy { !$0.forcesPlane })
     }
 
     @Test func twoDDefaultsAreInPoints() {

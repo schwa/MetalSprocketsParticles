@@ -107,10 +107,8 @@ public extension ParticleSystemRuntime {
             appliedLayout = layout
         }
         for (emitter, description) in zip(emitters, descriptions) {
-            emitter.settings = description.settings
-            if constrainsToPlane {
-                emitter.settings.constrainsToPlane = true
-            }
+            emitter.configure(modules: description.modules, settings: description.settings)
+            emitter.forcesPlane = constrainsToPlane
             emitter.simulationSpace = description.simulationSpace
             // Only a change in the description turns emission on or off, so start and stop triggers survive re-applying
             // the same description (as ParticlePlayer does every frame).

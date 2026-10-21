@@ -1,13 +1,12 @@
 import Metal
 
-// The runtime's API in modules (#204). The runtime itself keeps each emitter's lowered settings, which is what the
-// simulation reads.
+// The runtime's API in modules (#204). Each emitter keeps its modules and their lowered settings (#226).
 
 public extension ParticleSystemRuntime.Emitter {
-    /// The emitter's behavior as modules. Reading lifts the current settings; setting lowers the modules.
+    /// The emitter's behavior as modules.
     var modules: EmitterModules {
-        get { EmitterModules(settings) }
-        set { settings = newValue.lowered() }
+        get { storedModules }
+        set { configure(modules: newValue, settings: newValue.lowered()) }
     }
 }
 

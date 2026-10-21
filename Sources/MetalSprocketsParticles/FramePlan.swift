@@ -91,7 +91,7 @@ extension ParticleSystemRuntime {
         for child in subEmitterInstances {
             if let parent = child.parent, child.subEmitterIndex < parent.settings.subEmitters.count {
                 let sub = parent.settings.subEmitters[child.subEmitterIndex]
-                child.settings = sub.settings
+                child.configure(modules: sub.modules, settings: sub.settings)
                 // Cached per sprite, so this is a dictionary lookup.
                 child.texture = texture(for: sub.sprite)
             }
@@ -156,7 +156,7 @@ extension ParticleSystemRuntime {
     }
 
     /// Where an emitter is in simulation space for one step.
-    private struct SpawnMotion {
+    struct SpawnMotion {
         var transform = matrix_identity_float4x4
         var previousOrigin: SIMD3<Float> = .zero
         var inheritedVelocity: SIMD3<Float> = .zero
@@ -216,78 +216,31 @@ extension ParticleSystemRuntime {
         return (uniforms, max(threadCount, 1))
     }
 
-    /// An emitter's settings for one step, without side effects. Sub-emitter children spawn with these too.
-    private func uniforms(for emitter: Emitter, deltaTime: Float, motion: SpawnMotion, spawn: Spawner.Step) -> SimulationUniforms {
-        let settings = emitter.settings
-        let model = emitter.modelTransform
+    /// An emitter's settings for one step, without side effects. Sub-emitter children spawn with these too. The
+    /// emitter's modules write their own fields (#226); the rest comes from the frame and the runtime.
+    func uniforms(for emitter: Emitter, deltaTime: Float, motion: SpawnMotion, spawn: Spawner.Step) -> SimulationUniforms {
         var uniforms = SimulationUniforms()
+        emitter.modules.contribute(to: &uniforms, context: SimulationContext(motion: motion, mesh: emitter.mesh))
+        if emitter.forcesPlane {
+            uniforms.constrainToPlane(motion)
+        }
         uniforms.emitterTransform = motion.transform
-        // Glint sub-emitters see what foil shading sees: the first light (or foil's fixed light) and the shininess.
-        // The camera is set by simulate when it has a view.
-        uniforms.glintShininess = max(settings.foil?.shininess ?? ParticleFoil().shininess, 1)
-        uniforms.glintLight = switch lights.first {
-        case let .directional(direction, _, _)?: SIMD4(simd_length(direction) > 0 ? -simd_normalize(direction) : [0, 1, 0], 0)
-        case let .point(position, _, _, _)?: SIMD4(position, 1)
-        case nil: SIMD4(simd_normalize(SIMD3<Float>(0.3, 1, 0.6)), 0)
-        }
-        if settings.constrainsToPlane {
-            uniforms.constrainsToPlane = 1
-            uniforms.planePoint = motion.transform.columns.3.xyz
-            let normal = motion.transform.columns.2.xyz
-            uniforms.planeNormal = simd_length(normal) > 0 ? simd_normalize(normal) : [0, 0, 1]
-        }
-        uniforms.simulationToWorld = model
-        uniforms.worldToSimulation = model.inverse
+        uniforms.glintLight = glintLight
+        uniforms.simulationToWorld = emitter.modelTransform
+        uniforms.worldToSimulation = emitter.modelTransform.inverse
         uniforms.previousEmitterOrigin = motion.previousOrigin
         uniforms.inheritedVelocity = motion.inheritedVelocity
         uniforms.spinAxis = motion.spinAxis
         uniforms.spinAngle = motion.spinAngle
         uniforms.inheritedAngularVelocity = motion.inheritedAngularVelocity
-        uniforms.shape = ParticleShapeData(settings, mesh: emitter.mesh)
-        uniforms.velocity = settings.velocity
-        uniforms.velocitySpread = settings.velocitySpread
-        uniforms.gravity = settings.gravity
-        uniforms.drag = settings.drag
-        uniforms.lifetimeMinimum = settings.lifetime.lowerBound
-        uniforms.lifetimeMaximum = settings.lifetime.upperBound
         uniforms.deltaTime = deltaTime
         // The emitter clock, not wall time, so turbulence stays deterministic.
         uniforms.time = emitter.spawner.time
-        uniforms.restitution = settings.restitution
-        uniforms.friction = settings.friction
-        uniforms.diesOnCollision = settings.diesOnCollision ? 1 : 0
-        // The stride is filled in once the trail buffer is sized, after planning.
-        uniforms.trailPointCount = UInt32(settings.trail?.clampedPointCount ?? 0)
-        uniforms.trailPointInterval = max(settings.trail?.pointInterval ?? 0, 0)
-        uniforms.collisionRadius = max(settings.collisionRadius, 0)
-        uniforms.ordersBirths = settings.ribbon == nil ? 0 : 1
         // 0 when no function reads or writes ParticleState.custom: then the kernel skips the attribute traffic (#206).
+        // Function slots still come from the flat settings until stage 2 (#227).
+        let settings = emitter.settings
         uniforms.customAttributeCount = settings.usesCustomAttributes ? UInt32(min(max(settings.customAttributeCount, 1), ParticleFunction.maximumCustomAttributes)) : 0
-        if settings.colorByPositionAtBirth, settings.colorByPosition != nil {
-            uniforms.colorsByBirthPosition = 1
-            uniforms.birthColorStart = settings.colorByPositionStart
-            uniforms.birthColorEnd = settings.colorByPositionEnd
-        }
-        if let flocking = settings.flocking {
-            uniforms.flocks = 1
-            uniforms.flockSpeedRange = [flocking.speedRange.lowerBound, flocking.speedRange.upperBound]
-        }
         uniforms.countsColliderHits = countsColliderHits ? 1 : 0
-        uniforms.angle = settings.angle
-        uniforms.angularSpeed = settings.angularSpeed
-        uniforms.initialFrame = settings.imageSequence?.initialFrame ?? 0
-        uniforms.frameRate = settings.imageSequence?.frameRate ?? 0
-        uniforms.variation = ParticleVariationData(
-            size: max(settings.sizeVariation, 0),
-            restitution: max(settings.restitutionVariation, 0),
-            friction: max(settings.frictionVariation, 0),
-            speed: max(settings.speedVariation, 0),
-            color: simd_max(settings.colorVariation, .zero),
-            angle: settings.angleVariation,
-            angularSpeed: settings.angularSpeedVariation,
-            initialFrame: settings.imageSequence?.initialFrameVariation ?? 0,
-            frameRate: settings.imageSequence?.frameRateVariation ?? 0
-        )
         uniforms.colliderCount = UInt32(colliders.count)
         uniforms.forceFieldCount = UInt32(forceFields.count)
         uniforms.triggerVolumeCount = UInt32(min(triggerVolumes.count, Int(PARTICLE_TRIGGER_MAX_VOLUMES)))
@@ -302,6 +255,15 @@ extension ParticleSystemRuntime {
             kill: emitter.needsKill ? 1 : 0
         )
         return uniforms
+    }
+
+    /// The first light, or foil's fixed light, for glint sub-emitters. The camera is set by simulate when it has a view.
+    private var glintLight: SIMD4<Float> {
+        switch lights.first {
+        case let .directional(direction, _, _)?: SIMD4(simd_length(direction) > 0 ? -simd_normalize(direction) : [0, 1, 0], 0)
+        case let .point(position, _, _, _)?: SIMD4(position, 1)
+        case nil: SIMD4(simd_normalize(SIMD3<Float>(0.3, 1, 0.6)), 0)
+        }
     }
 
     /// What the parent's kernel needs to write `emitter`'s children.
@@ -400,10 +362,11 @@ extension ParticleSystemRuntime {
             uniforms.hasSpawnFunction = functions[1] == nil ? 0 : 1
             uniforms.hasCollisionFunction = functions[2] == nil ? 0 : 1
             uniforms.hasDeathFunction = functions[3] == nil ? 0 : 1
-            uniforms.reportsCollisions = emitter.settings.reportsCollisions ? 1 : 0
-            uniforms.reportsDeaths = emitter.settings.reportsDeaths ? 1 : 0
+            let events = emitter.modules.enabled(EventsModule.self)
+            uniforms.reportsCollisions = events?.reportsCollisions == true ? 1 : 0
+            uniforms.reportsDeaths = events?.reportsDeaths == true ? 1 : 0
             uniforms.eventEmitterIndex = UInt32(emitterIndex)
-            uniforms.collidesWithSceneDepth = emitter.settings.collidesWithSceneDepth ? 1 : 0
+            uniforms.collidesWithSceneDepth = emitter.modules.enabled(CollisionModule.self)?.collidesWithSceneDepth == true ? 1 : 0
             return FramePlan.Dispatch(
                 uniforms: uniforms,
                 threadCount: step.threadCount,

@@ -24,7 +24,19 @@ public final class ParticleSystemRuntime {
 
     /// One emitter in a system: its settings plus the runtime state that does not belong in a value type.
     public final class Emitter {
-        var settings: ParticleEmitter
+        /// The flat settings. Setting them lifts new `modules`; `configure(modules:settings:)` sets both without lifting.
+        var settings: ParticleEmitter {
+            get { storedSettings }
+            set {
+                storedSettings = newValue
+                storedModules = EmitterModules(newValue)
+            }
+        }
+        private var storedSettings: ParticleEmitter
+        /// What the emitter does, as modules. Frame planning reads these (#226).
+        private(set) var storedModules: EmitterModules
+        /// Keeps particles on the emitter's plane whatever the modules say: the 2D mode of `apply(_:constrainsToPlane:)`.
+        var forcesPlane = false
         /// Premultiplied-alpha sprite, or a sprite sheet when `settings.imageSequence` is set. `nil` draws a soft dot.
         public var texture: MTLTexture?
         /// Emitter-to-world transform. Emitter position, velocity, and shape are in this space.
@@ -94,11 +106,18 @@ public final class ParticleSystemRuntime {
         }
 
         init(settings: ParticleEmitter, capacity: Int, range: Range<Int>, seed: UInt32) {
-            self.settings = settings
+            storedSettings = settings
+            storedModules = EmitterModules(settings)
             self.capacity = capacity
             self.range = range
             self.seed = seed
             spawner = Spawner(seed: seed)
+        }
+
+        /// Sets modules and the settings they lower to, without lifting. `settings` must equal `modules.lowered()`.
+        func configure(modules: EmitterModules, settings: ParticleEmitter) {
+            storedSettings = settings
+            storedModules = modules
         }
 
         /// True when the emitter is done: it will not spawn on its own again (its `emissionOverTime` has ended at zero,

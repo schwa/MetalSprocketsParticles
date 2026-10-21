@@ -4847,9 +4847,12 @@ priority: medium
 kind: task
 labels: area:architecture, effort:l
 created: 2026-10-21T12:17:47Z
+updated: 2026-10-21T14:13:04Z
 +++
 
 Each module fills its part of SimulationUniforms, RenderUniforms and per-emitter CPU state via contribute hooks; FramePlan.uniforms(for:) and planDraws iterate modules instead of reading flat ParticleEmitter fields. Tests: given modules -> expected uniforms/draw. Goldens identical, bench gate.
+
+- `2026-10-21T14:13:04Z`: Simulation half done: modules write SimulationUniforms (SimulationModules.swift; stage enums switch to each module's contribute, since dynamic SimulationContributor casts cost Torch Avenue +0.05 ms build per frame). Emitter stores modules (configure(modules:settings:) per frame without lifting; assigning settings lifts). 2D mode is Emitter.forcesPlane, not a flat-settings override. Byte-equal to the flat path for every preset and sub-emitter in 3D and 2D (checked, then the flat builder was deleted). Still on flat settings until #227: function slots and customAttributeCount. Remaining for #226: RenderUniforms in planDraws.
 
 ---
 
