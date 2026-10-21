@@ -4705,11 +4705,13 @@ Found and fixed a bug while measuring: per-pixel shading after per-vertex shadin
 ## 220: Statically link built-in shading functions
 
 +++
-status: new
+status: closed
 priority: medium
 kind: enhancement
 labels: area:performance, effort:s
 created: 2026-10-21T01:38:00Z
+updated: 2026-10-21T01:49:39Z
+closed: 2026-10-21T01:49:39Z
 +++
 
 MetalSprockets 60e2abad (MetalSprockets #540) lets each VisibleFunction choose static or binary linking. Binary-linked calls cannot be inlined; Foil Confetti went from 0.12 ms GPU to ~0.175 ms after MetalSprockets #538 switched to binary linking.
@@ -4723,5 +4725,7 @@ This covers every shading pipeline (ParticleSystemRuntime.swift linkedFunctions 
 Requires bumping the MetalSprockets dependency to include 60e2abad.
 
 Verify: particles-bench --presets --preset foil --repeats 5 returns to ~0.12 ms.
+
+- `2026-10-21T01:49:39Z`: Done in nwxlzyvz: built-in shading functions use .linking(.static) (MetalSprockets #540); Foil Confetti GPU back to 0.12 ms.
 
 ---
