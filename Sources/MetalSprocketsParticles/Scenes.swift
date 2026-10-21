@@ -12,6 +12,24 @@ extension ParticleEmitter {
 
     /// The fountain's colliders animated over time: the sphere bobs through the jet and the boxes slide.
     static func fountainColliders(time: Float) -> [Collider] {
+        Collider.fountain(time: time)
+    }
+}
+
+extension EmitterModules {
+    /// A dense jet up from just above the ground, for tests and benchmarks.
+    static var fountain: Self {
+        var modules = Self.standard
+        modules[ShapeModule.self]!.position = [0, 0.5, 0] // swiftlint:disable:this force_unwrapping
+        modules[VelocityModule.self]!.velocity = [0, 5, 0] // swiftlint:disable:this force_unwrapping
+        modules[RateModule.self]!.birthRate = 20_000 // swiftlint:disable:this force_unwrapping
+        return modules
+    }
+}
+
+extension Collider {
+    /// The fountain's colliders animated over time: the sphere bobs through the jet and the boxes slide.
+    static func fountain(time: Float) -> [Collider] {
         [
             .plane(normal: [0, 1, 0], distance: 0),
             .sphere(center: [0, 2.5 + 0.6 * sin(time * 1.3), 0], radius: 0.6),

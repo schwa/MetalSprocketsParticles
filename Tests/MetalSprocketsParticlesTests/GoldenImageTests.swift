@@ -16,18 +16,18 @@ private let psnrThreshold = 30.0
 @Suite(.serialized, .requiresMetal4)
 struct GoldenImageTests {
     func render(
-        emitter: ParticleEmitter = .fountain,
+        emitter: EmitterModules = .fountain,
         seed: UInt32 = 0,
         frames: Int,
         colliders: Bool = true,
-        worldColliders: [Collider] = ParticleEmitter.fountainColliders(time: 0),
+        worldColliders: [Collider] = Collider.fountain(time: 0),
         forceFields: [ForceField] = [],
         configure: (ParticleSystemRuntime) throws -> Void = { _ in },
         perFrame: (ParticleSystemRuntime, Int) -> Void = { _, _ in }
     ) throws -> CGImage {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 50_000, emitter: emitter, seed: seed)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 50_000, modules: emitter, seed: seed)
         system.colliders = worldColliders
         system.forceFields = forceFields
         try configure(system)
@@ -55,20 +55,27 @@ struct GoldenImageTests {
         let teapot = try #require(Collider.signedDistanceField(
             mesh: .teapot(diameter: 2.4), resolution: 64, center: [0, 0.6, 0], rotation: simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
         ))
-        var sand = ParticleEmitter()
-        sand.shape = .box(size: [2.8, 0.05, 1.6])
-        sand.position = [0, 3.2, 0]
-        sand.velocity = .zero
-        sand.velocitySpread = 0.1
-        // About the helper's 50 000 particles alive by the end, so the coating builds up without recycling.
-        sand.birthRate = 9_000
-        sand.lifetime = 6...6
-        sand.restitution = 0.05
-        sand.friction = 0.8
-        sand.colorOverLife = .constant([0.95, 0.78, 0.48, 1])
-        sand.colorVariation = [0.08, 0.06, 0.04, 0]
-        sand.sizeOverLife = .constant(0.022)
-        sand.blendMode = .opaque
+        let sand = EmitterModules.standard {
+            $0.edit(ShapeModule.self) {
+                $0.shape = .box(size: [2.8, 0.05, 1.6])
+                $0.position = [0, 3.2, 0]
+            }
+            $0.edit(VelocityModule.self) {
+                $0.velocity = .zero
+                $0.spread = 0.1
+            }
+            // About the helper's 50 000 particles alive by the end, so the coating builds up without recycling.
+            $0.edit(RateModule.self) { $0.birthRate = 9_000 }
+            $0.edit(LifetimeModule.self) { $0.range = 6...6 }
+            $0.edit(CollisionModule.self) {
+                $0.restitution = 0.05
+                $0.friction = 0.8
+            }
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([0.95, 0.78, 0.48, 1]) }
+            $0[VariationModule.self] = VariationModule(color: [0.08, 0.06, 0.04, 0])
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.022) }
+            $0.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        }
         let image = try render(emitter: sand, frames: 330, colliders: false, worldColliders: [.plane(normal: [0, 1, 0], distance: 0), teapot])
         #expect(try image.matchesGolden(named: "sand-on-baked-teapot"))
     }
@@ -92,8 +99,7 @@ struct GoldenImageTests {
 
     @Test(arguments: [(ParticleBlendMode.additive, "additive"), (.screen, "screen"), (.opaque, "opaque")])
     func blendModes(mode: ParticleBlendMode, name: String) throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.blendMode = mode
+        let emitter = EmitterModules.fountain { $0.edit(SpriteModule.self) { $0.blendMode = mode } }
         #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "fountain-blend-\(name)"))
     }
 
@@ -101,8 +107,8 @@ struct GoldenImageTests {
     @Test func blendModeChangeOnSameRendererTakesEffect() throws {
         let size = CGSize(width: 160, height: 90)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 5_000, emitter: .fountain, seed: 0)
-        system.colliders = ParticleEmitter.fountainColliders(time: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 5_000, modules: .fountain, seed: 0)
+        system.colliders = Collider.fountain(time: 0)
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
         for _ in 0..<60 {
@@ -112,7 +118,7 @@ struct GoldenImageTests {
             try renderer.render(try RenderPass { try system.render(projection: projection, view: view) }).cgImage
         }
         let alpha = try draw()
-        system.emitter.blendMode = .additive
+        system.emitters[0].modules.edit(SpriteModule.self) { $0.blendMode = .additive }
         let additive = try draw()
         #expect(try ImageComparison().compare(alpha, additive).psnr < psnrThreshold)
     }
@@ -127,13 +133,14 @@ struct GoldenImageTests {
     }
 
     @Test func texturedSpinningSprites() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.birthRate = 2_000
-        emitter.sizeStart = 0.12
-        emitter.sizeEnd = 0.06
-        emitter.angleVariation = .pi
-        emitter.angularSpeed = 4
-        emitter.angularSpeedVariation = 2
+        let emitter = EmitterModules.fountain {
+            $0.edit(RateModule.self) { $0.birthRate = 2_000 }
+            $0.edit(SizeOverLifeModule.self) {
+                $0.curve.start = 0.12
+                $0.curve.end = 0.06
+            }
+            $0[RotationModule.self] = RotationModule(angleVariation: .pi, angularSpeed: 4, angularSpeedVariation: 2)
+        }
         let image = try render(emitter: emitter, frames: 120, colliders: false) { system in
             // An arrow pointing up, so rotation is visible.
             system.texture = try makeSpriteSheet(device: system.device, rows: 1, columns: 1) { context, _, rect in
@@ -148,13 +155,18 @@ struct GoldenImageTests {
     }
 
     @Test func spriteSheetAnimation() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.birthRate = 4_000
-        emitter.sizeStart = 0.08
-        emitter.sizeEnd = 0.08
-        emitter.colorStart = [1, 1, 1, 1]
-        emitter.colorEnd = [1, 1, 1, 0.3]
-        emitter.imageSequence = ImageSequence(rows: 2, columns: 2, frameRate: 2)
+        let emitter = EmitterModules.fountain {
+            $0.edit(RateModule.self) { $0.birthRate = 4_000 }
+            $0.edit(SizeOverLifeModule.self) {
+                $0.curve.start = 0.08
+                $0.curve.end = 0.08
+            }
+            $0.edit(ColorOverLifeModule.self) {
+                $0.color.start = [1, 1, 1, 1]
+                $0.color.end = [1, 1, 1, 0.3]
+            }
+            $0[ImageSequenceModule.self] = ImageSequenceModule(sequence: ImageSequence(rows: 2, columns: 2, frameRate: 2))
+        }
         let image = try render(emitter: emitter, frames: 120, colliders: false) { system in
             system.texture = try makeSpriteSheet(device: system.device, rows: 2, columns: 2) { context, index, rect in
                 context.setFillColor(frameColors[index])
@@ -165,16 +177,19 @@ struct GoldenImageTests {
     }
 
     @Test func overLifeCurves() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.colorOverLife = ParticleCurve([
-            .init(0, [1, 1, 0.8, 1]),
-            .init(0.15, [1, 0.6, 0.1, 1]),
-            .init(0.5, [0.8, 0.15, 0.05, 1]),
-            .init(1, [0.2, 0.2, 0.25, 1]),
-        ])
-        // Puff up, then shrink away.
-        emitter.sizeOverLife = ParticleCurve([.init(0, 0.01), .init(0.3, 0.06), .init(1, 0.005)])
-        emitter.opacityOverLife = .power(from: 1, to: 0, exponent: 3)
+        let emitter = EmitterModules.fountain {
+            $0.edit(ColorOverLifeModule.self) {
+                $0.color = ParticleCurve([
+                    .init(0, [1, 1, 0.8, 1]),
+                    .init(0.15, [1, 0.6, 0.1, 1]),
+                    .init(0.5, [0.8, 0.15, 0.05, 1]),
+                    .init(1, [0.2, 0.2, 0.25, 1]),
+                ])
+                $0.opacity = .power(from: 1, to: 0, exponent: 3)
+            }
+            // Puff up, then shrink away.
+            $0.edit(SizeOverLifeModule.self) { $0.curve = ParticleCurve([.init(0, 0.01), .init(0.3, 0.06), .init(1, 0.005)]) }
+        }
         #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "over-life-curves"))
     }
 
@@ -187,34 +202,42 @@ struct GoldenImageTests {
     }
 
     @Test func velocityStretchedSparks() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.birthRate = 3_000
-        emitter.velocity = [0, 6, 0]
-        emitter.velocitySpread = 3
-        emitter.orientation = .velocityAligned(stretch: 0.8)
-        emitter.sizeOverLife = .constant(0.02)
-        emitter.colorOverLife = .linear(from: [1, 0.9, 0.5, 1], to: [1, 0.3, 0.05, 0])
-        emitter.blendMode = .additive
+        let emitter = EmitterModules.fountain {
+            $0.edit(RateModule.self) { $0.birthRate = 3_000 }
+            $0.edit(VelocityModule.self) {
+                $0.velocity = [0, 6, 0]
+                $0.spread = 3
+            }
+            $0.edit(SpriteModule.self) {
+                $0.orientation = .velocityAligned(stretch: 0.8)
+                $0.blendMode = .additive
+            }
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.02) }
+            $0.edit(ColorOverLifeModule.self) { $0.color = .linear(from: [1, 0.9, 0.5, 1], to: [1, 0.3, 0.05, 0]) }
+        }
         #expect(try render(emitter: emitter, frames: 120).matchesGolden(named: "velocity-stretched-sparks"))
     }
 
     @Test func birthVariation() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.birthRate = 6_000
-        emitter.sizeVariation = 0.8
-        emitter.speedVariation = 1.5
-        emitter.colorVariation = [0.15, 0.3, 0.2, 0]
-        emitter.restitutionVariation = 0.3
+        let emitter = EmitterModules.fountain {
+            $0.edit(RateModule.self) { $0.birthRate = 6_000 }
+            $0[VariationModule.self] = VariationModule(size: 0.8, color: [0.15, 0.3, 0.2, 0])
+            $0.edit(VelocityModule.self) { $0.speedVariation = 1.5 }
+            $0.edit(CollisionModule.self) { $0.restitutionVariation = 0.3 }
+        }
         #expect(try render(emitter: emitter, frames: 120, colliders: false).matchesGolden(named: "birth-variation"))
     }
 
     @Test func movingEmitterTrail() throws {
-        var emitter = ParticleEmitter.fountain
-        emitter.velocity = [0, 0.5, 0]
-        emitter.velocitySpread = 0.3
-        emitter.gravity = [0, -0.5, 0]
-        emitter.birthRate = 8_000
-        emitter.inheritVelocity = 0.3
+        let emitter = EmitterModules.fountain {
+            $0.edit(VelocityModule.self) {
+                $0.velocity = [0, 0.5, 0]
+                $0.spread = 0.3
+                $0.inherit = 0.3
+            }
+            $0.edit(GravityModule.self) { $0.acceleration = [0, -0.5, 0] }
+            $0.edit(RateModule.self) { $0.birthRate = 8_000 }
+        }
         // render takes two closures (configure, perFrame); a trailing closure would bind to configure.
         // swiftlint:disable:next trailing_closure
         let image = try render(emitter: emitter, frames: 120, worldColliders: [.plane(normal: [0, 1, 0], distance: 0)], perFrame: { system, frame in
@@ -227,46 +250,45 @@ struct GoldenImageTests {
     }
 
     @Test func fireSmokeAndEmbers() throws {
-        var fire = ParticleEmitter()
-        fire.position = [0, 0.1, 0]
-        fire.radius = 0.25
-        fire.velocity = [0, 1.2, 0]
-        fire.velocitySpread = 0.3
-        fire.gravity = [0, 1, 0]
-        fire.lifetime = 0.5...1
-        fire.birthRate = 6_000
-        fire.blendMode = .additive
-        fire.sizeOverLife = ParticleCurve([.init(0, 0.06), .init(0.4, 0.1), .init(1, 0.02)])
-        fire.colorOverLife = ParticleCurve([
-            .init(0, [1, 0.9, 0.5, 0.6]),
-            .init(0.4, [1, 0.4, 0.05, 0.4]),
-            .init(1, [0.4, 0.05, 0.02, 0]),
-        ])
+        /// A sphere-shaped emitter rising (or falling) at `velocity`, with the parts these three share.
+        func puff(at position: SIMD3<Float>, radius: Float, velocity: SIMD3<Float>, spread: Float, gravity: SIMD3<Float>, lifetime: ClosedRange<Float>, birthRate: Float) -> EmitterModules {
+            EmitterModules.standard {
+                $0.edit(ShapeModule.self) {
+                    $0.position = position
+                    $0.shape = .sphere(radius: radius)
+                }
+                $0.edit(VelocityModule.self) {
+                    $0.velocity = velocity
+                    $0.spread = spread
+                }
+                $0.edit(GravityModule.self) { $0.acceleration = gravity }
+                $0.edit(LifetimeModule.self) { $0.range = lifetime }
+                $0.edit(RateModule.self) { $0.birthRate = birthRate }
+            }
+        }
+        var fire = puff(at: [0, 0.1, 0], radius: 0.25, velocity: [0, 1.2, 0], spread: 0.3, gravity: [0, 1, 0], lifetime: 0.5...1, birthRate: 6_000)
+        fire.edit(SpriteModule.self) { $0.blendMode = .additive }
+        fire.edit(SizeOverLifeModule.self) { $0.curve = ParticleCurve([.init(0, 0.06), .init(0.4, 0.1), .init(1, 0.02)]) }
+        fire.edit(ColorOverLifeModule.self) {
+            $0.color = ParticleCurve([
+                .init(0, [1, 0.9, 0.5, 0.6]),
+                .init(0.4, [1, 0.4, 0.05, 0.4]),
+                .init(1, [0.4, 0.05, 0.02, 0]),
+            ])
+        }
 
-        var smoke = ParticleEmitter()
-        smoke.position = [0, 1, 0]
-        smoke.radius = 0.2
-        smoke.velocity = [0, 0.8, 0]
-        smoke.velocitySpread = 0.25
-        smoke.gravity = [0, 0.2, 0]
-        smoke.lifetime = 2...3.5
-        smoke.birthRate = 400
-        smoke.sizeOverLife = .linear(from: 0.1, to: 0.45)
-        smoke.colorOverLife = .linear(from: [0.25, 0.25, 0.27, 0.25], to: [0.4, 0.4, 0.42, 0])
-        smoke.warmupDuration = 2
+        var smoke = puff(at: [0, 1, 0], radius: 0.2, velocity: [0, 0.8, 0], spread: 0.25, gravity: [0, 0.2, 0], lifetime: 2...3.5, birthRate: 400)
+        smoke.edit(SizeOverLifeModule.self) { $0.curve = .linear(from: 0.1, to: 0.45) }
+        smoke.edit(ColorOverLifeModule.self) { $0.color = .linear(from: [0.25, 0.25, 0.27, 0.25], to: [0.4, 0.4, 0.42, 0]) }
+        smoke.edit(RateModule.self) { $0.warmupDuration = 2 }
 
-        var embers = ParticleEmitter()
-        embers.position = [0, 0.3, 0]
-        embers.radius = 0.2
-        embers.velocity = [0, 3, 0]
-        embers.velocitySpread = 1
-        embers.gravity = [0, -1, 0]
-        embers.lifetime = 1...2.5
-        embers.birthRate = 150
-        embers.blendMode = .additive
-        embers.orientation = .velocityAligned(stretch: 0.6)
-        embers.sizeOverLife = .constant(0.012)
-        embers.colorOverLife = .linear(from: [1, 0.6, 0.2, 1], to: [1, 0.2, 0.05, 0])
+        var embers = puff(at: [0, 0.3, 0], radius: 0.2, velocity: [0, 3, 0], spread: 1, gravity: [0, -1, 0], lifetime: 1...2.5, birthRate: 150)
+        embers.edit(SpriteModule.self) {
+            $0.blendMode = .additive
+            $0.orientation = .velocityAligned(stretch: 0.6)
+        }
+        embers.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.012) }
+        embers.edit(ColorOverLifeModule.self) { $0.color = .linear(from: [1, 0.6, 0.2, 1], to: [1, 0.2, 0.05, 0]) }
 
         let image = try render(
             emitter: smoke,
@@ -283,17 +305,22 @@ struct GoldenImageTests {
     }
 
     @Test func rainDiesOnCollision() throws {
-        var rain = ParticleEmitter()
-        rain.position = [0, 4.5, 0]
-        rain.radius = 2.5
-        rain.velocity = [0, -6, 0]
-        rain.velocitySpread = 0.2
-        rain.lifetime = 2...2
-        rain.birthRate = 20_000
-        rain.diesOnCollision = true
-        rain.orientation = .velocityAligned(stretch: 0.25)
-        rain.sizeOverLife = .constant(0.008)
-        rain.colorOverLife = .constant([0.6, 0.7, 0.9, 0.7])
+        let rain = EmitterModules.standard {
+            $0.edit(ShapeModule.self) {
+                $0.position = [0, 4.5, 0]
+                $0.shape = .sphere(radius: 2.5)
+            }
+            $0.edit(VelocityModule.self) {
+                $0.velocity = [0, -6, 0]
+                $0.spread = 0.2
+            }
+            $0.edit(LifetimeModule.self) { $0.range = 2...2 }
+            $0.edit(RateModule.self) { $0.birthRate = 20_000 }
+            $0.edit(CollisionModule.self) { $0.diesOnCollision = true }
+            $0.edit(SpriteModule.self) { $0.orientation = .velocityAligned(stretch: 0.25) }
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.008) }
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([0.6, 0.7, 0.9, 0.7]) }
+        }
         let colliders: [Collider] = [
             .plane(normal: [0, 1, 0], distance: 0),
             .box(center: [0, 1.4, 0.5], halfExtents: [1.4, 0.05, 1.2], rotation: simd_quatf(angle: 0.25, axis: [0, 0, 1])),
@@ -302,21 +329,25 @@ struct GoldenImageTests {
     }
 
     @Test func emitterShapes() throws {
-        func emitter(_ shape: EmitterShape, at x: Float, location: ParticleBirthLocation, color: SIMD4<Float>) -> ParticleEmitter {
-            var emitter = ParticleEmitter()
-            emitter.position = [x, 1.4, 0]
-            emitter.shape = shape
-            emitter.birthLocation = location
-            emitter.birthDirection = .normal
-            emitter.velocity = [0, 0.15, 0]
-            emitter.velocitySpread = 0
-            emitter.gravity = .zero
-            emitter.lifetime = 1...2
-            emitter.birthRate = 3_000
-            emitter.blendMode = .additive
-            emitter.sizeOverLife = .constant(0.015)
-            emitter.colorOverLife = .linear(from: color, to: color * [1, 1, 1, 0])
-            return emitter
+        func emitter(_ shape: EmitterShape, at x: Float, location: ParticleBirthLocation, color: SIMD4<Float>) -> EmitterModules {
+            EmitterModules.standard {
+                $0.edit(ShapeModule.self) {
+                    $0.position = [x, 1.4, 0]
+                    $0.shape = shape
+                    $0.birthLocation = location
+                    $0.birthDirection = .normal
+                }
+                $0.edit(VelocityModule.self) {
+                    $0.velocity = [0, 0.15, 0]
+                    $0.spread = 0
+                }
+                $0.edit(GravityModule.self) { $0.acceleration = .zero }
+                $0.edit(LifetimeModule.self) { $0.range = 1...2 }
+                $0.edit(RateModule.self) { $0.birthRate = 3_000 }
+                $0.edit(SpriteModule.self) { $0.blendMode = .additive }
+                $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.015) }
+                $0.edit(ColorOverLifeModule.self) { $0.color = .linear(from: color, to: color * [1, 1, 1, 0]) }
+            }
         }
         let shapes = [
             emitter(.torus(radius: 0.4, tubeRadius: 0.08), at: -2.1, location: .surface, color: [1, 0.5, 0.2, 0.8]),
@@ -326,9 +357,7 @@ struct GoldenImageTests {
         ]
         let image = try render(emitter: shapes[0], frames: 90, colliders: false, worldColliders: []) { system in
             // Tilt the torus toward the camera so its hole shows. Its shape is centered on its own origin.
-            var torusSettings = shapes[0]
-            torusSettings.position = .zero
-            system.emitter = torusSettings
+            system.emitters[0].modules.edit(ShapeModule.self) { $0.position = .zero }
             var transform = simd_float4x4(simd_quatf(angle: 1.1, axis: [1, 0, 0]))
             transform.columns.3 = [-2.1, 1.4, 0, 1]
             system.transform = transform
@@ -342,21 +371,28 @@ struct GoldenImageTests {
     /// A large foil coin shaded per pixel (#174, #175): the reflection changes smoothly across its face instead of the
     /// whole face taking one color.
     @Test func largeFoilMeshPerPixel() throws {
-        var coin = ParticleEmitter()
-        coin.shape = .point
-        coin.position = [0, 1.5, 0]
-        coin.velocity = .zero
-        coin.velocitySpread = 0
-        coin.gravity = .zero
-        coin.birthRate = 0
-        coin.lifetime = 10...10
-        coin.angle = 0.9
-        coin.particleMesh = .coin
-        coin.sizeOverLife = .constant(1.2)
-        coin.colorOverLife = .constant([0.85, 0.65, 0.25, 1])
-        coin.blendMode = .opaque
-        coin.foil = ParticleFoil(glint: 3, shininess: 48, iridescence: 0.3)
-        coin.shadesPerPixel = true
+        let coin = EmitterModules.standard {
+            $0.edit(ShapeModule.self) {
+                $0.shape = .point
+                $0.position = [0, 1.5, 0]
+            }
+            $0.edit(VelocityModule.self) {
+                $0.velocity = .zero
+                $0.spread = 0
+            }
+            $0.edit(GravityModule.self) { $0.acceleration = .zero }
+            $0.edit(RateModule.self) { $0.birthRate = 0 }
+            $0.edit(LifetimeModule.self) { $0.range = 10...10 }
+            $0[RotationModule.self] = RotationModule(angle: 0.9)
+            $0[MeshModule.self] = MeshModule(mesh: .coin)
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(1.2) }
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([0.85, 0.65, 0.25, 1]) }
+            $0.edit(SpriteModule.self) { $0.blendMode = .opaque }
+            $0.edit(ShadingModule.self) {
+                $0.model = .foil(settings: ParticleFoil(glint: 3, shininess: 48, iridescence: 0.3))
+                $0.perPixel = true
+            }
+        }
         let image = try render(emitter: coin, frames: 2, colliders: false, worldColliders: []) { system in
             system.lights = [.directional(direction: simd_normalize([-0.3, -1, -0.6]))]
             system.burst(1)
@@ -366,19 +402,26 @@ struct GoldenImageTests {
 
     /// A custom shading function (#173): the rim-light template on lit-looking spheres of particles.
     @Test func customRimLightShading() throws {
-        var emitter = ParticleEmitter()
-        emitter.position = [0, 1.5, 0]
-        emitter.shape = .sphere(radius: 0.8)
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.sizeOverLife = .constant(0.35)
-        emitter.colorOverLife = .constant([0.2, 0.4, 0.9, 1])
-        emitter.blendMode = .opaque
-        emitter.orientation = .tumbling
-        emitter.shadingFunction = ShadingModule.template
+        let emitter = EmitterModules.standard {
+            $0.edit(ShapeModule.self) {
+                $0.position = [0, 1.5, 0]
+                $0.shape = .sphere(radius: 0.8)
+            }
+            $0.edit(VelocityModule.self) {
+                $0.velocity = .zero
+                $0.spread = 0
+            }
+            $0.edit(GravityModule.self) { $0.acceleration = .zero }
+            $0.edit(LifetimeModule.self) { $0.range = 10...10 }
+            $0.edit(RateModule.self) { $0.birthRate = 0 }
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.35) }
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([0.2, 0.4, 0.9, 1]) }
+            $0.edit(SpriteModule.self) {
+                $0.blendMode = .opaque
+                $0.orientation = .tumbling
+            }
+            $0.edit(ShadingModule.self) { $0.model = .custom(function: ShadingModule.template) }
+        }
         let image = try render(emitter: emitter, frames: 2, colliders: false, worldColliders: []) { system in
             system.lights = [.directional(direction: simd_normalize([-0.3, -1, -0.6]))]
             system.burst(24)
