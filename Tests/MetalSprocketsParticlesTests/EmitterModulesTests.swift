@@ -5,31 +5,6 @@ import MetalSprocketsParticlesSamples
 import Testing
 
 struct EmitterModulesTests {
-    /// Every preset's emitters (sub-emitters too) lift to modules and lower back unchanged.
-    @Test func presetsRoundTrip() {
-        for system in ParticleSystem.all {
-            for layer in system.layers {
-                let settings = layer.settings
-                #expect(EmitterModules(settings).lowered() == settings, "\(system.name) / \(layer.name)")
-            }
-        }
-    }
-
-    @Test func defaultEmitterRoundTrips() {
-        #expect(EmitterModules(ParticleEmitter()).lowered() == ParticleEmitter())
-        #expect(EmitterModules(ParticleEmitter.default2D).lowered() == ParticleEmitter.default2D)
-    }
-
-    @Test func disabledModulesAreSkippedAndKept() throws {
-        var layer = EmitterDescription("Test", settings: ParticleEmitter())
-        let index = try #require(layer.modules.update.firstIndex { if case .gravity = $0.module { true } else { false } })
-        layer.modules.update[index].isEnabled = false
-        #expect(layer.settings.gravity == .zero)
-        layer.settings.drag = 0.9
-        #expect(layer.modules.update.contains { !$0.isEnabled })
-        #expect(layer.settings.drag == 0.9)
-    }
-
     @Test func stitchedUpdateModulesMatchAHandWrittenFunction() throws {
         // Covered end to end with the runtime in StitchingSpikeTests; here: the slot gets one function from the stack.
         let stitched = [StitchedModule(source: "x", name: "a", parameters: [[1, 0, 0, 0]]), StitchedModule(source: "y", name: "b", parameterCount: 2)]
@@ -43,34 +18,6 @@ struct EmitterModulesTests {
         changed[0].parameters = [[9, 9, 9, 9]]
         let changedModules = EmitterModules(update: changed.map { .stitched(StitchedUpdateModule(module: $0)) })
         #expect(changedModules.function(for: .update)?.key == function.key)
-    }
-
-    @Test func editingSettingsKeepsModuleOrder() {
-        var layer = EmitterDescription("Test", settings: ParticleEmitter())
-        layer.modules.update.reverse()
-        let order = layer.modules.update.map(\.module.kind)
-        layer.settings.gravity = [0, -1, 0]
-        #expect(layer.modules.update.map(\.module.kind) == order)
-        layer.settings.flocking = ParticleFlocking()
-        #expect(layer.modules.update.map(\.module.kind) == order + ["flocking"])
-    }
-
-    @Test func addableModulesLowerAndLiftToTheirKind() {
-        for module in UpdateModule.addable {
-            var modules = EmitterModules(ParticleEmitter.neutral)
-            modules.update.append(ModuleSlot(module))
-            #expect(EmitterModules(modules.lowered()).update.contains { $0.module.kind == module.kind }, "\(module.kind)")
-        }
-        for module in SpawnModule.addable {
-            var modules = EmitterModules(ParticleEmitter.neutral)
-            modules.spawn.append(ModuleSlot(module))
-            #expect(EmitterModules(modules.lowered()).spawn.contains { $0.module.kind == module.kind }, "\(module.kind)")
-        }
-        for module in RenderModule.addable {
-            var modules = EmitterModules(ParticleEmitter.neutral)
-            modules.render.append(ModuleSlot(module))
-            #expect(EmitterModules(modules.lowered()).render.contains { $0.module.kind == module.kind }, "\(module.kind)")
-        }
     }
 
     @Test func customAttributesOnlyWhenAFunctionMentionsThem() {
@@ -101,11 +48,12 @@ struct EmitterModulesTests {
         #expect(layer.modules.update.map(\.module.kind) == ["drag", "gravity", "collision"])
         #expect(layer.modules.spawn.map(\.module.kind) == ["shape", "rate", "lifetime"])
         #expect(layer.modules.render.map(\.module.kind) == ["shading", "sprite", "colorOverLife", "sizeOverLife"])
-        #expect(layer.settings.foil == ParticleFoil())
-        #expect(layer.settings.shape == .disc(radius: 0.3))
-        #expect(layer.settings.gravity == [0, 1, 0])
-        #expect(layer.settings.birthRate == ParticleEmitter().birthRate)
-        #expect(layer.settings.velocity == .zero)
+        #expect(layer.modules[ShadingModule.self]?.model == .foil(settings: ParticleFoil()))
+        #expect(layer.modules[ShapeModule.self]?.shape == .disc(radius: 0.3))
+        #expect(layer.modules[GravityModule.self]?.acceleration == [0, 1, 0])
+        // Required modules come from `standard`; optional ones stay out.
+        #expect(layer.modules[RateModule.self] == EmitterModules.standard[RateModule.self])
+        #expect(layer.modules[VelocityModule.self] == nil)
     }
 
     /// The README's example, kept compiling.
@@ -130,8 +78,8 @@ struct EmitterModulesTests {
                 return parameters + 1;
             }
             """, name: "swirl", parameters: [[2, 0, 0, 0]])))))
-        #expect(description.settings.blendMode == .additive)
-        #expect(description.settings.updateModules.count == 1)
+        #expect(description.modules[SpriteModule.self]?.blendMode == .additive)
+        #expect(description.modules.update.count { $0.module.kind == StitchedUpdateModule.kind } == 1)
     }
 
     /// Custom shading (#173): the model and its per-pixel flag survive saving. Compiling is in GPUFunctionsTests.
@@ -143,7 +91,6 @@ struct EmitterModulesTests {
         let (json, files) = try system.encoded()
         let decoded = try ParticleSystem(json: json, resources: EffectResources(files: files))
         #expect(decoded.layers[0].modules[ShadingModule.self] == modules[ShadingModule.self])
-        #expect(decoded.layers[0].settings.shadingFunction == ShadingModule.template)
     }
 
     @Test func jsonRoundTrips() throws {

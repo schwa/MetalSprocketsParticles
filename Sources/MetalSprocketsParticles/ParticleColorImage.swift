@@ -4,7 +4,7 @@ import ImageIO
 import Metal
 import simd
 
-/// An image laid over the world that particles take their color from as they move (`ParticleEmitter.colorImage`): each
+/// An image laid over the world that particles take their color from as they move (`ColorImageModule`): each
 /// frame, a particle's color is multiplied by the image's color under its position. The image covers the rectangle
 /// from `origin` (its bottom-left corner) along `width` and `height` (edge vectors, world space); particles off the
 /// image take the nearest edge color. Saved in effect files as image data.

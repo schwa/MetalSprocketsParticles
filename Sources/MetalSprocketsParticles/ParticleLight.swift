@@ -1,7 +1,7 @@
 import MetalSprocketsParticlesShaders
 import simd
 
-/// A world-space light for emitters with `ParticleEmitter.isLit`. Lit particles are shaded like small spheres:
+/// A world-space light for emitters with lit shading (`ShadingModel.lit`). Lit particles are shaded like small spheres:
 /// color × (`ParticleSystemRuntime.ambientLight` + diffuse light from each light). At most `PARTICLE_MAX_LIGHTS` are used.
 public enum ParticleLight: Sendable, Equatable, Codable {
     /// Light from far away traveling along `direction`, like the sun.
@@ -10,7 +10,7 @@ public enum ParticleLight: Sendable, Equatable, Codable {
     case point(position: SIMD3<Float>, color: SIMD3<Float> = [1, 1, 1], intensity: Float = 1, range: Float = 0)
 }
 
-/// Turns some of an emitter's live particles into point lights each frame (`ParticleEmitter.light`): sparks lighting
+/// Turns some of an emitter's live particles into point lights each frame (`LightModule`): sparks lighting
 /// smoke, fireflies glowing on leaves. They light lit particles of every emitter, and the host can use them too
 /// (`ParticleSystemRuntime.particleLightBuffer`, `emittedLights()`). At most `PARTICLE_MAX_PARTICLE_LIGHTS` across the
 /// system.

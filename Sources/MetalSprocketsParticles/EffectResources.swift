@@ -132,6 +132,13 @@ public extension CodingUserInfoKey {
 }
 
 extension KeyedDecodingContainer {
+    /// Replaces `value` when `key` is present; otherwise leaves it alone.
+    func update<T: Decodable>(_ value: inout T, _ key: Key) throws {
+        if contains(key) {
+            value = try decode(T.self, forKey: key)
+        }
+    }
+
     /// Data stored as a file reference.
     func decodeResource(forKey key: Key, decoder: Decoder) throws -> Data {
         try decodeNamedResource(forKey: key, decoder: decoder).data

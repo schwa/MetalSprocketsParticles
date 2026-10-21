@@ -1,8 +1,7 @@
 import MetalSprocketsParticlesShaders
 import simd
 
-// Modules write their own part of the simulation uniforms (#226), so frame planning reads modules, not the flat
-// ParticleEmitter.
+// Modules write their own part of the simulation uniforms (#226). A missing module leaves its NeutralModules value.
 
 /// What a module needs from the frame to write its uniforms.
 struct SimulationContext {

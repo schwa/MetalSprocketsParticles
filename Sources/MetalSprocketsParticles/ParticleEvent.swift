@@ -3,7 +3,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// Something that happened to a particle on the GPU, reported back to the app. See
-/// `ParticleEmitter.reportsCollisions`, `ParticleEmitter.reportsDeaths`, and `ParticleSystemRuntime.recentEvents`.
+/// `EventsModule`, and `ParticleSystemRuntime.recentEvents`.
 public struct ParticleEvent: Sendable, Equatable {
     public enum Kind: Sendable, Equatable {
         /// Hit the collider at this index in `ParticleSystemRuntime.colliders`; -1 for the scene depth.

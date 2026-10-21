@@ -8,7 +8,7 @@ import Testing
 struct DeterminismTests {
     func simulate(seed: UInt32, steps: Int) throws -> [Particle] {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4_096, emitter: .fountain, seed: seed)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4_096, modules: .fountain, seed: seed)
         system.colliders = Collider.fountain(time: 0)
         let deltaTime: Float = 1.0 / 60.0
         for _ in 0..<steps {

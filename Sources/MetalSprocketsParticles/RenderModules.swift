@@ -54,7 +54,7 @@ public enum RenderModule: StageModule {
 }
 
 /// How each particle is drawn.
-public struct SpriteModule: LoweredModule {
+public struct SpriteModule: ParticleModule {
     public static let kind = "sprite"
     public static let isRequired = true
     public var blendMode: ParticleBlendMode
@@ -70,41 +70,18 @@ public struct SpriteModule: LoweredModule {
         self.softness = softness
         self.minimumScreenSize = minimumScreenSize
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        self.init(blendMode: emitter.blendMode, sortMode: emitter.sortMode, orientation: emitter.orientation, softness: emitter.softness, minimumScreenSize: emitter.minimumScreenSize)
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.blendMode = blendMode
-        emitter.sortMode = sortMode
-        emitter.orientation = orientation
-        emitter.softness = softness
-        emitter.minimumScreenSize = minimumScreenSize
-    }
 }
 
-public struct MeshModule: LoweredModule {
+public struct MeshModule: ParticleModule {
     public static let kind = "mesh"
     public var mesh: ParticleMesh
 
     public init(mesh: ParticleMesh) {
         self.mesh = mesh
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard let mesh = emitter.particleMesh else {
-            return nil
-        }
-        self.mesh = mesh
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.particleMesh = mesh
-    }
 }
 
-public struct TrailModule: LoweredModule {
+public struct TrailModule: ParticleModule {
     public static let kind = "trail"
     public static let added: Self? = Self(trail: ParticleTrail())
     public var trail: ParticleTrail
@@ -112,20 +89,9 @@ public struct TrailModule: LoweredModule {
     public init(trail: ParticleTrail) {
         self.trail = trail
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard let trail = emitter.trail else {
-            return nil
-        }
-        self.trail = trail
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.trail = trail
-    }
 }
 
-public struct RibbonModule: LoweredModule {
+public struct RibbonModule: ParticleModule {
     public static let kind = "ribbon"
     public static let added: Self? = Self(ribbon: ParticleRibbon())
     public var ribbon: ParticleRibbon
@@ -133,20 +99,9 @@ public struct RibbonModule: LoweredModule {
     public init(ribbon: ParticleRibbon) {
         self.ribbon = ribbon
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard let ribbon = emitter.ribbon else {
-            return nil
-        }
-        self.ribbon = ribbon
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.ribbon = ribbon
-    }
 }
 
-public struct LightModule: LoweredModule {
+public struct LightModule: ParticleModule {
     public static let kind = "light"
     public static let added: Self? = Self(light: ParticleLightEmission())
     public var light: ParticleLightEmission
@@ -154,21 +109,10 @@ public struct LightModule: LoweredModule {
     public init(light: ParticleLightEmission) {
         self.light = light
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard let light = emitter.light else {
-            return nil
-        }
-        self.light = light
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.light = light
-    }
 }
 
 /// Fewer, or no, particles far from the camera.
-public struct LevelOfDetailModule: LoweredModule {
+public struct LevelOfDetailModule: ParticleModule {
     public static let kind = "levelOfDetail"
     public static let added: Self? = Self(near: 5, far: 20)
     public var near: Float
@@ -185,21 +129,5 @@ public struct LevelOfDetailModule: LoweredModule {
         self.scalesSize = scalesSize
         self.cullingRadius = cullingRadius
         self.simulatesWhenCulled = simulatesWhenCulled
-    }
-
-    init?(lifting emitter: ParticleEmitter) {
-        self.init(near: emitter.lodNearDistance, far: emitter.lodFarDistance, farRateScale: emitter.lodFarRateScale, scalesSize: emitter.lodScalesSize, cullingRadius: emitter.cullingRadius, simulatesWhenCulled: emitter.simulatesWhenCulled)
-        guard self != Self() else {
-            return nil
-        }
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.lodNearDistance = near
-        emitter.lodFarDistance = far
-        emitter.lodFarRateScale = farRateScale
-        emitter.lodScalesSize = scalesSize
-        emitter.cullingRadius = cullingRadius
-        emitter.simulatesWhenCulled = simulatesWhenCulled
     }
 }

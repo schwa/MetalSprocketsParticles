@@ -1,24 +1,24 @@
 import Foundation
 
-// One emitter behavior with its settings (#200). Each module type owns its fields, its defaults, how it lowers onto
-// ParticleEmitter, and how it is recovered from one. SpawnModule, UpdateModule, and RenderModule wrap the types of
-// each stage.
+// One emitter behavior with its settings (#200). Each module type owns its fields and defaults, and writes its part of
+// the GPU uniforms (SimulationModules.swift, DrawModules.swift). SpawnModule, UpdateModule, and RenderModule wrap the
+// types of each stage.
+//
+// Adding a setting:
+// 1. A field of an existing ParticleModule type, or a new type in SpawnModules.swift, UpdateModules.swift, or
+//    RenderModules.swift (a case and an entry in `types`). Modules are what effect files save.
+// 2. If the GPU needs it: a field in SimulationUniforms or RenderUniforms (ParticleTypes.h), written by the module's
+//    contribute (SimulationModules.swift or DrawModules.swift) and used in Simulation.metal or Rendering.metal. If
+//    the CPU needs it each frame, read it in ResolvedModules (EmitterModules+Runtime.swift).
+// 3. A control in the demo's module editors (ModuleEditors.swift), and in ParticleKind.swift if it is a new enum kind.
 
 public protocol ParticleModule: Sendable, Equatable, Codable {
     /// The key in effect files, e.g. "gravity". Unique within a stage.
     static var kind: String { get }
-    /// Every emitter has this module; lifting always produces it and editors do not remove it.
+    /// Every emitter has this module; the builder adds it when missing and editors do not remove it.
     static var isRequired: Bool { get }
     /// What an editor adds, or nil if editors cannot add this kind.
     static var added: Self? { get }
-}
-
-/// How a module reaches the simulation: written onto the flat settings the runtime reads, and recovered from them.
-protocol LoweredModule: ParticleModule {
-    /// Writes the module's settings onto `emitter`.
-    func apply(to emitter: inout ParticleEmitter)
-    /// The module that `emitter` implies, or nil when `emitter` has it at its neutral value.
-    init?(lifting emitter: ParticleEmitter)
 }
 
 public extension ParticleModule {
@@ -28,7 +28,7 @@ public extension ParticleModule {
 
 /// A stage's module enum: one case per module type, wrapping it.
 public protocol StageModule: Sendable, Equatable, Codable {
-    /// The stage's module types in lifting order.
+    /// The stage's module types, in the order editors list them.
     static var types: [any ParticleModule.Type] { get }
 
     var module: any ParticleModule { get }
@@ -44,15 +44,6 @@ public extension StageModule {
     static var addable: [Self] {
         // A key path here crashes the compiler (existential metatypes).
         types.compactMap { $0.added }.compactMap { Self(wrapping: $0) } // swiftlint:disable:this prefer_key_path
-    }
-
-    internal func apply(to emitter: inout ParticleEmitter) {
-        (module as? any LoweredModule)?.apply(to: &emitter)
-    }
-
-    /// The modules `emitter` implies, in lifting order.
-    internal static func lifted(from emitter: ParticleEmitter) -> [Self] {
-        types.compactMap { ($0 as? any LoweredModule.Type)?.init(lifting: emitter) }.compactMap { Self(wrapping: $0) }
     }
 
     /// Saved as `{"kind": {settings}}`.

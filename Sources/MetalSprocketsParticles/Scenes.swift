@@ -1,23 +1,7 @@
 import simd
 
-extension ParticleEmitter {
-    /// The demo fountain. Pair it with `fountainColliders(time:)` on the system.
-    static var fountain: ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.position = [0, 0.5, 0]
-        emitter.velocity = [0, 5, 0]
-        emitter.birthRate = 20_000
-        return emitter
-    }
-
-    /// The fountain's colliders animated over time: the sphere bobs through the jet and the boxes slide.
-    static func fountainColliders(time: Float) -> [Collider] {
-        Collider.fountain(time: time)
-    }
-}
-
 extension EmitterModules {
-    /// A dense jet up from just above the ground, for tests and benchmarks.
+    /// A dense jet up from just above the ground, for tests and benchmarks. Pair it with `Collider.fountain(time:)`.
     static var fountain: Self {
         var modules = Self.standard
         modules[ShapeModule.self]!.position = [0, 0.5, 0] // swiftlint:disable:this force_unwrapping

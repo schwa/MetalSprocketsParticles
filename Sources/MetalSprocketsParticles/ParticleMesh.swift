@@ -2,7 +2,7 @@ import Metal
 import simd
 import SwiftMesh
 
-/// A small 3D shape drawn for each particle instead of a sprite (`ParticleEmitter.particleMesh`): debris, coins, thick
+/// A small 3D shape drawn for each particle instead of a sprite (`MeshModule`): debris, coins, thick
 /// confetti. The particle's size scales it (shapes span about -1...1), its color tints it, and each particle tumbles
 /// about its own random axis by its rotation angle. Lit emitters shade it with real normals; unlit ones get a little
 /// camera-facing shading so the shape reads.

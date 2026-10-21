@@ -8,11 +8,11 @@ import simd
 
 /// What an emitter's particles are drawn as. Decided once per draw; every later choice reads it.
 enum DrawKind {
-    /// One strip through the live window, in birth order (`ParticleEmitter.ribbon`), drawn instead of anything else.
+    /// One strip through the live window, in birth order (`RibbonModule`), drawn instead of anything else.
     case ribbon
-    /// A small mesh per particle (`ParticleEmitter.particleMesh`).
+    /// A small mesh per particle (`MeshModule`).
     case mesh(buffer: MTLBuffer, vertexCount: Int)
-    /// A strip per particle through its recent positions (`ParticleEmitter.trail`).
+    /// A strip per particle through its recent positions (`TrailModule`).
     case trail
     /// A quad per particle.
     case sprite

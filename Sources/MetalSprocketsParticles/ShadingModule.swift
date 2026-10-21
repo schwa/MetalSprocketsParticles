@@ -24,7 +24,7 @@ public enum ShadingModel: Sendable, Equatable, Codable {
 ///
 /// Return the vertex's color. `input.color` is the color before shading. `lights` holds `scene.lightCount` scene
 /// lights, and `particleLights` `scene.particleLightCount` lights from emitting particles.
-public struct ShadingModule: LoweredModule {
+public struct ShadingModule: ParticleModule {
     public static let kind = "shading"
     public static let isRequired = true
     public var model: ShadingModel
@@ -52,30 +52,6 @@ public struct ShadingModule: LoweredModule {
         try container.encode(model, forKey: .model)
         if perPixel {
             try container.encode(perPixel, forKey: .perPixel)
-        }
-    }
-
-    init?(lifting emitter: ParticleEmitter) {
-        perPixel = emitter.shadesPerPixel
-        if let function = emitter.shadingFunction {
-            model = .custom(function: function)
-        } else if let foil = emitter.foil {
-            model = .foil(settings: foil)
-        } else {
-            model = emitter.isLit ? .lit : .unlit
-        }
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.isLit = false
-        emitter.foil = nil
-        emitter.shadingFunction = nil
-        emitter.shadesPerPixel = perPixel
-        switch model {
-        case .unlit: break
-        case .lit: emitter.isLit = true
-        case let .foil(foil): emitter.foil = foil
-        case let .custom(function): emitter.shadingFunction = function
         }
     }
 

@@ -150,13 +150,4 @@ struct EmitterShapeTests {
     @Test func meshShapeWithoutMeshEmitsAtCenter() throws {
         #expect(try positions(.mesh).allSatisfy { $0 == .zero })
     }
-
-    @Test func radiusAccessorMapsToSphere() {
-        // Flat settings only; goes with ParticleEmitter in #229.
-        var emitter = ParticleEmitter()
-        emitter.radius = 0.3
-        #expect(emitter.shape == .sphere(radius: 0.3))
-        emitter.shape = .box(size: [1, 1, 1])
-        #expect(emitter.radius == 0)
-    }
 }

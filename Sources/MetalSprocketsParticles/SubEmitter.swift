@@ -19,7 +19,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         /// When the parent moves into `volume` (world space) during a step.
         case onEntering(TriggerVolume)
         /// When the parent flashes: its foil glint, as the camera sees it, rises past `threshold` (0...1) during a step.
-        /// Sparkles on confetti. The parent needs `ParticleEmitter.foil` and to turn (tumbling sprites or mesh
+        /// Sparkles on confetti. The parent needs foil shading (`ShadingModel.foil`) and to turn (tumbling sprites or mesh
         /// particles), and the runtime a camera: `ParticleSystemRuntime.simulate(view:)` or a `ParticlePlayer`.
         case onGlint(threshold: Float = 0.8)
     }
@@ -32,12 +32,6 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// ignored. Their own sub-emitters work, down to `ParticleSystemRuntime.maxSubEmitterDepth` levels, so a particle can change
     /// type several times. Capacity multiplies at each level (parent capacity × countPerEvent).
     public var modules: EmitterModules
-    /// The children's modules as flat settings, for code that still edits those (#228). Reading lowers; setting
-    /// replaces the modules, keeping disabled ones.
-    var settings: ParticleEmitter {
-        get { modules.lowered() }
-        set { modules = modules.merging(EmitterModules(newValue)) }
-    }
     /// How the children are drawn. Soft dots by default.
     public var sprite: ParticleSprite = .softDot
     /// The parent dies when it spawns children, so it turns into them: a transition to another particle type.
@@ -46,13 +40,6 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// where the parent was and the child dies when the parent would have.
     public var continuesParentLife = false
 
-    init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, settings: ParticleEmitter) {
-        self.occasion = occasion
-        self.countPerEvent = countPerEvent
-        self.velocityFactor = velocityFactor
-        modules = EmitterModules(settings)
-    }
-
     public init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, modules: EmitterModules) {
         self.occasion = occasion
         self.countPerEvent = countPerEvent
@@ -60,19 +47,9 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         self.modules = modules
     }
 
-    /// The parent turns into one particle with `settings` and `sprite` when `occasion` happens, keeping its position
+    /// The parent turns into one particle with `modules` and `sprite` when `occasion` happens, keeping its position
     /// and velocity. Set the child's own velocity and spread to zero to keep exactly the parent's motion.
     /// With `continuesLife`, the child also keeps the parent's age and lifetime (see `continuesParentLife`).
-    static func transition(
-        on occasion: Occasion,
-        into settings: ParticleEmitter,
-        sprite: ParticleSprite = .softDot,
-        continuesLife: Bool = false
-    ) -> Self {
-        transition(on: occasion, into: EmitterModules(settings), sprite: sprite, continuesLife: continuesLife)
-    }
-
-    /// The parent turns into one particle with `modules` and `sprite` when `occasion` happens; see the settings version.
     public static func transition(
         on occasion: Occasion,
         into modules: EmitterModules,

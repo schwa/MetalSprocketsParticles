@@ -4782,13 +4782,14 @@ Tests: replace the compile/validation checks spread over ParticleFunctionTests, 
 ## 223: One setting passes through three representations (modules, flat ParticleEmitter, GPU uniforms)
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:architecture, area:api, effort:xl, needs-design
 depends: 221, 226, 227, 228, 229
 created: 2026-10-21T02:03:07Z
-updated: 2026-10-21T12:17:54Z
+updated: 2026-10-21T15:36:13Z
+closed: 2026-10-21T15:36:13Z
 +++
 
 Module structs apply onto and lift from ParticleEmitter; EmitterModules lowers/lifts and merges to keep order; EmitterDescription and SubEmitter cache the lowered form in a didSet that does not fire in initializers; FramePlan.uniforms(for:) and EmitterDraw then read ~49 and ~39 ParticleEmitter fields. Adding a setting touches every layer, and lifting must stay exact for every preset.
@@ -4796,6 +4797,8 @@ Module structs apply onto and lift from ParticleEmitter; EmitterModules lowers/l
 Deepen: modules produce their GPU-facing contribution directly (e.g. each module writes its part of the simulation/render uniforms and CPU state), so the flat ParticleEmitter and lifting disappear. Dependency: in-process.
 
 Tests: the lift/lower round trips (presetsRoundTrip, Tests/RoundTrip.swift users) become 'given modules -> expected uniforms/draw' tests. Large: needs a design pass first; likely after the draw planner (see related issue) so render-side uniforms have one home.
+
+- `2026-10-21T15:36:13Z`: Done in four stages: #226 (modules write GPU uniforms), #227 (runtime holds only modules, ResolvedModules cache), #228 (tests build modules), #229 (ParticleEmitter and lifting deleted). One representation now: modules -> uniforms/draws, no flat settings type.
 
 ---
 
@@ -4899,16 +4902,19 @@ Mechanical sweep: ~67 test files plus demo and README build ParticleEmitter(...)
 ## 229: Delete flat ParticleEmitter and lifting (#223 stage 4)
 
 +++
-status: new
+status: closed
 priority: low
 kind: task
 labels: area:architecture, effort:m
 depends: 228
 created: 2026-10-21T12:17:48Z
-updated: 2026-10-21T12:17:54Z
+updated: 2026-10-21T15:36:12Z
+closed: 2026-10-21T15:36:12Z
 +++
 
 Remove ParticleEmitter, LoweredModule apply/lift and the lift round-trip tests; round-trip tests become modules <-> JSON only.
+
+- `2026-10-21T15:36:12Z`: Deleted ParticleEmitter (ParticleEmitter.swift), the LoweredModule protocol and every module's apply(to:)/init?(lifting:), StageModule.lifted, EmitterModules(_ emitter:)/lowered()/merging, the settings properties and settings-based inits on EmitterDescription, SubEmitter and runtime emitters, runtime.emitter, ParticleEmitter.fountain. Defaults are module-native: EmitterModules.standard/.default2D built from modules, required builder modules taken from standard, NeutralModules constants for what a missing module leaves; a temporary test proved them equal to the flat-derived values before deletion. Runtime designated init takes modules. 'Adding a setting' guide moved to ParticleModule.swift; doc comments and Documentation/Modules.md updated. Removed 8 flat-only tests; settingFlatSettingsUpdatesModules became editingARunningEmittersModulesTakesEffect. 478 lib + 80 demo tests, goldens identical, lint clean; bench A/B vs previous commit: only single noisy GPU flags (dasd at 100%).
 
 ---
 

@@ -1,8 +1,8 @@
 import simd
 
 // What the runtime reads from an emitter's modules on the CPU (#227): emission, LOD, sub-emitters, triggers, functions.
-// Each value is what `lowered()` would give: a missing module leaves the neutral value, modules that add up (sub-
-// emitters, triggers, stitched modules) are joined in stack order, and the last of a replacing module wins.
+// A missing module leaves its NeutralModules value, modules that add up (sub-emitters, triggers, stitched modules) are
+// joined in stack order, and of modules that replace each other the last wins.
 
 /// The runtime's per-frame view of an emitter's modules, found in one pass. Runtime emitters cache it until their
 /// modules change, because frame planning reads these values many times per emitter per frame.
@@ -107,7 +107,6 @@ enum NeutralModules {
 }
 
 extension EmitterModules {
-
     /// Every enabled module of type `Module`, in stage order. For occasional checks; per-frame code uses
     /// `ResolvedModules`.
     func allEnabled<Module: ParticleModule>(_: Module.Type) -> [Module] {

@@ -2,7 +2,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 // Modules write their own part of each draw (#226): render uniforms, baked curves, and blending. One pass over the
-// enabled modules also finds the ones the draw planner needs, so planning reads modules, not the flat ParticleEmitter.
+// enabled modules also finds the ones the draw planner needs.
 
 /// The modules the draw planner looks at, found while contributing.
 struct DrawModules {

@@ -2,7 +2,7 @@ import Metal
 import MetalSprocketsParticlesShaders
 import simd
 
-/// Draws each particle as a ribbon through its recent positions instead of a sprite (`ParticleEmitter.trail`): spark
+/// Draws each particle as a ribbon through its recent positions instead of a sprite (`TrailModule`): spark
 /// trails, comets, swooshes. Width is the particle's size; color is its color, with textures running along the ribbon.
 /// Each particle keeps `pointCount` positions: one per simulation step by default, so trails cover less time at higher
 /// frame rates, or one per `pointInterval` seconds, so they cover the same time at any frame rate.

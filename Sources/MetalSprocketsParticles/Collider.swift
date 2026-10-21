@@ -2,7 +2,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import SwiftMesh
 
-/// A world-space shape that particles bounce off. Only emitters whose `ParticleEmitter.categoryMask` shares a bit with
+/// A world-space shape that particles bounce off. Only emitters whose `EmitterModules.categoryMask` shares a bit with
 /// `categoryBitMask` collide with it.
 public struct Collider: Sendable, Equatable {
     public enum Shape: Sendable, Equatable {

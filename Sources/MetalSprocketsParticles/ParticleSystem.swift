@@ -38,7 +38,7 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     public var eventBursts: [EventBurst] = []
     /// 2D: the scene cameras (`.system`, `.lookAt`) become a flat front view of the z = 0 plane, y up, and every emitter
     /// is kept on its plane. The 3D camera and each emitter's own `constrainsToPlane` are kept, so turning it off
-    /// restores them. For effects over an app's UI in points, use the `.overlay` camera and `ParticleEmitter.default2D`.
+    /// restores them. For effects over an app's UI in points, use the `.overlay` camera and `EmitterModules.default2D`.
     public var is2D = false
     /// Saved with the effect. Only the current format loads (#218); older effects are not read.
     public private(set) var formatVersion = Self.currentFormatVersion

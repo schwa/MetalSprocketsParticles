@@ -2,7 +2,7 @@ import MetalSprocketsParticlesShaders
 import simd
 
 /// A force applied to particles each step, in addition to gravity and drag. Only emitters whose
-/// `ParticleEmitter.categoryMask` shares a bit with `categoryBitMask` feel it.
+/// `EmitterModules.categoryMask` shares a bit with `categoryBitMask` feel it.
 public struct ForceField: Sendable, Equatable {
     public enum Effect: Sendable, Equatable, Codable {
         /// Pulls particle velocity toward `velocity`. `strength` is per second: higher catches up faster.

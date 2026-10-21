@@ -24,12 +24,6 @@ public final class ParticleSystemRuntime {
 
     /// One emitter in a system: its settings plus the runtime state that does not belong in a value type.
     public final class Emitter {
-        /// The modules as flat settings, for code that still edits those; the runtime itself reads only modules (#227).
-        /// Reading lowers and setting lifts, so neither belongs in per-frame code.
-        var settings: ParticleEmitter {
-            get { storedModules.lowered() }
-            set { configure(modules: EmitterModules(newValue)) }
-        }
         /// What the emitter does.
         private(set) var storedModules: EmitterModules
         private var resolvedCache: ResolvedModules?
@@ -194,7 +188,7 @@ public final class ParticleSystemRuntime {
     public internal(set) var recentEvents: [ParticleEvent] = []
     /// Events lost since the system was made, because more than `ParticleEvent.capacity` happened between reads.
     public internal(set) var droppedEventCount = 0
-    /// Lights gathered from emitting particles (`ParticleEmitter.light`) by the last `simulate`: `particleLightCount`
+    /// Lights gathered from emitting particles (`LightModule`) by the last `simulate`: `particleLightCount`
     /// `ParticleLightData` values, in world space. The GPU writes it during the simulation, so read it on the GPU after
     /// the simulation, or on the CPU once that frame has finished (see `emittedLights()`).
     public let particleLightBuffer: MTLBuffer
@@ -204,7 +198,7 @@ public final class ParticleSystemRuntime {
     var particleLightColorCurves: [[SIMD4<Float>]] = []
     /// Points between particles' trails in `trails`; 0 without trails.
     var trailStride = 0
-    /// Vertex buffers for `ParticleEmitter.particleMesh`, made once per shape.
+    /// Vertex buffers for `MeshModule`, made once per shape.
     var particleMeshBuffers: [ParticleMesh: (buffer: MTLBuffer, vertexCount: Int)] = [:]
     /// The scene depth `collidesWithSceneDepth` emitters bounce off. `renderSceneDepth(into:projection:view:)` sets it
     /// each frame, so the simulation uses the depth of the frame before. Set it yourself to use your own depth.
@@ -242,7 +236,7 @@ public final class ParticleSystemRuntime {
     var appliedLayout: [AppliedEmitter] = []
     /// Sprite textures made by `apply(_:)`.
     var spriteTextures: [ParticleSprite: MTLTexture] = [:]
-    /// Textures for `ParticleEmitter.colorImage`, made once per image.
+    /// Textures for `ColorImageModule`, made once per image.
     var colorImageTextures: [Data: MTLTexture] = [:]
     /// Every visible function the pipelines call, compiled and cached once.
     lazy var gpuFunctions = GPUFunctions(device: device, library: library)
@@ -292,7 +286,7 @@ public final class ParticleSystemRuntime {
     private(set) var attributes: MTLBuffer?
     /// Attribute entries per particle in `attributes`: the largest `customAttributeCount` among emitters with functions.
     private(set) var attributeStride = 1
-    /// Recent positions for `ParticleEmitter.trail`, made when an emitter has a trail.
+    /// Recent positions for `TrailModule`, made when an emitter has a trail.
     var trails: MTLBuffer?
     /// Reverse Z: depth runs from 1 at the near plane to 0 at the far plane, for better precision at a distance. Use a
     /// reversed projection (`reversingDepth(_:)`; `ParticlePlayer` does this itself) and clear depth buffers to 0.
@@ -304,7 +298,7 @@ public final class ParticleSystemRuntime {
     public var debugRange: ClosedRange<Float> = 0...5
     /// See `colliderSolidVertices(planeExtent:)`.
     var solidVertexCache: (colliders: [Collider], planeExtent: Float, vertices: [SIMD4<Float>])?
-    /// For `ParticleEmitter.flocking`, made when an emitter flocks.
+    /// For `FlockingModule`, made when an emitter flocks.
     var flockingBuffers: FlockingBuffers?
     var flocks: [FlockData] = []
     let library: ShaderLibrary
@@ -340,8 +334,9 @@ public final class ParticleSystemRuntime {
         allEmitters.reduce(0) { $0 + $1.capacity }
     }
 
-    /// Creates a system with one emitter per entry in `emitters`, each with room for `capacity` particles.
-    init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), emitters: [ParticleEmitter], capacity: Int, seed: UInt32 = 0) throws {
+    /// Creates a system with one emitter per entry in `modules`, each with room for `capacity` particles. With none,
+    /// an empty system to fill with `apply(_:)` or `load(_:)`.
+    public init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), modules: [EmitterModules] = [], capacity: Int = 1, seed: UInt32 = 0) throws {
         self.device = device
         self.seed = seed
         library = try ShaderLibrary(bundle: .metalSprocketsParticlesShaders(), device: device)
@@ -408,12 +403,7 @@ public final class ParticleSystemRuntime {
         self.aliveCounters = aliveCounters
         buffer = try Self.makeBuffer(device: device, count: 1)
 
-        try setEmitters(emitters.map { (modules: EmitterModules($0), capacity: capacity) })
-    }
-
-    /// Creates a system with a single emitter.
-    convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), capacity: Int, emitter: ParticleEmitter, seed: UInt32 = 0) throws {
-        try self.init(device: device, emitters: [emitter], capacity: capacity, seed: seed)
+        try setEmitters(modules.map { (modules: $0, capacity: capacity) })
     }
 
     /// `total + capacity`, or `tooManyParticles` when it overflows or no buffer could hold that many particles.
@@ -442,12 +432,6 @@ public final class ParticleSystemRuntime {
     /// Emitter `index` uses the system seed offset by its index, so emitter 0 matches a single-emitter system.
     private func emitterSeed(_ index: Int) -> UInt32 {
         seed &+ UInt32(truncatingIfNeeded: index) &* 0x9E37_79B9
-    }
-
-    /// Replaces every emitter. Reallocates the particle buffer, so all particles are removed.
-    @discardableResult
-    func setEmitters(_ emitters: [(settings: ParticleEmitter, capacity: Int)]) throws -> [Emitter] {
-        try setEmitters(emitters.map { (modules: EmitterModules($0.settings), capacity: $0.capacity) })
     }
 
     /// Replaces every emitter. Reallocates the particle buffer, so all particles are removed.
@@ -532,12 +516,6 @@ public final class ParticleSystemRuntime {
         }
     }
 
-    /// Adds an emitter. Reallocates the particle buffer, so all particles are removed.
-    @discardableResult
-    func addEmitter(_ settings: ParticleEmitter, capacity: Int) throws -> Emitter {
-        try addEmitter(EmitterModules(settings), capacity: capacity)
-    }
-
     /// Removes all particles from every emitter, resets their clocks, and runs warmup again.
     public func restart() {
         allEmitters.forEach { $0.restart() }
@@ -549,11 +527,6 @@ public final class ParticleSystemRuntime {
     }
 
     // MARK: Single-emitter conveniences. These act on the first emitter.
-
-    var emitter: ParticleEmitter {
-        get { emitters[0].settings }
-        set { emitters[0].settings = newValue }
-    }
 
     public var texture: MTLTexture? {
         get { emitters[0].texture }
@@ -819,7 +792,7 @@ struct EmitterDraw {
     var sortRecords: MTLBuffer?
     /// By speed, alternate over life (with opacity, like `colorCurve`), and by position; white where unused.
     var extraColorCurves: [SIMD4<Float>]
-    /// `ParticleEmitter.colorImage`'s texture.
+    /// `ColorImageModule`'s texture.
     var colorImage: MTLTexture?
     /// What the particles are drawn as; see `DrawKind`.
     var kind = DrawKind.sprite

@@ -66,7 +66,7 @@ struct LiveWindowTests {
     @Test func loweringLifetimeLeavesNoFrozenParticles() throws {
         let system = try makeSystem { $0.edit(LifetimeModule.self) { $0.range = 5...5 } }
         try step(system, seconds: 1)
-        system.emitter.lifetime = 0.2...0.2
+        system.emitters[0].modules.edit(LifetimeModule.self) { $0.range = 0.2...0.2 }
         system.isEmitting = false
         try step(system, seconds: 6)
         // Particles born with a 5 s lifetime must have been simulated until they died, not dropped from the window.
@@ -76,7 +76,7 @@ struct LiveWindowTests {
     @Test func raisingLifetimeDoesNotRevealOldParticles() throws {
         let system = try makeSystem { $0.edit(LifetimeModule.self) { $0.range = 0.5...0.5 } }
         try step(system, seconds: 2)
-        system.emitter.lifetime = 4...4
+        system.emitters[0].modules.edit(LifetimeModule.self) { $0.range = 4...4 }
         system.isEmitting = false
         // Past the old 0.5 s lifetime, every particle is dead, even though the 4 s window now reaches back over slots
         // that died long ago.

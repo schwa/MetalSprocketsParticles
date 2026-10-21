@@ -32,7 +32,7 @@ public final class SceneDepth {
     }
 }
 
-/// A scene depth and the camera that drew it, for `ParticleEmitter.collidesWithSceneDepth`.
+/// A scene depth and the camera that drew it, for `CollisionModule.collidesWithSceneDepth`.
 public struct SceneDepthCollision {
     public var depth: SceneDepth
     public var projection: simd_float4x4

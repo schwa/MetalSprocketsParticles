@@ -28,7 +28,7 @@ public final class ParticlePlayer {
 
     /// A new runtime with `system` loaded.
     public init(system: ParticleSystem, device: MTLDevice = ParticleSystemRuntime.defaultDevice(), seed: UInt32 = 0) throws {
-        runtime = try ParticleSystemRuntime(device: device, emitters: [], capacity: 1, seed: seed)
+        runtime = try ParticleSystemRuntime(device: device, capacity: 1, seed: seed)
         self.system = system
         try runtime.load(system)
     }

@@ -17,13 +17,12 @@ struct SimulationModulesTests {
     /// With no modules, uniforms hold the neutral values: nothing moves, default lifetime and bounce.
     @Test func noModulesGiveNeutralUniforms() throws {
         let result = try uniforms(EmitterModules())
-        let neutral = ParticleEmitter.neutral
         #expect(result.velocity == .zero)
         #expect(result.gravity == .zero)
         #expect(result.drag == 0)
-        #expect(result.lifetimeMinimum == neutral.lifetime.lowerBound)
-        #expect(result.lifetimeMaximum == neutral.lifetime.upperBound)
-        #expect(result.restitution == neutral.restitution)
+        #expect(result.lifetimeMinimum == NeutralModules.lifetime.range.lowerBound)
+        #expect(result.lifetimeMaximum == NeutralModules.lifetime.range.upperBound)
+        #expect(result.restitution == NeutralModules.collision.restitution)
         #expect(result.constrainsToPlane == 0)
         #expect(result.ordersBirths == 0)
     }
@@ -59,10 +58,10 @@ struct SimulationModulesTests {
         }
     }
 
-    /// Assigning flat settings lifts modules, so code that edits settings directly still drives the uniforms.
-    @Test func settingFlatSettingsUpdatesModules() throws {
+    /// Editing a running emitter's modules changes its next uniforms (and resets its cached `ResolvedModules`).
+    @Test func editingARunningEmittersModulesTakesEffect() throws {
         let system = try ParticleSystemRuntime(capacity: 4, modules: .standard)
-        system.emitters[0].settings.gravity = [0, -1, 0]
+        system.emitters[0].modules.edit(GravityModule.self) { $0.acceleration = [0, -1, 0] }
         let uniforms = system.uniforms(for: system.emitters[0], deltaTime: 0, motion: .init(), spawn: .init(cursor: 0, count: 0, serial: 0))
         #expect(uniforms.gravity == [0, -1, 0])
     }

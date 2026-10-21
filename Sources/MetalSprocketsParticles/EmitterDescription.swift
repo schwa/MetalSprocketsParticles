@@ -12,12 +12,6 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public var name: String
     /// What the emitter does: module stacks per stage.
     public var modules: EmitterModules
-    /// The modules as flat settings, for code that still edits those (#228). Reading lowers; setting replaces the
-    /// modules with ones that lower to the new settings, keeping disabled ones.
-    var settings: ParticleEmitter {
-        get { modules.lowered() }
-        set { modules = modules.merging(EmitterModules(newValue)) }
-    }
     public var sprite: ParticleSprite
     public var motion: EmitterMotion
     public var simulationSpace: SimulationSpace
@@ -32,19 +26,6 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     /// An image for `EmitterShape.points`, sampled into points when applied. Takes the place of `points` and `mesh`.
     public var image: EmitterImage?
     public var isEmitting: Bool
-
-    init(
-        _ name: String,
-        settings: ParticleEmitter,
-        sprite: ParticleSprite = .softDot,
-        motion: EmitterMotion = EmitterMotion(),
-        simulationSpace: SimulationSpace = .world,
-        capacity: Int = 50_000,
-        mesh: Mesh? = nil,
-        isEmitting: Bool = true
-    ) {
-        self.init(name, modules: EmitterModules(settings), sprite: sprite, motion: motion, simulationSpace: simulationSpace, capacity: capacity, mesh: mesh, isEmitting: isEmitting)
-    }
 
     public init(
         _ name: String,
@@ -71,7 +52,7 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public func copy(named name: String? = nil) -> Self {
         var copy = Self(
             name ?? self.name,
-            settings: settings,
+            modules: modules,
             sprite: sprite,
             motion: motion,
             simulationSpace: simulationSpace,
@@ -79,7 +60,6 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
             mesh: mesh,
             isEmitting: isEmitting
         )
-        copy.modules = modules
         copy.meshDeformation = meshDeformation
         copy.points = points
         copy.image = image

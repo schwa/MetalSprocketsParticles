@@ -10,7 +10,7 @@ Design for #178 / #179. An emitter is module stacks per stage instead of one fla
   - `render`: sprite (blend, sort, orientation, softness, minimum size), the appearance modules (color and size over life, color by speed, color by position, image sequence), shading, mesh, trail, ribbon, light, level of detail.
 - `categoryMask` and `customAttributeCount` belong to no stage; they sit on `EmitterModules`.
 - `ModuleSlot` carries `isEnabled`, so a module can be turned off without losing its settings.
-- Each module is a struct conforming to `ParticleModule` (e.g. `GravityModule`): its settings, its `kind`, whether it is required, the instance editors add, `apply(to:)` onto `ParticleEmitter`, and `init?(lifting:)` back from one. `SpawnModule`, `UpdateModule`, and `RenderModule` are enums wrapping a stage's types (`StageModule`), saved as `{"module": {"gravity": {"acceleration": [...]}}}`.
+- Each module is a struct conforming to `ParticleModule` (e.g. `GravityModule`): its settings, its `kind`, whether it is required, the instance editors add, and its part of the GPU uniforms (`contribute`). `SpawnModule`, `UpdateModule`, and `RenderModule` are enums wrapping a stage's types (`StageModule`), saved as `{"module": {"gravity": {"acceleration": [...]}}}`.
 - In code, write an emitter as a list (`EmitterDescription("Flame") { ShapeModule(...); GravityModule(...) }`); each module goes to its stage and missing required ones get defaults.
 
 ## Order
@@ -25,9 +25,8 @@ Why built-ins don't follow stack order (#207, won't do): the appearance modules 
 
 ## How the runtime reads modules
 
-- The runtime holds only modules. Each module writes its own part of the GPU uniforms (`SimulationModules.swift`, `DrawModules.swift`, #226); a missing module leaves the value `ParticleEmitter.neutral` has (no motion, no color change).
+- Modules are the only representation (#223): there is no flat settings type. Each module writes its own part of the GPU uniforms (`SimulationModules.swift`, `DrawModules.swift`, #226); a missing module leaves its `NeutralModules` value (no motion, no color change).
 - CPU-side values (emission rate, LOD, sub-emitters, triggers, function slots) come from `ResolvedModules`: one pass over the enabled modules, cached per runtime emitter until its modules change (#227).
-- `ParticleEmitter` is the old flat form. It remains internal, only for lifting (`EmitterModules(_ emitter:)`) and `lowered()`, until #229 removes it. Tests build emitters from modules (#228).
 - Code outside the library builds modules: the `EmitterModulesBuilder` list, `EmitterModules.standard` / `.default2D`, and `modules[SomeModule.self]` to read or change one module.
 
 ## Performance

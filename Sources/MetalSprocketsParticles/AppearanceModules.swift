@@ -3,7 +3,7 @@ import simd
 // Appearance modules: evaluated when drawing, from each particle's age, speed, and position, so they are in the render
 // stage. Their colors multiply, so their order does not matter.
 
-public struct ColorOverLifeModule: LoweredModule {
+public struct ColorOverLifeModule: ParticleModule {
     public static let kind = "colorOverLife"
     public static let isRequired = true
     public var color: ParticleCurve<SIMD4<Float>>
@@ -16,19 +16,9 @@ public struct ColorOverLifeModule: LoweredModule {
         self.opacity = opacity
         self.alternate = alternate
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        self.init(color: emitter.colorOverLife, opacity: emitter.opacityOverLife, alternate: emitter.alternateColorOverLife)
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.colorOverLife = color
-        emitter.opacityOverLife = opacity
-        emitter.alternateColorOverLife = alternate
-    }
 }
 
-public struct SizeOverLifeModule: LoweredModule {
+public struct SizeOverLifeModule: ParticleModule {
     public static let kind = "sizeOverLife"
     public static let isRequired = true
     public var curve: ParticleCurve<Float>
@@ -36,17 +26,9 @@ public struct SizeOverLifeModule: LoweredModule {
     public init(curve: ParticleCurve<Float>) {
         self.curve = curve
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        curve = emitter.sizeOverLife
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.sizeOverLife = curve
-    }
 }
 
-public struct ColorBySpeedModule: LoweredModule {
+public struct ColorBySpeedModule: ParticleModule {
     public static let kind = "colorBySpeed"
     public static let added: Self? = Self(curve: .linear(from: [0.2, 0.4, 1, 1], to: [1, 0.3, 0.1, 1]), range: 0...5)
     public var curve: ParticleCurve<SIMD4<Float>>?
@@ -56,21 +38,9 @@ public struct ColorBySpeedModule: LoweredModule {
         self.curve = curve
         self.range = range
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard emitter.colorBySpeed != nil || emitter.colorBySpeedRange != ParticleEmitter.neutral.colorBySpeedRange else {
-            return nil
-        }
-        self.init(curve: emitter.colorBySpeed, range: emitter.colorBySpeedRange)
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.colorBySpeed = curve
-        emitter.colorBySpeedRange = range
-    }
 }
 
-public struct ColorByPositionModule: LoweredModule {
+public struct ColorByPositionModule: ParticleModule {
     public static let kind = "colorByPosition"
     public static let added: Self? = Self(curve: .linear(from: [1, 0.2, 0.2, 1], to: [0.2, 0.2, 1, 1]), start: [0, 0, 0], end: [0, 2, 0])
     public var curve: ParticleCurve<SIMD4<Float>>?
@@ -85,41 +55,14 @@ public struct ColorByPositionModule: LoweredModule {
         self.end = end
         self.atBirth = atBirth
     }
-
-    init?(lifting emitter: ParticleEmitter) {
-        let neutral = ParticleEmitter.neutral
-        guard emitter.colorByPosition != nil || emitter.colorByPositionStart != neutral.colorByPositionStart || emitter.colorByPositionEnd != neutral.colorByPositionEnd
-            || emitter.colorByPositionAtBirth else {
-            return nil
-        }
-        self.init(curve: emitter.colorByPosition, start: emitter.colorByPositionStart, end: emitter.colorByPositionEnd, atBirth: emitter.colorByPositionAtBirth)
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.colorByPosition = curve
-        emitter.colorByPositionStart = start
-        emitter.colorByPositionEnd = end
-        emitter.colorByPositionAtBirth = atBirth
-    }
 }
 
-public struct ImageSequenceModule: LoweredModule {
+public struct ImageSequenceModule: ParticleModule {
     public static let kind = "imageSequence"
     public static let added: Self? = Self(sequence: ImageSequence(rows: 2, columns: 2))
     public var sequence: ImageSequence
 
     public init(sequence: ImageSequence) {
         self.sequence = sequence
-    }
-
-    init?(lifting emitter: ParticleEmitter) {
-        guard let sequence = emitter.imageSequence else {
-            return nil
-        }
-        self.sequence = sequence
-    }
-
-    func apply(to emitter: inout ParticleEmitter) {
-        emitter.imageSequence = sequence
     }
 }

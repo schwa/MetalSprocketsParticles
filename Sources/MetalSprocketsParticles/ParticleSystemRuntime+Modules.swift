@@ -11,13 +11,6 @@ public extension ParticleSystemRuntime.Emitter {
 }
 
 public extension ParticleSystemRuntime {
-    /// Creates a system with one emitter per entry in `modules`, each with room for `capacity` particles. With none,
-    /// an empty system to fill with `apply(_:)` or `load(_:)`.
-    convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), modules: [EmitterModules] = [], capacity: Int = 1, seed: UInt32 = 0) throws {
-        try self.init(device: device, emitters: [], capacity: capacity, seed: seed)
-        try setEmitters(modules.map { (modules: $0, capacity: capacity) })
-    }
-
     /// Creates a system with a single emitter.
     convenience init(device: MTLDevice = ParticleSystemRuntime.defaultDevice(), capacity: Int, modules: EmitterModules, seed: UInt32 = 0) throws {
         try self.init(device: device, modules: [modules], capacity: capacity, seed: seed)

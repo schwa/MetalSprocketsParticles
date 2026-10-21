@@ -57,15 +57,6 @@ struct ParticleCurveTests {
         #expect(curve.keyframes.count == 1)
         #expect(curve.value(at: 0.5) == 3)
     }
-
-    @Test func emitterStartEndAccessorsMatchCurves() {
-        // Flat settings only; goes with ParticleEmitter in #229.
-        var emitter = ParticleEmitter()
-        emitter.colorStart = [1, 0, 0, 1]
-        emitter.sizeEnd = 0.5
-        #expect(emitter.colorOverLife.value(at: 0) == [1, 0, 0, 1])
-        #expect(emitter.sizeOverLife.value(at: 1) == 0.5)
-    }
 }
 
 @Suite(.serialized, .requiresMetal4)

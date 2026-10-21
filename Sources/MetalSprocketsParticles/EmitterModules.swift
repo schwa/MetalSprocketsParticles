@@ -3,7 +3,7 @@ import simd
 // An emitter as ordered module stacks per stage (#178). See Documentation/Modules.md. The module types are in
 // SpawnModules.swift, UpdateModules.swift, and RenderModules.swift.
 //
-// Built-in modules lower to ParticleEmitter, which the simulation kernel reads as uniforms, so they cost nothing per
+// Built-in modules write their part of the kernel uniforms, so they cost nothing per
 // module. Stitched modules (user [[stitchable]] functions) run in stack order inside the stage's function slot.
 
 /// A module in a stack, with a switch to turn it off without removing it.
@@ -145,83 +145,5 @@ extension Array {
             remove(at: index)
         }
         return true
-    }
-}
-
-// MARK: - Merging
-
-extension Array {
-    /// `lifted` in this stack's order: each enabled slot takes the next lifted module of its kind; disabled slots stay
-    /// where they are; lifted modules of new kinds go at the end.
-    func merging<Module: StageModule>(_ lifted: [ModuleSlot<Module>]) -> [ModuleSlot<Module>] where Element == ModuleSlot<Module> {
-        var pool = lifted
-        var result: [ModuleSlot<Module>] = []
-        for slot in self {
-            if !slot.isEnabled {
-                result.append(slot)
-            } else if let index = pool.firstIndex(where: { $0.module.kind == slot.module.kind }) {
-                result.append(pool.remove(at: index))
-            }
-        }
-        return result + pool
-    }
-}
-
-public extension EmitterModules {
-    /// `lifted`'s modules in this one's order, keeping this one's disabled modules.
-    func merging(_ lifted: EmitterModules) -> EmitterModules {
-        var merged = lifted
-        merged.spawn = spawn.merging(lifted.spawn)
-        merged.update = update.merging(lifted.update)
-        merged.render = render.merging(lifted.render)
-        return merged
-    }
-}
-
-// MARK: - Lowering and lifting
-
-extension ParticleEmitter {
-    /// What an emitter does with no modules: nothing moves, colors, or grows; it just spawns with the shape's defaults.
-    /// Modules are applied on top of this.
-    static var neutral: Self {
-        var emitter = Self()
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.sizeOverLife = .constant(0.04)
-        return emitter
-    }
-}
-
-extension EmitterModules {
-    /// The flat settings the simulation runs. Disabled modules are skipped.
-    func lowered() -> ParticleEmitter {
-        var emitter = ParticleEmitter.neutral
-        emitter.categoryMask = categoryMask
-        emitter.customAttributeCount = customAttributeCount
-        for slot in spawn where slot.isEnabled {
-            slot.module.apply(to: &emitter)
-        }
-        for slot in update where slot.isEnabled {
-            slot.module.apply(to: &emitter)
-        }
-        for slot in render where slot.isEnabled {
-            slot.module.apply(to: &emitter)
-        }
-        return emitter
-    }
-
-    /// Modules that lower to `emitter`: each module type that `emitter` uses, in the stage's type order, then its
-    /// stitched modules.
-    init(_ emitter: ParticleEmitter) {
-        self.init(
-            spawn: SpawnModule.lifted(from: emitter) + emitter.spawnModules.map { .stitched(StitchedSpawnModule(module: $0)) },
-            update: UpdateModule.lifted(from: emitter) + emitter.updateModules.map { .stitched(StitchedUpdateModule(module: $0)) },
-            render: RenderModule.lifted(from: emitter)
-        )
-        categoryMask = emitter.categoryMask
-        customAttributeCount = emitter.customAttributeCount
     }
 }

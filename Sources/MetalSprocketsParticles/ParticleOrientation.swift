@@ -12,7 +12,7 @@ public enum ParticleOrientation: Sendable, Equatable, Codable {
     case velocityAligned(stretch: Float = 0)
     /// Lies flat in the plane with this normal. Good for ripples, decals, and leaves on water.
     case fixed(normal: SIMD3<Float>)
-    /// A flat card turning in 3D about its own random axis by its spin (`ParticleEmitter.angle`, `angularSpeed`), not
+    /// A flat card turning in 3D about its own random axis by its spin (`RotationModule.angle`, `angularSpeed`), not
     /// facing the camera: confetti, leaves, flakes. It has a real facing direction, so foil glints as it turns.
     case tumbling
 

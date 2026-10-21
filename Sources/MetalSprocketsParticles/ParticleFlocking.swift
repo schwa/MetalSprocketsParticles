@@ -3,7 +3,7 @@ import MetalSprockets
 import MetalSprocketsParticlesShaders
 import simd
 
-/// Boids for one emitter's particles (`ParticleEmitter.flocking`): each steers away from neighbors that are too close
+/// Boids for one emitter's particles (`FlockingModule`): each steers away from neighbors that are too close
 /// (separation), toward their average velocity (alignment), and toward their center (cohesion), counting neighbors
 /// within `radius`. A spatial hash grid of the emitter's particles is built on the GPU each frame, so the cost grows
 /// with the particle count, not its square.
