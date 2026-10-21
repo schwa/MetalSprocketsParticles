@@ -3752,11 +3752,13 @@ Store point caches through EffectResources as PLY files (x y z, nx ny nz, red gr
 ## 178: Make particle behavior composable (modules instead of one large settings struct)
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:xl, needs-design
 created: 2026-10-20T02:29:21Z
+updated: 2026-10-21T00:37:57Z
+closed: 2026-10-21T00:37:57Z
 +++
 
 Particle systems are complex, and ParticleEmitter has grown into one flat struct with dozens of settings (motion, color, size, collision, foil, flocking, trails, ribbons, lights, LOD, user functions...). Every feature adds fields, kernel branches, uniforms, inspector controls, and Codable keys in several places. Make behavior composable instead.
@@ -3772,19 +3774,21 @@ Questions to answer first: per-module function calls vs. generated kernels (perf
 Related: #172 (pluggable shading, the Render-stage version of this), #167 (user functions), #100 (document-based editor).
 
 - `2026-10-20T02:31:43Z`: Implementation path: #179 (refactor to composable modules via Metal function stitching).
+- `2026-10-21T00:37:58Z`: Done via #179 (see its closing note and Documentation/Modules.md).
 
 ---
 
 ## 179: Refactor behavior and rendering into composable modules (stitched Metal functions)
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:api, effort:xl, needs-design
 depends: 178, 182, 197
 created: 2026-10-20T02:31:43Z
-updated: 2026-10-20T18:19:58Z
+updated: 2026-10-21T00:37:57Z
+closed: 2026-10-21T00:37:57Z
 +++
 
 Goal: refactor particle behavior and rendering so emitters are built from composable modules instead of one large settings struct and special-case kernel code. Implementation path for #178.
@@ -3819,6 +3823,7 @@ Steps 2 and 6 cover these; split them into their own issues after the spike.
 - `2026-10-20T18:32:44Z`: Verdict: go, with one risk. If all built-in behavior moves into modules, every particle pays the call overhead; the Stress Test may regress past the #184 gate. Mitigations to try in #188: keep hot built-ins (integrate, gravity, drag) inline in the kernel and only stitch the rest; or link the stitched function by direct extern call rather than through a table so the pipeline compiler can inline it. Fallback if both fail: generated Metal source per stack.
 - `2026-10-20T18:48:40Z`: Landed: modules model, effect format 2, stitched user modules in update/spawn, migration tool, presets migrated, demo module stacks. Open: #193 (render-stage stitching, after #172).
 - `2026-10-20T19:04:14Z`: Correction to the #182 notes: the ~22% was the custom attribute buffer, not the function call. See #205 and #206.
+- `2026-10-21T00:37:57Z`: Done: modules model, stitched user modules, effect format 4, demo module stacks, ParticleEmitter internal, shading functions. Built-ins run at fixed points by design (#207/#208). First-frame stall fixed upstream (#209). Follow-ups standing alone: #175 (foil look, deferred), #215, #218, #219.
 
 ---
 
@@ -4129,13 +4134,14 @@ Part of #179 (plan for #178).
 ## 193: Render modules: shading, foil, and per-pixel functions through the module stack
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:rendering, effort:l
 depends: 188
 created: 2026-10-20T18:19:53Z
-updated: 2026-10-20T18:26:32Z
+updated: 2026-10-21T00:37:57Z
+closed: 2026-10-21T00:37:57Z
 +++
 
 Rendering (sprite/mesh/trail/ribbon drawing, shading models, foil) does not use modules. Bring the render stage onto the same mechanism, building on #172 (pluggable shading), then #175 (foil) and #174 (per-pixel functions).
@@ -4144,6 +4150,7 @@ Part of #179 (plan for #178).
 
 - `2026-10-20T18:42:23Z`: Render modules exist at the API/file level (sprite, foil, mesh, trail, ribbon, light, LOD) and lower to current settings. Stitching render/shading functions still needs #172 first.
 - `2026-10-20T21:52:33Z`: Shading is now a render module (#172). What's left for render modules: per-pixel functions (#174) and reflective foil as a shading model (#175).
+- `2026-10-21T00:37:57Z`: Render stage is on modules: shading module with per-vertex/per-pixel functions (#172, #174); foil as a built-in model (#175, deferred for look).
 
 ---
 
@@ -4587,9 +4594,9 @@ Benchmarks/baseline-presets.json was recorded before the module work; pre-module
 status: new
 priority: low
 kind: task
-labels: area:tooling, effort:s
+labels: area:tooling, effort:s, deferred
 created: 2026-10-20T19:20:18Z
-updated: 2026-10-20T19:20:22Z
+updated: 2026-10-21T00:38:18Z
 +++
 
 In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any ParticleModule.Type] crashes swift-frontend (Xcode 27 RC). Worked around with a closure. Reduce to a minimal repro and report to Swift (swiftlang/swift).
@@ -4675,7 +4682,7 @@ Docs: Modules.md 'Effect files' section, README.
 status: new
 priority: low
 kind: task
-labels: area:rendering,effort:s
+labels: area:rendering, effort:s
 created: 2026-10-21T00:34:16Z
 +++
 
