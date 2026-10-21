@@ -219,6 +219,43 @@ struct StitchingSpikeTests {
         }
     }
 
+    /// First-frame cost of a new custom shading function (#219): render pipelines link it statically, unlike compute.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["STITCHING_TIMINGS"] != nil)) func firstFrameShadingCost() throws {
+        let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
+        let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
+        let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 100)
+        func firstFrame(_ configure: (inout ParticleEmitter) -> Void) throws -> Duration {
+            var settings = emitter(Self.handWritten)
+            settings.updateFunction = nil
+            configure(&settings)
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, emitter: settings)
+            system.burst(16)
+            let start = ContinuousClock.now
+            _ = try renderer.render(Group {
+                try system.simulate(deltaTime: 1.0 / 60.0, view: view)
+                try RenderPass { try system.render(projection: projection, view: view) }
+            })
+            return ContinuousClock.now - start
+        }
+        _ = try firstFrame { $0.isLit = true }
+        print("first-frame shading: built-in lit (warm) \(try firstFrame { $0.isLit = true })")
+        for perPixel in [false, true] {
+            for run in 0..<2 {
+                let name = "tint\(run)\(perPixel ? "p" : "v")\(UInt32.random(in: 0...UInt32.max))"
+                let function = ParticleFunction(source: """
+                [[visible]] float4 \(name)(ShadingInput input, ShadingScene scene, constant ShadingLight *lights, const device ShadingLight *particleLights, constant float4 *parameters) {
+                    return float4(input.color.rgb * 0.5, input.color.a);
+                }
+                """, name: name)
+                let time = try firstFrame {
+                    $0.shadingFunction = function
+                    $0.shadesPerPixel = perPixel
+                }
+                print("first-frame shading: new custom function, \(perPixel ? "per pixel" : "per vertex"): \(time)")
+            }
+        }
+    }
+
     /// Records which kinds of arguments a [[stitchable]] function accepts.
     @Test func stitchableSignatures() {
         let cases: [(String, String)] = [

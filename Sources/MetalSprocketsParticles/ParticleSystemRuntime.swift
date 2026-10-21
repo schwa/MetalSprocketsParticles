@@ -867,7 +867,8 @@ public final class ParticleSystemRuntime {
                     parameters.set("sprite", texture: draw.texture ?? placeholderTexture)
                 }
                 .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-                .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
+                .linkedFunctions(draw.linkedShading(builtInShading, stage: .vertex), functionType: .vertex)
+                .linkedFunctions(draw.linkedShading(builtInShading, stage: .fragment), functionType: .fragment)
                 .renderPipelineDescriptorTransformer { descriptor in
                     if let attachment = descriptor.colorAttachments[0] {
                         draw.blendMode.configure(attachment)
@@ -889,7 +890,8 @@ public final class ParticleSystemRuntime {
                     parameters.set("sprite", texture: placeholderTexture)
                 }
                 .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-                .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
+                .linkedFunctions(draw.linkedShading(builtInShading, stage: .vertex), functionType: .vertex)
+                .linkedFunctions(draw.linkedShading(builtInShading, stage: .fragment), functionType: .fragment)
                 // Shapes hide each other; only opaque ones write depth, so blended ones still show what is behind.
                 .depthCompare(function: depthCompare, writes: draw.blendMode == .opaque)
                 .renderPipelineDescriptorTransformer { descriptor in
@@ -919,7 +921,8 @@ public final class ParticleSystemRuntime {
                     parameters.set("sprite", texture: draw.texture ?? placeholderTexture)
                 }
                 .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-                .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
+                .linkedFunctions(draw.linkedShading(builtInShading, stage: .vertex), functionType: .vertex)
+                .linkedFunctions(draw.linkedShading(builtInShading, stage: .fragment), functionType: .fragment)
                 .renderPipelineDescriptorTransformer { descriptor in
                     if let attachment = descriptor.colorAttachments[0] {
                         draw.blendMode.configure(attachment)
@@ -940,7 +943,8 @@ public final class ParticleSystemRuntime {
                 parameters.set("sprite", texture: draw.texture ?? placeholderTexture)
             }
             .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-            .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
+            .linkedFunctions(draw.linkedShading(builtInShading, stage: .vertex), functionType: .vertex)
+            .linkedFunctions(draw.linkedShading(builtInShading, stage: .fragment), functionType: .fragment)
             .renderPipelineDescriptorTransformer { descriptor in
                 if let attachment = descriptor.colorAttachments[0] {
                     draw.blendMode.configure(attachment)
@@ -952,6 +956,14 @@ public final class ParticleSystemRuntime {
 }
 
 /// Everything one emitter's draw needs, captured when the render element is built.
+extension EmitterDraw {
+    /// The functions to link into `stage`: the built-ins and `shading` where it is called, nothing elsewhere. Both
+    /// stages are always set, so neither keeps a list from an earlier frame or another runtime (#219).
+    func linkedShading(_ builtIn: BuiltInShading, stage: MTLFunctionType) -> [VisibleFunction] {
+        shading == nil || stage != shadingStage ? [] : builtIn.linked(with: shading)
+    }
+}
+
 struct EmitterDraw {
     var uniforms: RenderUniforms
     /// Called per vertex, or per pixel; nil for draws that skip the call (see `ShadingModule`).

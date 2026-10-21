@@ -4688,4 +4688,8 @@ created: 2026-10-21T00:34:16Z
 
 MetalSprockets #534 binary-links compute pipelines, which removed the ~360 ms first-frame stall for update/spawn functions (#209). Render pipelines are still statically linked, so a new custom shading function (ShadingModel.custom, #172; per pixel, #174) probably rebuilds the particle vertex or fragment pipeline on its first frame. Not measured yet. Measure it (like StitchingSpikeTests.firstFrameCost, with a custom shading function); if it stalls, ask MetalSprockets for the same binary linking on render pipelines.
 
+- `2026-10-21T00:44:36Z`: Measured (StitchingSpikeTests.firstFrameShadingCost, STITCHING_TIMINGS=1): warm built-in lit ~5 ms; a new custom shading function costs 50-100 ms on its first frame per vertex and ~34 ms per pixel. A real stall, smaller than the old compute one (360 ms). Needs binary linking for render pipelines in MetalSprockets (like #534 did for compute).
+
+Found and fixed a bug while measuring: per-pixel shading after per-vertex shading from another runtime on the same renderer failed with "Linked function 'particleShadeUnlit' has conflicting definitions". We linked functions into one stage only; the other stage's linked list carried over from the previous frame's element tree. Now both stages are set every frame (EmitterDraw.linkedShading). Regression tests: ShadingPipelineTests.
+
 ---
