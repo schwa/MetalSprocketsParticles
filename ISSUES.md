@@ -3633,13 +3633,14 @@ Acceptance: every existing golden unchanged; foil and lit presets look the same;
 ## 173: Custom shading functions (user Metal code)
 
 +++
-status: open
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering, area:editor, effort:m
 depends: 172
 created: 2026-10-19T22:40:03Z
-updated: 2026-10-19T22:40:04Z
+updated: 2026-10-21T01:48:56Z
+closed: 2026-10-21T01:48:56Z
 +++
 
 On top of the shading function slot (#172): ShadingModel.custom(ParticleFunction-style source, name, parameters), compiled against a shading prelude that declares ShadingInput, validated like user functions. For toon, rim light, hologram, smoke tints, and the like, without library changes.
@@ -3649,6 +3650,7 @@ Inspector: a Shading picker (Unlit, Lit, Foil, Custom) with the Custom source ed
 Acceptance: a custom function that returns, say, a rim light compiles, renders (golden), round-trips; bad source is rejected before it reaches the runtime.
 
 - `2026-10-20T18:26:32Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
+- `2026-10-21T01:48:57Z`: Delivered with #172: ShadingModel.custom(function:) compiled after ShadingModule.prelude; inspector Shading picker with a Custom code editor (drafts, Compile & Apply, errors). Added: golden custom-rim-light-shading (the rim-light template), a round-trip test (custom model + perPixel survive saving), and rejection tests (bad source and simulation-style source fail validateShading).
 
 ---
 

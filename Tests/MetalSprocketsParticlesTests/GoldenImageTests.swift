@@ -364,6 +364,28 @@ struct GoldenImageTests {
         #expect(try image.matchesGolden(named: "foil-mesh-per-pixel"))
     }
 
+    /// A custom shading function (#173): the rim-light template on lit-looking spheres of particles.
+    @Test func customRimLightShading() throws {
+        var emitter = ParticleEmitter()
+        emitter.position = [0, 1.5, 0]
+        emitter.shape = .sphere(radius: 0.8)
+        emitter.velocity = .zero
+        emitter.velocitySpread = 0
+        emitter.gravity = .zero
+        emitter.lifetime = 10...10
+        emitter.birthRate = 0
+        emitter.sizeOverLife = .constant(0.35)
+        emitter.colorOverLife = .constant([0.2, 0.4, 0.9, 1])
+        emitter.blendMode = .opaque
+        emitter.orientation = .tumbling
+        emitter.shadingFunction = ShadingModule.template
+        let image = try render(emitter: emitter, frames: 2, colliders: false, worldColliders: []) { system in
+            system.lights = [.directional(direction: simd_normalize([-0.3, -1, -0.6]))]
+            system.burst(24)
+        }
+        #expect(try image.matchesGolden(named: "custom-rim-light-shading"))
+    }
+
     @Test func fountainWithoutColliderWireframes() throws {
         #expect(try render(frames: 120, colliders: false).matchesGolden(named: "fountain-no-wireframes"))
     }
