@@ -95,7 +95,7 @@ struct StitchingSpikeTests {
         // The runtime caches compiled functions by source and name; put the stitched function where it will look.
         let placeholder = ParticleFunction(source: "// stitched", name: "stitchedUpdate", parameters: Self.parameters)
         let actual = try run(emitter(placeholder)) { system in
-            system.compiledFunctions[SlotFunction.user(placeholder).key] = stitched
+            system.gpuFunctions.store(stitched, for: .simulation(SlotFunction.user(placeholder).key))
         }
         for (a, b) in zip(actual, expected) {
             #expect(a.position == b.position)
@@ -133,7 +133,7 @@ struct StitchingSpikeTests {
             let start = ContinuousClock.now
             let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1_000_000, emitter: settings)
             if let inject, let function {
-                system.compiledFunctions[SlotFunction.user(function).key] = inject
+                system.gpuFunctions.store(inject, for: .simulation(SlotFunction.user(function).key))
             }
             var times: [Double] = []
             var first: Duration?
@@ -172,21 +172,6 @@ struct StitchingSpikeTests {
     }
 
     /// Two modules from different sources may each define a helper with the same name (#216).
-    @Test func modulesWithSameHelperNameStitch() throws {
-        let first = StitchedModule(source: """
-        static float3 helper(float3 v) { return v + float3(0, 1, 0); }
-        [[stitchable]] constant float4 *up(thread ParticleState &p, float dt, float time, constant float4 *parameters) { p.velocity = helper(p.velocity); return parameters; }
-        """, name: "up")
-        let second = StitchedModule(source: """
-        static float3 helper(float3 v) { return v * 2; }
-        [[stitchable]] constant float4 *speedUp(thread ParticleState &p, float dt, float time, constant float4 *parameters) { p.velocity = helper(p.velocity); return parameters; }
-        """, name: "speedUp")
-        _ = try StitchedModule.stitch([first, second], name: "sameHelper", device: runner.device)
-        var clash = second
-        clash.name = "up"
-        #expect(throws: ParticleFunctionError.self) { try StitchedModule.stitch([first, clash], name: "clash", device: runner.device) }
-    }
-
     /// First-frame cost of a new function in the update slot (#209): a fresh source user function vs a fresh stitched
     /// stack, each with names nothing has compiled before.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["STITCHING_TIMINGS"] != nil)) func firstFrameCost() throws {

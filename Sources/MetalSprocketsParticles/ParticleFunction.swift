@@ -69,25 +69,7 @@ public struct ParticleFunctionError: Error, LocalizedError, Sendable {
 public extension ParticleFunction {
     /// Compiles the function on `device`. Throws `ParticleFunctionError` if it does not compile or is missing.
     func validate(device: MTLDevice) throws {
-        _ = try compile(device: device)
-    }
-
-    internal func compile(device: MTLDevice, prelude: String = Self.prelude) throws -> VisibleFunction {
-        let library: MTLLibrary
-        do {
-            library = try device.makeLibrary(source: prelude + source, options: nil)
-        } catch {
-            throw ParticleFunctionError(name: name, message: error.localizedDescription)
-        }
-        // Libraries list only functions with an entry point, so a function without [[visible]] is missing here too.
-        guard library.functionNames.contains(name) else {
-            throw ParticleFunctionError(name: name, message: "The source defines no [[visible]] function with that name.")
-        }
-        do {
-            return try VisibleFunction(library: library, name: name)
-        } catch {
-            throw ParticleFunctionError(name: name, message: error.localizedDescription)
-        }
+        _ = try GPUFunctions.compile(.user(self), device: device)
     }
 }
 
@@ -180,13 +162,6 @@ enum SlotFunction: Equatable {
         // Not \b: Unicode word boundaries treat "custom.x" as one word.
         return withoutComments.contains(/\.\s*custom[0-3]?(?![A-Za-z0-9_])/)
     }
-
-    func compile(device: MTLDevice) throws -> VisibleFunction {
-        switch self {
-        case let .user(function): try function.compile(device: device)
-        case let .stitched(modules, slot): try StitchedModule.stitch(modules, name: StitchedModule.functionName(for: modules, slot: slot), device: device)
-        }
-    }
 }
 
 extension ParticleEmitter {
@@ -228,7 +203,7 @@ public extension ParticleSystem {
             }
         }
         for function in layers.flatMap(\.settings.allFunctions) {
-            _ = try function.compile(device: device)
+            _ = try GPUFunctions.compile(function, device: device)
         }
     }
 }
@@ -238,7 +213,7 @@ public extension ParticleSystemRuntime {
     /// than on the next `simulate`. `load(_:)` calls this.
     func compileFunctions() throws {
         for function in emitters.flatMap(\.settings.allFunctions) {
-            _ = try visibleFunction(for: function)
+            _ = try gpuFunctions.simulation(function, slot: .update)
         }
     }
 }
@@ -260,16 +235,15 @@ extension ParticleSystemRuntime {
         var linked: [VisibleFunction] = []
         var linkedKeys: Set<SlotFunction.Key> = []
         for (slot, function) in zip(ParticleFunctionSlot.allCases, dispatch.functions) {
+            let compiled = try gpuFunctions.simulation(function, slot: slot)
+            functions.append(compiled)
+            // Each distinct function once; the no-ops differ per slot, so they are always distinct.
             if let function {
-                let compiled = try visibleFunction(for: function)
-                functions.append(compiled)
                 if linkedKeys.insert(function.key).inserted {
                     linked.append(compiled)
                 }
             } else {
-                let noOp = try library.function(type: VisibleFunction.self, named: slot.noOpName)
-                functions.append(noOp)
-                linked.append(noOp)
+                linked.append(compiled)
             }
         }
         let parameters = dispatch.functions.map { function in
@@ -277,16 +251,5 @@ extension ParticleSystemRuntime {
             return given + Array(repeating: SIMD4<Float>.zero, count: max(ParticleFunction.minimumParameterCount - given.count, 0))
         }
         return FunctionTables(functions: functions, linked: linked, parameters: parameters)
-    }
-
-    /// The linked function for `function`, compiled once per key. Throws `ParticleFunctionError`.
-    func visibleFunction(for function: SlotFunction) throws -> VisibleFunction {
-        let key = function.key
-        if let cached = compiledFunctions[key] {
-            return cached
-        }
-        let compiled = try function.compile(device: device)
-        compiledFunctions[key] = compiled
-        return compiled
     }
 }

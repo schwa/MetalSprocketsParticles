@@ -94,7 +94,6 @@ struct LightingTests {
             $0.shadesPerPixel = true
         }
         #expect(abs(perPixel - shaded) < 0.02)
-        #expect(try ShadingModule.template.validateShading(device: try #require(MTLCreateSystemDefaultDevice())) == ())
     }
 
     /// Lit per pixel: the sphere normal is interpolated, so the center faces the light fully; per vertex, the center only

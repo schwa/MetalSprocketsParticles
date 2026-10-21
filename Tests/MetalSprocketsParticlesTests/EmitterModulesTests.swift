@@ -133,9 +133,8 @@ struct EmitterModulesTests {
         #expect(description.settings.updateModules.count == 1)
     }
 
-    /// Custom shading (#173): the model and its per-pixel flag survive saving, and bad source is rejected before it
-    /// reaches the runtime.
-    @Test(.requiresMetal4) func customShadingRoundTripsAndRejectsBadSource() throws {
+    /// Custom shading (#173): the model and its per-pixel flag survive saving. Compiling is in GPUFunctionsTests.
+    @Test func customShadingRoundTrips() throws {
         let modules = EmitterModules {
             ShadingModule(model: .custom(function: ShadingModule.template), perPixel: true)
         }
@@ -144,12 +143,6 @@ struct EmitterModulesTests {
         let decoded = try ParticleSystem(json: json, resources: EffectResources(files: files))
         #expect(decoded.layers[0].modules[ShadingModule.self] == modules[ShadingModule.self])
         #expect(decoded.layers[0].settings.shadingFunction == ShadingModule.template)
-        let device = try #require(MTLCreateSystemDefaultDevice())
-        try ShadingModule.template.validateShading(device: device)
-        #expect(throws: ParticleFunctionError.self) { try ParticleFunction(source: "not metal", name: "x").validateShading(device: device) }
-        // Simulation-style source is not a shading function.
-        let update = ParticleFunction(source: "[[visible]] void f(thread ParticleState &p, float, float, constant float4 *) {}", name: "f")
-        #expect(throws: ParticleFunctionError.self) { try update.validateShading(device: device) }
     }
 
     @Test func jsonRoundTrips() throws {

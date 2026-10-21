@@ -166,46 +166,22 @@ extension ParticleSystemRuntime {
         return try library.function(type: FragmentShader.self, named: "particleFragment", constants: constants)
     }
 
-    func builtInShadingFunctions() throws -> BuiltInShading {
-        if let cachedBuiltInShading {
-            return cachedBuiltInShading
-        }
-        // Static: the compiler can inline them (per-pixel foil is ~45% faster than with a real call), and they are
-        // always linked, so their pipeline is built once. Custom functions stay binary-linked, so a new one does not
-        // rebuild the pipeline (#219).
-        let builtIn = BuiltInShading(
-            unlit: try library.function(type: VisibleFunction.self, named: "particleShadeUnlit").linking(.static),
-            lit: try library.function(type: VisibleFunction.self, named: "particleShadeLit").linking(.static),
-            foil: try library.function(type: VisibleFunction.self, named: "particleShadeFoil").linking(.static)
-        )
-        cachedBuiltInShading = builtIn
-        return builtIn
-    }
-
     /// The function `draw` calls per vertex, its parameters, and whether it is called at all. Matches the shading
     /// before #172: foil only when it glints or shifts color, and never on trails and ribbons; unlit sprites, trails,
     /// and ribbons skip the call.
     func shading(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool, perPixel: Bool) {
         let shading: (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) = try shadingPerVertex(for: settings, draw: draw)
         // Foil sprites always shade per pixel, so their crinkle breaks the card into facets (#175); foil meshes per vertex.
-        let isFoilSprite = shading.function.reference == (try builtInShadingFunctions()).foil.reference && draw.mesh == nil
+        let isFoilSprite = shading.function.reference == (try gpuFunctions.builtInShading()).foil.reference && draw.mesh == nil
         return (shading.function, shading.parameters, shading.calls, shading.calls && (settings.shadesPerPixel || isFoilSprite))
     }
 
     private func shadingPerVertex(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) {
-        let builtIn = try builtInShadingFunctions()
+        let builtIn = try gpuFunctions.builtInShading()
         let isMesh = !draw.isRibbon && draw.mesh != nil
         let isStrip = draw.isRibbon || (draw.mesh == nil && draw.uniforms.trailPointCount > 1)
         if let custom = settings.shadingFunction {
-            let key = SlotFunction.Key.user(source: custom.source, name: custom.name)
-            let compiled: VisibleFunction
-            if let cached = compiledShadingFunctions[key] {
-                compiled = cached
-            } else {
-                compiled = try custom.compile(device: device, prelude: ShadingModule.prelude)
-                compiledShadingFunctions[key] = compiled
-            }
-            return (compiled, Self.padded(custom.parameters), true)
+            return (try gpuFunctions.shading(custom), Self.padded(custom.parameters), true)
         }
         if let foil = settings.foil, foil.glint > 0 || foil.iridescence > 0, !isStrip {
             let parameters: [SIMD4<Float>] = [[max(foil.glint, 0), max(foil.shininess, 1), max(foil.iridescence, 0), 0]]
@@ -226,6 +202,6 @@ extension ParticleSystemRuntime {
 public extension ParticleFunction {
     /// Compiles the function as a custom shading function (after `ShadingModule.prelude`).
     func validateShading(device: MTLDevice) throws {
-        _ = try compile(device: device, prelude: ShadingModule.prelude)
+        _ = try GPUFunctions.compileShading(self, device: device)
     }
 }

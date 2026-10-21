@@ -240,15 +240,6 @@ struct ParticleFunctionTests {
         #expect(error?.localizedDescription.contains("oops") == true)
     }
 
-    @Test func missingAndNonVisibleFunctionsAreReported() throws {
-        var missing = setVelocity
-        missing.name = "setVelocty"
-        #expect(functionError { try missing.validate(device: runner.device) }?.message.contains("no [[visible]] function") == true)
-        let plain = ParticleFunction(source: "void plain(thread ParticleState &particle, float a, float b, constant float4 *c) {}", name: "plain")
-        #expect(functionError { try plain.validate(device: runner.device) }?.message.contains("[[visible]]") == true)
-        try setVelocity.validate(device: runner.device)
-    }
-
     @Test func validationCoversSubEmitterFunctions() {
         let broken = ParticleFunction(source: "nonsense", name: "broken")
         #expect(functionError { try preset(broken, inSubEmitter: true).validateFunctions(device: runner.device) }?.name == "broken")

@@ -4757,12 +4757,13 @@ Tests: assert draw decisions at the planner boundary (e.g. foil sprite -> per-pi
 ## 222: User GPU code is compiled, cached, and linked four different ways
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:architecture, area:simulation, effort:m
 created: 2026-10-21T02:03:07Z
-updated: 2026-10-21T02:03:42Z
+updated: 2026-10-21T02:10:15Z
+closed: 2026-10-21T02:10:15Z
 +++
 
 ParticleFunction.compile(prelude:), SlotFunction and its key, StitchedModule.stitch, ShadingModule's prelude and validateShading, the custom-attribute detection cache, and three caches on the runtime (compiledFunctions, compiledShadingFunctions, cachedBuiltInShading) all do: user source + prelude -> validated, cached visible function, linked statically or binary. Each feature (user functions #167, stitched modules #188, shading #172/#174) added its own path.
@@ -4772,6 +4773,7 @@ Deepen: one compiler/cache for user GPU code: given what fills a slot (user func
 Tests: replace the compile/validation checks spread over ParticleFunctionTests, StitchingSpikeTests, EmitterModulesTests, LightingTests with boundary tests: compiles once per source, rejects bad source with ParticleFunctionError, clashing stitched names fail clearly, built-ins link statically and user code binary.
 
 - `2026-10-21T02:03:43Z`: Related: #221 (the draw planner would get shading functions from this compiler).
+- `2026-10-21T02:10:15Z`: GPUFunctions (internal, one per runtime) owns compiling, caching, and linking for every visible function the pipelines call: simulation functions and stitched stacks (simulation(_:slot:), with per-slot no-ops), custom shading (shading(_:)), and the built-ins (builtInShading(), static). One cache keyed by source and name; one compileSource with the prelude; ParticleFunctionError everywhere. The runtime's three caches, ParticleFunction.compile(prelude:), SlotFunction.compile, and visibleFunction(for:) are gone; validate/validateShading/validateFunctions call GPUFunctions' uncached compile. Boundary tests in GPUFunctionsTests (compile once regardless of parameters, per-slot no-ops, static vs binary linking, errors by name, templates, stitched clashes) replace checks spread over ParticleFunctionTests, StitchingSpikeTests, EmitterModulesTests, LightingTests. 470 tests, demo, benchmark gate pass.
 
 ---
 

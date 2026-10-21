@@ -214,12 +214,8 @@ public final class ParticleSystemRuntime {
     var spriteTextures: [ParticleSprite: MTLTexture] = [:]
     /// Textures for `ParticleEmitter.colorImage`, made once per image.
     var colorImageTextures: [Data: MTLTexture] = [:]
-    /// User functions compiled by `visibleFunction(for:)`.
-    var compiledFunctions: [SlotFunction.Key: VisibleFunction] = [:]
-    /// Custom shading functions compiled by `shading(for:draw:)`, by source and name.
-    var compiledShadingFunctions: [SlotFunction.Key: VisibleFunction] = [:]
-    /// The built-in shading functions, looked up once.
-    var cachedBuiltInShading: BuiltInShading?
+    /// Every visible function the pipelines call, compiled and cached once.
+    lazy var gpuFunctions = GPUFunctions(device: device, library: library)
 
     /// Instances for every emitter's `settings.subEmitters`, stored after all emitters in the shared buffer.
     private(set) var subEmitterInstances: [Emitter] = []
@@ -826,7 +822,7 @@ public final class ParticleSystemRuntime {
             draw.fragmentShader = try fragmentShader(perPixel: shading.perPixel)
             return draw
         }
-        let builtInShading = try builtInShadingFunctions()
+        let builtInShading = try gpuFunctions.builtInShading()
         let depthCompare = depthCompareFunction
         let trailBuffer = trails ?? placeholderMesh.vertices
         let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
