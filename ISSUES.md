@@ -4474,18 +4474,20 @@ The stitched module ABI is (thread ParticleState &, dt, time, constant float4 *p
 ## 209: First frame with a new user function or stitched stack stalls ~360 ms building the pipeline
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:simulation, effort:m, needs-design
 created: 2026-10-20T19:20:17Z
-updated: 2026-10-20T19:40:59Z
+updated: 2026-10-21T00:34:16Z
+closed: 2026-10-21T00:34:16Z
 +++
 
 #182 measured about 420 ms for the first frame after a stitched function is linked (vs ~60 ms for a source user function); graph build itself is ~2 ms. Editing a module stack in the demo will hitch. Build stitched pipelines off the frame path (keep the old one until ready) and consider a binary archive cache.
 
 - `2026-10-20T19:40:59Z`: Measured (StitchingSpikeTests.firstFrameCost, STITCHING_TIMINGS=1): not stitching-specific. Fresh source user function: compile 4 ms, first frame ~360 ms; fresh stitched stack: stitch 7 ms, first frame ~360 ms. The cost is the Metal 4 compute pipeline for updateParticles being rebuilt with a new linked function (MetalSprockets PipelineCache.computePipeline, static linking). The earlier 60 ms for user functions was a warm cache. Options, both need MetalSprockets: (1) build the pipeline off the frame path and keep the previous one (or no function) until it's ready; (2) Metal's binary-function path: link visible functions into an existing pipeline without recompiling the kernel (MTL4 dynamic linking / pipelines with additional binary functions). Option 2 is the real fix if MTL4 supports it for compute.
 - `2026-10-20T20:03:59Z`: Filed upstream: MetalSprockets #534 (async pipeline builds / linking into an existing pipeline).
+- `2026-10-21T00:34:16Z`: Fixed upstream by MetalSprockets #534 (binary-linked compute pipelines; new linked functions skip the kernel rebuild). Updated the dependency: StitchingSpikeTests.firstFrameCost now ~5 ms first frame for a new user function or stitched stack (was ~360 ms). All tests, demo, and benchmark gate pass.
 
 ---
 
@@ -4664,5 +4666,19 @@ Effect files are at format 4. The library still reads formats 1 (flat settings),
 Hard deprecation: stop reading them. Files without formatVersion 4 fail to load with a clear error ('effect format N is not supported; this library reads format 4'). Remove the legacy decoding paths, the tests that cover them, and particles-migrate (the bundled presets are already format 4). Lifting stays only where tests still use it (@testable), or goes too if tests move to modules.
 
 Docs: Modules.md 'Effect files' section, README.
+
+---
+
+## 219: New custom shading functions may still stall the first frame (render pipelines are statically linked)
+
++++
+status: new
+priority: low
+kind: task
+labels: area:rendering,effort:s
+created: 2026-10-21T00:34:16Z
++++
+
+MetalSprockets #534 binary-links compute pipelines, which removed the ~360 ms first-frame stall for update/spawn functions (#209). Render pipelines are still statically linked, so a new custom shading function (ShadingModel.custom, #172; per pixel, #174) probably rebuilds the particle vertex or fragment pipeline on its first frame. Not measured yet. Measure it (like StitchingSpikeTests.firstFrameCost, with a custom shading function); if it stalls, ask MetalSprockets for the same binary linking on render pipelines.
 
 ---
