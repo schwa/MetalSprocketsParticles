@@ -278,16 +278,16 @@ public final class ParticleSystemRuntime {
     var flockingBuffers: FlockingBuffers?
     var flocks: [FlockData] = []
     let library: ShaderLibrary
-    private let sampler: MTLSamplerState
+    let sampler: MTLSamplerState
     /// Bound in place of a missing texture; the shader ignores it.
-    private let placeholderTexture: MTLTexture
+    let placeholderTexture: MTLTexture
     /// Bound in unused distance field slots; colliders never point at them.
     private let placeholderFieldTexture: MTLTexture
     /// Bound in place of a missing emitter mesh; the counts in uniforms keep it unused.
-    private let placeholderMesh: EmitterMesh
+    let placeholderMesh: EmitterMesh
     private let sortKernels: ParticleSortKernels
     /// Bound in place of sort records for unsorted emitters; the shader ignores it.
-    private let placeholderSortRecords: MTLBuffer
+    let placeholderSortRecords: MTLBuffer
     // Colliders from the previous frame, used to derive collider velocity. Nil before the first frame, unlike empty.
     // swiftlint:disable:next discouraged_optional_collection
     var previousColliders: [Collider]?
@@ -759,191 +759,7 @@ public final class ParticleSystemRuntime {
     /// not interleaved. Pass the scene's depth, the same size as the render target and rendered with `projection`, to
     /// soften emitters with `softness`; it is read, not tested against, so it must not be the pass's depth attachment.
     public func render(projection: simd_float4x4, view: simd_float4x4, sceneDepth: MTLTexture? = nil) throws -> some Element {
-        let cameraToWorld = view.inverse
-        let cameraPosition = cameraToWorld.columns.3.xyz
-        cullingCamera = CullingCamera(position: cameraPosition, viewProjection: projection * view)
-        let visible = allEmitters.filter { !$0.isOutsideView(camera: cullingCamera) }
-        let unsorted = visible.filter { $0.settings.sortMode == .none }
-        let sorted = visible.filter { $0.settings.sortMode != .none }
-            .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
-        let placeholderSortRecords = placeholderSortRecords
-        let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)), particleLightCount: particleLightCount)
-        let particleLightBuffer = particleLightBuffer
-        let draws = try (unsorted + sorted).map { emitter in
-            var draw = EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: sceneDepth != nil)
-            draw.mesh = try emitter.settings.particleMesh.flatMap(vertexBuffer(for:))
-            if draw.mesh != nil {
-                // Solid shapes: the fragment shader's procedural dot is fully covered at the center.
-                draw.uniforms.hasTexture = 0
-            }
-            if let image = emitter.settings.colorImage, let texture = colorImageTexture(for: image) {
-                draw.colorImage = texture
-                draw.uniforms.hasColorImage = 1
-                draw.uniforms.colorImageOrigin = image.origin
-                draw.uniforms.colorImageU = image.width
-                draw.uniforms.colorImageV = image.height
-            }
-            if debugView != .none {
-                draw.uniforms.debugMode = debugView.gpuMode
-                draw.uniforms.debugEmitterIndex = UInt32(allEmitters.firstIndex { $0 === emitter } ?? 0)
-                draw.uniforms.debugSliceStart = UInt32(emitter.range.lowerBound)
-                draw.uniforms.debugCapacity = UInt32(emitter.capacity)
-                draw.uniforms.debugRange = [debugRange.lowerBound, debugRange.upperBound]
-                if let blendMode = debugView.blendMode {
-                    draw.blendMode = blendMode
-                    draw.uniforms.blendMode = blendMode
-                }
-                draw.wireframe = debugView == .wireframe
-            }
-            if let ribbon = emitter.settings.ribbon {
-                let window = emitter.liveWindow
-                draw.uniforms.ribbonSliceStart = UInt32(emitter.range.lowerBound)
-                draw.uniforms.ribbonCapacity = UInt32(emitter.capacity)
-                draw.uniforms.ribbonWindowStart = UInt32(window.start)
-                draw.uniforms.ribbonWindowCount = UInt32(window.count)
-                draw.uniforms.ribbonTapers = ribbon.tapers ? 1 : 0
-                draw.isRibbon = true
-            }
-            if let trail = emitter.settings.trail, trails != nil, trailStride > 0 {
-                draw.uniforms.trailPointCount = UInt32(min(trail.clampedPointCount, trailStride))
-                draw.uniforms.trailStride = UInt32(trailStride)
-                draw.uniforms.trailTapers = trail.tapers ? 1 : 0
-                draw.uniforms.trailFades = trail.fades ? 1 : 0
-            }
-            let shading = try shading(for: emitter.settings, draw: draw)
-            // Draws that skip the call use the vertex shader variant without it, and link and bind nothing, so their
-            // pipelines are what they were before #172.
-            draw.shading = shading.calls ? shading.function : nil
-            draw.shadingParameters = shading.calls ? shading.parameters : [.zero]
-            draw.shadingStage = shading.perPixel ? .fragment : .vertex
-            let vertexName = draw.isRibbon ? "particleRibbonVertex" : draw.mesh != nil ? "particleMeshVertex"
-                : draw.uniforms.trailPointCount > 1 ? "particleTrailVertex" : "particleVertex"
-            draw.vertexShader = try vertexShader(vertexName, calls: shading.calls, perPixel: shading.perPixel)
-            draw.fragmentShader = try fragmentShader(perPixel: shading.perPixel)
-            return draw
-        }
-        let builtInShading = try gpuFunctions.builtInShading()
-        let depthCompare = depthCompareFunction
-        let trailBuffer = trails ?? placeholderMesh.vertices
-        let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
-        let buffer = buffer
-        let placeholderTexture = placeholderTexture
-        let sampler = sampler
-        // Never bind an empty array; lightCount keeps the padding unused.
-        let lightValues = lightData.isEmpty ? [ParticleLightData()] : lightData
-        // What every particle pipeline binds, set in one modifier: each .parameter is a modifier the frame walks and
-        // copies, and long chains cost CPU time every frame.
-        let common: (inout ShaderParameters, EmitterDraw) -> Void = { parameters, draw in
-            parameters.set("particles", buffer: buffer)
-            parameters.set("colorImage", texture: draw.colorImage ?? placeholderTexture)
-            parameters.set("uniforms", value: draw.uniforms)
-            parameters.set("colorCurve", values: draw.colorCurve)
-            parameters.set("sizeCurve", values: draw.sizeCurve)
-            parameters.set("extraColorCurves", values: draw.extraColorCurves)
-            parameters.set("spriteSampler", samplerState: sampler)
-            parameters.set("lights", values: lightValues)
-            parameters.set("particleLights", buffer: particleLightBuffer)
-            parameters.set("shadingParameters", values: draw.shadingParameters)
-            parameters.set("sceneDepth", texture: sceneDepth ?? placeholderTexture)
-        }
-        return ForEach(Array(draws.indices), id: \.self) { index in
-            let draw = draws[index]
-            if draw.isRibbon {
-                try RenderPipeline(vertexShader: try draw.vertexShader.orThrow(.resourceCreationFailure("Particle vertex shader")), fragmentShader: try draw.fragmentShader.orThrow(.resourceCreationFailure("Particle fragment shader"))) {
-                    Draw { encoder in
-                        encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
-                        let count = Int(draw.uniforms.ribbonWindowCount)
-                        if count > 1 {
-                            encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: count * 2, instanceCount: 1, baseInstance: 0)
-                        }
-                    }
-                }
-                .parameters { parameters in
-                    common(&parameters, draw)
-                    parameters.set("sprite", texture: draw.texture ?? placeholderTexture)
-                }
-                .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-                .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
-                .renderPipelineDescriptorTransformer { descriptor in
-                    if let attachment = descriptor.colorAttachments[0] {
-                        draw.blendMode.configure(attachment)
-                    }
-                }
-            } else if let mesh = draw.mesh {
-                try RenderPipeline(vertexShader: try draw.vertexShader.orThrow(.resourceCreationFailure("Particle vertex shader")), fragmentShader: try draw.fragmentShader.orThrow(.resourceCreationFailure("Particle fragment shader"))) {
-                    Draw { encoder in
-                        encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
-                        for segment in draw.segments where segment.count > 0 {
-                            encoder.drawPrimitives(primitiveType: .triangle, vertexStart: 0, vertexCount: mesh.vertexCount, instanceCount: segment.count, baseInstance: segment.start)
-                        }
-                    }
-                }
-                .parameters { parameters in
-                    common(&parameters, draw)
-                    parameters.set("meshVertices", buffer: mesh.buffer)
-                    parameters.set("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
-                    parameters.set("sprite", texture: placeholderTexture)
-                }
-                .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-                .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
-                // Shapes hide each other; only opaque ones write depth, so blended ones still show what is behind.
-                .depthCompare(function: depthCompare, writes: draw.blendMode == .opaque)
-                .renderPipelineDescriptorTransformer { descriptor in
-                    if let attachment = descriptor.colorAttachments[0] {
-                        draw.blendMode.configure(attachment)
-                    }
-                }
-            } else if draw.uniforms.trailPointCount > 1 {
-                try RenderPipeline(vertexShader: try draw.vertexShader.orThrow(.resourceCreationFailure("Particle vertex shader")), fragmentShader: try draw.fragmentShader.orThrow(.resourceCreationFailure("Particle fragment shader"))) {
-                    Draw { encoder in
-                        encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
-                        for segment in draw.segments where segment.count > 0 {
-                            encoder.drawPrimitives(
-                                primitiveType: .triangleStrip,
-                                vertexStart: 0,
-                                vertexCount: Int(draw.uniforms.trailPointCount) * 2,
-                                instanceCount: segment.count,
-                                baseInstance: segment.start
-                            )
-                        }
-                    }
-                }
-                .parameters { parameters in
-                    common(&parameters, draw)
-                    parameters.set("trails", buffer: trailBuffer)
-                    parameters.set("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
-                    parameters.set("sprite", texture: draw.texture ?? placeholderTexture)
-                }
-                .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-                .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
-                .renderPipelineDescriptorTransformer { descriptor in
-                    if let attachment = descriptor.colorAttachments[0] {
-                        draw.blendMode.configure(attachment)
-                    }
-                }
-            } else {
-            try RenderPipeline(vertexShader: try draw.vertexShader.orThrow(.resourceCreationFailure("Particle vertex shader")), fragmentShader: try draw.fragmentShader.orThrow(.resourceCreationFailure("Particle fragment shader"))) {
-                Draw { encoder in
-                    encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
-                    for segment in draw.segments where segment.count > 0 {
-                        encoder.drawPrimitives(primitiveType: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: segment.count, baseInstance: segment.start)
-                    }
-                }
-            }
-            .parameters { parameters in
-                common(&parameters, draw)
-                parameters.set("sortRecords", buffer: draw.sortRecords ?? placeholderSortRecords)
-                parameters.set("sprite", texture: draw.texture ?? placeholderTexture)
-            }
-            .visibleFunctionTable("shadingFunction", functionType: draw.shadingStage, functions: draw.shading.map { [$0] } ?? [])
-            .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
-            .renderPipelineDescriptorTransformer { descriptor in
-                if let attachment = descriptor.colorAttachments[0] {
-                    draw.blendMode.configure(attachment)
-                }
-            }
-            }
-        }
+        try encode(try planDraws(projection: projection, view: view, sceneDepth: sceneDepth), sceneDepth: sceneDepth)
     }
 }
 
@@ -970,12 +786,10 @@ struct EmitterDraw {
     var extraColorCurves: [SIMD4<Float>]
     /// `ParticleEmitter.colorImage`'s texture.
     var colorImage: MTLTexture?
-    /// `ParticleEmitter.ribbon`: one strip through the live window, drawn instead of anything else.
-    var isRibbon = false
+    /// What the particles are drawn as; see `DrawKind`.
+    var kind = DrawKind.sprite
     /// Draws triangles as lines (`ParticleDebugView.wireframe`).
     var wireframe = false
-    /// `ParticleEmitter.particleMesh`'s vertices, drawn instead of a quad.
-    var mesh: (buffer: MTLBuffer, vertexCount: Int)?
 
     struct Lighting {
         var ambient: SIMD3<Float>

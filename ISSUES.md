@@ -4736,12 +4736,13 @@ Verify: particles-bench --presets --preset foil --repeats 5 returns to ~0.12 ms.
 ## 221: Each draw's rendering decisions are spread across ParticleSystemRuntime
 
 +++
-status: open
+status: closed
 priority: medium
 kind: task
 labels: area:architecture, area:rendering, effort:l
 created: 2026-10-21T02:03:07Z
-updated: 2026-10-21T02:03:42Z
+updated: 2026-10-21T02:17:14Z
+closed: 2026-10-21T02:17:14Z
 +++
 
 render(projection:view:sceneDepth:) decides, for each emitter, in several places and a fixed order: the kind (ribbon, mesh, trail, sprite), the shading function, per-pixel or not, the shader variants (function constants), parameters, linked functions and their linking mode, and blend state. EmitterDraw's large init, shading(for:draw:), vertexShader/fragmentShader, BuiltInShading, four near-identical RenderPipeline branches, and ParticleBlendMode.configure share it. Bugs this session lived in these seams (#219 linked lists carrying over, per-draw lookups, long modifier chains). The runtime file is ~1,100 lines with ~76 stored properties and 21 files extend it.
@@ -4751,6 +4752,7 @@ Deepen: a draw planner that turns (lowered settings, emitter state, camera, ligh
 Tests: assert draw decisions at the planner boundary (e.g. foil sprite -> per-pixel fragment variant, foil linked statically; unlit sprite -> no shading call) instead of through pixels; keep a few goldens end to end.
 
 - `2026-10-21T02:03:43Z`: Related: #222 (shading-function compile/link/caching is one of the decisions the draw planner would consume).
+- `2026-10-21T02:17:15Z`: Rendering is now plan + encode. planDraws(projection:view:sceneDepth:) makes every decision once per emitter: DrawKind (ribbon > mesh > trail > sprite), uniforms, shading function, stage, shader variants. encode(_:sceneDepth:) builds one pipeline shape for any plan (one .parameters with kind-specific extras, the draw call from DrawKind); only meshes add a depth test. The four copy-pasted RenderPipeline branches and EmitterDraw.isRibbon/mesh are gone; shading reads draw.kind. Boundary tests in DrawPlanTests (unlit skips shading, lit per vertex, foil sprite per pixel + static, meshes always shade, ribbon wins and gets no foil, custom shading binary, sort order) without rendering. Goldens identical; 477 tests, demo, benchmark gate pass. ParticleSystemRuntime.swift ~1,100 -> ~900 lines.
 
 ---
 

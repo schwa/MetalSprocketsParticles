@@ -172,14 +172,14 @@ extension ParticleSystemRuntime {
     func shading(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool, perPixel: Bool) {
         let shading: (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) = try shadingPerVertex(for: settings, draw: draw)
         // Foil sprites always shade per pixel, so their crinkle breaks the card into facets (#175); foil meshes per vertex.
-        let isFoilSprite = shading.function.reference == (try gpuFunctions.builtInShading()).foil.reference && draw.mesh == nil
+        let isFoilSprite = shading.function.reference == (try gpuFunctions.builtInShading()).foil.reference && !draw.kind.isMesh
         return (shading.function, shading.parameters, shading.calls, shading.calls && (settings.shadesPerPixel || isFoilSprite))
     }
 
     private func shadingPerVertex(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) {
         let builtIn = try gpuFunctions.builtInShading()
-        let isMesh = !draw.isRibbon && draw.mesh != nil
-        let isStrip = draw.isRibbon || (draw.mesh == nil && draw.uniforms.trailPointCount > 1)
+        let isMesh = draw.kind.isMesh
+        let isStrip = draw.kind.isStrip
         if let custom = settings.shadingFunction {
             return (try gpuFunctions.shading(custom), Self.padded(custom.parameters), true)
         }
