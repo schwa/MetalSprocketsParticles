@@ -72,7 +72,7 @@ struct EmitterImageTests {
         emitter.lifetime = 10...10
         var description = EmitterDescription("Image", settings: emitter, capacity: 64)
         description.image = EmitterImage(data: try png(left: red, right: nil), width: 4, pointCount: 200)
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: .standard)
         try system.apply([description])
         system.burst(64)
         try runner.run(try system.simulate(deltaTime: 0))

@@ -9,15 +9,10 @@ struct DieOnCollisionTests {
     /// Particles dropped from y = 1 onto a floor, alive count after `steps` steps.
     func aliveAfterFalling(diesOnCollision: Bool, steps: Int, colliders: [Collider] = [.plane(normal: [0, 1, 0], distance: 0)]) throws -> Int {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.position = [0, 1, 0]
-        emitter.radius = 0.1
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.diesOnCollision = diesOnCollision
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter, seed: 3)
+        let emitter = EmitterModules.standard(position: [0, 1, 0], shape: .sphere(radius: 0.1), velocity: .zero, spread: 0, lifetime: 10...10, birthRate: 0) {
+            $0.edit(CollisionModule.self) { $0.diesOnCollision = diesOnCollision }
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: emitter, seed: 3)
         system.colliders = colliders
         system.burst(64)
         for _ in 0..<steps {

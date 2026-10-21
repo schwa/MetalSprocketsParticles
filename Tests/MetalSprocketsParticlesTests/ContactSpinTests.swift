@@ -10,19 +10,14 @@ import Testing
 struct ContactSpinTests {
     func spin(afterFalling frames: Int, friction: Float, floor: Bool) throws -> [Float] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = [0, 0.2, 0]
-        emitter.velocity = [0.5, 0, 0]
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.angularSpeed = 8
-        emitter.angularSpeedVariation = 0
-        emitter.restitution = 0
-        emitter.friction = friction
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: emitter)
+        let emitter = EmitterModules.standard(position: [0, 0.2, 0], shape: .point, velocity: [0.5, 0, 0], spread: 0, gravity: [0, -9.8, 0], lifetime: 10...10, birthRate: 0) {
+            $0[RotationModule.self] = RotationModule(angularSpeed: 8)
+            $0.edit(CollisionModule.self) {
+                $0.restitution = 0
+                $0.friction = friction
+            }
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, modules: emitter)
         system.colliders = floor ? [.plane(normal: [0, 1, 0], distance: 0)] : []
         system.burst(8)
         for _ in 0..<frames {

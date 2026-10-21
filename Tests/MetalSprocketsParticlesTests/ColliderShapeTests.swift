@@ -10,15 +10,8 @@ struct ColliderShapeTests {
     /// Spawns still particles in a small cloud around `origin` with one collider and runs one step.
     func pushOut(origin: SIMD3<Float>, collider: Collider) throws -> [SIMD3<Float>] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.position = origin
-        emitter.radius = 0.05
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter, seed: 4)
+        let emitter = EmitterModules.standard(position: origin, shape: .sphere(radius: 0.05), velocity: .zero, spread: 0, gravity: .zero, lifetime: 10...10, birthRate: 0)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: emitter, seed: 4)
         system.colliders = [collider]
         system.burst(64)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

@@ -52,7 +52,7 @@ struct DebugWireframeTests {
     /// Tracked objects draw in green, and only when asked for.
     @Test(.requiresMetal4) func trackedObjectsDrawWhenAskedFor() throws {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: .standard)
         system.trackedObjects = ["ball": .zero]
         let view = simd_float4x4(lookingFrom: [0, 0, 1], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 10)

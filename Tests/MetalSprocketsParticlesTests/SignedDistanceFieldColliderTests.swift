@@ -230,7 +230,7 @@ struct SignedDistanceFieldColliderTests {
 
     @Test func runtimeUploadsEachGridOnceAndReusesIt() throws {
         let runner = try Runner()
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: ParticleEmitter())
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: .standard)
         let field = sphereField()
         runtime.colliders = [.signedDistanceField(field), .signedDistanceField(field, center: [2, 0, 0])]
         try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))

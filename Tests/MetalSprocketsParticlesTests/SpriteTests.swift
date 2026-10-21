@@ -58,19 +58,18 @@ struct SpriteTests {
     /// One large still particle at the origin, viewed head-on, rendered after `steps` steps.
     func renderSingleParticle(texture: (MTLDevice) throws -> MTLTexture, sequence: ImageSequence?, steps: Int) throws -> CGImage {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.colorStart = [1, 1, 1, 1]
-        emitter.colorEnd = [1, 1, 1, 1]
-        emitter.sizeStart = 0.5
-        emitter.sizeEnd = 0.5
-        emitter.imageSequence = sequence
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)
+        let emitter = EmitterModules.standard(shape: .sphere(radius: 0), velocity: .zero, spread: 0, gravity: .zero, lifetime: 10...10, birthRate: 0) {
+            $0.edit(ColorOverLifeModule.self) {
+                $0.color.start = [1, 1, 1, 1]
+                $0.color.end = [1, 1, 1, 1]
+            }
+            $0.edit(SizeOverLifeModule.self) {
+                $0.curve.start = 0.5
+                $0.curve.end = 0.5
+            }
+            $0[ImageSequenceModule.self] = sequence.map(ImageSequenceModule.init)
+        }
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter, seed: 0)
         system.texture = try texture(renderer.device)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse

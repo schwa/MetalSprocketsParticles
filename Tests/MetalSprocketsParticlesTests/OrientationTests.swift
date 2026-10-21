@@ -40,18 +40,12 @@ struct OrientationTests {
     /// One white particle at the origin moving at `velocity`, rendered after one step from `eye`.
     func render(orientation: ParticleOrientation, velocity: SIMD3<Float> = .zero, eye: SIMD3<Float> = [0, 0, 3]) throws -> CGImage {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 128))
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = velocity
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.sizeOverLife = .constant(0.3)
-        emitter.orientation = orientation
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)
+        let emitter = EmitterModules.standard(shape: .sphere(radius: 0), velocity: velocity, spread: 0, gravity: .zero, drag: 0, lifetime: 10...10, birthRate: 0) {
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.3) }
+            $0.edit(SpriteModule.self) { $0.orientation = orientation }
+        }
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter, seed: 0)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: eye, at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 10)

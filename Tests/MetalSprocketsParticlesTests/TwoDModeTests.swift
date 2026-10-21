@@ -48,7 +48,7 @@ struct TwoDModeTests {
 
     @Test func emittersRunOnTheirPlaneButKeepTheirOwnSetting() throws {
         let flat = system(is2D: true)
-        let runtime = try ParticleSystemRuntime(capacity: 1, emitter: ParticleEmitter())
+        let runtime = try ParticleSystemRuntime(capacity: 1, modules: .standard)
         try runtime.load(flat)
         // swiftlint:disable:next prefer_key_path
         #expect(runtime.emitters.allSatisfy { $0.forcesPlane })

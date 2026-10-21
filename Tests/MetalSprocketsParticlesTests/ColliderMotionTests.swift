@@ -19,18 +19,13 @@ struct ColliderMotionTests {
     /// One still particle at `start` with `velocity`, no gravity; colliders per frame. Returns its final position and
     /// velocity.
     func run(start: SIMD3<Float>, velocity: SIMD3<Float> = .zero, frames: Int, colliders: (Int) -> [Collider]) throws -> (position: SIMD3<Float>, velocity: SIMD3<Float>) {
-        var emitter = ParticleEmitter()
-        emitter.position = start
-        emitter.shape = .point
-        emitter.velocity = velocity
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.restitution = 0
-        emitter.friction = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: emitter)
+        let emitter = EmitterModules.standard(position: start, shape: .point, velocity: velocity, spread: 0, gravity: .zero, drag: 0, lifetime: 10...10, birthRate: 0) {
+            $0.edit(CollisionModule.self) {
+                $0.restitution = 0
+                $0.friction = 0
+            }
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: emitter)
         system.burst(1)
         for frame in 0..<frames {
             try runner.run(try system.simulate(deltaTime: deltaTime, colliders: colliders(frame)))

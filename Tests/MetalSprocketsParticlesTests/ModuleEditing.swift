@@ -11,13 +11,37 @@ extension EmitterModules {
         self[Module.self] = module
     }
 
-    /// `.standard` with `body` applied.
-    static func standard(_ body: (inout Self) -> Void) -> Self {
+    /// `.standard` with the given values changed; nil keeps the standard one. Most simulation tests set a few of these
+    /// and then burst particles.
+    static func standard(
+        position: SIMD3<Float>? = nil,
+        shape: EmitterShape? = nil,
+        velocity: SIMD3<Float>? = nil,
+        spread: Float? = nil,
+        gravity: SIMD3<Float>? = nil,
+        drag: Float? = nil,
+        lifetime: ClosedRange<Float>? = nil,
+        birthRate: Float? = nil,
+        _ body: (inout Self) -> Void = { _ in }
+    ) -> Self {
         var modules = Self.standard
+        modules.edit(ShapeModule.self) {
+            $0.position = position ?? $0.position
+            $0.shape = shape ?? $0.shape
+        }
+        modules.edit(VelocityModule.self) {
+            $0.velocity = velocity ?? $0.velocity
+            $0.spread = spread ?? $0.spread
+        }
+        modules.edit(GravityModule.self) { $0.acceleration = gravity ?? $0.acceleration }
+        modules.edit(DragModule.self) { $0.amount = drag ?? $0.amount }
+        modules.edit(LifetimeModule.self) { $0.range = lifetime ?? $0.range }
+        modules.edit(RateModule.self) { $0.birthRate = birthRate ?? $0.birthRate }
         body(&modules)
         return modules
     }
 
+    /// `.standard` with `body` applied.
     /// `.fountain` with `body` applied.
     static func fountain(_ body: (inout Self) -> Void) -> Self {
         var modules = Self.fountain

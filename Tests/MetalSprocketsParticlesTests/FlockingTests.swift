@@ -136,7 +136,7 @@ struct FlockingTests {
         var far = emitter
         far.position = [20, 0, 0]
         let layers = [EmitterDescription("A", settings: emitter, capacity: 200), EmitterDescription("B", settings: far, capacity: 200)]
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: ParticleEmitter(), seed: 3)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: .standard, seed: 3)
         try system.apply(layers)
         for emitter in system.emitters {
             emitter.burst(200)

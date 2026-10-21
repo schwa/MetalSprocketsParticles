@@ -10,16 +10,8 @@ struct ForceFieldTests {
     /// Still particles spawned at `origin` with no gravity, drag, or colliders; returns them after `steps` steps.
     func simulate(origin: SIMD3<Float> = .zero, radius: Float = 0, count: Int = 16, steps: Int, fields: [ForceField]) throws -> [Particle] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.position = origin
-        emitter.radius = radius
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 100...100
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 9)
+        let emitter = EmitterModules.standard(position: origin, shape: .sphere(radius: radius), velocity: .zero, spread: 0, gravity: .zero, drag: 0, lifetime: 100...100, birthRate: 0)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, modules: emitter, seed: 9)
         system.forceFields = fields
         system.burst(count)
         for _ in 0..<steps {

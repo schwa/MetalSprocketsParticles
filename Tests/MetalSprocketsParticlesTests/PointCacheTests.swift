@@ -32,7 +32,7 @@ struct PointCacheTests {
         emitter.birthRate = 0
         var description = EmitterDescription("Points", settings: emitter, capacity: 256)
         description.points = points
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: .standard)
         try system.apply([description])
         system.burst(256)
         try runner.run(try system.simulate(deltaTime: 0))
@@ -85,7 +85,7 @@ struct PointCacheTests {
         var description = EmitterDescription("Points", settings: emitter, capacity: 16)
         description.points = [EmitterPoint([0, 0, 0], color: [0, 1, 0, 1])]
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: .standard)
         try system.apply([description])
         system.burst(16)
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse

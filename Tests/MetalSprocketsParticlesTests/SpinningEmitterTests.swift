@@ -20,17 +20,10 @@ struct SpinningEmitterTests {
     /// A point emitter 1 unit out along x, spun around y by `spinPerFrame` each frame. Returns positions and velocities
     /// of the particles alive after `frames` frames.
     func spin(frames: Int, inheritVelocity: Float = 0) throws -> [(position: SIMD3<Float>, velocity: SIMD3<Float>)] {
-        var emitter = ParticleEmitter()
-        emitter.position = [1, 0, 0]
-        emitter.shape = .point
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 1_200
-        emitter.inheritVelocity = inheritVelocity
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, emitter: emitter)
+        let emitter = EmitterModules.standard(position: [1, 0, 0], shape: .point, velocity: .zero, spread: 0, gravity: .zero, drag: 0, lifetime: 10...10, birthRate: 1_200) {
+            $0.edit(VelocityModule.self) { $0.inherit = inheritVelocity }
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, modules: emitter)
         for frame in 0..<frames {
             let rotation = simd_float4x4(simd_quatf(angle: Float(frame) * spinPerFrame, axis: [0, 1, 0]))
             try runner.run(try system.simulate(deltaTime: deltaTime, transforms: [rotation]))

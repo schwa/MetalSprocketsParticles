@@ -61,7 +61,7 @@ struct SimulationModulesTests {
 
     /// Assigning flat settings lifts modules, so code that edits settings directly still drives the uniforms.
     @Test func settingFlatSettingsUpdatesModules() throws {
-        let system = try ParticleSystemRuntime(capacity: 4, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(capacity: 4, modules: .standard)
         system.emitters[0].settings.gravity = [0, -1, 0]
         let uniforms = system.uniforms(for: system.emitters[0], deltaTime: 0, motion: .init(), spawn: .init(cursor: 0, count: 0, serial: 0))
         #expect(uniforms.gravity == [0, -1, 0])

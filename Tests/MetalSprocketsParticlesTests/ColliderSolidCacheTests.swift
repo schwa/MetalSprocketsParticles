@@ -7,7 +7,7 @@ import Testing
 @Suite(.requiresMetal4)
 struct ColliderSolidCacheTests {
     @Test func solidsAreMadeOncePerColliderChange() throws {
-        let system = try ParticleSystemRuntime(capacity: 1, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(capacity: 1, modules: .standard)
         system.colliders = [.sphere(center: .zero, radius: 1)]
         let first = system.colliderSolidVertices(planeExtent: 6)
         let cached = try #require(system.solidVertexCache)

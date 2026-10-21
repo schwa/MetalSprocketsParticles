@@ -39,7 +39,7 @@ struct AliveCountTests {
     }
 
     @Test func zeroUntilEnoughFramesHaveRun() throws {
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 100, emitter: ParticleEmitter())
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 100, modules: .standard)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         #expect(system.aliveParticleCount == 0)
     }

@@ -15,15 +15,10 @@ struct SwiftMeshEmitterTests {
     }
 
     func spawn(_ mesh: Mesh, location: ParticleBirthLocation) throws -> [SIMD3<Float>] {
-        var emitter = ParticleEmitter()
-        emitter.shape = .mesh
-        emitter.birthLocation = location
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_024, emitter: emitter, seed: 2)
+        let emitter = EmitterModules.standard(shape: .mesh, velocity: .zero, spread: 0, gravity: .zero, lifetime: 10...10, birthRate: 0) {
+            $0.edit(ShapeModule.self) { $0.birthLocation = location }
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_024, modules: emitter, seed: 2)
         system.emitters[0].mesh = try EmitterMesh(device: runner.device, mesh: mesh)
         system.burst(1_024)
         try runner.run(try system.simulate(deltaTime: 0))

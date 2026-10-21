@@ -9,19 +9,15 @@ struct MovingColliderTests {
     // Particles sit still at the origin; a sphere sweeps through them along +x.
     func sweep(speed: Float) throws -> [Particle] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0
-        emitter.friction = 0
+        let emitter = EmitterModules.standard(shape: .sphere(radius: 0), velocity: .zero, spread: 0, gravity: .zero, drag: 0, lifetime: 10...10, birthRate: 0) {
+            $0.edit(CollisionModule.self) {
+                $0.restitution = 0
+                $0.friction = 0
+            }
+        }
         let deltaTime: Float = 1.0 / 60.0
         var center: SIMD3<Float> = [-1, 0, 0]
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter, seed: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: emitter, seed: 1)
         system.colliders = [.sphere(center: center, radius: 0.5)]
         system.burst(64)
         for _ in 0..<30 {

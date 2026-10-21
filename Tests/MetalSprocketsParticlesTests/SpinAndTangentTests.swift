@@ -29,17 +29,13 @@ struct SpinMotionTests {
 struct TangentDirectionTests {
     @Test func tangentVelocityRunsAroundTheAxis() throws {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.position = [0, 0.5, 0]
-        emitter.shape = .disc(radius: 1)
-        emitter.birthLocation = .surface
-        emitter.birthDirection = .tangent
-        emitter.velocity = [0, 2, 0]
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 256, emitter: emitter, seed: 1)
+        let emitter = EmitterModules.standard(position: [0, 0.5, 0], shape: .disc(radius: 1), velocity: [0, 2, 0], spread: 0, gravity: .zero, lifetime: 10...10, birthRate: 0) {
+            $0.edit(ShapeModule.self) {
+                $0.birthLocation = .surface
+                $0.birthDirection = .tangent
+            }
+        }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 256, modules: emitter, seed: 1)
         system.burst(256)
         try runner.run(try system.simulate(deltaTime: 0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
