@@ -4786,9 +4786,9 @@ status: open
 priority: medium
 kind: task
 labels: area:architecture, area:api, effort:xl, needs-design
-depends: 221
+depends: 221, 226, 227, 228, 229
 created: 2026-10-21T02:03:07Z
-updated: 2026-10-21T02:03:42Z
+updated: 2026-10-21T12:17:54Z
 +++
 
 Module structs apply onto and lift from ParticleEmitter; EmitterModules lowers/lifts and merges to keep order; EmitterDescription and SubEmitter cache the lowered form in a didSet that does not fire in initializers; FramePlan.uniforms(for:) and EmitterDraw then read ~49 and ~39 ParticleEmitter fields. Adding a setting touches every layer, and lifting must stay exact for every preset.
@@ -4836,5 +4836,114 @@ ModuleStackView's Spawn/Update/RenderModuleEditor switch over every module case,
 Deepen: one editor per module type (e.g. a protocol the demo conforms each module to), looked up from the module, so adding a module adds one editor.
 
 - `2026-10-21T03:18:58Z`: Each module type now owns its editor: EditableModule (static editor(_: Binding<Self>)) in demo ModuleEditors.swift, conformed by all 33 module types. StageModuleEditor opens the stage enum's existential once and gives the module's editor a typed binding, replacing the three Spawn/Update/Render switch editors and the payload() helper. ModuleEditorTests fails if any StageModule.types entry lacks an editor. 80 demo tests pass, demo app builds, lint clean.
+
+---
+
+## 226: Modules write their own GPU uniforms (#223 stage 1)
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:architecture, effort:l
+created: 2026-10-21T12:17:47Z
++++
+
+Each module fills its part of SimulationUniforms, RenderUniforms and per-emitter CPU state via contribute hooks; FramePlan.uniforms(for:) and planDraws iterate modules instead of reading flat ParticleEmitter fields. Tests: given modules -> expected uniforms/draw. Goldens identical, bench gate.
+
+---
+
+## 227: Runtime holds only modules; ParticleEmitter becomes input-only (#223 stage 2)
+
++++
+status: new
+priority: medium
+kind: task
+labels: area:architecture, effort:m
+depends: 226
+created: 2026-10-21T12:17:47Z
+updated: 2026-10-21T12:17:53Z
++++
+
+EmitterDescription and SubEmitter stop caching the lowered ParticleEmitter (and the didSet that skips initializers). ParticleEmitter stays as a convenience converted to modules once at the edge.
+
+---
+
+## 228: Migrate tests, demo and README from ParticleEmitter to the module builder (#223 stage 3)
+
++++
+status: new
+priority: low
+kind: task
+labels: area:architecture, effort:l
+depends: 227
+created: 2026-10-21T12:17:48Z
+updated: 2026-10-21T12:17:54Z
++++
+
+Mechanical sweep: ~67 test files plus demo and README build ParticleEmitter(...) directly; move them to EmitterDescription { ... } modules.
+
+---
+
+## 229: Delete flat ParticleEmitter and lifting (#223 stage 4)
+
++++
+status: new
+priority: low
+kind: task
+labels: area:architecture, effort:m
+depends: 228
+created: 2026-10-21T12:17:48Z
+updated: 2026-10-21T12:17:54Z
++++
+
+Remove ParticleEmitter, LoweredModule apply/lift and the lift round-trip tests; round-trip tests become modules <-> JSON only.
+
+---
+
+## 230: Tests never run under Metal API validation (MTL_DEBUG_LAYER)
+
++++
+status: new
+priority: high
+kind: task
+labels: area:testing, effort:s, area:ci
+created: 2026-10-21T12:21:43Z
+updated: 2026-10-21T13:52:07Z
++++
+
+The suite never runs under the Metal layers that Xcode Debug runs turn on by default: API validation (MTL_DEBUG_LAYER=1) and GPU frame capture (MTL_CAPTURE_ENABLED=1). So layer-only failures never fail a test. Example: binary-linked user functions and stitched modules crashed under both layers (MetalSprockets #541, #542, now fixed upstream), and the suite passed while the demo crashed in Xcode. GitHub CI (macos-26 runners) has no Metal 4 GPU, so it cannot cover this.
+
+Local check after the MetalSprockets fixes (7588ede): 477 tests pass under each layer, except flockingInADensePileStaysCheap under validation (a timing test; the debug layer is slower).
+
+Needs Buildkite, as MetalSprockets has (.buildkite/pipeline.yml, MetalSprockets #544):
+1. Create the MetalSprocketsParticles pipeline on Buildkite, pointing at github.com/schwa/MetalSprocketsParticles, on the Metal 4 agent queue (default-queue). Needs a Buildkite account action.
+2. Add .buildkite/pipeline.yml: generate with 'xcb ci generate --target buildkite --warnings-as-errors --no-parallel', then add a step with MTL_DEBUG_LAYER=1 and MTL_CAPTURE_ENABLED=1 (Metal reads them once per process, so it is its own step). Share MetalSprockets' concurrency group for GPU tests. Include the demo support package tests and a demo app build.
+3. Port Scripts/test-metal-layers.sh and the MetalDebugLayers test support from MetalSprockets, so the same runs work locally.
+4. Skip or loosen timing tests (STITCHING_TIMINGS, flocking cost) when a layer is on.
+
+Done when: Buildkite is green on main with the validation + capture step.
+
+---
+
+## 231: Every particle draw calls setTriangleFillMode, flooding API validation with redundant-call warnings
+
++++
+status: new
+priority: low
+kind: bug
+labels: area:rendering, effort:s
+created: 2026-10-21T13:53:12Z
++++
+
+Running the demo in Xcode (API validation on) prints, for every emitter draw every frame:
+
+-[MTL4DebugRenderCommandEncoder setTriangleFillMode:], line 710: warning 'Redundant call to setTriangleFillMode. (setTriangleFillMode called with MTLTriangleFillModeFill but triangle fill mode was already set.)'
+
+Two sources:
+- DrawPlan.swift encode: the Draw closure calls encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill) on every draw, even when no draw is wireframe.
+- MetalSprockets Draw.swift:76 resets setTriangleFillMode(.fill) after each Draw unconditionally (MetalSprockets #472, open, deferred).
+
+The flood hides real validation messages in the console. Fix here: only set the fill mode for wireframe draws (draw.wireframe), and let the encoder default (.fill) stand otherwise; after a wireframe draw, either rely on MetalSprockets' reset or reset once. Fixing #472 upstream removes the other half. Done when a normal demo run under validation prints no setTriangleFillMode warnings.
 
 ---
