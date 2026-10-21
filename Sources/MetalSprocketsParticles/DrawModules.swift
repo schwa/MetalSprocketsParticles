@@ -17,21 +17,21 @@ struct DrawModules {
 extension EmitterModules {
     /// How a sprite module that is missing draws.
     static var neutralSprite: SpriteModule {
-        let neutral = neutralEmitter
-        return SpriteModule(blendMode: neutral.blendMode, sortMode: neutral.sortMode, orientation: neutral.orientation, softness: neutral.softness, minimumScreenSize: neutral.minimumScreenSize)
+        NeutralModules.sprite
     }
 
     /// Writes every enabled module's part of `draw`, over the values that apply when a module is missing, and returns
     /// the modules the planner needs.
     @discardableResult
     func contribute(to draw: inout EmitterDraw, emitter: ParticleSystemRuntime.Emitter) -> DrawModules {
-        let neutral = Self.neutralEmitter
-        draw.colorCurve = EmitterDraw.withOpacity(neutral.colorOverLife.baked(), neutral.opacityOverLife.baked())
-        draw.sizeCurve = neutral.sizeOverLife.baked()
+        let color = NeutralModules.colorOverLife
+        draw.colorCurve = EmitterDraw.withOpacity(color.color.baked(), color.opacity.baked())
+        draw.sizeCurve = NeutralModules.sizeOverLife.curve.baked()
         draw.extraColorCurves = EmitterDraw.whiteCurves(count: 3)
-        draw.uniforms.speedColorRange = [neutral.colorBySpeedRange.lowerBound, neutral.colorBySpeedRange.upperBound]
-        draw.uniforms.positionColorStart = neutral.colorByPositionStart
-        draw.uniforms.positionColorEnd = neutral.colorByPositionEnd
+        let speed = NeutralModules.colorBySpeed.range
+        draw.uniforms.speedColorRange = [speed.lowerBound, speed.upperBound]
+        draw.uniforms.positionColorStart = NeutralModules.colorByPosition.start
+        draw.uniforms.positionColorEnd = NeutralModules.colorByPosition.end
         draw.applySequence(nil, texture: emitter.texture)
         var found = DrawModules()
         Self.neutralSprite.contribute(to: &draw)

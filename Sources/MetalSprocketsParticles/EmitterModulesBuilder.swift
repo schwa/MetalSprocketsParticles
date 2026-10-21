@@ -39,7 +39,7 @@ public enum EmitterModulesBuilder {
 }
 
 public extension EmitterModules {
-    /// Modules from a list, each in its stage. Required modules that are missing get `ParticleEmitter`'s defaults.
+    /// Modules from a list, each in its stage. Required modules that are missing get those of `standard`.
     init(@EmitterModulesBuilder _ content: () -> [any ParticleModule]) {
         let modules = content()
         self.init(
@@ -53,9 +53,9 @@ public extension EmitterModules {
     private static func stage<Stage: StageModule>(_: Stage.Type, _ modules: [any ParticleModule]) -> [Stage] {
         var stage = modules.compactMap { Stage(wrapping: $0) }
         let present = Set(stage.map(\.kind))
-        let defaults = ParticleEmitter()
+        let defaults = standard.spawn.map(\.module.module) + standard.update.map(\.module.module) + standard.render.map(\.module.module)
         for type in Stage.types where type.isRequired && !present.contains(type.kind) {
-            if let module = (type as? any LoweredModule.Type)?.init(lifting: defaults), let wrapped = Stage(wrapping: module) {
+            if let module = defaults.first(where: { Swift.type(of: $0) == type }), let wrapped = Stage(wrapping: module) {
                 stage.append(wrapped)
             }
         }
@@ -66,13 +66,40 @@ public extension EmitterModules {
 public extension EmitterModules {
     /// A starting point for 3D effects: a small sphere spraying orange-to-red sparks upward that fall back down.
     static var standard: Self {
-        Self(ParticleEmitter())
+        Self(
+            spawn: [
+                .shape(ShapeModule()),
+                .rate(RateModule()),
+                .lifetime(LifetimeModule()),
+                .velocity(VelocityModule(velocity: [0, 4, 0], spread: 1.5)),
+            ],
+            update: [
+                .gravity(GravityModule(acceleration: [0, -9.8, 0])),
+                .drag(DragModule(amount: 0.1)),
+                .collision(CollisionModule()),
+            ],
+            render: [
+                .sprite(SpriteModule()),
+                .colorOverLife(ColorOverLifeModule(color: .linear(from: [1, 0.7, 0.2, 1], to: [0.8, 0.1, 0.05, 0]))),
+                .sizeOverLife(SizeOverLifeModule(curve: .linear(from: 0.04, to: 0.01))),
+                .shading(ShadingModule()),
+            ]
+        )
     }
 
     /// A starting point for 2D effects (`ParticleSystem.is2D`), in points: a fountain shooting up the screen at a few
     /// hundred points a second, falling back down (+y), 8 points across, kept on its plane.
     static var default2D: Self {
-        Self(ParticleEmitter.default2D)
+        var modules = standard
+        modules[ShapeModule.self]?.shape = .point
+        modules[RateModule.self]?.birthRate = 200
+        modules[VelocityModule.self] = VelocityModule(velocity: [0, -400, 0], spread: 150, speedVariation: 100)
+        modules[GravityModule.self] = GravityModule(acceleration: [0, 500, 0])
+        modules[DragModule.self] = DragModule(amount: 0.3)
+        modules[LifetimeModule.self] = LifetimeModule(range: 1...2)
+        modules[SizeOverLifeModule.self] = SizeOverLifeModule(curve: .constant(4))
+        modules[PlaneConstraintModule.self] = PlaneConstraintModule()
+        return modules
     }
 }
 

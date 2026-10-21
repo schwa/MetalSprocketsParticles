@@ -40,8 +40,8 @@ extension ParticleSystemRuntime {
         if let color {
             return EmitterDraw.withOpacity(color.color.baked(), color.opacity.baked())
         }
-        let neutral = EmitterModules.neutralEmitter
-        return EmitterDraw.withOpacity(neutral.colorOverLife.baked(), neutral.opacityOverLife.baked())
+        let neutral = NeutralModules.colorOverLife
+        return EmitterDraw.withOpacity(neutral.color.baked(), neutral.opacity.baked())
     }
 
     /// The particle lights as of the last finished frame, for lighting your own geometry. Lights without a live

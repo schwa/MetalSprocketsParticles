@@ -29,13 +29,12 @@ struct ResolvedModules {
     var usesCustomAttributes: Bool
 
     init(_ modules: EmitterModules) {
-        let neutral = EmitterModules.neutralEmitter
-        rate = RateModule(lifting: neutral) ?? RateModule()
-        lifetime = neutral.lifetime
-        inheritVelocity = neutral.inheritVelocity
-        shape = neutral.shape
-        position = neutral.position
-        sortMode = EmitterModules.neutralSprite.sortMode
+        rate = NeutralModules.rate
+        lifetime = NeutralModules.lifetime.range
+        inheritVelocity = 0
+        shape = NeutralModules.shape.shape
+        position = NeutralModules.shape.position
+        sortMode = NeutralModules.sprite.sortMode
         var userFunctions: [ParticleFunctionSlot: ParticleFunction] = [:]
         var stitchedUpdate: [StitchedModule] = []
         var stitchedSpawn: [StitchedModule] = []
@@ -93,9 +92,21 @@ struct ResolvedModules {
     }
 }
 
+/// What applies when an emitter has no module of a kind: nothing moves, colors, or grows; particles spawn from a
+/// small sphere at the default rate and lifetime and bounce with the default collision response.
+enum NeutralModules {
+    static let shape = ShapeModule()
+    static let rate = RateModule()
+    static let lifetime = LifetimeModule()
+    static let collision = CollisionModule()
+    static let sprite = SpriteModule()
+    static let colorOverLife = ColorOverLifeModule(color: .constant([1, 1, 1, 1]))
+    static let sizeOverLife = SizeOverLifeModule(curve: .constant(0.04))
+    static let colorBySpeed = ColorBySpeedModule(curve: nil)
+    static let colorByPosition = ColorByPositionModule(curve: nil)
+}
+
 extension EmitterModules {
-    /// Values a missing module leaves, as `lowered()` starts from. Stage 4 (#229) replaces this with constants.
-    static let neutralEmitter = ParticleEmitter.neutral
 
     /// Every enabled module of type `Module`, in stage order. For occasional checks; per-frame code uses
     /// `ResolvedModules`.

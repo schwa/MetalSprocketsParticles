@@ -18,12 +18,10 @@ protocol SimulationContributor {
 extension EmitterModules {
     /// Writes every enabled module's part of `uniforms`, over the values that apply when a module is missing.
     func contribute(to uniforms: inout SimulationUniforms, context: SimulationContext) {
-        let neutral = Self.neutralEmitter
-        uniforms.shape = ParticleShapeData(shape: neutral.shape, position: neutral.position, birthLocation: neutral.birthLocation, birthDirection: neutral.birthDirection, sweep: neutral.sweepAngle, mesh: context.mesh)
-        uniforms.lifetimeMinimum = neutral.lifetime.lowerBound
-        uniforms.lifetimeMaximum = neutral.lifetime.upperBound
-        uniforms.restitution = neutral.restitution
-        uniforms.friction = neutral.friction
+        NeutralModules.shape.contribute(to: &uniforms, context: context)
+        NeutralModules.lifetime.contribute(to: &uniforms, context: context)
+        uniforms.restitution = NeutralModules.collision.restitution
+        uniforms.friction = NeutralModules.collision.friction
         uniforms.glintShininess = max(ParticleFoil().shininess, 1)
         for slot in spawn where slot.isEnabled {
             slot.module.contribute(to: &uniforms, context: context)
