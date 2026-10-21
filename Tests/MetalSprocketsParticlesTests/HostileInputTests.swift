@@ -8,20 +8,21 @@ import Testing
 @Suite(.serialized, .requiresMetal4)
 struct HostileInputTests {
     @Test func emptyCurvesInAFileDoNotCrash() throws {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 100
-        var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(emitter)) as? [String: Any])
-        for key in ["colorOverLife", "sizeOverLife", "opacityOverLife", "emissionOverTime"] {
-            object[key] = ["keyframes": [Any]()]
-        }
-        let decoded: ParticleEmitter
+        let modules: EmitterModules
         do {
-            decoded = try JSONDecoder().decode(ParticleEmitter.self, from: JSONSerialization.data(withJSONObject: object))
+            let empty = Data(#"{ "keyframes": [] }"#.utf8)
+            let floats = try JSONDecoder().decode(ParticleCurve<Float>.self, from: empty)
+            let colors = try JSONDecoder().decode(ParticleCurve<SIMD4<Float>>.self, from: empty)
+            modules = EmitterModules {
+                RateModule(birthRate: 100, overTime: floats)
+                ColorOverLifeModule(color: colors, opacity: floats)
+                SizeOverLifeModule(curve: floats)
+            }
         } catch {
             return // Rejecting the file is fine too.
         }
         let runner = try Runner()
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: decoded)
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: modules)
         try runner.run(try runtime.simulate(deltaTime: 1.0 / 60.0))
     }
 

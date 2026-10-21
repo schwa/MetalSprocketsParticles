@@ -42,7 +42,7 @@ struct ParticleMeshTests {
     @Test func particleMeshesRoundTripThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.particleMesh = .coin
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).particleMesh == .coin)
+        #expect(try roundTrip(emitter).particleMesh == .coin)
         let json = try #require(String(bytes: JSONEncoder().encode(ParticleMesh.cube), encoding: .utf8))
         #expect(json == #"{"cube":{}}"#)
     }
@@ -58,7 +58,7 @@ struct ParticleMeshTests {
         var emitter = ParticleEmitter()
         emitter.particleMesh = .triangles(positions: positions + [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]], normals: normals + [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         let resources = EffectResources()
-        let json = try resources.encoder().encode(emitter)
+        let json = try resources.encoder().encode(EmitterModules(emitter))
         let (name, data) = try #require(resources.files.first)
         #expect(name.hasPrefix("particle-mesh-") && name.hasSuffix(".ply"))
         #expect(String(bytes: json, encoding: .utf8)?.contains("\"\(name)\"") == true)
@@ -66,7 +66,7 @@ struct ParticleMeshTests {
         let header = try #require(String(bytes: data[..<end.lowerBound], encoding: .ascii))
         // The square's two triangles share two corners: 4 vertices, plus 3 for the extra triangle.
         #expect(header.contains("element vertex 7") && header.contains("element face 3"))
-        let decoded = try EffectResources(files: resources.files).decoder().decode(ParticleEmitter.self, from: json)
+        let decoded = try EffectResources(files: resources.files).decoder().decode(EmitterModules.self, from: json).lowered()
         #expect(decoded.particleMesh == emitter.particleMesh)
     }
 

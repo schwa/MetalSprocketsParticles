@@ -73,7 +73,7 @@ struct ScreenSizeTests {
         var emitter = ParticleEmitter()
         emitter.minimumScreenSize = 0.003
         emitter.lodScalesSize = true
-        let decoded = try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter))
+        let decoded = try roundTrip(emitter)
         #expect(decoded.minimumScreenSize == 0.003 && decoded.lodScalesSize)
     }
 }

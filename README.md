@@ -164,11 +164,10 @@ For soft particles, which fade where they meet your geometry, render your scene'
 To try the presets and edit effects live, open the demo app in `Demos/MetalSprocketsParticlesDemo`. Pick a preset in the
 toolbar, change any setting in the inspector, and save the result as an effect file to load in your own app.
 
-There are also three command-line tools:
+There are also two command-line tools:
 
 - `particles-render` renders presets and effect files to images and videos, with debug views if you want them.
 - `particles-bench` measures frame times, for particle counts or for every sample preset against a frame budget. `--save-baseline` and `--compare` check for slowdowns (see `Benchmarks/`).
-- `particles-migrate` rewrites older effect files in the current format.
 
 ## 100% vibe coded
 

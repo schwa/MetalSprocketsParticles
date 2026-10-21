@@ -21,17 +21,14 @@ struct DecodingCoverageTests {
         }
     }
 
-    @Test func emitterDecoderReadsEverySetting() throws {
-        // Optional settings are only written when set, so set them all.
-        var emitter = ParticleEmitter()
-        let function = ParticleFunction(source: "", name: "f")
-        emitter.updateFunction = function
-        emitter.spawnFunction = function
-        emitter.collisionFunction = function
-        emitter.deathFunction = function
-        emitter.emissionDuration = 1
-        emitter.imageSequence = ImageSequence(rows: 2, columns: 2)
-        #expect(try ignoredKeys(emitter).isEmpty)
+    @Test func moduleDecodersReadEveryField() throws {
+        // Optional fields are only written when they differ from the default, so set them.
+        var modules = EmitterModules.standard
+        modules.categoryMask = 0b101
+        modules.customAttributeCount = 2
+        #expect(try ignoredKeys(modules).isEmpty)
+        #expect(try ignoredKeys(ShadingModule(model: .lit, perPixel: true)).isEmpty)
+        #expect(try ignoredKeys(RateModule(emissionDuration: 1)).isEmpty)
     }
 
     @Test func systemDecoderReadsEveryField() throws {

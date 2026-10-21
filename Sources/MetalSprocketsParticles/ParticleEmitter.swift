@@ -3,19 +3,18 @@ import simd
 
 // Adding a setting:
 // 1. The property here, with its default.
-// 2. A `container.update` line in `init(from:)` (DecodingCoverageTests fails if it is missing).
+// 2. A module for it: a field of an existing ParticleModule type, or a new type in SpawnModules.swift,
+//    UpdateModules.swift, or RenderModules.swift (a case and an entry in `types`), with `apply` and `init?(lifting:)`.
+//    Modules are what effect files save. EmitterModulesTests fails if presets stop round-tripping.
 // 3. If the GPU needs it: a field in SimulationUniforms or RenderUniforms (ParticleTypes.h), set in
 //    FramePlan.uniforms(for:) or the render draw, and used in Particles.metal.
-// 4. A control in the demo inspector, and in ParticleKind.swift if it is a new enum kind.
-// 5. A module for it: a field of an existing ParticleModule type, or a new type in SpawnModules.swift,
-//    UpdateModules.swift, or RenderModules.swift (a case and an entry in `types`), with `apply` and `init?(lifting:)`.
-//    EmitterModulesTests fails if presets stop round-tripping.
+// 4. A control in the demo's module editors, and in ParticleKind.swift if it is a new enum kind.
 
 /// The flat form of an emitter: what `EmitterModules` lowers to and the simulation reads. Internal: code outside the
 /// library builds modules (#204).
 ///
 /// Colliders and force fields are shared by all emitters and live on `ParticleSystemRuntime`.
-struct ParticleEmitter: Sendable, Equatable, Codable {
+struct ParticleEmitter: Sendable, Equatable {
     /// Center of `shape` in emitter space.
     var position: SIMD3<Float> = .zero
     var shape: EmitterShape = .sphere(radius: 0.05)
@@ -227,11 +226,6 @@ struct ParticleEmitter: Sendable, Equatable, Codable {
     init() {}
 }
 
-/// Keys of the two masks that `categoryMask` replaced, read from older effect files.
-private enum LegacyMaskKeys: String, CodingKey {
-    case collisionMask, fieldMask
-}
-
 extension ParticleEmitter {
     /// A starting point for 2D effects (`ParticleSystem.is2D`), in points: a fountain shooting up the screen at a few
     /// hundred points a second, with spread and speed variation in points too, falling back down (+y), 8 points across.
@@ -248,97 +242,6 @@ extension ParticleEmitter {
         emitter.sizeOverLife = .constant(4)
         emitter.constrainsToPlane = true
         return emitter
-    }
-
-    /// Missing keys keep their defaults, so effects saved before a setting existed still load.
-    init(from decoder: Decoder) throws {
-        self.init()
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        try container.update(&position, .position)
-        try container.update(&shape, .shape)
-        try container.update(&birthLocation, .birthLocation)
-        try container.update(&birthDirection, .birthDirection)
-        try container.update(&sweepAngle, .sweepAngle)
-        try container.update(&velocity, .velocity)
-        try container.update(&velocitySpread, .velocitySpread)
-        try container.update(&lifetime, .lifetime)
-        try container.update(&colorOverLife, .colorOverLife)
-        try container.update(&sizeOverLife, .sizeOverLife)
-        try container.update(&opacityOverLife, .opacityOverLife)
-        try container.update(&gravity, .gravity)
-        try container.update(&drag, .drag)
-        try container.update(&restitution, .restitution)
-        try container.update(&restitutionVariation, .restitutionVariation)
-        try container.update(&friction, .friction)
-        try container.update(&frictionVariation, .frictionVariation)
-        try container.update(&diesOnCollision, .diesOnCollision)
-        try container.update(&speedVariation, .speedVariation)
-        try container.update(&sizeVariation, .sizeVariation)
-        try container.update(&colorVariation, .colorVariation)
-        try container.update(&angle, .angle)
-        try container.update(&angleVariation, .angleVariation)
-        try container.update(&angularSpeed, .angularSpeed)
-        try container.update(&angularSpeedVariation, .angularSpeedVariation)
-        try container.update(&blendMode, .blendMode)
-        try container.update(&sortMode, .sortMode)
-        try container.update(&imageSequence, .imageSequence)
-        try container.update(&orientation, .orientation)
-        try container.update(&birthRate, .birthRate)
-        try container.update(&birthRateVariation, .birthRateVariation)
-        try container.update(&inheritVelocity, .inheritVelocity)
-        try container.update(&emissionDuration, .emissionDuration)
-        try container.update(&idleDuration, .idleDuration)
-        try container.update(&loops, .loops)
-        try container.update(&warmupDuration, .warmupDuration)
-        try container.update(&subEmitters, .subEmitters)
-        try container.update(&triggers, .triggers)
-        if container.contains(.categoryMask) {
-            try container.update(&categoryMask, .categoryMask)
-        } else {
-            // Files from before one mask had collisionMask and fieldMask: equal ones carry over; different ones combine.
-            let legacy = try decoder.container(keyedBy: LegacyMaskKeys.self)
-            let collision = try legacy.decodeIfPresent(UInt32.self, forKey: .collisionMask) ?? .max
-            let field = try legacy.decodeIfPresent(UInt32.self, forKey: .fieldMask) ?? .max
-            categoryMask = collision | field
-        }
-        try container.update(&emissionOverTime, .emissionOverTime)
-        try container.update(&isLit, .isLit)
-        try container.update(&softness, .softness)
-        updateFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .updateFunction)
-        try container.update(&constrainsToPlane, .constrainsToPlane)
-        spawnFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .spawnFunction)
-        collisionFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .collisionFunction)
-        deathFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .deathFunction)
-        try container.update(&reportsCollisions, .reportsCollisions)
-        try container.update(&reportsDeaths, .reportsDeaths)
-        try container.update(&lodNearDistance, .lodNearDistance)
-        try container.update(&lodFarDistance, .lodFarDistance)
-        try container.update(&lodFarRateScale, .lodFarRateScale)
-        try container.update(&cullingRadius, .cullingRadius)
-        try container.update(&simulatesWhenCulled, .simulatesWhenCulled)
-        light = try container.decodeIfPresent(ParticleLightEmission.self, forKey: .light)
-        particleMesh = try container.decodeIfPresent(ParticleMesh.self, forKey: .particleMesh)
-        try container.update(&collidesWithSceneDepth, .collidesWithSceneDepth)
-        colorBySpeed = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .colorBySpeed)
-        try container.update(&colorBySpeedRange, .colorBySpeedRange)
-        alternateColorOverLife = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .alternateColorOverLife)
-        colorByPosition = try container.decodeIfPresent(ParticleCurve<SIMD4<Float>>.self, forKey: .colorByPosition)
-        try container.update(&colorByPositionStart, .colorByPositionStart)
-        try container.update(&colorByPositionEnd, .colorByPositionEnd)
-        trail = try container.decodeIfPresent(ParticleTrail.self, forKey: .trail)
-        flocking = try container.decodeIfPresent(ParticleFlocking.self, forKey: .flocking)
-        foil = try container.decodeIfPresent(ParticleFoil.self, forKey: .foil)
-        try container.update(&collisionRadius, .collisionRadius)
-        ribbon = try container.decodeIfPresent(ParticleRibbon.self, forKey: .ribbon)
-        try container.update(&minimumScreenSize, .minimumScreenSize)
-        try container.update(&lodScalesSize, .lodScalesSize)
-        try container.update(&colorByPositionAtBirth, .colorByPositionAtBirth)
-        try container.update(&customAttributeCount, .customAttributeCount)
-        colorImage = try container.decodeIfPresent(ParticleColorImage.self, forKey: .colorImage)
-        try container.update(&updateModules, .updateModules)
-        try container.update(&spawnModules, .spawnModules)
-        shadingFunction = try container.decodeIfPresent(ParticleFunction.self, forKey: .shadingFunction)
-        try container.update(&shadesPerPixel, .shadesPerPixel)
     }
 }
 

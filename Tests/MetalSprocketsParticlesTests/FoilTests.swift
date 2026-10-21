@@ -194,13 +194,13 @@ struct FoilTests {
     @Test func tumblingRoundTripsThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.orientation = .tumbling
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).orientation == .tumbling)
+        #expect(try roundTrip(emitter).orientation == .tumbling)
     }
 
     @Test func foilRoundTripsThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.foil = ParticleFoil(glint: 2, shininess: 30, iridescence: 0.4)
-        let decoded = try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter))
+        let decoded = try roundTrip(emitter)
         #expect(decoded.foil == emitter.foil)
     }
 }

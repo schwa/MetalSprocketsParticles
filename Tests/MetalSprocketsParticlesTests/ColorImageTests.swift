@@ -84,7 +84,6 @@ struct ColorImageTests {
     @Test func colorImagesRoundTripThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.colorImage = ParticleColorImage(data: try redBluePNG(), center: .zero, size: 2)
-        let resources = EffectResources()
-        #expect(try resources.decoder().decode(ParticleEmitter.self, from: resources.encoder().encode(emitter)).colorImage == emitter.colorImage)
+        #expect(try roundTrip(emitter).colorImage == emitter.colorImage)
     }
 }

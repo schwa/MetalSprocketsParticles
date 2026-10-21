@@ -154,6 +154,6 @@ struct FlockingTests {
     @Test func flockingRoundTripsThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.flocking = ParticleFlocking(radius: 0.7, separation: 0.1, speedRange: 1...3, maxNeighbors: 12)
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).flocking == emitter.flocking)
+        #expect(try roundTrip(emitter).flocking == emitter.flocking)
     }
 }

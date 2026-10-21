@@ -64,7 +64,7 @@ struct PlaneConstraintTests {
         var emitter = ParticleEmitter()
         #expect(!emitter.constrainsToPlane)
         emitter.constrainsToPlane = true
-        let decoded = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(emitter))
+        let decoded = try roundTrip(emitter)
         #expect(decoded.constrainsToPlane)
     }
 }

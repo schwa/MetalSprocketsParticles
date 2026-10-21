@@ -57,7 +57,7 @@ Every emitter has a `ShadingModule` with a model: `.unlit`, `.lit`, `.foil(setti
 ## Effect files
 
 - Format 4: each layer and sub-emitter has `modules`; appearance modules are in `render`; a shading module replaces the foil module and the sprite's `isLit`.
-- Formats 3 (foil module, `isLit`), 2 (appearance modules in `update`), and 1 (flat `settings`) still load. Saving writes format 4. `particles-migrate` rewrites files in place.
+- Only format 4 loads (#218). Older effects (format 1 flat `settings`, 2 appearance modules in `update`, 3 foil module and `isLit`, and files with no `formatVersion`) fail with an error naming the format.
 
 ## Not modules
 

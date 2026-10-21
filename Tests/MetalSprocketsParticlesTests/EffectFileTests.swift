@@ -211,13 +211,24 @@ struct EffectFileTests {
         #expect(decoded == box)
     }
 
-    @Test func emitterSettingsMissingFromAFileKeepTheirDefaults() throws {
-        let json = Data(#"{ "birthRate": 42, "gravity": [0, -1, 0] }"#.utf8)
-        let emitter = try JSONDecoder().decode(ParticleEmitter.self, from: json)
-        var expected = ParticleEmitter()
-        expected.birthRate = 42
-        expected.gravity = [0, -1, 0]
-        #expect(emitter == expected)
+    /// Only the current format loads (#218): older effects fail with an error naming their format.
+    @Test func olderFormatsAreRejected() {
+        func message(_ json: String) -> String? {
+            do {
+                _ = try ParticleSystem(json: Data(json.utf8), resources: EffectResources())
+                return nil
+            } catch let DecodingError.dataCorrupted(context) {
+                return context.debugDescription
+            } catch {
+                return "\(error)"
+            }
+        }
+        let unversioned = message(#"{ "name": "Old", "layers": [] }"#)
+        #expect(unversioned?.contains("no format version") == true, "\(unversioned ?? "loaded")")
+        let three = message(#"{ "name": "Old", "layers": [], "formatVersion": 3 }"#)
+        #expect(three?.contains("format 3") == true, "\(three ?? "loaded")")
+        #expect(message(#"{ "name": "New", "layers": [], "formatVersion": 5 }"#) != nil)
+        #expect(message(#"{ "name": "Current", "layers": [], "formatVersion": 4 }"#) == nil)
     }
 
     @Test func unknownColliderKindIsAnError() {

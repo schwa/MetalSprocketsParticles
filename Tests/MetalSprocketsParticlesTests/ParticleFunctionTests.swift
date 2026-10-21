@@ -268,15 +268,15 @@ struct ParticleFunctionTests {
 
     @Test func updateFunctionRoundTripsThroughJSON() throws {
         let emitter = fallingEmitter { $0.updateFunction = setVelocity }
-        let decoded = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(emitter))
+        let decoded = try roundTrip(emitter)
         #expect(decoded.updateFunction == setVelocity)
         var spawning = fallingEmitter()
         spawning.spawnFunction = ring
         spawning.collisionFunction = setVelocity
         spawning.deathFunction = ring
-        let events = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(spawning))
+        let events = try roundTrip(spawning)
         #expect(events.spawnFunction == ring && events.collisionFunction == setVelocity && events.deathFunction == ring)
-        let plain = try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(fallingEmitter()))
+        let plain = try roundTrip(fallingEmitter())
         #expect(plain.updateFunction == nil)
     }
 }

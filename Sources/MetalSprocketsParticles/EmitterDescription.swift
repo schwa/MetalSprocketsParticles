@@ -155,19 +155,14 @@ public extension ParticleSystemRuntime {
 /// emission uses) and loads back as a triangle mesh.
 extension EmitterDescription: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, settings, modules, sprite, motion, simulationSpace, capacity, isEmitting, mesh, meshPositions, meshTriangles, meshDeformation, points, image
+        case id, name, modules, sprite, motion, simulationSpace, capacity, isEmitting, mesh, meshPositions, meshTriangles, meshDeformation, points, image
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        // Files before modules (format 1) have flat settings; they lift to modules.
-        if container.contains(.modules) {
-            modules = try container.decode(EmitterModules.self, forKey: .modules)
-        } else {
-            modules = EmitterModules(try container.decode(ParticleEmitter.self, forKey: .settings))
-        }
+        modules = try container.decode(EmitterModules.self, forKey: .modules)
         lowered = modules.lowered()
         sprite = try container.decode(ParticleSprite.self, forKey: .sprite)
         motion = try container.decode(EmitterMotion.self, forKey: .motion)

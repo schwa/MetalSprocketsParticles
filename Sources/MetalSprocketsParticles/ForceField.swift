@@ -112,8 +112,7 @@ extension ForceField: Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Files saved before categories stored the effect itself, without the wrapper.
-        effect = try container.decodeIfPresent(Effect.self, forKey: .effect) ?? Effect(from: decoder)
+        effect = try container.decode(Effect.self, forKey: .effect)
         categoryBitMask = try container.decodeIfPresent(UInt32.self, forKey: .categoryBitMask) ?? .max
     }
 }

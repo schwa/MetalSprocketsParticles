@@ -56,6 +56,6 @@ struct CollisionRadiusTests {
     @Test func collisionRadiusRoundTripsThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.collisionRadius = 0.07
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).collisionRadius == 0.07)
+        #expect(try roundTrip(emitter).collisionRadius == 0.07)
     }
 }

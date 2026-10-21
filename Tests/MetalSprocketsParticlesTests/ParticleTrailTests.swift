@@ -127,6 +127,6 @@ struct ParticleTrailTests {
     @Test func trailsRoundTripThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.trail = ParticleTrail(pointCount: 24, tapers: false, fades: true)
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).trail == emitter.trail)
+        #expect(try roundTrip(emitter).trail == emitter.trail)
     }
 }

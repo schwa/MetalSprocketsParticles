@@ -81,69 +81,10 @@ public struct EmitterModules: Sendable, Equatable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try container.update(&spawn, .spawn)
-        // Format 3 and earlier had a foil module and SpriteModule.isLit; both become the shading module (#172).
-        var legacyShading: ShadingModel?
-        if container.contains(.render) {
-            var entries = try container.nestedUnkeyedContainer(forKey: .render)
-            while !entries.isAtEnd {
-                let entry = try entries.superDecoder()
-                let legacy = try? LegacyRenderEntry(from: entry)
-                if let foil = legacy?.module.foil?.foil {
-                    legacyShading = .foil(settings: foil)
-                    continue
-                }
-                if legacy?.module.sprite?.isLit ?? false, legacyShading == nil {
-                    legacyShading = .lit
-                }
-                render.append(try ModuleSlot<RenderModule>(from: entry))
-            }
-        }
-        // Format 2 had the appearance modules (color and size over life...) in update; they move to render.
-        if container.contains(.update) {
-            var entries = try container.nestedUnkeyedContainer(forKey: .update)
-            while !entries.isAtEnd {
-                let entry = try entries.superDecoder()
-                do {
-                    update.append(try ModuleSlot<UpdateModule>(from: entry))
-                } catch {
-                    guard let moved = try? ModuleSlot<RenderModule>(from: entry) else {
-                        throw error
-                    }
-                    render.append(moved)
-                }
-            }
-        }
+        try container.update(&update, .update)
+        try container.update(&render, .render)
         try container.update(&categoryMask, .categoryMask)
         try container.update(&customAttributeCount, .customAttributeCount)
-        if !render.contains(where: { if case .shading = $0.module { true } else { false } }) {
-            render.append(ModuleSlot(.shading(ShadingModule(model: legacyShading ?? .unlit))))
-        }
-    }
-
-    /// Only what format 3 had that format 4 replaced.
-    private struct LegacyRenderEntry: Decodable {
-        var module: LegacyRenderModule
-    }
-
-    private struct LegacyRenderModule: Decodable {
-        var sprite: LegacySprite?
-        var foil: LegacyFoil?
-    }
-
-    private struct LegacySprite: Decodable {
-        var isLit: Bool
-
-        private enum CodingKeys: String, CodingKey {
-            case isLit
-        }
-
-        init(from decoder: Decoder) throws {
-            isLit = try decoder.container(keyedBy: CodingKeys.self).decodeIfPresent(Bool.self, forKey: .isLit) ?? false
-        }
-    }
-
-    private struct LegacyFoil: Decodable {
-        var foil: ParticleFoil
     }
 
     public func encode(to encoder: Encoder) throws {

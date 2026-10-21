@@ -4662,12 +4662,13 @@ Adding the stitched template twice gives two modules named 'swirl'. Editing one'
 ## 218: Hard-deprecate effect file formats older than 4
 
 +++
-status: new
+status: closed
 priority: low
 kind: task
 labels: area:api, effort:s
 created: 2026-10-21T00:24:43Z
-updated: 2026-10-21T00:24:59Z
+updated: 2026-10-21T01:58:02Z
+closed: 2026-10-21T01:58:02Z
 +++
 
 Effect files are at format 4. The library still reads formats 1 (flat settings), 2 (appearance modules in update), and 3 (foil module, SpriteModule.isLit), through lifting (EmitterModules.init(ParticleEmitter)), the update-stage fallback and LegacyRenderEntry in EmitterModules decoding, and SubEmitter's flat 'settings'.
@@ -4675,6 +4676,8 @@ Effect files are at format 4. The library still reads formats 1 (flat settings),
 Hard deprecation: stop reading them. Files without formatVersion 4 fail to load with a clear error ('effect format N is not supported; this library reads format 4'). Remove the legacy decoding paths, the tests that cover them, and particles-migrate (the bundled presets are already format 4). Lifting stays only where tests still use it (@testable), or goes too if tests move to modules.
 
 Docs: Modules.md 'Effect files' section, README.
+
+- `2026-10-21T01:58:02Z`: Hard-deprecated: ParticleSystem requires formatVersion 4 and fails first with an error naming the found format (or 'no format version'). Removed: flat-settings decoding in EmitterDescription and SubEmitter, format 2/3 conversions in EmitterModules, ParticleEmitter's Codable (with the old collisionMask/fieldMask), the '_0' key fallbacks in EmissionTrigger and PointerBinding, the pre-category ForceField form, and particles-migrate. Lifting stays internal (settings setter, standard/default2D). Tests round-trip through modules (Tests/RoundTrip.swift); legacy tests removed; new EffectFileTests.olderFormatsAreRejected. Docs updated.
 
 ---
 

@@ -41,15 +41,6 @@ struct EnumKeyTests {
         }
     }
 
-    @Test func oldUnderscoreKeysStillLoad() throws {
-        func decode<T: Decodable>(_ type: T.Type, _ text: String) throws -> T {
-            try JSONDecoder().decode(type, from: Data(text.utf8))
-        }
-        #expect(try decode(PointerBinding.self, #"{"collider":{"_0":3}}"#) == .collider(3))
-        #expect(try decode(EmissionTrigger.Action.self, #"{"burst":{"_0":40}}"#) == .burst(40))
-        #expect(try decode(EmissionTrigger.Condition.self, #"{"event":{"_0":"pop"}}"#) == .event("pop"))
-    }
-
     @Test func samplePresetsHaveNoUnderscoreKeys() throws {
         for system in ParticleSystem.all {
             #expect(try !json(system).contains("\"_0\""), "\(system.name)")

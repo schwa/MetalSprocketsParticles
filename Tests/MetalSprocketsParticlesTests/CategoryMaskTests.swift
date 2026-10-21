@@ -70,31 +70,15 @@ struct CategoryMaskTests {
         #expect(try JSONDecoder().decode(Collider.self, from: try JSONEncoder().encode(masked)) == masked)
         let plain = try JSONEncoder().encode(Collider.sphere(center: .zero, radius: 1))
         #expect(String(bytes: plain, encoding: .utf8)?.contains("categoryBitMask") == false)
-        // Files saved before categories existed still load, with all bits set.
-        let old = Data(#"{ "kind": "sphere", "center": [0, 0, 0], "radius": 1 }"#.utf8)
-        #expect(try JSONDecoder().decode(Collider.self, from: old).categoryBitMask == .max)
+        // All bits set is the default and is not written.
+        let allBits = Data(#"{ "kind": "sphere", "center": [0, 0, 0], "radius": 1 }"#.utf8)
+        #expect(try JSONDecoder().decode(Collider.self, from: allBits).categoryBitMask == .max)
 
         let field = ForceField.vortex(center: .zero, strength: 1, categoryBitMask: 0b11)
         #expect(try JSONDecoder().decode(ForceField.self, from: try JSONEncoder().encode(field)) == field)
-        let oldField = Data(#"{ "turbulence": { "strength": 2, "scale": 1, "speed": 0 } }"#.utf8)
-        #expect(try JSONDecoder().decode(ForceField.self, from: oldField) == .turbulence(strength: 2))
         var emitter = ParticleEmitter()
         emitter.categoryMask = 0b101
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: try JSONEncoder().encode(emitter)) == emitter)
-    }
-
-    /// Before one mask, emitters had collisionMask and fieldMask (#138): equal ones carry over, different ones combine.
-    @Test func oldSeparateMasksLoadAsOne() throws {
-        func decoded(collision: UInt32?, field: UInt32?) throws -> UInt32 {
-            var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(ParticleEmitter())) as? [String: Any])
-            object["categoryMask"] = nil
-            object["collisionMask"] = collision
-            object["fieldMask"] = field
-            return try JSONDecoder().decode(ParticleEmitter.self, from: JSONSerialization.data(withJSONObject: object)).categoryMask
-        }
-        #expect(try decoded(collision: 0b1, field: 0b1) == 0b1)
-        #expect(try decoded(collision: 0b1, field: 0b10) == 0b11)
-        #expect(try decoded(collision: nil, field: nil) == .max)
+        #expect(try roundTrip(emitter) == emitter)
     }
 
     /// One mask, both kinds: an emitter feels the collider and field sharing its bit and ignores the others.

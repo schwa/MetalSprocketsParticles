@@ -40,8 +40,7 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     /// is kept on its plane. The 3D camera and each emitter's own `constrainsToPlane` are kept, so turning it off
     /// restores them. For effects over an app's UI in points, use the `.overlay` camera and `ParticleEmitter.default2D`.
     public var is2D = false
-    /// Saved with the effect. 1: emitters as flat `settings`. 2: emitters as `modules` (#186). 3: appearance modules in
-    /// the render stage. 4: a shading module in place of the foil module and the sprite's isLit. All load.
+    /// Saved with the effect. Only the current format loads (#218); older effects are not read.
     public private(set) var formatVersion = Self.currentFormatVersion
     public static let currentFormatVersion = 4
 
@@ -74,6 +73,12 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
     /// Missing keys keep their defaults, so effects saved before a field existed still load.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        // First, so an old file fails with this message rather than whatever its first old field trips.
+        let version = try container.decodeIfPresent(Int.self, forKey: .formatVersion)
+        guard version == Self.currentFormatVersion else {
+            let found = version.map { "format \($0)" } ?? "no format version (an effect from before format 2)"
+            throw DecodingError.dataCorruptedError(forKey: .formatVersion, in: container, debugDescription: "This effect has \(found); this library reads only format \(Self.currentFormatVersion).")
+        }
         self.init(try container.decode(String.self, forKey: .name), layers: try container.decode([Layer].self, forKey: .layers))
         try container.update(&colliders, .colliders)
         try container.update(&animatesColliders, .animatesColliders)
@@ -90,10 +95,6 @@ public struct ParticleSystem: Sendable, Identifiable, Codable {
         try container.update(&cameraTarget, .cameraTarget)
         try container.update(&eventBursts, .eventBursts)
         try container.update(&is2D, .is2D)
-        let version = try container.decodeIfPresent(Int.self, forKey: .formatVersion) ?? 1
-        guard version <= Self.currentFormatVersion else {
-            throw DecodingError.dataCorruptedError(forKey: .formatVersion, in: container, debugDescription: "Effect format \(version) is newer than this library reads (\(Self.currentFormatVersion)).")
-        }
     }
 
     /// The same system with `comment` set.

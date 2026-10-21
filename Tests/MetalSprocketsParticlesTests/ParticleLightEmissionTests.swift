@@ -125,6 +125,6 @@ struct ParticleLightEmissionTests {
     @Test func lightEmissionRoundTripsThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.light = ParticleLightEmission(count: 3, color: [0.2, 1, 0.4], intensity: 1.5, range: 2.5)
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).light == emitter.light)
+        #expect(try roundTrip(emitter).light == emitter.light)
     }
 }

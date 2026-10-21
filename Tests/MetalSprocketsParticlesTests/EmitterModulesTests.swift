@@ -133,51 +133,6 @@ struct EmitterModulesTests {
         #expect(description.settings.updateModules.count == 1)
     }
 
-    @Test func formatTwoAppearanceModulesMoveToRender() throws {
-        let json = """
-        {"update": [{"module": {"gravity": {"acceleration": [0, -1, 0]}}}, {"module": {"sizeOverLife": {"curve": {"keyframes": [{"time": 0, "value": 0.5}]}}}}],
-        "render": [], "spawn": []}
-        """
-        let modules = try JSONDecoder().decode(EmitterModules.self, from: Data(json.utf8))
-        #expect(modules.update.map(\.module.kind) == ["gravity"])
-        #expect(modules.render.map(\.module.kind) == ["sizeOverLife", "shading"])
-        let bad = #"{"update": [{"module": {"gravity": {"acceleration": "x"}}}]}"#
-        #expect(throws: DecodingError.self) { try JSONDecoder().decode(EmitterModules.self, from: Data(bad.utf8)) }
-    }
-
-    @Test func typedSubscriptReadsAddsReplacesAndRemoves() {
-        var modules = EmitterModules.standard
-        modules[RateModule.self]?.birthRate = 7
-        #expect(modules.lowered().birthRate == 7)
-        modules[ShadingModule.self] = ShadingModule(model: .foil(settings: ParticleFoil(glint: 2)))
-        #expect(modules.render.filter { $0.module.kind == "shading" }.count == 1)
-        #expect(modules[ShadingModule.self]?.model == .foil(settings: ParticleFoil(glint: 2)))
-        #expect(modules.lowered().foil?.glint == 2)
-        modules[GravityModule.self] = nil
-        #expect(modules[GravityModule.self] == nil)
-        #expect(modules.lowered().gravity == .zero)
-    }
-
-    @Test(.requiresMetal4) func stitchedTemplatesCompile() throws {
-        let device = try #require(MTLCreateSystemDefaultDevice())
-        try StitchedModule.template.validate(device: device)
-        try #require(StitchedSpawnModule.added).module.validate(device: device)
-        let broken = StitchedModule(source: "not metal", name: "x")
-        #expect(throws: ParticleFunctionError.self) { try broken.validate(device: device) }
-    }
-
-    /// Format 3 effects: a foil module or a lit sprite become the shading module (#172).
-    @Test func formatThreeFoilAndLitBecomeShading() throws {
-        func render(_ json: String) throws -> [RenderModule] {
-            try JSONDecoder().decode(EmitterModules.self, from: Data(json.utf8)).render.map(\.module)
-        }
-        let lit = try render(#"{"render": [{"module": {"sprite": {"blendMode": 0, "sortMode": "None", "orientation": {"billboard": {}}, "softness": 0, "isLit": true, "minimumScreenSize": 0}}}]}"#)
-        #expect(lit.last == .shading(ShadingModule(model: .lit)))
-        let foil = try render(#"{"render": [{"module": {"foil": {"foil": {"glint": 5, "shininess": 10, "iridescence": 0.25}}}}]}"#)
-        #expect(foil == [.shading(ShadingModule(model: .foil(settings: ParticleFoil(glint: 5, shininess: 10, iridescence: 0.25))))])
-        #expect(try render(#"{"render": []}"#) == [.shading(ShadingModule())])
-    }
-
     /// Custom shading (#173): the model and its per-pixel flag survive saving, and bad source is rejected before it
     /// reaches the runtime.
     @Test(.requiresMetal4) func customShadingRoundTripsAndRejectsBadSource() throws {

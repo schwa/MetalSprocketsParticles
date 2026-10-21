@@ -82,6 +82,6 @@ struct ParticleRibbonTests {
     @Test func ribbonsRoundTripThroughEffectFiles() throws {
         var emitter = ParticleEmitter()
         emitter.ribbon = ParticleRibbon(tapers: false)
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)).ribbon == emitter.ribbon)
+        #expect(try roundTrip(emitter).ribbon == emitter.ribbon)
     }
 }

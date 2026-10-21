@@ -93,16 +93,13 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case occasion, countPerEvent, velocityFactor, settings, modules, sprite, replacesParent, continuesParentLife
+        case occasion, countPerEvent, velocityFactor, modules, sprite, replacesParent, continuesParentLife
     }
 
     /// Missing keys keep their defaults, so effects saved before a setting existed still load.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Files from before sub-emitter modules have flat settings; they lift to modules.
-        let modules = container.contains(.modules)
-            ? try container.decode(EmitterModules.self, forKey: .modules)
-            : EmitterModules(try container.decode(ParticleEmitter.self, forKey: .settings))
+        let modules = try container.decode(EmitterModules.self, forKey: .modules)
         self.init(
             occasion: try container.decode(Occasion.self, forKey: .occasion),
             countPerEvent: try container.decode(Int.self, forKey: .countPerEvent),

@@ -139,6 +139,6 @@ struct ColorGradientTests {
         emitter.colorByPosition = .constant([0.5, 0.5, 0.5, 1])
         emitter.colorByPositionStart = [1, 2, 3]
         emitter.colorByPositionEnd = [4, 5, 6]
-        #expect(try JSONDecoder().decode(ParticleEmitter.self, from: JSONEncoder().encode(emitter)) == emitter)
+        #expect(try roundTrip(emitter) == emitter)
     }
 }
