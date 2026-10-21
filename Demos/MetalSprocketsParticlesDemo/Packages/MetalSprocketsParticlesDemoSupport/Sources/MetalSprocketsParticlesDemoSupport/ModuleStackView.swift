@@ -150,7 +150,7 @@ struct ModuleStackView<Module: StageModule, Editor: View>: View {
     }
 
     /// "colorOverLife" as "Color Over Life"; stitched modules by their function name.
-    static func label(_ module: Module) -> String {
+    nonisolated static func label(_ module: Module) -> String {
         switch module.module {
         case let stitched as StitchedUpdateModule: return "Stitched \(stitched.module.name)"
         case let stitched as StitchedSpawnModule: return "Stitched \(stitched.module.name)"
