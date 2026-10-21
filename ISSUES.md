@@ -4593,12 +4593,12 @@ Benchmarks/baseline-presets.json was recorded before the module work; pre-module
 ## 215: Swift compiler crash: key path to a static property on an existential metatype
 
 +++
-status: new
+status: open
 priority: low
 kind: task
 labels: area:tooling, effort:s, deferred
 created: 2026-10-20T19:20:18Z
-updated: 2026-10-21T00:38:18Z
+updated: 2026-10-21T02:03:42Z
 +++
 
 In ParticleModule.swift, 'types.compactMap(\\.added)' where types is [any ParticleModule.Type] crashes swift-frontend (Xcode 27 RC). Worked around with a closure. Reduce to a minimal repro and report to Swift (swiftlang/swift).
@@ -4730,5 +4730,101 @@ Requires bumping the MetalSprockets dependency to include 60e2abad.
 Verify: particles-bench --presets --preset foil --repeats 5 returns to ~0.12 ms.
 
 - `2026-10-21T01:49:39Z`: Done in nwxlzyvz: built-in shading functions use .linking(.static) (MetalSprockets #540); Foil Confetti GPU back to 0.12 ms.
+
+---
+
+## 221: Each draw's rendering decisions are spread across ParticleSystemRuntime
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:architecture, area:rendering, effort:l
+created: 2026-10-21T02:03:07Z
+updated: 2026-10-21T02:03:42Z
++++
+
+render(projection:view:sceneDepth:) decides, for each emitter, in several places and a fixed order: the kind (ribbon, mesh, trail, sprite), the shading function, per-pixel or not, the shader variants (function constants), parameters, linked functions and their linking mode, and blend state. EmitterDraw's large init, shading(for:draw:), vertexShader/fragmentShader, BuiltInShading, four near-identical RenderPipeline branches, and ParticleBlendMode.configure share it. Bugs this session lived in these seams (#219 linked lists carrying over, per-draw lookups, long modifier chains). The runtime file is ~1,100 lines with ~76 stored properties and 21 files extend it.
+
+Deepen: a draw planner that turns (lowered settings, emitter state, camera, lights) into a complete draw description (pure, in-process), plus one thin encoder that binds any description. Dependency: in-process for planning; real MTLDevice (local-substitutable) for encoding.
+
+Tests: assert draw decisions at the planner boundary (e.g. foil sprite -> per-pixel fragment variant, foil linked statically; unlit sprite -> no shading call) instead of through pixels; keep a few goldens end to end.
+
+- `2026-10-21T02:03:43Z`: Related: #222 (shading-function compile/link/caching is one of the decisions the draw planner would consume).
+
+---
+
+## 222: User GPU code is compiled, cached, and linked four different ways
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:architecture, area:simulation, effort:m
+created: 2026-10-21T02:03:07Z
+updated: 2026-10-21T02:03:42Z
++++
+
+ParticleFunction.compile(prelude:), SlotFunction and its key, StitchedModule.stitch, ShadingModule's prelude and validateShading, the custom-attribute detection cache, and three caches on the runtime (compiledFunctions, compiledShadingFunctions, cachedBuiltInShading) all do: user source + prelude -> validated, cached visible function, linked statically or binary. Each feature (user functions #167, stitched modules #188, shading #172/#174) added its own path.
+
+Deepen: one compiler/cache for user GPU code: given what fills a slot (user function, stitched stack, shading function, built-in), return the linked function, compiled once per source, with linking mode and validation errors handled in one place. Dependency: local-substitutable (real MTLDevice in tests).
+
+Tests: replace the compile/validation checks spread over ParticleFunctionTests, StitchingSpikeTests, EmitterModulesTests, LightingTests with boundary tests: compiles once per source, rejects bad source with ParticleFunctionError, clashing stitched names fail clearly, built-ins link statically and user code binary.
+
+- `2026-10-21T02:03:43Z`: Related: #221 (the draw planner would get shading functions from this compiler).
+
+---
+
+## 223: One setting passes through three representations (modules, flat ParticleEmitter, GPU uniforms)
+
++++
+status: open
+priority: medium
+kind: task
+labels: area:architecture, area:api, effort:xl, needs-design
+depends: 221
+created: 2026-10-21T02:03:07Z
+updated: 2026-10-21T02:03:42Z
++++
+
+Module structs apply onto and lift from ParticleEmitter; EmitterModules lowers/lifts and merges to keep order; EmitterDescription and SubEmitter cache the lowered form in a didSet that does not fire in initializers; FramePlan.uniforms(for:) and EmitterDraw then read ~49 and ~39 ParticleEmitter fields. Adding a setting touches every layer, and lifting must stay exact for every preset.
+
+Deepen: modules produce their GPU-facing contribution directly (e.g. each module writes its part of the simulation/render uniforms and CPU state), so the flat ParticleEmitter and lifting disappear. Dependency: in-process.
+
+Tests: the lift/lower round trips (presetsRoundTrip, Tests/RoundTrip.swift users) become 'given modules -> expected uniforms/draw' tests. Large: needs a design pass first; likely after the draw planner (see related issue) so render-side uniforms have one home.
+
+---
+
+## 224: Particles.metal is one 2,000-line file; the four vertex shaders repeat their setup
+
++++
+status: open
+priority: low
+kind: task
+labels: area:architecture, area:rendering, effort:m
+created: 2026-10-21T02:03:07Z
+updated: 2026-10-21T02:03:43Z
++++
+
+Particles.metal holds the update kernel, spawning, collisions, sorting helpers, lights, shading, four particle vertex shaders, and the fragment shader. The sprite, mesh, trail, and ribbon vertex shaders each repeat dead-particle handling, color/tint, ShadingInput building, and the shade-or-store step.
+
+Split by concern into several files, and share the common vertex setup. Goldens must stay identical.
+
+---
+
+## 225: Demo module editors are one large switch
+
++++
+status: open
+priority: low
+kind: task
+labels: area:demo, area:architecture, effort:s
+created: 2026-10-21T02:03:07Z
+updated: 2026-10-21T02:03:43Z
++++
+
+ModuleStackView's Spawn/Update/RenderModuleEditor switch over every module case, with editing adapters in ModuleEditing.swift and Inspector+Editing.swift. Adding a module means editing the switch, the adapters, and the menu defaults in different files.
+
+Deepen: one editor per module type (e.g. a protocol the demo conforms each module to), looked up from the module, so adding a module adds one editor.
 
 ---
