@@ -50,8 +50,8 @@ extension ParticleSystemRuntime {
         let cameraPosition = cameraToWorld.columns.3.xyz
         cullingCamera = CullingCamera(position: cameraPosition, viewProjection: projection * view)
         let visible = allEmitters.filter { !$0.isOutsideView(camera: cullingCamera) }
-        let unsorted = visible.filter { $0.settings.sortMode == .none }
-        let sorted = visible.filter { $0.settings.sortMode != .none }
+        let unsorted = visible.filter { $0.sortMode == .none }
+        let sorted = visible.filter { $0.sortMode != .none }
             .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
         let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)), particleLightCount: particleLightCount)
         return try (unsorted + sorted).map { emitter in
@@ -61,13 +61,13 @@ extension ParticleSystemRuntime {
 
     private func planDraw(_ emitter: Emitter, projection: simd_float4x4, view: simd_float4x4, lighting: EmitterDraw.Lighting, hasSceneDepth: Bool) throws -> EmitterDraw {
         var draw = EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: hasSceneDepth)
-        let settings = emitter.settings
-        let mesh = try settings.particleMesh.flatMap(vertexBuffer(for:))
+        let modules = draw.modules
+        let mesh = try modules.mesh.flatMap { try vertexBuffer(for: $0.mesh) }
         if mesh != nil {
             // Solid shapes: the fragment shader's procedural dot is fully covered at the center.
             draw.uniforms.hasTexture = 0
         }
-        if let image = settings.colorImage, let texture = colorImageTexture(for: image) {
+        if let image = modules.colorImage?.image, let texture = colorImageTexture(for: image) {
             draw.colorImage = texture
             draw.uniforms.hasColorImage = 1
             draw.uniforms.colorImageOrigin = image.origin
@@ -86,7 +86,7 @@ extension ParticleSystemRuntime {
             }
             draw.wireframe = debugView == .wireframe
         }
-        if let ribbon = settings.ribbon {
+        if let ribbon = modules.ribbon?.ribbon {
             let window = emitter.liveWindow
             draw.uniforms.ribbonSliceStart = UInt32(emitter.range.lowerBound)
             draw.uniforms.ribbonCapacity = UInt32(emitter.capacity)
@@ -94,21 +94,21 @@ extension ParticleSystemRuntime {
             draw.uniforms.ribbonWindowCount = UInt32(window.count)
             draw.uniforms.ribbonTapers = ribbon.tapers ? 1 : 0
         }
-        if let trail = settings.trail, trails != nil, trailStride > 0 {
+        if let trail = modules.trail?.trail, trails != nil, trailStride > 0 {
             draw.uniforms.trailPointCount = UInt32(min(trail.clampedPointCount, trailStride))
             draw.uniforms.trailStride = UInt32(trailStride)
             draw.uniforms.trailTapers = trail.tapers ? 1 : 0
             draw.uniforms.trailFades = trail.fades ? 1 : 0
         }
         // A ribbon wins over a mesh, and a mesh over a trail.
-        if settings.ribbon != nil {
+        if modules.ribbon != nil {
             draw.kind = .ribbon
         } else if let mesh {
             draw.kind = .mesh(buffer: mesh.buffer, vertexCount: mesh.vertexCount)
         } else if draw.uniforms.trailPointCount > 1 {
             draw.kind = .trail
         }
-        let shading = try shading(for: settings, draw: draw)
+        let shading = try shading(for: modules.shading, draw: draw)
         // Draws that skip the call use the vertex shader variant without it, and link and bind nothing, so their
         // pipelines are what they were before #172.
         draw.shading = shading.calls ? shading.function : nil

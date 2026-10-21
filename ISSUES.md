@@ -4842,17 +4842,19 @@ Deepen: one editor per module type (e.g. a protocol the demo conforms each modul
 ## 226: Modules write their own GPU uniforms (#223 stage 1)
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:architecture, effort:l
 created: 2026-10-21T12:17:47Z
-updated: 2026-10-21T14:13:04Z
+updated: 2026-10-21T14:23:59Z
+closed: 2026-10-21T14:23:59Z
 +++
 
 Each module fills its part of SimulationUniforms, RenderUniforms and per-emitter CPU state via contribute hooks; FramePlan.uniforms(for:) and planDraws iterate modules instead of reading flat ParticleEmitter fields. Tests: given modules -> expected uniforms/draw. Goldens identical, bench gate.
 
 - `2026-10-21T14:13:04Z`: Simulation half done: modules write SimulationUniforms (SimulationModules.swift; stage enums switch to each module's contribute, since dynamic SimulationContributor casts cost Torch Avenue +0.05 ms build per frame). Emitter stores modules (configure(modules:settings:) per frame without lifting; assigning settings lifts). 2D mode is Emitter.forcesPlane, not a flat-settings override. Byte-equal to the flat path for every preset and sub-emitter in 3D and 2D (checked, then the flat builder was deleted). Still on flat settings until #227: function slots and customAttributeCount. Remaining for #226: RenderUniforms in planDraws.
+- `2026-10-21T14:23:59Z`: Render half done: modules write their part of each EmitterDraw (DrawModules.swift: curves, blend, orientation, softness, color-by-speed/position, alternate color, image sequence, lit, LOD size scale) in one switch pass that also returns the modules planDraw needs (sprite, mesh, trail, ribbon, shading, color image). planDraw, sorting, shading(for: ShadingModule?) and particle-light gathering read modules, not flat settings. Field-for-field equal to the flat path for every preset (Mirror compare; byte diffs were float3 padding from the old memberwise init), then the flat initializer was deleted. ParticleSystemRuntime(modules:) and setEmitters(modules) keep the given modules (disabled ones included) instead of re-lifting. Tests: SimulationModulesTests and DrawModulesTests (given modules -> expected uniforms/draw). 485 lib + 80 demo tests, lint clean; bench A/B against the previous commit under the same load: no regressions (absolute gate noisy: dasd/duetexpertd at 100% CPU). Left on flat settings for #227: function slots, customAttributeCount, spawner (birth rate, warmup), LOD distances, triggers, sub-emitter layout.
 
 ---
 

@@ -169,28 +169,28 @@ extension ParticleSystemRuntime {
     /// The function `draw` calls per vertex, its parameters, and whether it is called at all. Matches the shading
     /// before #172: foil only when it glints or shifts color, and never on trails and ribbons; unlit sprites, trails,
     /// and ribbons skip the call.
-    func shading(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool, perPixel: Bool) {
-        let shading: (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) = try shadingPerVertex(for: settings, draw: draw)
+    func shading(for module: ShadingModule?, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool, perPixel: Bool) {
+        let shading: (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) = try shadingPerVertex(for: module?.model ?? .unlit, draw: draw)
         // Foil sprites always shade per pixel, so their crinkle breaks the card into facets (#175); foil meshes per vertex.
         let isFoilSprite = shading.function.reference == (try gpuFunctions.builtInShading()).foil.reference && !draw.kind.isMesh
-        return (shading.function, shading.parameters, shading.calls, shading.calls && (settings.shadesPerPixel || isFoilSprite))
+        return (shading.function, shading.parameters, shading.calls, shading.calls && (module?.perPixel == true || isFoilSprite))
     }
 
-    private func shadingPerVertex(for settings: ParticleEmitter, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) {
+    private func shadingPerVertex(for model: ShadingModel, draw: EmitterDraw) throws -> (function: VisibleFunction, parameters: [SIMD4<Float>], calls: Bool) {
         let builtIn = try gpuFunctions.builtInShading()
         let isMesh = draw.kind.isMesh
         let isStrip = draw.kind.isStrip
-        if let custom = settings.shadingFunction {
-            return (try gpuFunctions.shading(custom), Self.padded(custom.parameters), true)
-        }
-        if let foil = settings.foil, foil.glint > 0 || foil.iridescence > 0, !isStrip {
+        switch model {
+        case let .custom(function):
+            return (try gpuFunctions.shading(function), Self.padded(function.parameters), true)
+        case let .foil(foil) where (foil.glint > 0 || foil.iridescence > 0) && !isStrip:
             let parameters: [SIMD4<Float>] = [[max(foil.glint, 0), max(foil.shininess, 1), max(foil.iridescence, 0), 0]]
             return (builtIn.foil, Self.padded(parameters), true)
-        }
-        if settings.isLit {
+        case .lit:
             return (builtIn.lit, Self.padded([]), true)
+        case .unlit, .foil:
+            return (builtIn.unlit, Self.padded([]), isMesh)
         }
-        return (builtIn.unlit, Self.padded([]), isMesh)
     }
 
     /// At least `ParticleFunction.minimumParameterCount` entries, so functions can read a few past what they were given.

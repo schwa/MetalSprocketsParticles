@@ -77,3 +77,46 @@ struct SimulationModulesTests {
         #expect(uniforms.gravity == .zero)
     }
 }
+
+/// Modules write their part of each draw (#226).
+@Suite(.serialized, .requiresMetal4)
+struct DrawModulesTests {
+    func draw(_ modules: EmitterModules) throws -> EmitterDraw {
+        let system = try ParticleSystemRuntime(capacity: 4, modules: modules)
+        let lighting = EmitterDraw.Lighting(ambient: .zero, lightCount: 0, particleLightCount: 0)
+        return EmitterDraw(emitter: system.emitters[0], projection: matrix_identity_float4x4, view: matrix_identity_float4x4, lighting: lighting, hasSceneDepth: false)
+    }
+
+    @Test func noModulesDrawWhiteAlphaBlendedWithNoExtraColors() throws {
+        let result = try draw(EmitterModules())
+        #expect(result.blendMode == EmitterModules.neutralSprite.blendMode)
+        #expect(result.extraColorCurves.allSatisfy { $0 == .one })
+        #expect(result.uniforms.hasSpeedColor == 0)
+        #expect(result.uniforms.sizeScale == 1)
+        #expect(result.modules.shading == nil)
+    }
+
+    @Test func colorModulesFillTheirOwnExtraCurve() throws {
+        let red = ParticleCurve<SIMD4<Float>>.constant([1, 0, 0, 1])
+        let result = try draw(EmitterModules {
+            ColorBySpeedModule(curve: red, range: 1...2)
+            ColorByPositionModule(curve: red, atBirth: true)
+        })
+        let samples = Int(PARTICLE_CURVE_SAMPLES)
+        #expect(result.extraColorCurves[0..<samples].allSatisfy { $0 == [1, 0, 0, 1] })
+        #expect(result.extraColorCurves[samples..<(2 * samples)].allSatisfy { $0 == .one })
+        #expect(result.uniforms.hasSpeedColor == 1)
+        #expect(result.uniforms.speedColorRange == [1, 2])
+        // At birth, the simulation colors the particle instead.
+        #expect(result.uniforms.hasPositionColor == 0)
+    }
+
+    /// Disabled modules write nothing and are not handed to the planner.
+    @Test func disabledModulesAreSkipped() throws {
+        var modules = EmitterModules { ShadingModule(model: .lit) }
+        modules.render[0].isEnabled = false
+        let result = try draw(modules)
+        #expect(result.uniforms.isLit == 0)
+        #expect(result.modules.shading == nil)
+    }
+}

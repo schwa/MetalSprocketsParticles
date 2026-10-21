@@ -114,6 +114,11 @@ public final class ParticleSystemRuntime {
             spawner = Spawner(seed: seed)
         }
 
+        /// How the sprite module sorts this emitter's particles.
+        var sortMode: ParticleSortMode {
+            (storedModules.enabled(SpriteModule.self) ?? EmitterModules.neutralSprite).sortMode
+        }
+
         /// Sets modules and the settings they lower to, without lifting. `settings` must equal `modules.lowered()`.
         func configure(modules: EmitterModules, settings: ParticleEmitter) {
             storedSettings = settings
@@ -741,7 +746,7 @@ public final class ParticleSystemRuntime {
         var sorts: [EmitterSort] = []
         for emitter in allEmitters {
             emitter.sortedCount = 0
-            guard emitter.settings.sortMode == .backToFront, let view else {
+            guard emitter.sortMode == .backToFront, let view else {
                 continue
             }
             let window = emitter.liveWindow
@@ -809,6 +814,8 @@ struct EmitterDraw {
     var kind = DrawKind.sprite
     /// Draws triangles as lines (`ParticleDebugView.wireframe`).
     var wireframe = false
+    /// The modules the planner reads, found while they wrote this draw.
+    var modules = DrawModules()
 
     struct Lighting {
         var ambient: SIMD3<Float>
@@ -816,23 +823,14 @@ struct EmitterDraw {
         var particleLightCount: Int
     }
 
+    /// The camera, emitter, and frame parts of the draw; the emitter's modules write the rest (#226).
     init(emitter: ParticleSystemRuntime.Emitter, projection: simd_float4x4, view: simd_float4x4, lighting: Lighting, hasSceneDepth: Bool) {
-        let viewProjection = projection * view
         let cameraToWorld = view.inverse
-        let settings = emitter.settings
-        let sequence = emitter.texture == nil ? ImageSequence() : settings.imageSequence ?? ImageSequence()
-        let opacity = settings.opacityOverLife.baked()
-        colorCurve = zip(settings.colorOverLife.baked(), opacity).map { color, opacity in
-            SIMD4(color.x, color.y, color.z, color.w * opacity)
-        }
-        sizeCurve = settings.sizeOverLife.baked()
-        let white = [SIMD4<Float>](repeating: .one, count: Int(PARTICLE_CURVE_SAMPLES))
-        let alternate = settings.alternateColorOverLife.map { curve in
-            zip(curve.baked(), opacity).map { color, opacity in SIMD4(color.x, color.y, color.z, color.w * opacity) }
-        }
-        extraColorCurves = (settings.colorBySpeed?.baked() ?? white) + (alternate ?? white) + (settings.colorByPosition?.baked() ?? white)
+        colorCurve = []
+        sizeCurve = []
+        extraColorCurves = []
         texture = emitter.texture
-        blendMode = settings.blendMode
+        blendMode = .alpha
         if emitter.sortedCount > 0, let buffers = emitter.sortBuffers {
             // Sorted records hold absolute particle indices, so instances start at 0.
             segments = [(0, emitter.sortedCount)]
@@ -844,65 +842,26 @@ struct EmitterDraw {
             segments = [(base + window.start, firstCount), (base, window.count - firstCount)]
             sortRecords = nil
         }
-        uniforms = RenderUniforms(
-            viewProjection: viewProjection,
-            model: emitter.modelTransform,
-            cameraRight: simd_normalize(cameraToWorld.columns.0.xyz),
-            cameraUp: simd_normalize(cameraToWorld.columns.1.xyz),
-            cameraPosition: cameraToWorld.columns.3.xyz,
-            fixedNormal: settings.orientation.fixedNormal,
-            velocityStretch: settings.orientation.velocityStretch,
-            orientationMode: settings.orientation.mode,
-            blendMode: settings.blendMode,
-            hasTexture: emitter.texture == nil ? 0 : 1,
-            sheetColumns: UInt32(max(sequence.columns, 1)),
-            sheetRows: UInt32(max(sequence.rows, 1)),
-            frameCount: UInt32(max(sequence.frameCount, 1)),
-            sequenceMode: sequence.mode,
-            readsSortRecords: sortRecords == nil ? 0 : 1,
-            // The camera looks down its -Z axis.
-            cameraForward: -simd_normalize(cameraToWorld.columns.2.xyz),
-            ambientLight: lighting.ambient,
-            isLit: settings.isLit ? 1 : 0,
-            lightCount: UInt32(lighting.lightCount),
-            particleLightCount: UInt32(lighting.particleLightCount),
-            softness: max(settings.softness, 0),
-            hasSceneDepth: hasSceneDepth ? 1 : 0,
-            // Clip z = a * zView + b and clip w = c * zView, so depth d = (a * zView + b) / (c * zView).
-            depthUnproject: [projection.columns.2.z, projection.columns.3.z, projection.columns.2.w],
-            hasSpeedColor: settings.colorBySpeed == nil ? 0 : 1,
-            hasAlternateColor: settings.alternateColorOverLife == nil ? 0 : 1,
-            // At birth, the simulation applies it instead.
-            hasPositionColor: settings.colorByPosition == nil || settings.colorByPositionAtBirth ? 0 : 1,
-            speedColorRange: [settings.colorBySpeedRange.lowerBound, settings.colorBySpeedRange.upperBound],
-            positionColorStart: settings.colorByPositionStart,
-            positionColorEnd: settings.colorByPositionEnd,
-            // Set by render once the trail buffer is known.
-            trailPointCount: 0,
-            trailStride: 0,
-            trailTapers: 0,
-            trailFades: 0,
-            // Set by render for debug views.
-            debugMode: .none,
-            debugEmitterIndex: 0,
-            debugSliceStart: 0,
-            debugCapacity: 0,
-            debugRange: .zero,
-            // Set by render for ribbons.
-            ribbonSliceStart: 0,
-            ribbonCapacity: 0,
-            ribbonWindowStart: 0,
-            ribbonWindowCount: 0,
-            ribbonTapers: 0,
-            sizeScale: settings.lodScalesSize && emitter.lodRateScale > 0 ? 1 / emitter.lodRateScale.squareRoot() : 1,
-            minimumScreenSize: max(settings.minimumScreenSize, 0),
-            projectionScaleY: projection.columns.1.y,
-            // Set by render when the emitter has a color image.
-            hasColorImage: 0,
-            colorImageOrigin: .zero,
-            colorImageU: .zero,
-            colorImageV: .zero
-        )
+        var uniforms = RenderUniforms()
+        uniforms.viewProjection = projection * view
+        uniforms.model = emitter.modelTransform
+        uniforms.cameraRight = simd_normalize(cameraToWorld.columns.0.xyz)
+        uniforms.cameraUp = simd_normalize(cameraToWorld.columns.1.xyz)
+        uniforms.cameraPosition = cameraToWorld.columns.3.xyz
+        // The camera looks down its -Z axis.
+        uniforms.cameraForward = -simd_normalize(cameraToWorld.columns.2.xyz)
+        uniforms.hasTexture = emitter.texture == nil ? 0 : 1
+        uniforms.readsSortRecords = sortRecords == nil ? 0 : 1
+        uniforms.ambientLight = lighting.ambient
+        uniforms.lightCount = UInt32(lighting.lightCount)
+        uniforms.particleLightCount = UInt32(lighting.particleLightCount)
+        uniforms.hasSceneDepth = hasSceneDepth ? 1 : 0
+        // Clip z = a * zView + b and clip w = c * zView, so depth d = (a * zView + b) / (c * zView).
+        uniforms.depthUnproject = [projection.columns.2.z, projection.columns.3.z, projection.columns.2.w]
+        uniforms.sizeScale = 1
+        uniforms.projectionScaleY = projection.columns.1.y
+        self.uniforms = uniforms
+        modules = emitter.modules.contribute(to: &self, emitter: emitter)
     }
 }
 
