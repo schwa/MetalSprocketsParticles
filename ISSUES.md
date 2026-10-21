@@ -4993,8 +4993,25 @@ priority: low
 kind: task
 labels: area:ci, area:demo, effort:s
 created: 2026-10-21T16:10:06Z
+updated: 2026-10-21T16:31:44Z
 +++
 
 The demo claims iphoneos/xros support (SUPPORTED_PLATFORMS in MetalSprocketsParticlesDemo-Shared.xcconfig), but only macOS is built in CI (.buildkite/pipeline.yml, #230). Locally: the iOS Simulator build fails with ~249 errors because the simulator SDK lacks Metal 4 types (MTL4ArgumentTable, MTL4RenderCommandEncoder, ...) in MetalSprockets; generic/platform=iOS (device) is what CI would build but xcb cannot target it; no visionOS simulator is installed. Check generic iOS and visionOS device builds; if they pass, add them to the demo step's destination matrix (as MetalSprockets' example step does); if not, either fix or drop those platforms from SUPPORTED_PLATFORMS.
+
+- `2026-10-21T16:31:44Z`: iOS builds and runs on device after one change: OutlineView's .onDeleteCommand guarded with #if os(macOS) (macOS-only API). The simulator still cannot build (no Metal 4 in the simulator SDK). visionOS not checked yet. iOS UI quality is tracked separately (#234).
+
+---
+
+## 234: Demo: iOS UI needs a lot of work
+
++++
+status: new
+priority: medium
+kind: enhancement
+labels: area:demo, effort:l, needs-design
+created: 2026-10-21T16:31:44Z
++++
+
+The demo builds and runs on iOS (after guarding OutlineView's onDeleteCommand with #if os(macOS)), but the UI is a poor fit: it is the macOS layout (outline sidebar, inspector sections, toolbars, sliders) carried over. Needs a design pass for touch and small screens: navigation (outline vs. inspector vs. viewport), inspector density and controls, toolbar items, and keyboard-only affordances (delete command, shortcuts) that have no iOS equivalent. Capture screenshots of the current state when designing. Related: #233 (iOS/visionOS in CI).
 
 ---

@@ -63,7 +63,9 @@ struct OutlineView: View {
             }
         }
         .listStyle(.sidebar)
+        #if os(macOS)
         .onDeleteCommand { model.removeSelection() }
+        #endif
         .toolbar {
             ToolbarItem {
                 Menu("Add", systemImage: "plus") {
