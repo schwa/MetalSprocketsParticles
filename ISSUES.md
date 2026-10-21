@@ -4688,8 +4688,35 @@ created: 2026-10-21T00:34:16Z
 
 MetalSprockets #534 binary-links compute pipelines, which removed the ~360 ms first-frame stall for update/spawn functions (#209). Render pipelines are still statically linked, so a new custom shading function (ShadingModel.custom, #172; per pixel, #174) probably rebuilds the particle vertex or fragment pipeline on its first frame. Not measured yet. Measure it (like StitchingSpikeTests.firstFrameCost, with a custom shading function); if it stalls, ask MetalSprockets for the same binary linking on render pipelines.
 
-- `2026-10-21T00:44:36Z`: Measured (StitchingSpikeTests.firstFrameShadingCost, STITCHING_TIMINGS=1): warm built-in lit ~5 ms; a new custom shading function costs 50-100 ms on its first frame per vertex and ~34 ms per pixel. A real stall, smaller than the old compute one (360 ms). Needs binary linking for render pipelines in MetalSprockets (like #534 did for compute).
+\- `2026-10-21T00:44:36Z`: Measured (StitchingSpikeTests.firstFrameShadingCost, STITCHING_TIMINGS=1): warm built-in lit ~5 ms; a new custom shading function costs 50-100 ms on its first frame per vertex and ~34 ms per pixel. A real stall, smaller than the old compute one (360 ms). Needs binary linking for render pipelines in MetalSprockets (like #534 did for compute).
 
 Found and fixed a bug while measuring: per-pixel shading after per-vertex shading from another runtime on the same renderer failed with "Linked function 'particleShadeUnlit' has conflicting definitions". We linked functions into one stage only; the other stage's linked list carried over from the previous frame's element tree. Now both stages are set every frame (EmitterDraw.linkedShading). Regression tests: ShadingPipelineTests.
+
+- `2026-10-21T00:47:41Z`: Filed upstream: MetalSprockets #538 (binary linking for render pipelines) and #539 (stage-specific linked functions carrying over between frames).
+- `2026-10-21T01:20:52Z`: MetalSprockets #538 landed: a new custom shading function's first frame is ~8 ms (was 50-100 ms). #539 landed too; the both-stages workaround is removed and ShadingPipelineTests pass without it. Cost: binary linking stops inlining, so per-pixel shading is slower (Foil Confetti GPU 0.12 -> ~0.175 ms). Filed MetalSprockets #540 for a per-pipeline static/binary choice; keep this open until it lands, then statically link the built-ins.
+
+---
+
+## 220: Statically link built-in shading functions
+
++++
+status: new
+priority: medium
+kind: enhancement
+labels: area:performance, effort:s
+created: 2026-10-21T01:38:00Z
++++
+
+MetalSprockets 60e2abad (MetalSprockets #540) lets each VisibleFunction choose static or binary linking. Binary-linked calls cannot be inlined; Foil Confetti went from 0.12 ms GPU to ~0.175 ms after MetalSprockets #538 switched to binary linking.
+
+Fix: in Sources/MetalSprocketsParticles/ShadingModule.swift, change `all` to
+
+    var all: [VisibleFunction] { [unlit, lit, foil].map { $0.linking(.static) } }
+
+This covers every shading pipeline (ParticleSystemRuntime.swift linkedFunctions calls at ~870/892/922/943). Custom shading stays binary. Leave tables.linked (~666) binary.
+
+Requires bumping the MetalSprockets dependency to include 60e2abad.
+
+Verify: particles-bench --presets --preset foil --repeats 5 returns to ~0.12 ms.
 
 ---
