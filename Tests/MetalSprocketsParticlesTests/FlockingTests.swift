@@ -54,7 +54,7 @@ struct FlockingTests {
     /// so a crowded cell cost its count squared on a single thread: Inside the Teapot's beads, piled in a few cells,
     /// took 2 to 5 ms of GPU a frame for 3 000 particles. Measured against the same preset without flocking, not a
     /// fixed budget, so it does not depend on the machine.
-    @Test func flockingInADensePileStaysCheap() throws {
+    @Test(.disabled(if: MetalDebugLayers.validationActive || MetalDebugLayers.captureActive, "Timing; the debug layers are slower (#230).")) func flockingInADensePileStaysCheap() throws {
         let preset = try #require(ParticleSystem.named("Inside the Teapot"))
         func averageGPUMilliseconds(_ system: ParticleSystem) throws -> Double {
             let size = CGSize(width: 320, height: 180)

@@ -4926,7 +4926,7 @@ priority: high
 kind: task
 labels: area:testing, effort:s, area:ci
 created: 2026-10-21T12:21:43Z
-updated: 2026-10-21T13:52:07Z
+updated: 2026-10-21T16:10:06Z
 +++
 
 The suite never runs under the Metal layers that Xcode Debug runs turn on by default: API validation (MTL_DEBUG_LAYER=1) and GPU frame capture (MTL_CAPTURE_ENABLED=1). So layer-only failures never fail a test. Example: binary-linked user functions and stitched modules crashed under both layers (MetalSprockets #541, #542, now fixed upstream), and the suite passed while the demo crashed in Xcode. GitHub CI (macos-26 runners) has no Metal 4 GPU, so it cannot cover this.
@@ -4940,6 +4940,8 @@ Needs Buildkite, as MetalSprockets has (.buildkite/pipeline.yml, MetalSprockets 
 4. Skip or loosen timing tests (STITCHING_TIMINGS, flocking cost) when a layer is on.
 
 Done when: Buildkite is green on main with the validation + capture step.
+
+- `2026-10-21T16:10:06Z`: Done locally: Tests/.../Support/MetalDebugLayers.swift (ported from MetalSprockets), MetalDebugLayersTests (fails if a requested layer is not active), Scripts/test-metal-layers.sh; flockingInADensePileStaysCheap skipped under a layer (timing). All three configurations pass (479-480 tests). Added .buildkite/pipeline.yml: lint (--strict), tests debug+release under MTL_DEBUG_LAYER=1, a validation+capture step, demo support tests, demo app (macOS; iOS/visionOS in #233); GPU steps share MetalSprockets' concurrency group. Remaining: create the MetalSprocketsParticles pipeline on Buildkite (account step) and get main green.
 
 ---
 
@@ -4980,5 +4982,19 @@ closed: 2026-10-21T16:00:52Z
 ModuleStackView.swift lines 43-45: 'call to main actor-isolated static method label in a synchronous nonisolated context [#ActorIsolatedCall]'. ModuleStackView is a View, so @MainActor, including its static label(_:); ModuleStage.labels(of:) is a nonisolated enum method that calls it per module. Only visible when the file recompiles (touch it); incremental builds hide it. Fix: mark label(_:) nonisolated (it is a pure string function), or move it out of the view. Done when a clean demo build has no warnings.
 
 - `2026-10-21T16:00:52Z`: Marked ModuleStackView.label(_:) nonisolated (pure string function). Build with the file recompiled: 0 warnings; 80 demo tests pass.
+
+---
+
+## 233: Demo app: verify iOS and visionOS builds and add them to Buildkite
+
++++
+status: new
+priority: low
+kind: task
+labels: area:ci, area:demo, effort:s
+created: 2026-10-21T16:10:06Z
++++
+
+The demo claims iphoneos/xros support (SUPPORTED_PLATFORMS in MetalSprocketsParticlesDemo-Shared.xcconfig), but only macOS is built in CI (.buildkite/pipeline.yml, #230). Locally: the iOS Simulator build fails with ~249 errors because the simulator SDK lacks Metal 4 types (MTL4ArgumentTable, MTL4RenderCommandEncoder, ...) in MetalSprockets; generic/platform=iOS (device) is what CI would build but xcb cannot target it; no visionOS simulator is installed. Check generic iOS and visionOS device builds; if they pass, add them to the demo step's destination matrix (as MetalSprockets' example step does); if not, either fix or drop those platforms from SUPPORTED_PLATFORMS.
 
 ---
