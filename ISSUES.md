@@ -5062,3 +5062,16 @@ closed: 2026-10-21T17:43:51Z
 Calling runtime.simulate(deltaTime:) more than about 4 times before one GPU submission completes (for example sub-stepping a long frame in steps of maximumStep) makes the output differ from run to run with the same seed. 4 or fewer steps per frame are deterministic; 8 or more are not. I think planFrame reads aliveCounters slots (PARTICLE_ALIVE_COUNTER_SLOTS) that the GPU has not written yet, but this is not verified. Found by MetalSprocketsSceneGraph, which now steps once per frame. Support sub-stepping, or document that one simulate per submitted frame is required.
 
 ---
+
+## 238: Send to device: preview an effect from the Mac editor on iPhone or headset
+
++++
+status: new
+priority: medium
+kind: feature
+created: 2026-10-21T17:44:16Z
++++
+
+Build and configure a particle system in the Mac demo, then send it to a connected iPhone or Vision Pro to preview it live there. The effect file format (EffectFile) already holds a full effect, so it could be the payload. Open questions: transport (for example Network.framework with Bonjour discovery), a receiver app on iOS and visionOS, and whether edits stream live or are sent on demand.
+
+---
