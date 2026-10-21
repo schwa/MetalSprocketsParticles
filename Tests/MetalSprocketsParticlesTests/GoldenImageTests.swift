@@ -55,26 +55,26 @@ struct GoldenImageTests {
         let teapot = try #require(Collider.signedDistanceField(
             mesh: .teapot(diameter: 2.4), resolution: 64, center: [0, 0.6, 0], rotation: simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
         ))
-        let sand = EmitterModules.standard {
-            $0.edit(ShapeModule.self) {
+        let sand = EmitterModules.standard { modules in
+            modules.edit(ShapeModule.self) {
                 $0.shape = .box(size: [2.8, 0.05, 1.6])
                 $0.position = [0, 3.2, 0]
             }
-            $0.edit(VelocityModule.self) {
+            modules.edit(VelocityModule.self) {
                 $0.velocity = .zero
                 $0.spread = 0.1
             }
             // About the helper's 50 000 particles alive by the end, so the coating builds up without recycling.
-            $0.edit(RateModule.self) { $0.birthRate = 9_000 }
-            $0.edit(LifetimeModule.self) { $0.range = 6...6 }
-            $0.edit(CollisionModule.self) {
+            modules.edit(RateModule.self) { $0.birthRate = 9_000 }
+            modules.edit(LifetimeModule.self) { $0.range = 6...6 }
+            modules.edit(CollisionModule.self) {
                 $0.restitution = 0.05
                 $0.friction = 0.8
             }
-            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([0.95, 0.78, 0.48, 1]) }
-            $0[VariationModule.self] = VariationModule(color: [0.08, 0.06, 0.04, 0])
-            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.022) }
-            $0.edit(SpriteModule.self) { $0.blendMode = .opaque }
+            modules.edit(ColorOverLifeModule.self) { $0.color = .constant([0.95, 0.78, 0.48, 1]) }
+            modules[VariationModule.self] = VariationModule(color: [0.08, 0.06, 0.04, 0])
+            modules.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.022) }
+            modules.edit(SpriteModule.self) { $0.blendMode = .opaque }
         }
         let image = try render(emitter: sand, frames: 330, colliders: false, worldColliders: [.plane(normal: [0, 1, 0], distance: 0), teapot])
         #expect(try image.matchesGolden(named: "sand-on-baked-teapot"))
@@ -133,13 +133,13 @@ struct GoldenImageTests {
     }
 
     @Test func texturedSpinningSprites() throws {
-        let emitter = EmitterModules.fountain {
-            $0.edit(RateModule.self) { $0.birthRate = 2_000 }
-            $0.edit(SizeOverLifeModule.self) {
+        let emitter = EmitterModules.fountain { modules in
+            modules.edit(RateModule.self) { $0.birthRate = 2_000 }
+            modules.edit(SizeOverLifeModule.self) {
                 $0.curve.start = 0.12
                 $0.curve.end = 0.06
             }
-            $0[RotationModule.self] = RotationModule(angleVariation: .pi, angularSpeed: 4, angularSpeedVariation: 2)
+            modules[RotationModule.self] = RotationModule(angleVariation: .pi, angularSpeed: 4, angularSpeedVariation: 2)
         }
         let image = try render(emitter: emitter, frames: 120, colliders: false) { system in
             // An arrow pointing up, so rotation is visible.
@@ -155,17 +155,17 @@ struct GoldenImageTests {
     }
 
     @Test func spriteSheetAnimation() throws {
-        let emitter = EmitterModules.fountain {
-            $0.edit(RateModule.self) { $0.birthRate = 4_000 }
-            $0.edit(SizeOverLifeModule.self) {
+        let emitter = EmitterModules.fountain { modules in
+            modules.edit(RateModule.self) { $0.birthRate = 4_000 }
+            modules.edit(SizeOverLifeModule.self) {
                 $0.curve.start = 0.08
                 $0.curve.end = 0.08
             }
-            $0.edit(ColorOverLifeModule.self) {
+            modules.edit(ColorOverLifeModule.self) {
                 $0.color.start = [1, 1, 1, 1]
                 $0.color.end = [1, 1, 1, 0.3]
             }
-            $0[ImageSequenceModule.self] = ImageSequenceModule(sequence: ImageSequence(rows: 2, columns: 2, frameRate: 2))
+            modules[ImageSequenceModule.self] = ImageSequenceModule(sequence: ImageSequence(rows: 2, columns: 2, frameRate: 2))
         }
         let image = try render(emitter: emitter, frames: 120, colliders: false) { system in
             system.texture = try makeSpriteSheet(device: system.device, rows: 2, columns: 2) { context, index, rect in
@@ -250,7 +250,8 @@ struct GoldenImageTests {
     }
 
     @Test func fireSmokeAndEmbers() throws {
-        /// A sphere-shaped emitter rising (or falling) at `velocity`, with the parts these three share.
+        // A sphere-shaped emitter rising (or falling) at `velocity`, with the parts these three share.
+        // swiftlint:disable:next function_parameter_count
         func puff(at position: SIMD3<Float>, radius: Float, velocity: SIMD3<Float>, spread: Float, gravity: SIMD3<Float>, lifetime: ClosedRange<Float>, birthRate: Float) -> EmitterModules {
             EmitterModules.standard {
                 $0.edit(ShapeModule.self) {
@@ -371,24 +372,24 @@ struct GoldenImageTests {
     /// A large foil coin shaded per pixel (#174, #175): the reflection changes smoothly across its face instead of the
     /// whole face taking one color.
     @Test func largeFoilMeshPerPixel() throws {
-        let coin = EmitterModules.standard {
-            $0.edit(ShapeModule.self) {
+        let coin = EmitterModules.standard { modules in
+            modules.edit(ShapeModule.self) {
                 $0.shape = .point
                 $0.position = [0, 1.5, 0]
             }
-            $0.edit(VelocityModule.self) {
+            modules.edit(VelocityModule.self) {
                 $0.velocity = .zero
                 $0.spread = 0
             }
-            $0.edit(GravityModule.self) { $0.acceleration = .zero }
-            $0.edit(RateModule.self) { $0.birthRate = 0 }
-            $0.edit(LifetimeModule.self) { $0.range = 10...10 }
-            $0[RotationModule.self] = RotationModule(angle: 0.9)
-            $0[MeshModule.self] = MeshModule(mesh: .coin)
-            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(1.2) }
-            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([0.85, 0.65, 0.25, 1]) }
-            $0.edit(SpriteModule.self) { $0.blendMode = .opaque }
-            $0.edit(ShadingModule.self) {
+            modules.edit(GravityModule.self) { $0.acceleration = .zero }
+            modules.edit(RateModule.self) { $0.birthRate = 0 }
+            modules.edit(LifetimeModule.self) { $0.range = 10...10 }
+            modules[RotationModule.self] = RotationModule(angle: 0.9)
+            modules[MeshModule.self] = MeshModule(mesh: .coin)
+            modules.edit(SizeOverLifeModule.self) { $0.curve = .constant(1.2) }
+            modules.edit(ColorOverLifeModule.self) { $0.color = .constant([0.85, 0.65, 0.25, 1]) }
+            modules.edit(SpriteModule.self) { $0.blendMode = .opaque }
+            modules.edit(ShadingModule.self) {
                 $0.model = .foil(settings: ParticleFoil(glint: 3, shininess: 48, iridescence: 0.3))
                 $0.perPixel = true
             }

@@ -9,15 +9,15 @@ import Testing
 @Suite(.serialized, .requiresMetal4)
 struct VariationTests {
     /// Spawns `count` particles in one burst and runs one zero-length step so birth values are untouched.
-    func spawn(count: Int = 512, configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
+    func spawn(count: Int = 512, configure: (inout EmitterModules) -> Void) throws -> [Particle] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.velocity = [0, 4, 0]
-        emitter.velocitySpread = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
+        var emitter = EmitterModules.standard
+        emitter.edit(VelocityModule.self) { $0.velocity = [0, 4, 0] }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&emitter)
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 21)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, modules: emitter, seed: 21)
         system.burst(count)
         try runner.run(try system.simulate(deltaTime: 0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: system.capacity)
@@ -31,22 +31,22 @@ struct VariationTests {
     }
 
     @Test func sizeVariationScalesWithinRange() throws {
-        let scales = try spawn { $0.sizeVariation = 0.25 }.map(\.properties.x)
+        let scales = try spawn { $0.edit(VariationModule.self, adding: VariationModule()) { $0.size = 0.25 } }.map(\.properties.x)
         #expect(scales.allSatisfy { $0 >= 0.75 && $0 <= 1.25 })
         #expect(scales.min()! < 0.8 && scales.max()! > 1.2)
     }
 
     @Test func restitutionAndFrictionOffsetsWithinRange() throws {
         let particles = try spawn {
-            $0.restitutionVariation = 0.2
-            $0.frictionVariation = 0.1
+            $0.edit(CollisionModule.self) { $0.restitutionVariation = 0.2 }
+            $0.edit(CollisionModule.self) { $0.frictionVariation = 0.1 }
         }
         #expect(particles.allSatisfy { abs($0.properties.y) <= 0.2 && abs($0.properties.z) <= 0.1 })
         #expect(Set(particles.map(\.properties.y)).count > 100)
     }
 
     @Test func speedVariationKeepsDirection() throws {
-        let particles = try spawn { $0.speedVariation = 1 }
+        let particles = try spawn { $0.edit(VelocityModule.self) { $0.speedVariation = 1 } }
         let speeds = particles.map { simd_length(SIMD3($0.velocity.x, $0.velocity.y, $0.velocity.z)) }
         #expect(speeds.allSatisfy { $0 >= 3 - 1e-4 && $0 <= 5 + 1e-4 })
         #expect(speeds.min()! < 3.2 && speeds.max()! > 4.8)
@@ -55,7 +55,7 @@ struct VariationTests {
 
     @Test func colorOffsetsWithinRange() throws {
         let variation: SIMD4<Float> = [0.1, 0.2, 0.3, 0.4]
-        let offsets = try spawn { $0.colorVariation = variation }.map(\.color)
+        let offsets = try spawn { $0.edit(VariationModule.self, adding: VariationModule()) { $0.color = variation } }.map(\.color)
         #expect(offsets.allSatisfy { all(abs($0) .<= variation) })
         #expect(Set(offsets.map(\.x)).count > 100)
     }
@@ -64,17 +64,17 @@ struct VariationTests {
     @Test func hueVariationChangesRenderedColor() throws {
         func render(hueVariation: Float) throws -> [SIMD4<UInt8>] {
             let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-            var emitter = ParticleEmitter()
-            emitter.radius = 0.6
-            emitter.velocity = .zero
-            emitter.velocitySpread = 0
-            emitter.gravity = .zero
-            emitter.lifetime = 10...10
-            emitter.birthRate = 0
-            emitter.colorOverLife = .constant([1, 0, 0, 1])
-            emitter.sizeOverLife = .constant(0.08)
-            emitter.colorVariation = [hueVariation, 0, 0, 0]
-            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 200, emitter: emitter, seed: 2)
+            var emitter = EmitterModules.standard
+            emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0.6) }
+            emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+            emitter.edit(VelocityModule.self) { $0.spread = 0 }
+            emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+            emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+            emitter.edit(RateModule.self) { $0.birthRate = 0 }
+            emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 0, 0, 1]) }
+            emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.08) }
+            emitter.edit(VariationModule.self, adding: VariationModule()) { $0.color = [hueVariation, 0, 0, 0] }
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 200, modules: emitter, seed: 2)
             system.burst(200)
             let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
             let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 10)

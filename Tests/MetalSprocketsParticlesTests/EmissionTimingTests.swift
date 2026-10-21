@@ -84,12 +84,12 @@ struct EmissionGPUTests {
         runner = try Runner()
     }
 
-    func makeSystem(_ configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystemRuntime {
-        var emitter = ParticleEmitter()
-        emitter.lifetime = 5...5
-        emitter.birthRate = 600
+    func makeSystem(_ configure: (inout EmitterModules) -> Void = { _ in }) throws -> ParticleSystemRuntime {
+        var emitter = EmitterModules.standard
+        emitter.edit(LifetimeModule.self) { $0.range = 5...5 }
+        emitter.edit(RateModule.self) { $0.birthRate = 600 }
         configure(&emitter)
-        return try ParticleSystemRuntime(device: runner.device, capacity: 10_000, emitter: emitter, seed: 3)
+        return try ParticleSystemRuntime(device: runner.device, capacity: 10_000, modules: emitter, seed: 3)
     }
 
     func step(_ system: ParticleSystemRuntime, count: Int = 1) throws {
@@ -115,16 +115,16 @@ struct EmissionGPUTests {
 
     @Test func particlesDieAfterLifetime() throws {
         let system = try makeSystem {
-            $0.lifetime = 0.5...0.5
-            $0.emissionDuration = 0.25
-            $0.loops = false
+            $0.edit(LifetimeModule.self) { $0.range = 0.5...0.5 }
+            $0.edit(RateModule.self) { $0.emissionDuration = 0.25 }
+            $0.edit(RateModule.self) { $0.loops = false }
         }
         try step(system, count: 60)
         #expect(liveCount(system) == 0)
     }
 
     @Test func burstSpawnsImmediately() throws {
-        let system = try makeSystem { $0.birthRate = 0 }
+        let system = try makeSystem { $0.edit(RateModule.self) { $0.birthRate = 0 } }
         system.burst(123)
         try step(system)
         #expect(liveCount(system) == 123)
@@ -159,7 +159,7 @@ struct EmissionGPUTests {
     }
 
     @Test func warmupPreSimulatesOnFirstFrame() throws {
-        let system = try makeSystem { $0.warmupDuration = 1 }
+        let system = try makeSystem { $0.edit(RateModule.self) { $0.warmupDuration = 1 } }
         try step(system)
         // One second of warmup plus one frame.
         #expect(abs(liveCount(system) - 610) <= 2)
@@ -173,7 +173,7 @@ struct EmissionGPUTests {
     }
 
     @Test func fullRingRecyclesOldestParticles() throws {
-        let system = try makeSystem { $0.birthRate = 60_000 }
+        let system = try makeSystem { $0.edit(RateModule.self) { $0.birthRate = 60_000 } }
         try step(system, count: 30)
         #expect(liveCount(system) == system.capacity)
     }

@@ -7,7 +7,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-/// User Metal functions (`ParticleEmitter.updateFunction`) compiled at runtime and called from the simulation kernel.
+/// User Metal functions (`UpdateFunctionModule`) compiled at runtime and called from the simulation kernel.
 @Suite(.serialized, .requiresMetal4)
 struct ParticleFunctionTests {
     let runner: Runner
@@ -23,14 +23,14 @@ struct ParticleFunctionTests {
     }
     """, name: "setVelocity", parameters: [[0, 5, 0, 0]])
 
-    func fallingEmitter(_ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
+    func fallingEmitter(_ configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&emitter)
         return emitter
     }
@@ -50,8 +50,8 @@ struct ParticleFunctionTests {
     }
 
     @Test func updateFunctionAppliesOnlyToItsEmitter() throws {
-        let lifted = fallingEmitter { $0.updateFunction = setVelocity }
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: [lifted, fallingEmitter()], capacity: 32)
+        let lifted = fallingEmitter { $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: setVelocity) }
+        let system = try ParticleSystemRuntime(device: runner.device, modules: [lifted, fallingEmitter()], capacity: 32)
         let result = try velocities(system, count: 16)
         // Gravity is applied before the function, so the function wins; the other emitter just falls.
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
@@ -61,7 +61,7 @@ struct ParticleFunctionTests {
     @Test func parametersReachTheFunction() throws {
         var function = setVelocity
         function.parameters = [[2, 0, -3, 0]]
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = function })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: fallingEmitter { $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: function) })
         let result = try velocities(system, count: 16)
         #expect(result[0].allSatisfy { simd_distance($0, [2, 0, -3]) < 1e-4 })
     }
@@ -79,10 +79,10 @@ struct ParticleFunctionTests {
 
     @Test func spawnFunctionPlacesNewParticles() throws {
         let emitter = fallingEmitter {
-            $0.gravity = .zero
-            $0.spawnFunction = ring
+            $0.edit(GravityModule.self) { $0.acceleration = .zero }
+            $0[SpawnFunctionModule.self] = SpawnFunctionModule(function: ring)
         }
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: emitter)
         system.burst(16)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 16)
@@ -96,10 +96,10 @@ struct ParticleFunctionTests {
 
     @Test func spawnAndUpdateFunctionsWorkTogether() throws {
         let emitter = fallingEmitter {
-            $0.spawnFunction = ring
-            $0.updateFunction = setVelocity
+            $0[SpawnFunctionModule.self] = SpawnFunctionModule(function: ring)
+            $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: setVelocity)
         }
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: emitter)
         let result = try velocities(system, count: 16, frames: 10)
         let pointer = system.buffer.contents().bindMemory(to: Particle.self, capacity: 16)
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
@@ -112,10 +112,10 @@ struct ParticleFunctionTests {
         var spawnVersion = setVelocity
         spawnVersion.parameters = [[0, 1, 0, 0]]
         let emitter = fallingEmitter {
-            $0.spawnFunction = spawnVersion
-            $0.updateFunction = setVelocity
+            $0[SpawnFunctionModule.self] = SpawnFunctionModule(function: spawnVersion)
+            $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: setVelocity)
         }
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: emitter)
         let result = try velocities(system, count: 16, frames: 3)
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
     }
@@ -123,21 +123,21 @@ struct ParticleFunctionTests {
     @Test func oneFunctionCanBeBothSpawnAndUpdate() throws {
         // Linking the same function twice would fail pipeline creation.
         let emitter = fallingEmitter {
-            $0.spawnFunction = setVelocity
-            $0.updateFunction = setVelocity
+            $0[SpawnFunctionModule.self] = SpawnFunctionModule(function: setVelocity)
+            $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: setVelocity)
         }
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: emitter)
         let result = try velocities(system, count: 16, frames: 3)
         #expect(result[0].allSatisfy { simd_distance($0, [0, 5, 0]) < 1e-4 })
     }
 
     /// Particles dropped 0.5 above a floor, `frames` steps; returns them all.
-    func dropOntoFloor(frames: Int, _ configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
+    func dropOntoFloor(frames: Int, _ configure: (inout EmitterModules) -> Void) throws -> [Particle] {
         var emitter = fallingEmitter(configure)
-        emitter.position = [0, 0.5, 0]
-        emitter.restitution = 1
-        emitter.friction = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: emitter)
+        emitter.edit(ShapeModule.self) { $0.position = [0, 0.5, 0] }
+        emitter.edit(CollisionModule.self) { $0.restitution = 1 }
+        emitter.edit(CollisionModule.self) { $0.friction = 0 }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, modules: emitter)
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
         system.burst(8)
         for _ in 0..<frames {
@@ -155,7 +155,7 @@ struct ParticleFunctionTests {
         """, name: "stick")
         // Hits the floor after about 0.32 s; with restitution 1 it would be back up near 0.5 by 0.64 s.
         let bouncing = try dropOntoFloor(frames: 40) { _ in }
-        let sticking = try dropOntoFloor(frames: 40) { $0.collisionFunction = stick }
+        let sticking = try dropOntoFloor(frames: 40) { $0[CollisionFunctionModule.self] = CollisionFunctionModule(function: stick) }
         #expect(bouncing.allSatisfy { $0.position.y > 0.1 })
         #expect(sticking.allSatisfy { $0.position.y < 0.05 && $0.velocity.w > $0.position.w })
     }
@@ -166,7 +166,7 @@ struct ParticleFunctionTests {
             particle.age = particle.lifetime;
         }
         """, name: "kill")
-        let particles = try dropOntoFloor(frames: 40) { $0.collisionFunction = kill }
+        let particles = try dropOntoFloor(frames: 40) { $0[CollisionFunctionModule.self] = CollisionFunctionModule(function: kill) }
         #expect(particles.allSatisfy { $0.position.w >= $0.velocity.w })
     }
 
@@ -179,14 +179,14 @@ struct ParticleFunctionTests {
         }
         """
         let respawn = try dropOntoFloor(frames: 30) {
-            $0.lifetime = 0.2...0.2
-            $0.deathFunction = ParticleFunction(source: source, name: "onDeath", parameters: [[1, 0, 0, 0]])
+            $0.edit(LifetimeModule.self) { $0.range = 0.2...0.2 }
+            $0[DeathFunctionModule.self] = DeathFunctionModule(function: ParticleFunction(source: source, name: "onDeath", parameters: [[1, 0, 0, 0]]))
         }
         #expect(respawn.allSatisfy { $0.position.y > 9 && $0.position.w < $0.velocity.w })
         // Without the extension the particle dies once; dead particles are not updated, so it moved up exactly once.
         let once = try dropOntoFloor(frames: 30) {
-            $0.lifetime = 0.2...0.2
-            $0.deathFunction = ParticleFunction(source: source, name: "onDeath", parameters: [[0, 0, 0, 0]])
+            $0.edit(LifetimeModule.self) { $0.range = 0.2...0.2 }
+            $0[DeathFunctionModule.self] = DeathFunctionModule(function: ParticleFunction(source: source, name: "onDeath", parameters: [[0, 0, 0, 0]]))
         }
         #expect(once.allSatisfy { $0.position.y > 9 && $0.position.y < 11 && $0.position.w >= $0.velocity.w })
     }
@@ -198,14 +198,14 @@ struct ParticleFunctionTests {
             particle.velocity = parameters[7].xyz + float3(0, 1, 0);
         }
         """, name: "readsSeven", parameters: [[9, 9, 9, 9]])
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = readsSeven })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: fallingEmitter { $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: readsSeven) })
         let result = try velocities(system, count: 16, frames: 2)
         #expect(result[0].allSatisfy { simd_distance($0, [0, 1, 0]) < 1e-5 })
     }
 
     @Test func compileErrorsThrowFromSimulate() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: fallingEmitter { $0.updateFunction = broken })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: fallingEmitter { $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: broken) })
         #expect(throws: (any Error).self) {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         }
@@ -214,13 +214,13 @@ struct ParticleFunctionTests {
     func preset(_ function: ParticleFunction, inSubEmitter: Bool = false) -> ParticleSystem {
         var settings = fallingEmitter()
         if inSubEmitter {
-            var childSettings = ParticleEmitter()
-            childSettings.updateFunction = function
-            settings.subEmitters = [SubEmitter(occasion: .onDeath, countPerEvent: 1, settings: childSettings)]
+            var childSettings = EmitterModules.standard
+            childSettings[UpdateFunctionModule.self] = UpdateFunctionModule(function: function)
+            settings[SubEmittersModule.self] = SubEmittersModule(emitters: [SubEmitter(occasion: .onDeath, countPerEvent: 1, modules: childSettings)])
         } else {
-            settings.updateFunction = function
+            settings[UpdateFunctionModule.self] = UpdateFunctionModule(function: function)
         }
-        return ParticleSystem("Test", layers: [ParticleSystem.Layer("Layer", settings: settings, capacity: 16)])
+        return ParticleSystem("Test", layers: [ParticleSystem.Layer("Layer", modules: settings, capacity: 16)])
     }
 
     func functionError(_ body: () throws -> Void) -> ParticleFunctionError? {
@@ -234,7 +234,7 @@ struct ParticleFunctionTests {
 
     @Test func loadReportsCompileErrorsByName() throws {
         let broken = ParticleFunction(source: "[[visible]] void broken(thread ParticleState &particle) { oops; }", name: "broken")
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         let error = functionError { try system.load(preset(broken)) }
         #expect(error?.name == "broken")
         #expect(error?.localizedDescription.contains("oops") == true)
@@ -251,23 +251,23 @@ struct ParticleFunctionTests {
         defer { try? FileManager.default.removeItem(at: url) }
         try ParticleSystem.strangeAttractor.write(to: url)
         let loaded = try ParticleSystem(contentsOf: url)
-        #expect(loaded.layers[0].settings.updateFunction == ParticleSystem.strangeAttractor.layers[0].settings.updateFunction)
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        #expect(loaded.layers[0].modules[UpdateFunctionModule.self] == ParticleSystem.strangeAttractor.layers[0].modules[UpdateFunctionModule.self])
+        let system = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         try system.load(loaded)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
     }
 
     @Test func updateFunctionRoundTripsThroughJSON() throws {
-        let emitter = fallingEmitter { $0.updateFunction = setVelocity }
+        let emitter = fallingEmitter { $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: setVelocity) }
         let decoded = try roundTrip(emitter)
-        #expect(decoded.updateFunction == setVelocity)
+        #expect(decoded[UpdateFunctionModule.self]?.function == setVelocity)
         var spawning = fallingEmitter()
-        spawning.spawnFunction = ring
-        spawning.collisionFunction = setVelocity
-        spawning.deathFunction = ring
+        spawning[SpawnFunctionModule.self] = SpawnFunctionModule(function: ring)
+        spawning[CollisionFunctionModule.self] = CollisionFunctionModule(function: setVelocity)
+        spawning[DeathFunctionModule.self] = DeathFunctionModule(function: ring)
         let events = try roundTrip(spawning)
-        #expect(events.spawnFunction == ring && events.collisionFunction == setVelocity && events.deathFunction == ring)
+        #expect(events[SpawnFunctionModule.self]?.function == ring && events[CollisionFunctionModule.self]?.function == setVelocity && events[DeathFunctionModule.self]?.function == ring)
         let plain = try roundTrip(fallingEmitter())
-        #expect(plain.updateFunction == nil)
+        #expect(plain[UpdateFunctionModule.self] == nil)
     }
 }

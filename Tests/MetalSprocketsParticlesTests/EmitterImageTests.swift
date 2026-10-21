@@ -63,14 +63,14 @@ struct EmitterImageTests {
 
     @Test func appliedImagesSpawnTintedParticles() throws {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.shape = .points
-        emitter.birthRate = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        var description = EmitterDescription("Image", settings: emitter, capacity: 64)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .points }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        var description = EmitterDescription("Image", modules: emitter, capacity: 64)
         description.image = EmitterImage(data: try png(left: red, right: nil), width: 4, pointCount: 200)
         let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: .standard)
         try system.apply([description])
@@ -81,7 +81,7 @@ struct EmitterImageTests {
     }
 
     @Test func imagesRoundTripThroughEffectFiles() throws {
-        var description = EmitterDescription("Image", settings: ParticleEmitter())
+        var description = EmitterDescription("Image", modules: .standard)
         description.image = EmitterImage(data: try png(left: red, right: nil), width: 3, pointCount: 10, weighting: .brightness, usesColors: false)
         let resources = EffectResources()
         let decoded = try resources.decoder().decode(EmitterDescription.self, from: resources.encoder().encode(description))

@@ -16,14 +16,14 @@ struct OverlayTests {
         runner = try Runner()
     }
 
-    func still(_ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
+    func still(_ configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&emitter)
         return emitter
     }
@@ -37,20 +37,20 @@ struct OverlayTests {
     /// In points, spread and speed variation must be hundreds of points a second; with 0.7 and 0.4 (meant for meters)
     /// every particle moved as one and the burst stayed a blob (#140).
     @Test func overlayConfettiSpreads() throws {
-        var confetti = ParticleEmitter()
-        confetti.shape = .point
-        confetti.birthRate = 0
-        confetti.velocity = [0, -900, 0]
-        confetti.velocitySpread = 600
-        confetti.speedVariation = 300
-        confetti.gravity = [0, 1_400, 0]
-        confetti.drag = 1.2
-        confetti.lifetime = 3...4
-        confetti.sizeOverLife = .constant(7)
-        confetti.restitution = 0.3
-        confetti.friction = 0.6
-        confetti.constrainsToPlane = true
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 300, emitter: confetti)
+        var confetti = EmitterModules.standard
+        confetti.edit(ShapeModule.self) { $0.shape = .point }
+        confetti.edit(RateModule.self) { $0.birthRate = 0 }
+        confetti.edit(VelocityModule.self) { $0.velocity = [0, -900, 0] }
+        confetti.edit(VelocityModule.self) { $0.spread = 600 }
+        confetti.edit(VelocityModule.self) { $0.speedVariation = 300 }
+        confetti.edit(GravityModule.self) { $0.acceleration = [0, 1_400, 0] }
+        confetti.edit(DragModule.self) { $0.amount = 1.2 }
+        confetti.edit(LifetimeModule.self) { $0.range = 3...4 }
+        confetti.edit(SizeOverLifeModule.self) { $0.curve = .constant(7) }
+        confetti.edit(CollisionModule.self) { $0.restitution = 0.3 }
+        confetti.edit(CollisionModule.self) { $0.friction = 0.6 }
+        confetti[PlaneConstraintModule.self] = PlaneConstraintModule()
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 300, modules: confetti)
         let button = CGRect(x: 230, y: 420, width: 140, height: 50)
         runtime.burst(300, at: [Float(button.midX), Float(button.minY) - 8, 0])
         let colliders = Collider.edges(of: CGSize(width: 600, height: 540)) + [.box(frame: button)]
@@ -65,7 +65,7 @@ struct OverlayTests {
     }
 
     @Test func burstsSpawnAtTheirPointsWithoutMovingTheEmitter() throws {
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 32, emitter: still { $0.position = [5, 5, 0] })
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 32, modules: still { $0.edit(ShapeModule.self) { $0.position = [5, 5, 0] } })
         runtime.burst(3, at: [100, 50, 0])
         runtime.burst(2, at: [-20, 10, 0])
         runtime.burst(4)
@@ -82,7 +82,7 @@ struct OverlayTests {
 
     @Test func burstsSurviveTransformsPassedEachFrame() throws {
         // ParticleView passes emitter transforms every frame; a positioned burst must not be overwritten by them.
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: still())
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 8, modules: still())
         runtime.burst(2, at: [30, 40, 0])
         try runner.run(try runtime.simulate(deltaTime: deltaTime, transforms: [matrix_identity_float4x4]))
         #expect(live(runtime).allSatisfy { simd_distance(SIMD3($0.position.x, $0.position.y, $0.position.z), [30, 40, 0]) < 1e-3 })
@@ -90,7 +90,7 @@ struct OverlayTests {
     }
 
     @Test func pausedBurstsWaitAndKeepTheEmitterUnfinished() throws {
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: still())
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 8, modules: still())
         runtime.state = .paused
         runtime.burst(2, at: [1, 2, 0])
         try runner.run(try runtime.simulate(deltaTime: deltaTime))
@@ -103,11 +103,11 @@ struct OverlayTests {
 
     @Test func edgesKeepParticlesInsideTheView() throws {
         // Fast particles flying out in every direction from the middle of a 200 × 100 view.
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: still {
-            $0.velocity = [0, -400, 0]
-            $0.velocitySpread = .pi
-            $0.restitution = 0.5
-            $0.constrainsToPlane = true
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: still {
+            $0.edit(VelocityModule.self) { $0.velocity = [0, -400, 0] }
+            $0.edit(VelocityModule.self) { $0.spread = .pi }
+            $0.edit(CollisionModule.self) { $0.restitution = 0.5 }
+            $0[PlaneConstraintModule.self] = PlaneConstraintModule()
         })
         runtime.colliders = Collider.edges(of: CGSize(width: 200, height: 100))
         runtime.burst(64, at: [100, 50, 0])

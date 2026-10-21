@@ -36,6 +36,6 @@ struct DecodingCoverageTests {
     }
 
     @Test func subEmitterDecoderReadsEveryField() throws {
-        #expect(try ignoredKeys(SubEmitter.transition(on: .onDeath, into: ParticleEmitter(), sprite: .star, continuesLife: true)).isEmpty)
+        #expect(try ignoredKeys(SubEmitter.transition(on: .onDeath, into: .standard, sprite: .star, continuesLife: true)).isEmpty)
     }
 }

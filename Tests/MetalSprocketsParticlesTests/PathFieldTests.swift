@@ -33,15 +33,15 @@ struct PathFieldTests {
 
     /// Particles start beside a straight path along +X; the field pulls them onto it and carries them along.
     @Test func particlesAreCarriedAlongThePath() throws {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = [0, 0.5, 0]
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = [0, 0.5, 0] }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: emitter)
         system.forceFields = [.path(points: [[-5, 0, 0], [0, 0, 0], [5, 0, 0], [10, 0, 0]], speed: 2, strength: 4)]
         system.burst(16)
         for _ in 0..<120 {
@@ -57,15 +57,15 @@ struct PathFieldTests {
     }
 
     @Test func outsideTheRadiusNothingHappens() throws {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = [0, 3, 0]
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = [0, 3, 0] }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: emitter)
         system.forceFields = [.path(points: [[-5, 0, 0], [5, 0, 0]], speed: 2, strength: 4, radius: 1)]
         system.burst(4)
         for _ in 0..<30 {

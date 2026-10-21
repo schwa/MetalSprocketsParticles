@@ -30,7 +30,7 @@ struct ApplySystemTests {
         system.forceFields = [.wind(velocity: [1, 0, 0], strength: 2)]
         system.lights = [.point(position: [0, 2, 0], color: [1, 0.5, 0.2], range: 3)]
         system.ambientLight = [0.1, 0.1, 0.1]
-        let runtime = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let runtime = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         try runtime.apply(system)
         #expect(runtime.emitters.count == system.layers.count)
         #expect(runtime.colliders == system.colliders)
@@ -41,18 +41,18 @@ struct ApplySystemTests {
 
     @Test func settingAndWorldChangesKeepTheParticles() throws {
         var system = ParticleSystem.fountain
-        let runtime = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let runtime = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         try runtime.load(system)
         try run(runtime, frames: 30)
         let buffer = runtime.buffer
         let before = liveCount(runtime)
-        system.layers[0].settings.gravity = [0, -2, 0]
+        system.layers[0].modules.edit(GravityModule.self) { $0.acceleration = [0, -2, 0] }
         system.colliders = []
         system.forceFields = [.turbulence(strength: 1)]
         try runtime.apply(system)
         #expect(runtime.buffer === buffer)
         #expect(liveCount(runtime) == before)
-        #expect(runtime.emitters[0].settings.gravity == [0, -2, 0])
+        #expect(runtime.emitters[0].modules[GravityModule.self]?.acceleration == [0, -2, 0])
         #expect(runtime.colliders.isEmpty && runtime.forceFields == [.turbulence(strength: 1)])
     }
 
@@ -60,8 +60,8 @@ struct ApplySystemTests {
         // Triggers start and stop emitters while running. Applying the same description again (as ParticlePlayer does
         // every frame) must not undo that.
         var system = ParticleSystem.fountain
-        system.layers[0].settings.triggers = [EmissionTrigger(.event("halt"), .stop)]
-        let runtime = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        system.layers[0].modules[TriggersModule.self] = TriggersModule(triggers: [EmissionTrigger(.event("halt"), .stop)])
+        let runtime = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         try runtime.load(system)
         runtime.send(event: "halt")
         try run(runtime, frames: 3)
@@ -78,7 +78,7 @@ struct ApplySystemTests {
 
     @Test func layoutChangesAndLoadStartOver() throws {
         var system = ParticleSystem.fountain
-        let runtime = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let runtime = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         try runtime.load(system)
         try run(runtime, frames: 30)
         #expect(liveCount(runtime) > 0)

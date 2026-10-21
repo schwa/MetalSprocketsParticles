@@ -23,12 +23,12 @@ Built-in modules run at fixed points; only stitched user modules have an order (
 
 Why built-ins don't follow stack order (#207, won't do): the appearance modules aren't simulation steps at all; force fields, flocking, and collisions need system data (colliders, fields, textures, events) that stitched modules can't get (#208); that leaves gravity, drag, and the plane constraint, where order hardly matters. Behavior that must run at a specific point can be written as a stitched module.
 
-## Lowering
+## How the runtime reads modules
 
-- `EmitterModules.lowered()` produces `ParticleEmitter`, the internal flat form the runtime reads. It starts from `ParticleEmitter.neutral` (no motion, no color change) and applies each enabled module.
-- `EmitterDescription` and `SubEmitter` cache the lowered form when modules change, so reading `settings` every frame is free.
-- `EmitterModules(_ emitter:)` lifts flat settings to modules. Every preset lifts and lowers back unchanged (`EmitterModulesTests`).
-- `ParticleEmitter`, `EmitterDescription.settings`, `SubEmitter.settings`, and the runtime's flat-settings API are internal (#204). Code outside the library builds modules: the `EmitterModulesBuilder` list, `EmitterModules.standard` / `.default2D`, and `modules[SomeModule.self]` to read or change one module.
+- The runtime holds only modules. Each module writes its own part of the GPU uniforms (`SimulationModules.swift`, `DrawModules.swift`, #226); a missing module leaves the value `ParticleEmitter.neutral` has (no motion, no color change).
+- CPU-side values (emission rate, LOD, sub-emitters, triggers, function slots) come from `ResolvedModules`: one pass over the enabled modules, cached per runtime emitter until its modules change (#227).
+- `ParticleEmitter` is the old flat form. It remains internal, only for lifting (`EmitterModules(_ emitter:)`) and `lowered()`, until #229 removes it. Tests build emitters from modules (#228).
+- Code outside the library builds modules: the `EmitterModulesBuilder` list, `EmitterModules.standard` / `.default2D`, and `modules[SomeModule.self]` to read or change one module.
 
 ## Performance
 

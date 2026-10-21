@@ -12,17 +12,17 @@ struct ParticleRibbonTests {
     /// Particles burst one per frame at each of `positions`, then rendered; returns the middle row of pixels.
     func row(ribbon: ParticleRibbon?, positions: [SIMD3<Float>], lifetimes: Float = 10) throws -> [SIMD4<UInt8>] {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = lifetimes...lifetimes
-        emitter.birthRate = 0
-        emitter.sizeOverLife = .constant(0.06)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.ribbon = ribbon
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = lifetimes...lifetimes }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.06) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+        emitter[RibbonModule.self] = ribbon.map(RibbonModule.init)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, modules: emitter)
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
         var image: CGImage?
@@ -59,15 +59,15 @@ struct ParticleRibbonTests {
     /// With random birth ages (other emitters), slot order and path order differ within a step.
     @Test func ribbonEmittersBirthInSlotOrderAlongTheirPath() throws {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 1_200
-        emitter.ribbon = ParticleRibbon()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 200, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 1_200 }
+        emitter[RibbonModule.self] = RibbonModule(ribbon: ParticleRibbon())
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 200, modules: emitter)
         for frame in 0..<4 {
             system.emitters[0].transform = simd_float4x4(translation: [Float(frame), 0, 0])
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -80,8 +80,8 @@ struct ParticleRibbonTests {
     }
 
     @Test func ribbonsRoundTripThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.ribbon = ParticleRibbon(tapers: false)
-        #expect(try roundTrip(emitter).ribbon == emitter.ribbon)
+        var emitter = EmitterModules.standard
+        emitter[RibbonModule.self] = RibbonModule(ribbon: ParticleRibbon(tapers: false))
+        #expect(try roundTrip(emitter)[RibbonModule.self] == emitter[RibbonModule.self])
     }
 }

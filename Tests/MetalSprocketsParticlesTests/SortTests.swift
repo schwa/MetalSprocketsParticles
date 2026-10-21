@@ -13,16 +13,16 @@ struct SortTests {
     let cameraForward = simd_normalize(SIMD3<Float>(0, 0, -6))
 
     func makeSystem(capacity: Int, sortMode: ParticleSortMode = .backToFront, device: MTLDevice) throws -> ParticleSystemRuntime {
-        var emitter = ParticleEmitter()
-        emitter.position = [0, 1, 0]
-        emitter.shape = .sphere(radius: 2)
-        emitter.velocity = .zero
-        emitter.velocitySpread = 1
-        emitter.gravity = .zero
-        emitter.lifetime = 1...3
-        emitter.birthRate = Float(capacity) / 2
-        emitter.sortMode = sortMode
-        return try ParticleSystemRuntime(device: device, capacity: capacity, emitter: emitter, seed: 6)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.position = [0, 1, 0] }
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 2) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 1 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 1...3 }
+        emitter.edit(RateModule.self) { $0.birthRate = Float(capacity) / 2 }
+        emitter.edit(SpriteModule.self) { $0.sortMode = sortMode }
+        return try ParticleSystemRuntime(device: device, capacity: capacity, modules: emitter, seed: 6)
     }
 
     @Test(arguments: [100, 5_000, 70_000])
@@ -82,21 +82,21 @@ struct SortTests {
     /// draws first and blue covers it.
     func centerPixel(sortMode: ParticleSortMode) throws -> SIMD4<UInt8> {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-        func disc(z: Float, color: SIMD4<Float>) -> ParticleEmitter {
-            var emitter = ParticleEmitter()
-            emitter.position = [0, 1, z]
-            emitter.shape = .point
-            emitter.velocity = .zero
-            emitter.velocitySpread = 0
-            emitter.gravity = .zero
-            emitter.lifetime = 10...10
-            emitter.birthRate = 0
-            emitter.sizeOverLife = .constant(0.8)
-            emitter.colorOverLife = .constant(color)
-            emitter.sortMode = sortMode
+        func disc(z: Float, color: SIMD4<Float>) -> EmitterModules {
+            var emitter = EmitterModules.standard
+            emitter.edit(ShapeModule.self) { $0.position = [0, 1, z] }
+            emitter.edit(ShapeModule.self) { $0.shape = .point }
+            emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+            emitter.edit(VelocityModule.self) { $0.spread = 0 }
+            emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+            emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+            emitter.edit(RateModule.self) { $0.birthRate = 0 }
+            emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.8) }
+            emitter.edit(ColorOverLifeModule.self) { $0.color = .constant(color) }
+            emitter.edit(SpriteModule.self) { $0.sortMode = sortMode }
             return emitter
         }
-        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [disc(z: 1, color: [1, 0, 0, 1]), disc(z: -1, color: [0, 0, 1, 1])], capacity: 1)
+        let system = try ParticleSystemRuntime(device: renderer.device, modules: [disc(z: 1, color: [1, 0, 0, 1]), disc(z: -1, color: [0, 0, 1, 1])], capacity: 1)
         system.emitters.forEach { $0.burst(1) }
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 20)
         return try renderer.render(Group {

@@ -9,23 +9,23 @@ import Testing
 
 @Suite(.serialized, .requiresMetal4)
 struct ParticleLightEmissionTests {
-    func still(at position: SIMD3<Float>, _ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = position
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
+    func still(at position: SIMD3<Float>, _ configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = position }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&emitter)
         return emitter
     }
 
     @Test func liveParticlesBecomeLightsWhereTheyAre() throws {
         let runner = try Runner()
-        let glowing = still(at: [1, 2, 3]) { $0.light = ParticleLightEmission(count: 4, color: [1, 0.5, 0], intensity: 2, range: 3) }
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: glowing)
+        let glowing = still(at: [1, 2, 3]) { $0[LightModule.self] = LightModule(light: ParticleLightEmission(count: 4, color: [1, 0.5, 0], intensity: 2, range: 3)) }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: glowing)
         system.burst(64)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         let lights = system.emittedLights()
@@ -45,7 +45,7 @@ struct ParticleLightEmissionTests {
     /// A few live particles in a big ring: lights come from where they are, not from evenly spaced empty slots.
     @Test func sparseEmittersStillLightEveryLight() throws {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, emitter: still(at: .zero) { $0.light = ParticleLightEmission(count: 8) })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, modules: still(at: .zero) { $0[LightModule.self] = LightModule(light: ParticleLightEmission(count: 8)) })
         system.burst(20)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         #expect(system.emittedLights().count == 8)
@@ -56,11 +56,11 @@ struct ParticleLightEmissionTests {
         func lightX(picksBrightest: Bool) throws -> Float {
             let runner = try Runner()
             let settings = still(at: .zero) {
-                $0.colorOverLife = .linear(from: [1, 1, 1, 1], to: [0, 0, 0, 1])
-                $0.lifetime = 1...1
-                $0.light = ParticleLightEmission(count: 1, picksBrightest: picksBrightest)
+                $0.edit(ColorOverLifeModule.self) { $0.color = .linear(from: [1, 1, 1, 1], to: [0, 0, 0, 1]) }
+                $0.edit(LifetimeModule.self) { $0.range = 1...1 }
+                $0[LightModule.self] = LightModule(light: ParticleLightEmission(count: 1, picksBrightest: picksBrightest))
             }
-            let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, emitter: settings)
+            let system = try ParticleSystemRuntime(device: runner.device, capacity: 8, modules: settings)
             for x in 0..<4 {
                 system.burst(1, at: [Float(x), 0, 0])
                 try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -77,15 +77,15 @@ struct ParticleLightEmissionTests {
 
     @Test func noLiveParticlesNoLights() throws {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: still(at: .zero) { $0.light = ParticleLightEmission() })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: still(at: .zero) { $0[LightModule.self] = LightModule(light: ParticleLightEmission()) })
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         #expect(system.particleLightCount == 4)
         #expect(system.emittedLights().isEmpty)
     }
 
     @Test func lightsAreCappedAcrossTheSystem() throws {
-        let many = still(at: .zero) { $0.light = ParticleLightEmission(count: 10) }
-        let system = try ParticleSystemRuntime(emitters: [many, many], capacity: 64)
+        let many = still(at: .zero) { $0[LightModule.self] = LightModule(light: ParticleLightEmission(count: 10)) }
+        let system = try ParticleSystemRuntime(modules: [many, many], capacity: 64)
         system.planParticleLights()
         #expect(system.particleLightCount == Int(PARTICLE_MAX_PARTICLE_LIGHTS))
         #expect(system.particleLightGathers.map(\.count) == [10, 6])
@@ -96,16 +96,16 @@ struct ParticleLightEmissionTests {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
         func brightness(glowing: Bool) throws -> Int {
             let lit = still(at: .zero) {
-                $0.isLit = true
-                $0.sizeOverLife = .constant(1)
-                $0.colorOverLife = .constant([1, 1, 1, 1])
-                $0.blendMode = .opaque
+                $0.edit(ShadingModule.self) { $0.model = .lit }
+                $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(1) }
+                $0.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+                $0.edit(SpriteModule.self) { $0.blendMode = .opaque }
             }
             let glow = still(at: [0, 0, 0.6]) {
-                $0.sizeOverLife = .constant(0.001)
-                $0.light = glowing ? ParticleLightEmission(count: 1, color: [1, 1, 1], intensity: 1, range: 3) : nil
+                $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.001) }
+                $0[LightModule.self] = glowing ? LightModule(light: ParticleLightEmission(count: 1, color: [1, 1, 1], intensity: 1, range: 3)) : nil
             }
-            let system = try ParticleSystemRuntime(device: renderer.device, emitters: [lit, glow], capacity: 1)
+            let system = try ParticleSystemRuntime(device: renderer.device, modules: [lit, glow], capacity: 1)
             system.ambientLight = .zero
             system.emitters.forEach { $0.burst(1) }
             let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
@@ -123,8 +123,8 @@ struct ParticleLightEmissionTests {
     }
 
     @Test func lightEmissionRoundTripsThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.light = ParticleLightEmission(count: 3, color: [0.2, 1, 0.4], intensity: 1.5, range: 2.5)
-        #expect(try roundTrip(emitter).light == emitter.light)
+        var emitter = EmitterModules.standard
+        emitter[LightModule.self] = LightModule(light: ParticleLightEmission(count: 3, color: [0.2, 1, 0.4], intensity: 1.5, range: 2.5))
+        #expect(try roundTrip(emitter)[LightModule.self] == emitter[LightModule.self])
     }
 }

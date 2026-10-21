@@ -6,7 +6,7 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-/// `ParticleEmitter.constrainsToPlane` keeps particles on the emitter's XY plane.
+/// `PlaneConstraintModule` keeps particles on the emitter's XY plane.
 @Suite(.serialized, .requiresMetal4)
 struct PlaneConstraintTests {
     let runner: Runner
@@ -17,15 +17,15 @@ struct PlaneConstraintTests {
 
     /// Particles from a sphere with wide spread, gravity with a z part, and turbulence: everything that adds depth.
     func particles(constrained: Bool, transform: simd_float4x4 = matrix_identity_float4x4, colliders: [Collider] = []) throws -> [Particle] {
-        var emitter = ParticleEmitter()
-        emitter.shape = .sphere(radius: 0.5)
-        emitter.velocity = [0, 1, 1]
-        emitter.velocitySpread = 2
-        emitter.gravity = [0, -2, 3]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.constrainsToPlane = constrained
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0.5) }
+        emitter.edit(VelocityModule.self) { $0.velocity = [0, 1, 1] }
+        emitter.edit(VelocityModule.self) { $0.spread = 2 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -2, 3] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter[PlaneConstraintModule.self] = constrained ? PlaneConstraintModule() : nil
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: emitter)
         runtime.emitters[0].transform = transform
         runtime.forceFields = [.turbulence(strength: 4, scale: 1, speed: 1)]
         runtime.colliders = colliders
@@ -61,10 +61,10 @@ struct PlaneConstraintTests {
     }
 
     @Test func settingRoundTripsAndDefaultsOff() throws {
-        var emitter = ParticleEmitter()
-        #expect(!emitter.constrainsToPlane)
-        emitter.constrainsToPlane = true
+        var emitter = EmitterModules.standard
+        #expect(emitter[PlaneConstraintModule.self] == nil)
+        emitter[PlaneConstraintModule.self] = PlaneConstraintModule()
         let decoded = try roundTrip(emitter)
-        #expect(decoded.constrainsToPlane)
+        #expect(decoded[PlaneConstraintModule.self] != nil)
     }
 }

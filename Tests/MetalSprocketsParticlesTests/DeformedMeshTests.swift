@@ -32,15 +32,15 @@ struct DeformedMeshTests {
 
     /// Bursts `count` still particles from the mesh and returns their positions after one step.
     func emit(_ mesh: EmitterMesh, location: ParticleBirthLocation = .surface, count: Int = 64) throws -> [SIMD3<Float>] {
-        var settings = ParticleEmitter()
-        settings.shape = .mesh
-        settings.birthLocation = location
-        settings.velocity = .zero
-        settings.velocitySpread = 0
-        settings.gravity = .zero
-        settings.lifetime = 10...10
-        settings.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: settings)
+        var settings = EmitterModules.standard
+        settings.edit(ShapeModule.self) { $0.shape = .mesh }
+        settings.edit(ShapeModule.self) { $0.birthLocation = location }
+        settings.edit(VelocityModule.self) { $0.velocity = .zero }
+        settings.edit(VelocityModule.self) { $0.spread = 0 }
+        settings.edit(GravityModule.self) { $0.acceleration = .zero }
+        settings.edit(LifetimeModule.self) { $0.range = 10...10 }
+        settings.edit(RateModule.self) { $0.birthRate = 0 }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, modules: settings)
         system.emitters[0].mesh = mesh
         system.burst(count)
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -60,18 +60,18 @@ struct DeformedMeshTests {
 
     @Test func systemAnimatesAMeshDeformationEachFrame() throws {
         // A flat square in the XY plane (z = 0) that waves along Z.
-        var settings = ParticleEmitter()
-        settings.shape = .mesh
-        settings.birthLocation = .surface
-        settings.velocity = .zero
-        settings.velocitySpread = 0
-        settings.gravity = .zero
-        settings.lifetime = 10...10
-        settings.birthRate = 0
-        var description = EmitterDescription("Flag", settings: settings, capacity: 256)
+        var settings = EmitterModules.standard
+        settings.edit(ShapeModule.self) { $0.shape = .mesh }
+        settings.edit(ShapeModule.self) { $0.birthLocation = .surface }
+        settings.edit(VelocityModule.self) { $0.velocity = .zero }
+        settings.edit(VelocityModule.self) { $0.spread = 0 }
+        settings.edit(GravityModule.self) { $0.acceleration = .zero }
+        settings.edit(LifetimeModule.self) { $0.range = 10...10 }
+        settings.edit(RateModule.self) { $0.birthRate = 0 }
+        var description = EmitterDescription("Flag", modules: settings, capacity: 256)
         description.mesh = Mesh(positions: [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], faces: [[0, 1, 2], [0, 2, 3]])
         description.meshDeformation = .wave(amplitude: 0.4, wavelength: 1, speed: 1)
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         try system.apply([description])
         for _ in 0..<10 {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

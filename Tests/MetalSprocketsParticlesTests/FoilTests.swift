@@ -5,7 +5,7 @@ import MetalSprockets
 import simd
 import Testing
 
-/// `ParticleEmitter.foil`: mesh particles glint when they turn to catch the light and shift color with angle (#155).
+/// Foil shading (`ShadingModel.foil`): mesh particles glint when they turn to catch the light and shift color with angle (#155).
 @Suite(.serialized, .requiresMetal4)
 struct FoilTests {
     /// What the piece is: a mesh particle, or a sprite card oriented some way.
@@ -17,33 +17,33 @@ struct FoilTests {
 
     /// The color at the middle of the view for one large piece turned to `angle`.
     func centerColor(angle: Float, foil: ParticleFoil?, piece: Piece = .coin) throws -> SIMD3<Float> {
-        var coin = ParticleEmitter()
-        coin.shape = .point
-        coin.position = [0, 0, 0]
-        coin.velocity = .zero
-        coin.velocitySpread = 0
-        coin.gravity = .zero
-        coin.birthRate = 0
-        coin.lifetime = 10...10
-        coin.angle = angle
+        var coin = EmitterModules.standard
+        coin.edit(ShapeModule.self) { $0.shape = .point }
+        coin.edit(ShapeModule.self) { $0.position = [0, 0, 0] }
+        coin.edit(VelocityModule.self) { $0.velocity = .zero }
+        coin.edit(VelocityModule.self) { $0.spread = 0 }
+        coin.edit(GravityModule.self) { $0.acceleration = .zero }
+        coin.edit(RateModule.self) { $0.birthRate = 0 }
+        coin.edit(LifetimeModule.self) { $0.range = 10...10 }
+        coin.edit(RotationModule.self, adding: RotationModule()) { $0.angle = angle }
         switch piece {
         case .coin:
-            coin.particleMesh = .coin
+            coin[MeshModule.self] = MeshModule(mesh: .coin)
         case .tumblingCard:
-            coin.orientation = .tumbling
+            coin.edit(SpriteModule.self) { $0.orientation = .tumbling }
         case .billboard:
-            coin.orientation = .billboard
+            coin.edit(SpriteModule.self) { $0.orientation = .billboard }
         }
-        coin.sizeOverLife = .constant(0.8)
+        coin.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.8) }
         // Dark, so the glint stands out instead of clipping at white with the base color.
-        coin.colorOverLife = .constant([0.3, 0.25, 0.12, 1])
-        coin.blendMode = .opaque
-        coin.foil = foil
+        coin.edit(ColorOverLifeModule.self) { $0.color = .constant([0.3, 0.25, 0.12, 1]) }
+        coin.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        coin.edit(ShadingModule.self) { $0.model = foil.map { .foil(settings: $0) } ?? .unlit }
         // Light from behind the camera: the glint peaks when the coin faces the camera.
         // A plain square card (the procedural dot fades toward its edges and would hide the glint's extent).
         let sprite: ParticleSprite = piece == .coin ? .softDot : .confetti
         let system = ParticleSystem(
-            "Coin", layers: [EmitterDescription("Coin", settings: coin, sprite: sprite, capacity: 1)], lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
+            "Coin", layers: [EmitterDescription("Coin", modules: coin, sprite: sprite, capacity: 1)], lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
         )
         let size = CGSize(width: 64, height: 64)
         let renderer = try OffscreenRenderer(size: size)
@@ -90,21 +90,21 @@ struct FoilTests {
     /// the card into brighter and darker patches; and the reflection keeps the metal's hue instead of turning white.
     @Test func foilCardsReflectInTheirOwnColor() throws {
         func render(angle: Float) throws -> [SIMD3<Float>] {
-            var card = ParticleEmitter()
-            card.shape = .point
-            card.velocity = .zero
-            card.velocitySpread = 0
-            card.gravity = .zero
-            card.birthRate = 0
-            card.lifetime = 10...10
-            card.angle = angle
-            card.orientation = .tumbling
-            card.sizeOverLife = .constant(0.9)
-            card.colorOverLife = .constant([0.3, 0.25, 0.12, 1])
-            card.blendMode = .opaque
-            card.foil = ParticleFoil(glint: 3, shininess: 48, iridescence: 0)
+            var card = EmitterModules.standard
+            card.edit(ShapeModule.self) { $0.shape = .point }
+            card.edit(VelocityModule.self) { $0.velocity = .zero }
+            card.edit(VelocityModule.self) { $0.spread = 0 }
+            card.edit(GravityModule.self) { $0.acceleration = .zero }
+            card.edit(RateModule.self) { $0.birthRate = 0 }
+            card.edit(LifetimeModule.self) { $0.range = 10...10 }
+            card.edit(RotationModule.self, adding: RotationModule()) { $0.angle = angle }
+            card.edit(SpriteModule.self) { $0.orientation = .tumbling }
+            card.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.9) }
+            card.edit(ColorOverLifeModule.self) { $0.color = .constant([0.3, 0.25, 0.12, 1]) }
+            card.edit(SpriteModule.self) { $0.blendMode = .opaque }
+            card.edit(ShadingModule.self) { $0.model = .foil(settings: ParticleFoil(glint: 3, shininess: 48, iridescence: 0)) }
             let system = ParticleSystem(
-                "Card", layers: [EmitterDescription("Card", settings: card, sprite: .confetti, capacity: 1)],
+                "Card", layers: [EmitterDescription("Card", modules: card, sprite: .confetti, capacity: 1)],
                 lights: [.directional(direction: [0, 0, -1])], cameraEye: [0, 0, 3], cameraTarget: .zero
             )
             let size = CGSize(width: 96, height: 96)
@@ -146,23 +146,23 @@ struct FoilTests {
     /// Sparkles: an `.onGlint` sub-emitter fires as a spinning foil card flashes (#171), and only then.
     @Test func glintSubEmittersFireWhenPiecesFlash() throws {
         func children(spin: Float, withView: Bool) throws -> Int {
-            var card = ParticleEmitter()
-            card.shape = .point
-            card.velocity = .zero
-            card.velocitySpread = 0
-            card.gravity = .zero
-            card.birthRate = 0
-            card.lifetime = 10...10
-            card.orientation = .tumbling
-            card.angularSpeed = spin
-            card.foil = ParticleFoil()
-            var sparkle = ParticleEmitter()
-            sparkle.shape = .point
-            sparkle.lifetime = 5...5
-            sparkle.gravity = .zero
-            card.subEmitters = [SubEmitter(occasion: .onGlint(threshold: 0.5), countPerEvent: 2, settings: sparkle)]
+            var card = EmitterModules.standard
+            card.edit(ShapeModule.self) { $0.shape = .point }
+            card.edit(VelocityModule.self) { $0.velocity = .zero }
+            card.edit(VelocityModule.self) { $0.spread = 0 }
+            card.edit(GravityModule.self) { $0.acceleration = .zero }
+            card.edit(RateModule.self) { $0.birthRate = 0 }
+            card.edit(LifetimeModule.self) { $0.range = 10...10 }
+            card.edit(SpriteModule.self) { $0.orientation = .tumbling }
+            card.edit(RotationModule.self, adding: RotationModule()) { $0.angularSpeed = spin }
+            card.edit(ShadingModule.self) { $0.model = .foil(settings: ParticleFoil()) }
+            var sparkle = EmitterModules.standard
+            sparkle.edit(ShapeModule.self) { $0.shape = .point }
+            sparkle.edit(LifetimeModule.self) { $0.range = 5...5 }
+            sparkle.edit(GravityModule.self) { $0.acceleration = .zero }
+            card[SubEmittersModule.self] = SubEmittersModule(emitters: [SubEmitter(occasion: .onGlint(threshold: 0.5), countPerEvent: 2, modules: sparkle)])
             let runner = try Runner()
-            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: card)
+            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: card)
             runtime.burst(1)
             let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
             for _ in 0..<120 {
@@ -179,7 +179,7 @@ struct FoilTests {
     }
 
     @Test func onGlintRoundTripsThroughEffectFiles() throws {
-        let sub = SubEmitter(occasion: .onGlint(threshold: 0.6), countPerEvent: 3, settings: ParticleEmitter())
+        let sub = SubEmitter(occasion: .onGlint(threshold: 0.6), countPerEvent: 3, modules: .standard)
         #expect(try JSONDecoder().decode(SubEmitter.self, from: JSONEncoder().encode(sub)).occasion == .onGlint(threshold: 0.6))
     }
 
@@ -192,15 +192,15 @@ struct FoilTests {
     }
 
     @Test func tumblingRoundTripsThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.orientation = .tumbling
-        #expect(try roundTrip(emitter).orientation == .tumbling)
+        var emitter = EmitterModules.standard
+        emitter.edit(SpriteModule.self) { $0.orientation = .tumbling }
+        #expect(try roundTrip(emitter)[SpriteModule.self]?.orientation == .tumbling)
     }
 
     @Test func foilRoundTripsThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.foil = ParticleFoil(glint: 2, shininess: 30, iridescence: 0.4)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShadingModule.self) { $0.model = .foil(settings: ParticleFoil(glint: 2, shininess: 30, iridescence: 0.4)) }
         let decoded = try roundTrip(emitter)
-        #expect(decoded.foil == emitter.foil)
+        #expect(decoded[ShadingModule.self] == emitter[ShadingModule.self])
     }
 }

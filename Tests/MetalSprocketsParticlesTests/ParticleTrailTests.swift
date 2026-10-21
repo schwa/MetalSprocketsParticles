@@ -9,17 +9,17 @@ import Testing
 
 @Suite(.serialized, .requiresMetal4)
 struct ParticleTrailTests {
-    func mover(_ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.velocity = [6, 0, 0]
-        emitter.velocitySpread = 0
-        emitter.speedVariation = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.trail = ParticleTrail(pointCount: 8)
+    func mover(_ configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(VelocityModule.self) { $0.velocity = [6, 0, 0] }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(VelocityModule.self) { $0.speedVariation = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(DragModule.self) { $0.amount = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter[TrailModule.self] = TrailModule(trail: ParticleTrail(pointCount: 8))
         configure(&emitter)
         return emitter
     }
@@ -32,7 +32,7 @@ struct ParticleTrailTests {
 
     @Test func trailsHoldRecentPositionsHeadFirst() throws {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: mover())
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: mover())
         system.burst(1)
         for _ in 0..<5 {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -50,7 +50,7 @@ struct ParticleTrailTests {
 
     @Test func reusedSlotsDoNotStreakFromTheirLastParticle() throws {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: mover { $0.lifetime = 0.05...0.05 })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: mover { $0.edit(LifetimeModule.self) { $0.range = 0.05...0.05 } })
         system.burst(1)
         for _ in 0..<10 {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -64,7 +64,7 @@ struct ParticleTrailTests {
 
     @Test func systemsWithoutTrailsDoNotAllocate() throws {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: mover { $0.trail = nil })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: mover { $0[TrailModule.self] = nil })
         try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
         #expect(system.trails == nil)
     }
@@ -72,14 +72,14 @@ struct ParticleTrailTests {
     /// One particle moving right draws a long horizontal ribbon, not a dot.
     @Test func ribbonsCoverThePath() throws {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
-        let settings = mover {
-            $0.position = [-1.5, 0, 0]
-            $0.sizeOverLife = .constant(0.08)
-            $0.colorOverLife = .constant([1, 1, 1, 1])
-            $0.blendMode = .additive
-            $0.trail = ParticleTrail(pointCount: 16, tapers: false, fades: false)
+        let settings = mover { modules in
+            modules.edit(ShapeModule.self) { $0.position = [-1.5, 0, 0] }
+            modules.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.08) }
+            modules.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+            modules.edit(SpriteModule.self) { $0.blendMode = .additive }
+            modules[TrailModule.self] = TrailModule(trail: ParticleTrail(pointCount: 16, tapers: false, fades: false))
         }
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: settings)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: settings)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
@@ -100,8 +100,8 @@ struct ParticleTrailTests {
     /// Head-to-tail length of an 8-point trail after 0.5 s at `stepsPerSecond`.
     func trailLength(stepsPerSecond: Int, interval: Float) throws -> Float {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: mover {
-            $0.trail = ParticleTrail(pointCount: 8, pointInterval: interval)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: mover {
+            $0[TrailModule.self] = TrailModule(trail: ParticleTrail(pointCount: 8, pointInterval: interval))
         })
         system.burst(1)
         for _ in 0..<(stepsPerSecond / 2) {
@@ -125,8 +125,8 @@ struct ParticleTrailTests {
     }
 
     @Test func trailsRoundTripThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.trail = ParticleTrail(pointCount: 24, tapers: false, fades: true)
-        #expect(try roundTrip(emitter).trail == emitter.trail)
+        var emitter = EmitterModules.standard
+        emitter[TrailModule.self] = TrailModule(trail: ParticleTrail(pointCount: 24, tapers: false, fades: true))
+        #expect(try roundTrip(emitter)[TrailModule.self] == emitter[TrailModule.self])
     }
 }

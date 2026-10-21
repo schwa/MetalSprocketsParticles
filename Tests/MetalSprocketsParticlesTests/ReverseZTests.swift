@@ -81,19 +81,19 @@ struct ReverseZTests {
     }
 
     @Test func depthCollisionWorksInReverseZ() throws {
-        var emitter = ParticleEmitter()
-        emitter.shape = .disc(radius: 0.1)
-        emitter.position = [0, 1.2, 0]
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0
-        emitter.friction = 1
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .disc(radius: 0.1) }
+        emitter.edit(ShapeModule.self) { $0.position = [0, 1.2, 0] }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+        emitter.edit(CollisionModule.self) { $0.friction = 1 }
         emitter.categoryMask = 0
-        emitter.collidesWithSceneDepth = true
-        var system = ParticleSystem("Depth", layers: [EmitterDescription("Drops", settings: emitter, capacity: 16)])
+        emitter.edit(CollisionModule.self) { $0.collidesWithSceneDepth = true }
+        var system = ParticleSystem("Depth", layers: [EmitterDescription("Drops", modules: emitter, capacity: 16)])
         system.colliders = [.sphere(center: .zero, radius: 0.5)]
         system.drawsColliders = true
         system.cameraEye = [0, 1, 3]

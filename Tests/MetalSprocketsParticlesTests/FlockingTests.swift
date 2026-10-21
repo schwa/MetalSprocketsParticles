@@ -17,16 +17,16 @@ struct FlockingTests {
 
     /// `count` particles in a box of `size` with random directions at speed about 1, run for `frames` steps.
     func run(count: Int, size: Float, frames: Int, flocking: ParticleFlocking?) throws -> [Particle] {
-        var emitter = ParticleEmitter()
-        emitter.shape = .box(size: [size, size, size])
-        emitter.velocity = .zero
-        emitter.velocitySpread = 1
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 100...100
-        emitter.birthRate = 0
-        emitter.flocking = flocking
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 3)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .box(size: [size, size, size]) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 1 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(DragModule.self) { $0.amount = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 100...100 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter[FlockingModule.self] = flocking.map(FlockingModule.init)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, modules: emitter, seed: 3)
         system.burst(count)
         for _ in 0..<frames {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -71,7 +71,7 @@ struct FlockingTests {
             return total / 180
         }
         var withoutFlocking = preset
-        withoutFlocking.layers[1].settings.flocking = nil
+        withoutFlocking.layers[1].modules[FlockingModule.self] = nil
         let flocking = try averageGPUMilliseconds(preset)
         let baseline = try averageGPUMilliseconds(withoutFlocking)
         #expect(flocking < baseline * 5 + 0.3, "with flocking \(flocking) ms, without \(baseline) ms")
@@ -124,18 +124,18 @@ struct FlockingTests {
 
     /// Each flocking emitter gets its own grid pass, one after another: both flocks align, each on its own.
     @Test func twoFlockingEmittersEachFlock() throws {
-        var emitter = ParticleEmitter()
-        emitter.shape = .box(size: [1, 1, 1])
-        emitter.velocity = .zero
-        emitter.velocitySpread = 1
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 100...100
-        emitter.birthRate = 0
-        emitter.flocking = ParticleFlocking(radius: 2, separation: 0, alignment: 3, cohesion: 0, speedRange: 0...10)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .box(size: [1, 1, 1]) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 1 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(DragModule.self) { $0.amount = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 100...100 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter[FlockingModule.self] = FlockingModule(flocking: ParticleFlocking(radius: 2, separation: 0, alignment: 3, cohesion: 0, speedRange: 0...10))
         var far = emitter
-        far.position = [20, 0, 0]
-        let layers = [EmitterDescription("A", settings: emitter, capacity: 200), EmitterDescription("B", settings: far, capacity: 200)]
+        far.edit(ShapeModule.self) { $0.position = [20, 0, 0] }
+        let layers = [EmitterDescription("A", modules: emitter, capacity: 200), EmitterDescription("B", modules: far, capacity: 200)]
         let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: .standard, seed: 3)
         try system.apply(layers)
         for emitter in system.emitters {
@@ -152,8 +152,8 @@ struct FlockingTests {
     }
 
     @Test func flockingRoundTripsThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.flocking = ParticleFlocking(radius: 0.7, separation: 0.1, speedRange: 1...3, maxNeighbors: 12)
-        #expect(try roundTrip(emitter).flocking == emitter.flocking)
+        var emitter = EmitterModules.standard
+        emitter[FlockingModule.self] = FlockingModule(flocking: ParticleFlocking(radius: 0.7, separation: 0.1, speedRange: 1...3, maxNeighbors: 12))
+        #expect(try roundTrip(emitter)[FlockingModule.self] == emitter[FlockingModule.self])
     }
 }

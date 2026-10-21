@@ -19,14 +19,14 @@ struct EmitterDescriptionTests {
     }
 
     func description(_ name: String, sprite: ParticleSprite = .star, mesh: Mesh? = nil) -> EmitterDescription {
-        var settings = ParticleEmitter()
-        settings.birthRate = 600
-        settings.lifetime = 5...5
-        return EmitterDescription(name, settings: settings, sprite: sprite, capacity: 1_000, mesh: mesh)
+        var settings = EmitterModules.standard
+        settings.edit(RateModule.self) { $0.birthRate = 600 }
+        settings.edit(LifetimeModule.self) { $0.range = 5...5 }
+        return EmitterDescription(name, modules: settings, sprite: sprite, capacity: 1_000, mesh: mesh)
     }
 
     @Test func editingInPlaceKeepsParticlesAndChangingIDsRebuilds() throws {
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         var descriptions = [description("A"), description("B")]
         try system.apply(descriptions)
         for _ in 0..<10 {
@@ -35,11 +35,11 @@ struct EmitterDescriptionTests {
         let alive = liveCount(system)
         #expect(alive > 0)
 
-        descriptions[0].settings.gravity = [0, -1, 0]
+        descriptions[0].modules.edit(GravityModule.self) { $0.acceleration = [0, -1, 0] }
         descriptions[1].isEmitting = false
         try system.apply(descriptions)
         #expect(liveCount(system) == alive)
-        #expect(system.emitters[0].settings.gravity == [0, -1, 0])
+        #expect(system.emitters[0].modules[GravityModule.self]?.acceleration == [0, -1, 0])
         #expect(system.emitters[1].isEmitting == false)
 
         descriptions.append(descriptions[0].copy(named: "A Copy"))
@@ -49,16 +49,16 @@ struct EmitterDescriptionTests {
     }
 
     @Test func resourcesAreResolvedOnceAndReused() throws {
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: runner.device, modules: [], capacity: 1)
         let mesh = Mesh.teapot(diameter: 1)
         var descriptions = [description("A", mesh: mesh), description("B", sprite: .star)]
-        descriptions[0].settings.shape = .mesh
+        descriptions[0].modules.edit(ShapeModule.self) { $0.shape = .mesh }
         try system.apply(descriptions)
         let texture = try #require(system.emitters[0].texture)
         let emitterMesh = try #require(system.emitters[0].mesh)
         #expect(system.emitters[1].texture === texture)
 
-        descriptions[0].settings.birthRate = 1
+        descriptions[0].modules.edit(RateModule.self) { $0.birthRate = 1 }
         try system.apply(descriptions)
         #expect(system.emitters[0].texture === texture)
         #expect(system.emitters[0].mesh === emitterMesh)
@@ -75,6 +75,6 @@ struct EmitterDescriptionTests {
         let copy = original.copy(named: "B")
         #expect(copy.id != original.id)
         #expect(copy.name == "B")
-        #expect(copy.settings == original.settings && copy.mesh == original.mesh && copy.sprite == original.sprite)
+        #expect(copy.modules == original.modules && copy.mesh == original.mesh && copy.sprite == original.sprite)
     }
 }

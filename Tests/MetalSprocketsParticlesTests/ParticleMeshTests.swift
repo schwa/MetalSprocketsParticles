@@ -40,9 +40,9 @@ struct ParticleMeshTests {
     }
 
     @Test func particleMeshesRoundTripThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.particleMesh = .coin
-        #expect(try roundTrip(emitter).particleMesh == .coin)
+        var emitter = EmitterModules.standard
+        emitter[MeshModule.self] = MeshModule(mesh: .coin)
+        #expect(try roundTrip(emitter)[MeshModule.self]?.mesh == .coin)
         let json = try #require(String(bytes: JSONEncoder().encode(ParticleMesh.cube), encoding: .utf8))
         #expect(json == #"{"cube":{}}"#)
     }
@@ -55,10 +55,10 @@ struct ParticleMeshTests {
             Issue.record("Expected triangles")
             return
         }
-        var emitter = ParticleEmitter()
-        emitter.particleMesh = .triangles(positions: positions + [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]], normals: normals + [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        var emitter = EmitterModules.standard
+        emitter[MeshModule.self] = MeshModule(mesh: .triangles(positions: positions + [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]], normals: normals + [[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
         let resources = EffectResources()
-        let json = try resources.encoder().encode(EmitterModules(emitter))
+        let json = try resources.encoder().encode(emitter)
         let (name, data) = try #require(resources.files.first)
         #expect(name.hasPrefix("particle-mesh-") && name.hasSuffix(".ply"))
         #expect(String(bytes: json, encoding: .utf8)?.contains("\"\(name)\"") == true)
@@ -66,8 +66,8 @@ struct ParticleMeshTests {
         let header = try #require(String(bytes: data[..<end.lowerBound], encoding: .ascii))
         // The square's two triangles share two corners: 4 vertices, plus 3 for the extra triangle.
         #expect(header.contains("element vertex 7") && header.contains("element face 3"))
-        let decoded = try EffectResources(files: resources.files).decoder().decode(EmitterModules.self, from: json).lowered()
-        #expect(decoded.particleMesh == emitter.particleMesh)
+        let decoded = try EffectResources(files: resources.files).decoder().decode(EmitterModules.self, from: json)
+        #expect(decoded[MeshModule.self] == emitter[MeshModule.self])
     }
 
     /// Meshes from other tools: ASCII, quads (split into triangles), and no normals (flat normals are made).
@@ -125,19 +125,19 @@ struct ParticleMeshTests {
     /// One opaque cube particle, 0.5 across, in the middle: solid at the center, nothing near the corners of the view.
     @Test func meshParticlesDrawSolidShapes() throws {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-        var settings = ParticleEmitter()
-        settings.shape = .point
-        settings.velocity = .zero
-        settings.velocitySpread = 0
-        settings.gravity = .zero
-        settings.lifetime = 10...10
-        settings.birthRate = 0
-        settings.angleVariation = 0
-        settings.sizeOverLife = .constant(0.5)
-        settings.colorOverLife = .constant([1, 0, 0, 1])
-        settings.blendMode = .opaque
-        settings.particleMesh = .cube
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: settings)
+        var settings = EmitterModules.standard
+        settings.edit(ShapeModule.self) { $0.shape = .point }
+        settings.edit(VelocityModule.self) { $0.velocity = .zero }
+        settings.edit(VelocityModule.self) { $0.spread = 0 }
+        settings.edit(GravityModule.self) { $0.acceleration = .zero }
+        settings.edit(LifetimeModule.self) { $0.range = 10...10 }
+        settings.edit(RateModule.self) { $0.birthRate = 0 }
+        settings.edit(RotationModule.self, adding: RotationModule()) { $0.angleVariation = 0 }
+        settings.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.5) }
+        settings.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 0, 0, 1]) }
+        settings.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        settings[MeshModule.self] = MeshModule(mesh: .cube)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: settings)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 10)

@@ -69,7 +69,7 @@ struct SimulationModulesTests {
 
     /// A disabled module writes nothing: the uniform keeps its neutral value.
     @Test func disabledModulesContributeNothing() throws {
-        var modules = EmitterModules(ParticleEmitter())
+        var modules = EmitterModules.standard
         let index = try #require(modules.update.firstIndex { $0.module.kind == GravityModule.kind })
         modules.update[index].isEnabled = false
         let system = try ParticleSystemRuntime(capacity: 4, modules: modules)

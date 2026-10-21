@@ -62,8 +62,8 @@ struct StitchingSpikeTests {
         return try device.makeLibrary(stitchedDescriptor: descriptor)
     }
 
-    func run(_ emitter: ParticleEmitter, inject: ((ParticleSystemRuntime) throws -> Void)? = nil, frames: Int = 30) throws -> [Particle] {
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: emitter)
+    func run(_ emitter: EmitterModules, inject: ((ParticleSystemRuntime) throws -> Void)? = nil, frames: Int = 30) throws -> [Particle] {
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: emitter)
         try inject?(system)
         system.burst(64)
         for _ in 0..<frames {
@@ -73,15 +73,15 @@ struct StitchingSpikeTests {
         return (0..<64).map { pointer[$0] }
     }
 
-    func emitter(_ function: ParticleFunction) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .sphere(radius: 1)
-        emitter.velocitySpread = 1
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 2...2
-        emitter.birthRate = 0
-        emitter.updateFunction = function
+    func emitter(_ function: ParticleFunction) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 1) }
+        emitter.edit(VelocityModule.self) { $0.spread = 1 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(DragModule.self) { $0.amount = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 2...2 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter[UpdateFunctionModule.self] = UpdateFunctionModule(function: function)
         return emitter
     }
 
@@ -127,11 +127,11 @@ struct StitchingSpikeTests {
         ]
         for (label, function, inject) in cases {
             var settings = emitter(function ?? Self.handWritten)
-            settings.updateFunction = function
-            settings.lifetime = 2...2
-            settings.birthRate = 500_000
+            settings[UpdateFunctionModule.self] = function.map(UpdateFunctionModule.init)
+            settings.edit(LifetimeModule.self) { $0.range = 2...2 }
+            settings.edit(RateModule.self) { $0.birthRate = 500_000 }
             let start = ContinuousClock.now
-            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1_000_000, emitter: settings)
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1_000_000, modules: settings)
             if let inject, let function {
                 system.gpuFunctions.store(inject, for: .simulation(SlotFunction.user(function).key))
             }
@@ -156,12 +156,12 @@ struct StitchingSpikeTests {
         let source = String(Self.moduleSource.dropFirst(ParticleFunction.prelude.count))
         let parameters = Self.parameters
         var settings = emitter(Self.handWritten)
-        settings.updateFunction = nil
-        settings.updateModules = [
+        settings[UpdateFunctionModule.self] = nil
+        settings.update += [
             StitchedModule(source: source, name: "gravityModule", parameters: [parameters[0]]),
             StitchedModule(source: source, name: "dragModule", parameters: [parameters[1]]),
             StitchedModule(source: source, name: "colorOverLifeModule", parameters: [parameters[2], parameters[3]]),
-        ]
+        ].map { ModuleSlot(.stitched(StitchedUpdateModule(module: $0))) }
         let expected = try run(emitter(Self.handWritten))
         let actual = try run(settings)
         for (a, b) in zip(actual, expected) {
@@ -176,11 +176,11 @@ struct StitchingSpikeTests {
     /// stack, each with names nothing has compiled before.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["STITCHING_TIMINGS"] != nil)) func firstFrameCost() throws {
         let source = String(Self.moduleSource.dropFirst(ParticleFunction.prelude.count))
-        func firstFrame(_ configure: (inout ParticleEmitter) -> Void) throws -> (compile: Duration, frame: Duration) {
+        func firstFrame(_ configure: (inout EmitterModules) -> Void) throws -> (compile: Duration, frame: Duration) {
             var settings = emitter(Self.handWritten)
-            settings.updateFunction = nil
+            settings[UpdateFunctionModule.self] = nil
             configure(&settings)
-            let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, emitter: settings)
+            let system = try ParticleSystemRuntime(device: runner.device, capacity: 64, modules: settings)
             let start = ContinuousClock.now
             try system.compileFunctions()
             let compiled = ContinuousClock.now
@@ -192,12 +192,12 @@ struct StitchingSpikeTests {
         for run in 0..<3 {
             let unique = "\(run)_\(UInt32.random(in: 0...UInt32.max))"
             let user = try firstFrame {
-                $0.updateFunction = ParticleFunction(source: Self.handWritten.source.replacingOccurrences(of: "handWritten", with: "user\(unique)"), name: "user\(unique)", parameters: Self.parameters)
+                $0[UpdateFunctionModule.self] = UpdateFunctionModule(function: ParticleFunction(source: Self.handWritten.source.replacingOccurrences(of: "handWritten", with: "user\(unique)"), name: "user\(unique)", parameters: Self.parameters))
             }
             let stitched = try firstFrame {
                 let renamed = source.replacingOccurrences(of: "Module(", with: "Module\(unique)(")
-                $0.updateModules = ["gravityModule", "dragModule", "colorOverLifeModule"].map { name in
-                    StitchedModule(source: renamed, name: name + unique, parameters: [[0, -9.8, 0, 0]])
+                $0.update += ["gravityModule", "dragModule", "colorOverLifeModule"].map { name in
+                    ModuleSlot(.stitched(StitchedUpdateModule(module: StitchedModule(source: renamed, name: name + unique, parameters: [[0, -9.8, 0, 0]]))))
                 }
             }
             print("first-frame user: compile \(user.compile), frame \(user.frame); stitched: compile \(stitched.compile), frame \(stitched.frame)")
@@ -209,11 +209,11 @@ struct StitchingSpikeTests {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
         let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 100)
-        func firstFrame(_ configure: (inout ParticleEmitter) -> Void) throws -> Duration {
+        func firstFrame(_ configure: (inout EmitterModules) -> Void) throws -> Duration {
             var settings = emitter(Self.handWritten)
-            settings.updateFunction = nil
+            settings[UpdateFunctionModule.self] = nil
             configure(&settings)
-            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, emitter: settings)
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, modules: settings)
             system.burst(16)
             let start = ContinuousClock.now
             _ = try renderer.render(Group {
@@ -222,8 +222,8 @@ struct StitchingSpikeTests {
             })
             return ContinuousClock.now - start
         }
-        _ = try firstFrame { $0.isLit = true }
-        print("first-frame shading: built-in lit (warm) \(try firstFrame { $0.isLit = true })")
+        _ = try firstFrame { $0.edit(ShadingModule.self) { $0.model = .lit } }
+        print("first-frame shading: built-in lit (warm) \(try firstFrame { $0.edit(ShadingModule.self) { $0.model = .lit } })")
         for perPixel in [false, true] {
             for run in 0..<2 {
                 let name = "tint\(run)\(perPixel ? "p" : "v")\(UInt32.random(in: 0...UInt32.max))"
@@ -233,8 +233,8 @@ struct StitchingSpikeTests {
                 }
                 """, name: name)
                 let time = try firstFrame {
-                    $0.shadingFunction = function
-                    $0.shadesPerPixel = perPixel
+                    $0.edit(ShadingModule.self) { $0.model = .custom(function: function) }
+                    $0.edit(ShadingModule.self) { $0.perPixel = perPixel }
                 }
                 print("first-frame shading: new custom function, \(perPixel ? "per pixel" : "per vertex"): \(time)")
             }

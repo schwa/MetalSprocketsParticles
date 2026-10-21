@@ -30,21 +30,21 @@ struct SubEmitterTests {
     }
 
     func parent(_ sub: SubEmitter, lifetime: ClosedRange<Float> = 0.5...0.5, configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
-        EmitterModules.standard {
-            $0.edit(ShapeModule.self) {
+        EmitterModules.standard { modules in
+            modules.edit(ShapeModule.self) {
                 $0.position = [0, 1, 0]
                 $0.shape = .point
             }
-            $0.edit(VelocityModule.self) {
+            modules.edit(VelocityModule.self) {
                 $0.velocity = [1, 0, 0]
                 $0.spread = 0
             }
-            $0.edit(GravityModule.self) { $0.acceleration = .zero }
-            $0.edit(DragModule.self) { $0.amount = 0 }
-            $0.edit(LifetimeModule.self) { $0.range = lifetime }
-            $0.edit(RateModule.self) { $0.birthRate = 0 }
-            $0[SubEmittersModule.self] = SubEmittersModule(emitters: [sub])
-            configure(&$0)
+            modules.edit(GravityModule.self) { $0.acceleration = .zero }
+            modules.edit(DragModule.self) { $0.amount = 0 }
+            modules.edit(LifetimeModule.self) { $0.range = lifetime }
+            modules.edit(RateModule.self) { $0.birthRate = 0 }
+            modules[SubEmittersModule.self] = SubEmittersModule(emitters: [sub])
+            configure(&modules)
         }
     }
 

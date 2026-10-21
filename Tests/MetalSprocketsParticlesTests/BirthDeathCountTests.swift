@@ -8,21 +8,21 @@ import Testing
 /// `bornParticleCount` and `diedParticleCount`, counted on the GPU and read a few frames late (#135).
 @Suite(.serialized, .requiresMetal4)
 struct BirthDeathCountTests {
-    func emitter(_ configure: (inout ParticleEmitter) -> Void) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
+    func emitter(_ configure: (inout EmitterModules) -> Void) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
         configure(&emitter)
         return emitter
     }
 
     @Test func steadyEmissionBalancesBirthsAndDeaths() throws {
         let runner = try Runner()
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, emitter: emitter {
-            $0.birthRate = 600
-            $0.lifetime = 0.5...0.5
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 1_000, modules: emitter {
+            $0.edit(RateModule.self) { $0.birthRate = 600 }
+            $0.edit(LifetimeModule.self) { $0.range = 0.5...0.5 }
         })
         var born: [Int] = []
         var died: [Int] = []
@@ -44,15 +44,15 @@ struct BirthDeathCountTests {
     @Test func subEmitterChildrenCountAsBirths() throws {
         let runner = try Runner()
         let child = emitter {
-            $0.birthRate = 0
-            $0.lifetime = 0.05...0.05
+            $0.edit(RateModule.self) { $0.birthRate = 0 }
+            $0.edit(LifetimeModule.self) { $0.range = 0.05...0.05 }
         }
         let parent = emitter {
-            $0.birthRate = 0
-            $0.lifetime = 0.05...0.05
-            $0.subEmitters = [SubEmitter(occasion: .onDeath, countPerEvent: 3, settings: child)]
+            $0.edit(RateModule.self) { $0.birthRate = 0 }
+            $0.edit(LifetimeModule.self) { $0.range = 0.05...0.05 }
+            $0[SubEmittersModule.self] = SubEmittersModule(emitters: [SubEmitter(occasion: .onDeath, countPerEvent: 3, modules: child)])
         }
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: parent)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: parent)
         system.burst(4)
         var born = 0
         var died = 0

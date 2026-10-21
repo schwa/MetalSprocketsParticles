@@ -6,24 +6,24 @@ import MetalSprocketsParticlesShaders
 import simd
 import Testing
 
-/// `ParticleEmitter.collisionRadius`: particles collide as spheres, so big ones rest on colliders (#126).
+/// `CollisionModule.radius`: particles collide as spheres, so big ones rest on colliders (#126).
 @Suite(.serialized, .requiresMetal4)
 struct CollisionRadiusTests {
     /// Final positions of particles dropped straight down from `start` onto `collider`.
     func rest(radius: Float, on collider: Collider, from start: SIMD3<Float> = [0, 1, 0]) throws -> [SIMD3<Float>] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = start
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0
-        emitter.friction = 1
-        emitter.collisionRadius = radius
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = start }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+        emitter.edit(CollisionModule.self) { $0.friction = 1 }
+        emitter.edit(CollisionModule.self) { $0.radius = radius }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: emitter)
         system.colliders = [collider]
         system.burst(4)
         for _ in 0..<120 {
@@ -54,8 +54,8 @@ struct CollisionRadiusTests {
     }
 
     @Test func collisionRadiusRoundTripsThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.collisionRadius = 0.07
-        #expect(try roundTrip(emitter).collisionRadius == 0.07)
+        var emitter = EmitterModules.standard
+        emitter.edit(CollisionModule.self) { $0.radius = 0.07 }
+        #expect(try roundTrip(emitter)[CollisionModule.self]?.radius == 0.07)
     }
 }

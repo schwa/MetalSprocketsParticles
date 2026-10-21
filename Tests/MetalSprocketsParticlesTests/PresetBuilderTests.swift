@@ -18,9 +18,9 @@ struct BuiltInPresetTests {
 
 @Suite(.requiresMetal4)
 struct PresetBuilderTests {
-    func settings(_ birthRate: Float) -> ParticleEmitter {
-        var settings = ParticleEmitter()
-        settings.birthRate = birthRate
+    func settings(_ birthRate: Float) -> EmitterModules {
+        var settings = EmitterModules.standard
+        settings.edit(RateModule.self) { $0.birthRate = birthRate }
         return settings
     }
 
@@ -28,7 +28,7 @@ struct PresetBuilderTests {
     func same(_ a: ParticleSystem, _ b: ParticleSystem) -> Bool {
         a.name == b.name
             && a.layers.map(\.name) == b.layers.map(\.name)
-            && a.layers.map(\.settings) == b.layers.map(\.settings)
+            && a.layers.map(\.modules) == b.layers.map(\.modules)
             && a.layers.map(\.capacity) == b.layers.map(\.capacity)
             && a.colliders == b.colliders && a.forceFields == b.forceFields && a.lights == b.lights
             && a.trackedObjects == b.trackedObjects && a.ambientLight == b.ambientLight
@@ -39,15 +39,15 @@ struct PresetBuilderTests {
         let motion = EmitterMotion(kind: .circle)
         let built = ParticleSystem("Test", ambientLight: [0.1, 0.1, 0.1], cameraEye: [1, 2, 3]) {
             Collider.plane(normal: [0, 1, 0], distance: 0)
-            EmitterDescription("A", settings: settings(10), capacity: 100)
+            EmitterDescription("A", modules: settings(10), capacity: 100)
             ForceField.turbulence(strength: 1)
             ParticleLight.directional(direction: [0, -1, 0])
-            EmitterDescription("B", settings: settings(20))
+            EmitterDescription("B", modules: settings(20))
             TrackedObject("ball", motion: motion)
         }
         let explicit = ParticleSystem(
             "Test",
-            layers: [EmitterDescription("A", settings: settings(10), capacity: 100), EmitterDescription("B", settings: settings(20))],
+            layers: [EmitterDescription("A", modules: settings(10), capacity: 100), EmitterDescription("B", modules: settings(20))],
             colliders: [.plane(normal: [0, 1, 0], distance: 0)],
             forceFields: [.turbulence(strength: 1)],
             lights: [.directional(direction: [0, -1, 0])],
@@ -62,7 +62,7 @@ struct PresetBuilderTests {
         func preset(windy: Bool, count: Int, extra: Collider?) -> ParticleSystem {
             ParticleSystem("Flow") {
                 for index in 0..<count {
-                    EmitterDescription("Layer \(index)", settings: settings(Float(index)))
+                    EmitterDescription("Layer \(index)", modules: settings(Float(index)))
                 }
                 if windy {
                     ForceField.wind(velocity: [1, 0, 0], strength: 1)

@@ -10,9 +10,8 @@ import Testing
 @Suite(.requiresMetal4)
 struct TwoDModeTests {
     func system(is2D: Bool) -> ParticleSystem {
-        var emitter = ParticleEmitter()
-        emitter.constrainsToPlane = false
-        var system = ParticleSystem("2D", layers: [EmitterDescription("Dots", settings: emitter)])
+        let emitter = EmitterModules.standard
+        var system = ParticleSystem("2D", layers: [EmitterDescription("Dots", modules: emitter)])
         system.is2D = is2D
         return system
     }
@@ -53,20 +52,21 @@ struct TwoDModeTests {
         // swiftlint:disable:next prefer_key_path
         #expect(runtime.emitters.allSatisfy { $0.forcesPlane })
         // The stored layer is untouched, so turning 2D off restores it.
-        #expect(flat.layers.allSatisfy { !$0.settings.constrainsToPlane })
+        #expect(flat.layers.allSatisfy { $0.modules[PlaneConstraintModule.self] == nil })
         try runtime.apply(system(is2D: false))
         #expect(runtime.emitters.allSatisfy { !$0.forcesPlane })
     }
 
-    @Test func twoDDefaultsAreInPoints() {
-        let emitter = ParticleEmitter.default2D
-        let speed = simd_length(emitter.velocity)
+    @Test func twoDDefaultsAreInPoints() throws {
+        let emitter = EmitterModules.default2D
+        let velocity = try #require(emitter[VelocityModule.self])
+        let speed = simd_length(velocity.velocity)
         #expect(speed >= 100)
         // Spread and speed variation are speeds too (#140).
-        #expect(emitter.velocitySpread > speed * 0.3)
-        #expect(emitter.speedVariation > speed * 0.2)
-        #expect(emitter.gravity.y > 0) // Down the screen.
-        #expect(emitter.constrainsToPlane)
+        #expect(velocity.spread > speed * 0.3)
+        #expect(velocity.speedVariation > speed * 0.2)
+        #expect(try #require(emitter[GravityModule.self]).acceleration.y > 0) // Down the screen.
+        #expect(emitter[PlaneConstraintModule.self] != nil)
     }
 
     @Test func is2DRoundTripsAndOldFilesAre3D() throws {

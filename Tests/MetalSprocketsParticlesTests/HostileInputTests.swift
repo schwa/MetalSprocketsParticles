@@ -27,16 +27,16 @@ struct HostileInputTests {
     }
 
     @Test func hugeNestedSubEmitterCountsThrowInsteadOfCrashing() throws {
-        var child = ParticleEmitter()
-        var sub = SubEmitter(occasion: .onDeath, countPerEvent: 1_000_000, settings: child)
+        var child = EmitterModules.standard
+        var sub = SubEmitter(occasion: .onDeath, countPerEvent: 1_000_000, modules: child)
         for _ in 0..<2 {
-            child.subEmitters = [sub]
-            sub = SubEmitter(occasion: .onDeath, countPerEvent: 1_000_000, settings: child)
+            child[SubEmittersModule.self] = SubEmittersModule(emitters: [sub])
+            sub = SubEmitter(occasion: .onDeath, countPerEvent: 1_000_000, modules: child)
         }
-        var parent = ParticleEmitter()
-        parent.subEmitters = [sub]
+        var parent = EmitterModules.standard
+        parent[SubEmittersModule.self] = SubEmittersModule(emitters: [sub])
         #expect(throws: (any Error).self) {
-            _ = try ParticleSystemRuntime(capacity: 1_000_000, emitter: parent)
+            _ = try ParticleSystemRuntime(capacity: 1_000_000, modules: parent)
         }
     }
 }

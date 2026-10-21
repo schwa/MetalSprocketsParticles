@@ -11,21 +11,21 @@ import Testing
 @Suite(.serialized, .requiresMetal4)
 struct ScreenSizeTests {
     /// Lit pixels of one opaque particle `distance` units in front of the camera, after `frames` frames.
-    func litPixels(distance: Float, size: Float, frames: Int = 2, configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> Int {
+    func litPixels(distance: Float, size: Float, frames: Int = 2, configure: (inout EmitterModules) -> Void = { _ in }) throws -> Int {
         let renderer = try OffscreenRenderer(size: CGSize(width: 200, height: 200))
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = [0, 0, -distance]
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.blendMode = .opaque
-        emitter.sizeOverLife = .constant(size)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = [0, 0, -distance] }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(size) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
         configure(&emitter)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter)
         system.burst(1)
         let view = matrix_identity_float4x4
         let projection = simd_float4x4.perspective(fovY: .pi / 2, aspect: 1, near: 0.1, far: 1_000)
@@ -44,36 +44,36 @@ struct ScreenSizeTests {
         #expect(try litPixels(distance: 100, size: 0.01) == 0)
         // Half-size at least 5% of the view height: a 20-pixel quad. Opaque keeps the soft dot's middle (coverage over
         // half, the inner 29% of the radius), a disc about 6 pixels across.
-        let lit = try litPixels(distance: 100, size: 0.01) { $0.minimumScreenSize = 0.05 }
+        let lit = try litPixels(distance: 100, size: 0.01) { $0.edit(SpriteModule.self) { $0.minimumScreenSize = 0.05 } }
         #expect(lit > 15 && lit < 60)
     }
 
     @Test func nearParticlesAreNotShrunk() throws {
         let plain = try litPixels(distance: 2, size: 0.3)
-        let withMinimum = try litPixels(distance: 2, size: 0.3) { $0.minimumScreenSize = 0.01 }
+        let withMinimum = try litPixels(distance: 2, size: 0.3) { $0.edit(SpriteModule.self) { $0.minimumScreenSize = 0.01 } }
         #expect(plain == withMinimum)
     }
 
     @Test func lodGrowsParticlesItThinsOut() throws {
-        func lod(_ emitter: inout ParticleEmitter) {
-            emitter.lodNearDistance = 1
-            emitter.lodFarDistance = 10
-            emitter.lodFarRateScale = 0.25
+        func lod(_ emitter: inout EmitterModules) {
+            emitter.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.near = 1 }
+            emitter.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.far = 10 }
+            emitter.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.farRateScale = 0.25 }
         }
         // At the far distance the rate scale is 1/4, so sizes double and the area is about four times larger.
         let plain = try litPixels(distance: 20, size: 4, frames: 3, configure: lod)
         let grown = try litPixels(distance: 20, size: 4, frames: 3) {
             lod(&$0)
-            $0.lodScalesSize = true
+            $0.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.scalesSize = true }
         }
         #expect(Double(grown) > Double(plain) * 3 && Double(grown) < Double(plain) * 5)
     }
 
     @Test func settingsRoundTripThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.minimumScreenSize = 0.003
-        emitter.lodScalesSize = true
+        var emitter = EmitterModules.standard
+        emitter.edit(SpriteModule.self) { $0.minimumScreenSize = 0.003 }
+        emitter.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.scalesSize = true }
         let decoded = try roundTrip(emitter)
-        #expect(decoded.minimumScreenSize == 0.003 && decoded.lodScalesSize)
+        #expect(decoded[SpriteModule.self]?.minimumScreenSize == 0.003 && decoded[LevelOfDetailModule.self]?.scalesSize == true)
     }
 }

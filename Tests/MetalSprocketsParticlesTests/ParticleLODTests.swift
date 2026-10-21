@@ -27,27 +27,27 @@ struct ParticleLODTests {
         #expect(Emitter.sphereIntersectsFrustum(center: [20, 0, 0], radius: 19, viewProjection: viewProjection))
     }
 
-    func emitter(at position: SIMD3<Float>, _ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.position = position
-        emitter.birthRate = 600
+    func emitter(at position: SIMD3<Float>, _ configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.position = position }
+        emitter.edit(RateModule.self) { $0.birthRate = 600 }
         configure(&emitter)
         return emitter
     }
 
     /// Particles spawned by one emitter in one 1/30 s step.
-    func spawnCount(_ settings: ParticleEmitter, camera: CullingCamera?) throws -> Int {
-        let system = try ParticleSystemRuntime(capacity: 1_000, emitter: settings)
+    func spawnCount(_ settings: EmitterModules, camera: CullingCamera?) throws -> Int {
+        let system = try ParticleSystemRuntime(capacity: 1_000, modules: settings)
         system.cullingCamera = camera
         let plan = try system.planFrame(deltaTime: 1.0 / 30.0)
         return plan.dispatches.reduce(0) { $0 + Int($1.uniforms.spawn.count) }
     }
 
     @Test func emissionFallsOffWithDistance() throws {
-        func lod(_ settings: inout ParticleEmitter) {
-            settings.lodNearDistance = 10
-            settings.lodFarDistance = 30
-            settings.lodFarRateScale = 0.25
+        func lod(_ settings: inout EmitterModules) {
+            settings.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.near = 10 }
+            settings.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.far = 30 }
+            settings.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.farRateScale = 0.25 }
         }
         #expect(try spawnCount(emitter(at: .zero, lod), camera: camera()) == 20)
         #expect(try spawnCount(emitter(at: [0, 0, -45], lod), camera: camera()) == 5)
@@ -59,12 +59,12 @@ struct ParticleLODTests {
 
     @Test func culledEmittersSimulateUnlessToldNotTo() throws {
         let offscreen: SIMD3<Float> = [50, 0, 0]
-        let keepsGoing = emitter(at: offscreen) { $0.cullingRadius = 1 }
+        let keepsGoing = emitter(at: offscreen) { $0.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.cullingRadius = 1 } }
         let freezes = emitter(at: offscreen) {
-            $0.cullingRadius = 1
-            $0.simulatesWhenCulled = false
+            $0.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.cullingRadius = 1 }
+            $0.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.simulatesWhenCulled = false }
         }
-        let system = try ParticleSystemRuntime(emitters: [keepsGoing, freezes], capacity: 100)
+        let system = try ParticleSystemRuntime(modules: [keepsGoing, freezes], capacity: 100)
         system.cullingCamera = camera()
         let plan = try system.planFrame(deltaTime: 1.0 / 60.0)
         // swiftlint:disable:next prefer_key_path
@@ -77,16 +77,16 @@ struct ParticleLODTests {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
         func render(cullingRadius: Float) throws -> Int {
             var settings = emitter(at: [50, 0, 0]) {
-                $0.cullingRadius = cullingRadius
-                $0.birthRate = 0
-                $0.velocity = .zero
-                $0.velocitySpread = 0
-                $0.gravity = .zero
-                $0.sizeOverLife = .constant(1)
-                $0.colorOverLife = .constant([1, 1, 1, 1])
+                $0.edit(LevelOfDetailModule.self, adding: LevelOfDetailModule()) { $0.cullingRadius = cullingRadius }
+                $0.edit(RateModule.self) { $0.birthRate = 0 }
+                $0.edit(VelocityModule.self) { $0.velocity = .zero }
+                $0.edit(VelocityModule.self) { $0.spread = 0 }
+                $0.edit(GravityModule.self) { $0.acceleration = .zero }
+                $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(1) }
+                $0.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
             }
-            settings.lifetime = 10...10
-            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, emitter: settings)
+            settings.edit(LifetimeModule.self) { $0.range = 10...10 }
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 16, modules: settings)
             // Particles in the middle of the view, from an emitter whose culling sphere is far off to the side.
             system.burst(16, at: [-50, 0, 0])
             var image: CGImage?

@@ -59,6 +59,7 @@ struct ParticleCurveTests {
     }
 
     @Test func emitterStartEndAccessorsMatchCurves() {
+        // Flat settings only; goes with ParticleEmitter in #229.
         var emitter = ParticleEmitter()
         emitter.colorStart = [1, 0, 0, 1]
         emitter.sizeEnd = 0.5
@@ -70,18 +71,18 @@ struct ParticleCurveTests {
 @Suite(.serialized, .requiresMetal4)
 struct ParticleCurveGPUTests {
     /// One still, procedurally drawn particle at the origin, 1 s lifetime, viewed head-on after `steps` frames.
-    func centerPixel(steps: Int, configure: (inout ParticleEmitter) -> Void) throws -> SIMD4<UInt8> {
+    func centerPixel(steps: Int, configure: (inout EmitterModules) -> Void) throws -> SIMD4<UInt8> {
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 1...1
-        emitter.birthRate = 0
-        emitter.sizeOverLife = .constant(0.5)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 1...1 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.5) }
         configure(&emitter)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter, seed: 0)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 10)
@@ -99,12 +100,12 @@ struct ParticleCurveGPUTests {
 
     @Test func colorFollowsMultiStopGradient() throws {
         // 30 steps: age 0.483...0.5, near the green stop.
-        let middle = try centerPixel(steps: 30) { $0.colorOverLife = redGreenBlue }
+        let middle = try centerPixel(steps: 30) { $0.edit(ColorOverLifeModule.self) { $0.color = redGreenBlue } }
         #expect(middle.y > 230)
         #expect(middle.x < 60)
         #expect(middle.z < 10)
         // 55 steps: age 0.9...0.917, mostly blue.
-        let late = try centerPixel(steps: 55) { $0.colorOverLife = redGreenBlue }
+        let late = try centerPixel(steps: 55) { $0.edit(ColorOverLifeModule.self) { $0.color = redGreenBlue } }
         #expect(late.z > late.y)
         #expect(late.x < 10)
     }
@@ -113,12 +114,12 @@ struct ParticleCurveGPUTests {
         // Fade in then out: invisible at birth and death, opaque in the middle.
         let fade = ParticleCurve<Float>([.init(0, 0), .init(0.5, 1), .init(1, 0)])
         let middle = try centerPixel(steps: 30) {
-            $0.colorOverLife = .constant([1, 1, 1, 1])
-            $0.opacityOverLife = fade
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+            $0.edit(ColorOverLifeModule.self) { $0.opacity = fade }
         }
         let early = try centerPixel(steps: 1) {
-            $0.colorOverLife = .constant([1, 1, 1, 1])
-            $0.opacityOverLife = fade
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+            $0.edit(ColorOverLifeModule.self) { $0.opacity = fade }
         }
         #expect(middle.x > 240)
         // After one step opacity is at most ~0.033 linear, which the sRGB target encodes as ~51.

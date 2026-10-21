@@ -4880,16 +4880,19 @@ EmitterDescription and SubEmitter stop caching the lowered ParticleEmitter (and 
 ## 228: Migrate tests, demo and README from ParticleEmitter to the module builder (#223 stage 3)
 
 +++
-status: new
+status: closed
 priority: low
 kind: task
 labels: area:architecture, effort:l
 depends: 227
 created: 2026-10-21T12:17:48Z
-updated: 2026-10-21T12:17:54Z
+updated: 2026-10-21T15:06:11Z
+closed: 2026-10-21T15:06:11Z
 +++
 
 Mechanical sweep: ~67 test files plus demo and README build ParticleEmitter(...) directly; move them to EmitterDescription { ... } modules.
+
+- `2026-10-21T15:06:11Z`: Tests build emitters from modules: EmitterModules.standard / .fountain plus edit(_:adding:_:) (fails loudly when a .standard module is missing) and a standard(position:shape:velocity:...) helper in Tests/ModuleEditing.swift. Converted by hand where nesting mattered (goldens, sub-emitters) and by a reviewed sed field-to-module mapping elsewhere; every golden image is unchanged and 485 tests pass. Effect-file round-trip checks compare modules (stricter than lowered settings) and still pass. Added EmitterModules.fountain and Collider.fountain(time:) fixtures. Demo and README already used modules. Left for #229, because they test the flat type itself: EmitterModulesTests' lift/lower tests, roundTrip(ParticleEmitter), radiusAccessorMapsToSphere, emitterStartEndAccessorsMatchCurves, settingFlatSettingsUpdatesModules. Documentation/Modules.md updated for #226-#228.
 
 ---
 

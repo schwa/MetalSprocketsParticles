@@ -19,13 +19,13 @@ struct AliveCountTests {
     }
 
     @Test func matchesAReadbackFromFiveFramesEarlier() throws {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 300
-        emitter.lifetime = 0.2...0.6
+        var emitter = EmitterModules.standard
+        emitter.edit(RateModule.self) { $0.birthRate = 300 }
+        emitter.edit(LifetimeModule.self) { $0.range = 0.2...0.6 }
         // Warmup adds extra steps on the first frame; each emitter must still be counted once per frame.
-        emitter.warmupDuration = 0.5
-        emitter.subEmitters = [SubEmitter(occasion: .onDeath, countPerEvent: 2, settings: ParticleEmitter())]
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 500, emitter: emitter)
+        emitter.edit(RateModule.self) { $0.warmupDuration = 0.5 }
+        emitter[SubEmittersModule.self] = SubEmittersModule(emitters: [SubEmitter(occasion: .onDeath, countPerEvent: 2, modules: .standard)])
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 500, modules: emitter)
         var counts: [Int] = []
         for _ in 0..<40 {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))

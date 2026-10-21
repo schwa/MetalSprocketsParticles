@@ -21,16 +21,16 @@ struct PointCacheTests {
     ]
 
     func spawn(_ points: [EmitterPoint], direction: ParticleBirthDirection = .velocity) throws -> [Particle] {
-        var emitter = ParticleEmitter()
-        emitter.shape = .points
-        emitter.birthDirection = direction
-        emitter.velocity = direction == .normal ? [0, 1, 0] : .zero
-        emitter.velocitySpread = 0
-        emitter.speedVariation = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        var description = EmitterDescription("Points", settings: emitter, capacity: 256)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .points }
+        emitter.edit(ShapeModule.self) { $0.birthDirection = direction }
+        emitter.edit(VelocityModule.self) { $0.velocity = direction == .normal ? [0, 1, 0] : .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(VelocityModule.self) { $0.speedVariation = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        var description = EmitterDescription("Points", modules: emitter, capacity: 256)
         description.points = points
         let system = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: .standard)
         try system.apply([description])
@@ -72,17 +72,17 @@ struct PointCacheTests {
     }
 
     @Test func tintedParticlesRenderInTheirPointColor() throws {
-        var emitter = ParticleEmitter()
-        emitter.shape = .points
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.sizeOverLife = .constant(2)
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.birthRate = 0
-        emitter.lifetime = 10...10
-        emitter.blendMode = .opaque
-        var description = EmitterDescription("Points", settings: emitter, capacity: 16)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .points }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(2) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        var description = EmitterDescription("Points", modules: emitter, capacity: 16)
         description.points = [EmitterPoint([0, 0, 0], color: [0, 1, 0, 1])]
         let renderer = try OffscreenRenderer(size: CGSize(width: 64, height: 64))
         let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: .standard)
@@ -100,7 +100,7 @@ struct PointCacheTests {
 
     /// Points are saved as a PLY file (#177), exactly, including points without a normal or color.
     @Test func pointsRoundTripThroughEffectFiles() throws {
-        var description = EmitterDescription("Points", settings: ParticleEmitter())
+        var description = EmitterDescription("Points", modules: .standard)
         description.points = points + [EmitterPoint([0.1, 0.2, 0.3], color: [0.25, 0.5, 0.75, 1])]
         let resources = EffectResources()
         let json = try resources.encoder().encode(description)
@@ -148,7 +148,7 @@ struct PointCacheTests {
 
     /// Inline points (the old format) are not read, per #169's decision for inline data.
     @Test func inlinePointsAreAnError() throws {
-        var description = EmitterDescription("Points", settings: ParticleEmitter())
+        var description = EmitterDescription("Points", modules: .standard)
         description.points = points
         var json = try #require(try JSONSerialization.jsonObject(with: EffectResources().encoder().encode(description)) as? [String: Any])
         json["points"] = [["position": [0, 0, 0]]]

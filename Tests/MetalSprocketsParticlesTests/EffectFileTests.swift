@@ -36,9 +36,9 @@ struct EffectFileTests {
     /// A small effect with an emitter image, a color image, and a distance field: everything kept in files.
     func effectWithFiles() throws -> ParticleSystem {
         let image = try #require(ParticleSystem.named("Butterfly Dust")?.layers.first?.image)
-        var settings = ParticleEmitter()
-        settings.colorImage = ParticleColorImage(data: image.data, center: .zero, size: 2)
-        var layer = EmitterDescription("Dust", settings: settings)
+        var settings = EmitterModules.standard
+        settings[ColorImageModule.self] = ColorImageModule(image: ParticleColorImage(data: image.data, center: .zero, size: 2))
+        var layer = EmitterDescription("Dust", modules: settings)
         layer.image = image
         let field = SignedDistanceField(origin: .zero, spacing: [1, 1, 1], resolution: [2, 2, 2], values: (0..<8).map(Float.init))
         return ParticleSystem("Files", layers: [layer], colliders: [.signedDistanceField(field)])
@@ -76,7 +76,7 @@ struct EffectFileTests {
         #expect(names.count == 1 + (try effect.encoded().files.count))
         let loaded = try ParticleSystem(contentsOf: package)
         #expect(loaded.layers.first?.image == effect.layers.first?.image)
-        #expect(loaded.layers.first?.settings.colorImage == effect.layers.first?.settings.colorImage)
+        #expect(loaded.layers.first?.modules[ColorImageModule.self] == effect.layers.first?.modules[ColorImageModule.self])
         #expect(loaded.colliders == effect.colliders)
         // A package file wrapper (for documents) reads back the same.
         #expect(try ParticleSystem(packageFileWrapper: effect.packageFileWrapper()).colliders == effect.colliders)
@@ -243,6 +243,6 @@ struct EffectFileTests {
         defer { try? FileManager.default.removeItem(at: url) }
         try ParticleSystem.fireworks.write(to: url)
         let loaded = try ParticleSystem(contentsOf: url)
-        #expect(loaded.layers.map(\.settings) == ParticleSystem.fireworks.layers.map(\.settings))
+        #expect(loaded.layers.map(\.modules) == ParticleSystem.fireworks.layers.map(\.modules))
     }
 }

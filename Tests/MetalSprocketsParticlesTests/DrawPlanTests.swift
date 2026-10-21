@@ -11,11 +11,11 @@ struct DrawPlanTests {
     let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse
     let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 100)
 
-    func plan(_ configure: (inout ParticleEmitter) -> Void) throws -> EmitterDraw {
-        var settings = ParticleEmitter()
-        settings.birthRate = 0
+    func plan(_ configure: (inout EmitterModules) -> Void) throws -> EmitterDraw {
+        var settings = EmitterModules.standard
+        settings.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&settings)
-        let system = try ParticleSystemRuntime(capacity: 16, emitter: settings)
+        let system = try ParticleSystemRuntime(capacity: 16, modules: settings)
         system.burst(16)
         return try #require(try system.planDraws(projection: projection, view: view, sceneDepth: nil).first)
     }
@@ -37,7 +37,7 @@ struct DrawPlanTests {
     }
 
     @Test func litSpritesShadePerVertex() throws {
-        let draw = try plan { $0.isLit = true }
+        let draw = try plan { $0.edit(ShadingModule.self) { $0.model = .lit } }
         #expect(draw.shading?.reference.name == "particleShadeLit")
         #expect(draw.shadingStage == .vertex)
         #expect(constant(draw.vertexShader, "particleHasShading") == true)
@@ -46,8 +46,8 @@ struct DrawPlanTests {
     /// Foil sprites always shade per pixel, for their crinkle (#175), with foil linked statically.
     @Test func foilSpritesShadePerPixel() throws {
         let draw = try plan {
-            $0.foil = ParticleFoil()
-            $0.orientation = .tumbling
+            $0.edit(ShadingModule.self) { $0.model = .foil(settings: ParticleFoil()) }
+            $0.edit(SpriteModule.self) { $0.orientation = .tumbling }
         }
         #expect(draw.shading?.reference.name == "particleShadeFoil")
         #expect(draw.shading?.linking == .static)
@@ -58,12 +58,12 @@ struct DrawPlanTests {
 
     /// Meshes always call a shading function, even unlit; foil meshes stay per vertex.
     @Test func meshesAlwaysShade() throws {
-        let unlit = try plan { $0.particleMesh = .cube }
+        let unlit = try plan { $0[MeshModule.self] = MeshModule(mesh: .cube) }
         #expect(unlit.kind.isMesh)
         #expect(unlit.shading?.reference.name == "particleShadeUnlit")
         let foil = try plan {
-            $0.particleMesh = .coin
-            $0.foil = ParticleFoil()
+            $0[MeshModule.self] = MeshModule(mesh: .coin)
+            $0.edit(ShadingModule.self) { $0.model = .foil(settings: ParticleFoil()) }
         }
         #expect(foil.shading?.reference.name == "particleShadeFoil")
         #expect(foil.shadingStage == .vertex)
@@ -72,9 +72,9 @@ struct DrawPlanTests {
     /// A ribbon wins over a mesh; strips never get foil.
     @Test func ribbonsWinAndStripsGetNoFoil() throws {
         let draw = try plan {
-            $0.ribbon = ParticleRibbon()
-            $0.particleMesh = .cube
-            $0.foil = ParticleFoil()
+            $0[RibbonModule.self] = RibbonModule(ribbon: ParticleRibbon())
+            $0[MeshModule.self] = MeshModule(mesh: .cube)
+            $0.edit(ShadingModule.self) { $0.model = .foil(settings: ParticleFoil()) }
         }
         guard case .ribbon = draw.kind else {
             Issue.record("Expected a ribbon, got \(draw.kind)")
@@ -85,7 +85,7 @@ struct DrawPlanTests {
 
     /// Custom shading functions link binary, so a new one does not rebuild the pipeline.
     @Test func customShadingLinksBinary() throws {
-        let draw = try plan { $0.shadingFunction = ShadingModule.template }
+        let draw = try plan { $0.edit(ShadingModule.self) { $0.model = .custom(function: ShadingModule.template) } }
         #expect(draw.shading?.reference.name == "rimLight")
         #expect(draw.shading?.linking == .binary)
         #expect(draw.shadingParameters.count >= ParticleFunction.minimumParameterCount)
@@ -93,14 +93,14 @@ struct DrawPlanTests {
 
     /// Sorted emitters draw after unsorted ones, farthest first.
     @Test func sortedEmittersDrawLastFarthestFirst() throws {
-        func emitter(z: Float, sorted: Bool) -> ParticleEmitter {
-            var settings = ParticleEmitter()
-            settings.birthRate = 0
-            settings.position = [0, 0, z]
-            settings.sortMode = sorted ? .backToFront : .none
+        func emitter(z: Float, sorted: Bool) -> EmitterModules {
+            var settings = EmitterModules.standard
+            settings.edit(RateModule.self) { $0.birthRate = 0 }
+            settings.edit(ShapeModule.self) { $0.position = [0, 0, z] }
+            settings.edit(SpriteModule.self) { $0.sortMode = sorted ? .backToFront : .none }
             return settings
         }
-        let system = try ParticleSystemRuntime(emitters: [emitter(z: 1, sorted: true), emitter(z: 0, sorted: false), emitter(z: -2, sorted: true)], capacity: 8)
+        let system = try ParticleSystemRuntime(modules: [emitter(z: 1, sorted: true), emitter(z: 0, sorted: false), emitter(z: -2, sorted: true)], capacity: 8)
         system.burst(8)
         // A debug view records each draw's emitter index.
         system.debugView = .emitter

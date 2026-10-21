@@ -15,15 +15,15 @@ struct LiveWindowTests {
         runner = try Runner()
     }
 
-    func makeSystem(capacity: Int = 2_000, configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystemRuntime {
-        var emitter = ParticleEmitter()
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0.5
-        emitter.gravity = .zero
-        emitter.lifetime = 1...2
-        emitter.birthRate = 300
+    func makeSystem(capacity: Int = 2_000, configure: (inout EmitterModules) -> Void = { _ in }) throws -> ParticleSystemRuntime {
+        var emitter = EmitterModules.standard
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0.5 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 1...2 }
+        emitter.edit(RateModule.self) { $0.birthRate = 300 }
         configure(&emitter)
-        return try ParticleSystemRuntime(device: runner.device, capacity: capacity, emitter: emitter, seed: 4)
+        return try ParticleSystemRuntime(device: runner.device, capacity: capacity, modules: emitter, seed: 4)
     }
 
     func step(_ system: ParticleSystemRuntime, seconds: Float) throws {
@@ -64,7 +64,7 @@ struct LiveWindowTests {
     }
 
     @Test func loweringLifetimeLeavesNoFrozenParticles() throws {
-        let system = try makeSystem { $0.lifetime = 5...5 }
+        let system = try makeSystem { $0.edit(LifetimeModule.self) { $0.range = 5...5 } }
         try step(system, seconds: 1)
         system.emitter.lifetime = 0.2...0.2
         system.isEmitting = false
@@ -74,7 +74,7 @@ struct LiveWindowTests {
     }
 
     @Test func raisingLifetimeDoesNotRevealOldParticles() throws {
-        let system = try makeSystem { $0.lifetime = 0.5...0.5 }
+        let system = try makeSystem { $0.edit(LifetimeModule.self) { $0.range = 0.5...0.5 } }
         try step(system, seconds: 2)
         system.emitter.lifetime = 4...4
         system.isEmitting = false
@@ -86,7 +86,7 @@ struct LiveWindowTests {
     }
 
     @Test func burstsLargerThanTheWindowAreCovered() throws {
-        let system = try makeSystem { $0.birthRate = 10 }
+        let system = try makeSystem { $0.edit(RateModule.self) { $0.birthRate = 10 } }
         try step(system, seconds: 0.5)
         system.burst(1_500)
         try step(system, seconds: deltaTime)

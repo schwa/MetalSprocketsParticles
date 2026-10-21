@@ -14,16 +14,16 @@ struct ParticleEventTests {
         runner = try Runner()
     }
 
-    func dropper(_ configure: (inout ParticleEmitter) -> Void) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = [0, 1, 0]
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0.5
+    func dropper(_ configure: (inout EmitterModules) -> Void) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = [0, 1, 0] }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(CollisionModule.self) { $0.restitution = 0.5 }
         configure(&emitter)
         return emitter
     }
@@ -39,7 +39,7 @@ struct ParticleEventTests {
     }
 
     @Test func collisionsReportWhereWhichColliderAndHowFast() throws {
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: dropper { $0.reportsCollisions = true })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: dropper { $0[EventsModule.self] = EventsModule(reportsCollisions: true, reportsDeaths: false) })
         system.colliders = [.sphere(center: [0, 50, 0], radius: 0.1), .plane(normal: [0, 1, 0], distance: 0)]
         system.burst(16)
         let events = try events(system, frames: 40)
@@ -54,9 +54,9 @@ struct ParticleEventTests {
     }
 
     @Test func deathsAreReportedOncePerParticle() throws {
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 32, emitter: dropper {
-            $0.reportsDeaths = true
-            $0.lifetime = 0.1...0.1
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 32, modules: dropper {
+            $0[EventsModule.self] = EventsModule(reportsCollisions: false, reportsDeaths: true)
+            $0.edit(LifetimeModule.self) { $0.range = 0.1...0.1 }
         })
         system.burst(32)
         let events = try events(system, frames: 20)
@@ -65,7 +65,7 @@ struct ParticleEventTests {
     }
 
     @Test func emittersThatDoNotReportStayQuiet() throws {
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, emitter: dropper { $0.lifetime = 0.1...0.1 })
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 16, modules: dropper { $0.edit(LifetimeModule.self) { $0.range = 0.1...0.1 } })
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0)]
         system.burst(16)
         #expect(try events(system, frames: 40).isEmpty)
@@ -73,9 +73,9 @@ struct ParticleEventTests {
 
     @Test func overflowDropsTheOldestAndCountsThem() throws {
         let count = ParticleEvent.capacity + 100
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: dropper {
-            $0.reportsDeaths = true
-            $0.lifetime = 0.01...0.01
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, modules: dropper {
+            $0[EventsModule.self] = EventsModule(reportsCollisions: false, reportsDeaths: true)
+            $0.edit(LifetimeModule.self) { $0.range = 0.01...0.01 }
         })
         system.burst(count)
         let events = try events(system, frames: 3)

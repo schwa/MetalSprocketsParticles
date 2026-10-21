@@ -58,7 +58,7 @@ struct ParticlePlayerTests {
         // The loop the CLI, video export, and goldens used to write out by hand.
         let system = ParticleSystem.paddleWheel
         let renderer = try OffscreenRenderer(size: size)
-        let manual = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1)
+        let manual = try ParticleSystemRuntime(device: renderer.device, modules: [], capacity: 1)
         try manual.load(system)
         let view = simd_float4x4(lookingFrom: system.cameraEye, at: system.cameraTarget).inverse
         for frame in 0..<60 {
@@ -82,10 +82,10 @@ struct ParticlePlayerTests {
         let player = try ParticlePlayer(system: system, device: renderer.device)
         _ = try render(player, renderer: renderer, frames: 30)
         let runtimeBefore = player.runtime.buffer
-        system.layers[0].settings.gravity = [0, -1, 0]
+        system.layers[0].modules.edit(GravityModule.self) { $0.acceleration = [0, -1, 0] }
         try player.update(system)
         #expect(player.runtime.buffer === runtimeBefore)
-        #expect(player.runtime.emitters[0].settings.gravity == [0, -1, 0])
+        #expect(player.runtime.emitters[0].modules[GravityModule.self]?.acceleration == [0, -1, 0])
         system.layers.append(system.layers[0].copy(named: "Second"))
         try player.update(system)
         #expect(player.runtime.emitters.count == 2)

@@ -16,21 +16,21 @@ struct CategoryMaskTests {
     }
 
     /// Two emitters dropping still particles from y = 1; returns each emitter's particles after `steps` steps.
-    func drop(_ configure: (inout ParticleEmitter, Int) -> Void, colliders: [Collider] = [], fields: [ForceField] = [], steps: Int = 90) throws -> [[Particle]] {
-        let emitters: [ParticleEmitter] = (0..<2).map { index in
-            var emitter = ParticleEmitter()
-            emitter.position = [0, 1, 0]
-            emitter.radius = 0
-            emitter.velocity = .zero
-            emitter.velocitySpread = 0
-            emitter.drag = 0
-            emitter.restitution = 0
-            emitter.lifetime = 100...100
-            emitter.birthRate = 0
+    func drop(_ configure: (inout EmitterModules, Int) -> Void, colliders: [Collider] = [], fields: [ForceField] = [], steps: Int = 90) throws -> [[Particle]] {
+        let emitters: [EmitterModules] = (0..<2).map { index in
+            var emitter = EmitterModules.standard
+            emitter.edit(ShapeModule.self) { $0.position = [0, 1, 0] }
+            emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0) }
+            emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+            emitter.edit(VelocityModule.self) { $0.spread = 0 }
+            emitter.edit(DragModule.self) { $0.amount = 0 }
+            emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+            emitter.edit(LifetimeModule.self) { $0.range = 100...100 }
+            emitter.edit(RateModule.self) { $0.birthRate = 0 }
             configure(&emitter, index)
             return emitter
         }
-        let system = try ParticleSystemRuntime(device: runner.device, emitters: emitters, capacity: 8, seed: 3)
+        let system = try ParticleSystemRuntime(device: runner.device, modules: emitters, capacity: 8, seed: 3)
         system.colliders = colliders
         system.forceFields = fields
         system.emitters.forEach { $0.burst(8) }
@@ -53,7 +53,7 @@ struct CategoryMaskTests {
     @Test func fieldsSkipEmittersOutsideTheirCategory() throws {
         let wind = ForceField.wind(velocity: [5, 0, 0], strength: 2, categoryBitMask: 0b10)
         let result = try drop({ emitter, index in
-            emitter.gravity = .zero
+            emitter.edit(GravityModule.self) { $0.acceleration = .zero }
             emitter.categoryMask = index == 0 ? 0b01 : 0b10
         }, fields: [wind], steps: 30)
         #expect(result[0].allSatisfy { $0.position.x == 0 })
@@ -76,14 +76,14 @@ struct CategoryMaskTests {
 
         let field = ForceField.vortex(center: .zero, strength: 1, categoryBitMask: 0b11)
         #expect(try JSONDecoder().decode(ForceField.self, from: try JSONEncoder().encode(field)) == field)
-        var emitter = ParticleEmitter()
+        var emitter = EmitterModules.standard
         emitter.categoryMask = 0b101
         #expect(try roundTrip(emitter) == emitter)
     }
 
     /// One mask, both kinds: an emitter feels the collider and field sharing its bit and ignores the others.
     @Test func oneMaskSelectsCollidersAndFieldsTogether() throws {
-        let system = try ParticleSystemRuntime(capacity: 4, emitter: { var e = ParticleEmitter(); e.categoryMask = 0b10; return e }())
+        let system = try ParticleSystemRuntime(capacity: 4, modules: { var e = EmitterModules.standard; e.categoryMask = 0b10; return e }())
         system.colliders = [.plane(normal: [0, 1, 0], distance: 0, categoryBitMask: 0b01), .sphere(center: .zero, radius: 1, categoryBitMask: 0b10)]
         system.forceFields = [.wind(velocity: [1, 0, 0], strength: 1, categoryBitMask: 0b10), .turbulence(strength: 1, categoryBitMask: 0b100)]
         let plan = try system.planFrame(deltaTime: 1.0 / 60.0)

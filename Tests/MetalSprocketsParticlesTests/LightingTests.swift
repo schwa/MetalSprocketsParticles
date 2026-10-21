@@ -15,19 +15,19 @@ struct LightingTests {
         .perspective(fovY: .pi / 4, aspect: 1, near: 0.1, far: 100)
     }
 
-    func centerBrightness(_ configure: (inout ParticleEmitter) -> Void = { _ in }, system setUp: (ParticleSystemRuntime) -> Void = { _ in }, sceneDepth: Float? = nil) throws -> Float {
+    func centerBrightness(_ configure: (inout EmitterModules) -> Void = { _ in }, system setUp: (ParticleSystemRuntime) -> Void = { _ in }, sceneDepth: Float? = nil) throws -> Float {
         let renderer = try OffscreenRenderer(size: size)
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.sizeOverLife = .constant(0.5)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.5) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
         configure(&emitter)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter)
         setUp(system)
         system.burst(1)
         let depthTexture = try sceneDepth.map { try makeDepthTexture(device: renderer.device, depth: $0) }
@@ -62,16 +62,16 @@ struct LightingTests {
 
     @Test func unlitIsUnchangedAndLitUsesAmbient() throws {
         let unlit = try centerBrightness()
-        let lit = try centerBrightness { $0.isLit = true }
+        let lit = try centerBrightness { $0.edit(ShadingModule.self) { $0.model = .lit } }
         #expect(unlit > 0.95)
         // Ambient 0.25 linear is about 0.54 in sRGB.
         #expect(lit > 0.45 && lit < 0.65)
     }
 
     @Test func lightFacingTheCameraBrightensAndLightFromBehindDoesNot() throws {
-        let front = try centerBrightness({ $0.isLit = true }, system: { $0.lights = [.directional(direction: [0, 0, -1])] })
-        let behind = try centerBrightness({ $0.isLit = true }, system: { $0.lights = [.directional(direction: [0, 0, 1])] })
-        let ambientOnly = try centerBrightness { $0.isLit = true }
+        let front = try centerBrightness({ $0.edit(ShadingModule.self) { $0.model = .lit } }, system: { $0.lights = [.directional(direction: [0, 0, -1])] })
+        let behind = try centerBrightness({ $0.edit(ShadingModule.self) { $0.model = .lit } }, system: { $0.lights = [.directional(direction: [0, 0, 1])] })
+        let ambientOnly = try centerBrightness { $0.edit(ShadingModule.self) { $0.model = .lit } }
         // Lit at the corners, whose normals lean away from the camera, so the center is bright but not white.
         #expect(front > ambientOnly + 0.25)
         #expect(abs(behind - ambientOnly) < 0.02)
@@ -85,13 +85,13 @@ struct LightingTests {
         }
         """, name: "halfRed", parameters: [[0.2, 0, 0, 0]])
         try half.validateShading(device: try #require(MTLCreateSystemDefaultDevice()))
-        let shaded = try centerBrightness { $0.shadingFunction = half }
+        let shaded = try centerBrightness { $0.edit(ShadingModule.self) { $0.model = .custom(function: half) } }
         // 0.2 linear is about 0.48 in sRGB.
         #expect(shaded > 0.4 && shaded < 0.56)
         // Per pixel (#174): the same function in the fragment shader.
         let perPixel = try centerBrightness {
-            $0.shadingFunction = half
-            $0.shadesPerPixel = true
+            $0.edit(ShadingModule.self) { $0.model = .custom(function: half) }
+            $0.edit(ShadingModule.self) { $0.perPixel = true }
         }
         #expect(abs(perPixel - shaded) < 0.02)
     }
@@ -100,20 +100,20 @@ struct LightingTests {
     /// averages the corners, which lean away. Per pixel is brighter there.
     @Test func litPerPixelIsBrighterAtTheCenter() throws {
         let lights: (ParticleSystemRuntime) -> Void = { $0.lights = [.directional(direction: [0, 0, -1])] }
-        let perVertex = try centerBrightness({ $0.isLit = true }, system: lights)
+        let perVertex = try centerBrightness({ $0.edit(ShadingModule.self) { $0.model = .lit } }, system: lights)
         let perPixel = try centerBrightness({
-            $0.isLit = true
-            $0.shadesPerPixel = true
+            $0.edit(ShadingModule.self) { $0.model = .lit }
+            $0.edit(ShadingModule.self) { $0.perPixel = true }
         }, system: lights)
         #expect(perPixel > perVertex + 0.02, "per pixel \(perPixel), per vertex \(perVertex)")
     }
 
     @Test func pointLightRangeFallsOff() throws {
-        let near = try centerBrightness({ $0.isLit = true }, system: {
+        let near = try centerBrightness({ $0.edit(ShadingModule.self) { $0.model = .lit } }, system: {
             $0.ambientLight = .zero
             $0.lights = [.point(position: [0, 0, 1], range: 10)]
         })
-        let outOfRange = try centerBrightness({ $0.isLit = true }, system: {
+        let outOfRange = try centerBrightness({ $0.edit(ShadingModule.self) { $0.model = .lit } }, system: {
             $0.ambientLight = .zero
             $0.lights = [.point(position: [0, 0, 1], range: 0.5)]
         })
@@ -124,17 +124,17 @@ struct LightingTests {
     /// Center brightness with `colliders` drawn as solids into a scene depth (via `renderScene`).
     func centerBrightnessWithSolids(_ colliders: [Collider], softness: Float) throws -> Float {
         let renderer = try OffscreenRenderer(size: size)
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.sizeOverLife = .constant(0.5)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.softness = softness
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.5) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+        emitter.edit(SpriteModule.self) { $0.softness = softness }
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter)
         system.colliders = colliders
         system.burst(1)
         let sceneDepth = try SceneDepth(device: renderer.device, width: Int(size.width), height: Int(size.height))
@@ -160,9 +160,9 @@ struct LightingTests {
 
     @Test func softParticlesFadeNearTheSceneDepth() throws {
         // The particle is 3 units away. A surface at 3.05 is within 0.5 of softness; one at 10 is not.
-        let hard = try centerBrightness({ $0.softness = 0.5 }, sceneDepth: 3.05)
-        let farSurface = try centerBrightness({ $0.softness = 0.5 }, sceneDepth: 10)
-        let softnessOff = try centerBrightness({ $0.softness = 0 }, sceneDepth: 3.05)
+        let hard = try centerBrightness({ $0.edit(SpriteModule.self) { $0.softness = 0.5 } }, sceneDepth: 3.05)
+        let farSurface = try centerBrightness({ $0.edit(SpriteModule.self) { $0.softness = 0.5 } }, sceneDepth: 10)
+        let softnessOff = try centerBrightness({ $0.edit(SpriteModule.self) { $0.softness = 0 } }, sceneDepth: 3.05)
         #expect(hard < 0.5)
         #expect(farSurface > 0.95)
         #expect(softnessOff > 0.95)

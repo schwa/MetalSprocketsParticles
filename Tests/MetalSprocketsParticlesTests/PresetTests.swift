@@ -66,7 +66,7 @@ struct SpriteAndMotionTests {
 @Suite(.serialized, .requiresMetal4)
 struct PresetRenderTests {
     @Test func loadReplacesEverything() throws {
-        let system = try ParticleSystemRuntime(emitters: [ParticleEmitter()], capacity: 10)
+        let system = try ParticleSystemRuntime(modules: [.standard], capacity: 10)
         system.colliders = [.sphere(center: .zero, radius: 3)]
         try system.load(.campfire)
         #expect(system.emitters.map(\.capacity) == ParticleSystem.campfire.layers.map(\.capacity))
@@ -95,7 +95,7 @@ struct PresetRenderTests {
     @Test func debugWireframesLookTheSame() throws {
         let size = CGSize(width: 640, height: 360)
         let renderer = try OffscreenRenderer(size: size)
-        let system = try ParticleSystemRuntime(device: renderer.device, emitters: [], capacity: 1, seed: 0)
+        let system = try ParticleSystemRuntime(device: renderer.device, modules: [], capacity: 1, seed: 0)
         try system.load(.bumper)
         system.forceFields = [
             .wind(velocity: [1, 0, 0], strength: 1),
@@ -103,14 +103,12 @@ struct PresetRenderTests {
             .vortex(center: [0, 0.5, 0], strength: 1, radius: 1.5),
             .turbulence(strength: 1, scale: 1, speed: 1),
         ]
-        var shapes = [ParticleEmitter(), ParticleEmitter(), ParticleEmitter()]
-        shapes[0].shape = .cone(radius: 0.3, height: 0.6)
-        shapes[0].position = [1.8, 2.5, 0]
-        shapes[1].shape = .cylinder(radius: 0.3, height: 0.6)
-        shapes[1].position = [-1.8, 2.5, 0]
-        shapes[2].shape = .torus(radius: 0.5, tubeRadius: 0.1)
-        shapes[2].position = [0, 3.2, 0]
-        try system.setEmitters(system.emitters.map { ($0.settings, 10) } + shapes.map { ($0, 10) })
+        let shapes = [
+            EmitterModules.standard(position: [1.8, 2.5, 0], shape: .cone(radius: 0.3, height: 0.6)),
+            EmitterModules.standard(position: [-1.8, 2.5, 0], shape: .cylinder(radius: 0.3, height: 0.6)),
+            EmitterModules.standard(position: [0, 3.2, 0], shape: .torus(radius: 0.5, tubeRadius: 0.1)),
+        ]
+        try system.setEmitters(system.emitters.map { (modules: $0.modules, capacity: 10) } + shapes.map { (modules: $0, capacity: 10) })
         let view = simd_float4x4(lookingFrom: [0, 3, 6], at: [0, 1.5, 0]).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: Float(size.width / size.height), near: 0.1, far: 100)
         let rendering = try renderer.render(RenderPass {

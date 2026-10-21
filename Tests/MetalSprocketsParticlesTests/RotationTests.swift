@@ -6,13 +6,13 @@ import Testing
 
 @Suite(.serialized, .requiresMetal4)
 struct RotationTests {
-    func simulate(steps: Int, configure: (inout ParticleEmitter) -> Void) throws -> [Particle] {
+    func simulate(steps: Int, configure: (inout EmitterModules) -> Void) throws -> [Particle] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
+        var emitter = EmitterModules.standard
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&emitter)
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: 256, emitter: emitter, seed: 11)
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: 256, modules: emitter, seed: 11)
         system.burst(256)
         for _ in 0..<steps {
             try runner.run(try system.simulate(deltaTime: 1.0 / 60.0))
@@ -28,8 +28,8 @@ struct RotationTests {
 
     @Test func initialAngleWithinVariation() throws {
         let particles = try simulate(steps: 1) {
-            $0.angle = 1
-            $0.angleVariation = 0.25
+            $0.edit(RotationModule.self, adding: RotationModule()) { $0.angle = 1 }
+            $0.edit(RotationModule.self, adding: RotationModule()) { $0.angleVariation = 0.25 }
         }
         #expect(particles.allSatisfy { $0.rotation.x >= 0.75 && $0.rotation.x <= 1.25 })
         // Variation actually varies.
@@ -38,7 +38,7 @@ struct RotationTests {
 
     @Test func spinAccumulatesWithAge() throws {
         let particles = try simulate(steps: 60) {
-            $0.angularSpeed = 2
+            $0.edit(RotationModule.self, adding: RotationModule()) { $0.angularSpeed = 2 }
         }
         for particle in particles {
             let age = particle.position.w
@@ -49,8 +49,8 @@ struct RotationTests {
 
     @Test func angularSpeedWithinVariation() throws {
         let particles = try simulate(steps: 1) {
-            $0.angularSpeed = -3
-            $0.angularSpeedVariation = 1
+            $0.edit(RotationModule.self, adding: RotationModule()) { $0.angularSpeed = -3 }
+            $0.edit(RotationModule.self, adding: RotationModule()) { $0.angularSpeedVariation = 1 }
         }
         #expect(particles.allSatisfy { $0.rotation.y >= -4 && $0.rotation.y <= -2 })
     }

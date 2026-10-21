@@ -14,17 +14,17 @@ struct EmitterTransformTests {
         runner = try Runner()
     }
 
-    func makeSystem(count: Int = 64, configure: (inout ParticleEmitter) -> Void = { _ in }) throws -> ParticleSystemRuntime {
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = [0, 4, 0]
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
+    func makeSystem(count: Int = 64, configure: (inout EmitterModules) -> Void = { _ in }) throws -> ParticleSystemRuntime {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0) }
+        emitter.edit(VelocityModule.self) { $0.velocity = [0, 4, 0] }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(DragModule.self) { $0.amount = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
         configure(&emitter)
-        return try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 8)
+        return try ParticleSystemRuntime(device: runner.device, capacity: count, modules: emitter, seed: 8)
     }
 
     func particles(_ system: ParticleSystemRuntime) -> [Particle] {
@@ -62,7 +62,7 @@ struct EmitterTransformTests {
     }
 
     @Test func inheritVelocityAddsEmitterMotion() throws {
-        let system = try makeSystem { $0.inheritVelocity = 1 }
+        let system = try makeSystem { $0.edit(VelocityModule.self) { $0.inherit = 1 } }
         let deltaTime: Float = 1.0 / 60.0
         try runner.run(try system.simulate(deltaTime: deltaTime))
         // Emitter moves 0.1 per frame: 6 m/s along +x.
@@ -75,7 +75,7 @@ struct EmitterTransformTests {
     }
 
     @Test func fastEmitterSpreadsBirthsAlongItsPath() throws {
-        let system = try makeSystem(count: 256) { $0.velocity = .zero }
+        let system = try makeSystem(count: 256) { $0.edit(VelocityModule.self) { $0.velocity = .zero } }
         try runner.run(try system.simulate(deltaTime: 0))
         system.transform = translation([1, 0, 0])
         system.burst(256)
@@ -89,16 +89,16 @@ struct EmitterTransformTests {
     /// Horizontal screen position of the lit pixels' center.
     func renderedCenterX(space: SimulationSpace, moveAfterSpawn: SIMD3<Float>) throws -> Float {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 128))
-        var emitter = ParticleEmitter()
-        emitter.radius = 0
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
-        emitter.sizeOverLife = .constant(0.1)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter, seed: 0)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .sphere(radius: 0) }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.1) }
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter, seed: 0)
         system.simulationSpace = space
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 3], at: .zero).inverse

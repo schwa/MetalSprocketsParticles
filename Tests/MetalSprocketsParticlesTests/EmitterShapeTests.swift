@@ -24,17 +24,17 @@ struct EmitterShapeTests {
         count: Int = 1_024,
         mesh: EmitterMesh? = nil
     ) throws -> [(position: SIMD3<Float>, velocity: SIMD3<Float>)] {
-        var emitter = ParticleEmitter()
-        emitter.shape = shape
-        emitter.birthLocation = location
-        emitter.birthDirection = direction
-        emitter.sweepAngle = sweep
-        emitter.velocity = [0, speed, 0]
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, emitter: emitter, seed: 5)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = shape }
+        emitter.edit(ShapeModule.self) { $0.birthLocation = location }
+        emitter.edit(ShapeModule.self) { $0.birthDirection = direction }
+        emitter.edit(ShapeModule.self) { $0.sweepAngle = sweep }
+        emitter.edit(VelocityModule.self) { $0.velocity = [0, speed, 0] }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        let system = try ParticleSystemRuntime(device: runner.device, capacity: count, modules: emitter, seed: 5)
         system.emitters[0].mesh = mesh
         system.burst(count)
         try runner.run(try system.simulate(deltaTime: 0))
@@ -152,6 +152,7 @@ struct EmitterShapeTests {
     }
 
     @Test func radiusAccessorMapsToSphere() {
+        // Flat settings only; goes with ParticleEmitter in #229.
         var emitter = ParticleEmitter()
         emitter.radius = 0.3
         #expect(emitter.shape == .sphere(radius: 0.3))

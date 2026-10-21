@@ -3,7 +3,7 @@ import Metal
 import MetalSprocketsParticlesSamples
 import Testing
 
-/// `ParticleEmitter.emissionOverTime` shapes births over time and lets effects finish.
+/// `RateModule.overTime` shapes births over time and lets effects finish.
 @Suite(.requiresMetal4)
 struct EmissionEnvelopeTests {
     let device = MTLCreateSystemDefaultDevice()!
@@ -11,10 +11,10 @@ struct EmissionEnvelopeTests {
     /// Full for 10 seconds, then down to nothing by 12.
     let runAndFade = ParticleCurve<Float>([.init(0, 1), .init(10, 1), .init(12, 0)])
 
-    func emitter(_ configure: (inout ParticleEmitter) -> Void) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 100
-        emitter.lifetime = 1...1
+    func emitter(_ configure: (inout EmitterModules) -> Void) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(RateModule.self) { $0.birthRate = 100 }
+        emitter.edit(LifetimeModule.self) { $0.range = 1...1 }
         configure(&emitter)
         return emitter
     }
@@ -36,7 +36,7 @@ struct EmissionEnvelopeTests {
     }
 
     @Test func runAndFadeEmitsTheAreaUnderTheCurveThenStops() throws {
-        let system = try ParticleSystemRuntime(device: device, capacity: 2_000, emitter: emitter { $0.emissionOverTime = runAndFade })
+        let system = try ParticleSystemRuntime(device: device, capacity: 2_000, modules: emitter { $0.edit(RateModule.self) { $0.overTime = runAndFade } })
         let counts = try births(system, seconds: 14)
         let afterEnd = counts.dropFirst(Int(12.05 / deltaTime))
         #expect(abs(counts.reduce(0, +) - 1_100) <= 1)
@@ -47,8 +47,8 @@ struct EmissionEnvelopeTests {
     }
 
     @Test func fadeInRampsUp() throws {
-        let system = try ParticleSystemRuntime(device: device, capacity: 2_000, emitter: emitter {
-            $0.emissionOverTime = ParticleCurve([.init(0, 0), .init(1, 1)])
+        let system = try ParticleSystemRuntime(device: device, capacity: 2_000, modules: emitter {
+            $0.edit(RateModule.self) { $0.overTime = ParticleCurve([.init(0, 0), .init(1, 1)]) }
         })
         let counts = try births(system, seconds: 2)
         #expect(abs(counts.prefix(60).reduce(0, +) - 50) <= 1)
@@ -56,8 +56,8 @@ struct EmissionEnvelopeTests {
     }
 
     @Test func finishesAfterTheEnvelopeEndsAndParticlesDie() throws {
-        let system = try ParticleSystemRuntime(device: device, capacity: 2_000, emitter: emitter {
-            $0.emissionOverTime = ParticleCurve([.init(0, 1), .init(2, 0)])
+        let system = try ParticleSystemRuntime(device: device, capacity: 2_000, modules: emitter {
+            $0.edit(RateModule.self) { $0.overTime = ParticleCurve([.init(0, 1), .init(2, 0)]) }
         })
         _ = try births(system, seconds: 2.5)
         // Emission ended near 2 s, but particles born then live 1 s.
@@ -68,7 +68,7 @@ struct EmissionEnvelopeTests {
     }
 
     @Test func confettiPresetFinishes() throws {
-        let system = try ParticleSystemRuntime(device: device, emitters: [], capacity: 1)
+        let system = try ParticleSystemRuntime(device: device, modules: [], capacity: 1)
         try system.load(.confetti)
         _ = try births(system, seconds: 2)
         #expect(!system.isFinished)
@@ -77,19 +77,19 @@ struct EmissionEnvelopeTests {
     }
 
     @Test func infiniteEmittersAndTriggeredEmittersNeverFinish() throws {
-        let infinite = try ParticleSystemRuntime(device: device, capacity: 500, emitter: emitter { _ in })
+        let infinite = try ParticleSystemRuntime(device: device, capacity: 500, modules: emitter { _ in })
         _ = try births(infinite, seconds: 3)
         #expect(!infinite.isFinished)
-        let triggered = try ParticleSystemRuntime(device: device, capacity: 500, emitter: emitter {
-            $0.birthRate = 0
-            $0.triggers = [EmissionTrigger(.event("go"), .burst(5))]
+        let triggered = try ParticleSystemRuntime(device: device, capacity: 500, modules: emitter {
+            $0.edit(RateModule.self) { $0.birthRate = 0 }
+            $0[TriggersModule.self] = TriggersModule(triggers: [EmissionTrigger(.event("go"), .burst(5))])
         })
         _ = try births(triggered, seconds: 3)
         #expect(!triggered.isFinished)
     }
 
     @Test func burstOnlyEmitterFinishesWhenItsParticlesDie() throws {
-        let system = try ParticleSystemRuntime(device: device, capacity: 50, emitter: emitter { $0.birthRate = 0 })
+        let system = try ParticleSystemRuntime(device: device, capacity: 50, modules: emitter { $0.edit(RateModule.self) { $0.birthRate = 0 } })
         system.burst(10)
         _ = try births(system, seconds: 0.5)
         #expect(!system.isFinished)

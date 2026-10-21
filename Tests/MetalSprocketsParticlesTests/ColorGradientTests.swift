@@ -11,28 +11,28 @@ import Testing
 @Suite(.serialized, .requiresMetal4)
 struct ColorGradientTests {
     /// A particle sitting at `position` with `velocity` (the step is 0 s, so it does not move).
-    func still(at position: SIMD3<Float>, velocity: SIMD3<Float> = .zero, _ configure: (inout ParticleEmitter) -> Void = { _ in }) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = position
-        emitter.velocity = velocity
-        emitter.velocitySpread = 0
-        emitter.speedVariation = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.blendMode = .opaque
-        emitter.sizeOverLife = .constant(0.15)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
+    func still(at position: SIMD3<Float>, velocity: SIMD3<Float> = .zero, _ configure: (inout EmitterModules) -> Void = { _ in }) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = position }
+        emitter.edit(VelocityModule.self) { $0.velocity = velocity }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(VelocityModule.self) { $0.speedVariation = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.15) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
         configure(&emitter)
         return emitter
     }
 
     /// Renders one particle per emitter into a 128×64 view and returns the RGB at each emitter's position, which must
     /// be at y = 0 and x in -1.5...1.5.
-    func colors(_ emitters: [ParticleEmitter], burst: Int = 1) throws -> [SIMD3<Int>] {
+    func colors(_ emitters: [EmitterModules], burst: Int = 1) throws -> [SIMD3<Int>] {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
-        let system = try ParticleSystemRuntime(device: renderer.device, emitters: emitters, capacity: burst)
+        let system = try ParticleSystemRuntime(device: renderer.device, modules: emitters, capacity: burst)
         system.emitters.forEach { $0.burst(burst) }
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
@@ -41,7 +41,7 @@ struct ColorGradientTests {
             try RenderPass { try system.render(projection: projection, view: view) }
         }).cgImage.rgbaPixels()
         return emitters.map { emitter in
-            let clip = projection * view * SIMD4(emitter.position, 1)
+            let clip = projection * view * SIMD4(emitter[ShapeModule.self]?.position ?? .zero, 1)
             let x = Int((clip.x / clip.w * 0.5 + 0.5) * 128)
             let pixel = pixels[32 * 128 + min(max(x, 0), 127)]
             return SIMD3(Int(pixel.x), Int(pixel.y), Int(pixel.z))
@@ -49,9 +49,8 @@ struct ColorGradientTests {
     }
 
     @Test func colorBySpeedMapsSpeedThroughTheRange() throws {
-        func bySpeed(_ emitter: inout ParticleEmitter) {
-            emitter.colorBySpeed = .linear(from: [0, 0, 1, 1], to: [1, 0, 0, 1])
-            emitter.colorBySpeedRange = 1...5
+        func bySpeed(_ emitter: inout EmitterModules) {
+            emitter[ColorBySpeedModule.self] = ColorBySpeedModule(curve: .linear(from: [0, 0, 1, 1], to: [1, 0, 0, 1]), range: 1...5)
         }
         let result = try colors([
             still(at: [-1, 0, 0], velocity: [0, 0.5, 0], bySpeed),
@@ -62,10 +61,8 @@ struct ColorGradientTests {
     }
 
     @Test func colorByPositionFollowsTheAxis() throws {
-        func byPosition(_ emitter: inout ParticleEmitter) {
-            emitter.colorByPosition = .linear(from: [0, 1, 0, 1], to: [1, 0, 1, 1])
-            emitter.colorByPositionStart = [-1, 0, 0]
-            emitter.colorByPositionEnd = [1, 0, 0]
+        func byPosition(_ emitter: inout EmitterModules) {
+            emitter[ColorByPositionModule.self] = ColorByPositionModule(curve: .linear(from: [0, 1, 0, 1], to: [1, 0, 1, 1]), start: [-1, 0, 0], end: [1, 0, 0])
         }
         let result = try colors([still(at: [-1, 0, 0], byPosition), still(at: [0, 0, 0], byPosition), still(at: [1, 0, 0], byPosition)])
         #expect(result[0].y > 200 && result[0].x < 30)
@@ -78,12 +75,12 @@ struct ColorGradientTests {
         // Many particles on one spot would hide each other, so spread them along x and look at all lit pixels.
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
         let emitter = still(at: .zero) {
-            $0.shape = .box(size: [3, 1, 0])
-            $0.sizeOverLife = .constant(0.04)
-            $0.colorOverLife = .constant([1, 0, 0, 1])
-            $0.alternateColorOverLife = .constant([0, 0, 1, 1])
+            $0.edit(ShapeModule.self) { $0.shape = .box(size: [3, 1, 0]) }
+            $0.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.04) }
+            $0.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 0, 0, 1]) }
+            $0.edit(ColorOverLifeModule.self) { $0.alternate = .constant([0, 0, 1, 1]) }
         }
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 200, emitter: emitter)
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 200, modules: emitter)
         system.burst(200)
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
@@ -101,12 +98,9 @@ struct ColorGradientTests {
         func color(atBirth: Bool) throws -> SIMD3<Int> {
             let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
             var emitter = still(at: [-1, 0, 0], velocity: [20, 0, 0])
-            emitter.colorByPosition = .linear(from: [0, 1, 0, 1], to: [1, 0, 1, 1])
-            emitter.colorByPositionStart = [-1, 0, 0]
-            emitter.colorByPositionEnd = [1, 0, 0]
-            emitter.colorByPositionAtBirth = atBirth
-            emitter.drag = 0
-            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
+            emitter[ColorByPositionModule.self] = ColorByPositionModule(curve: .linear(from: [0, 1, 0, 1], to: [1, 0, 1, 1]), start: [-1, 0, 0], end: [1, 0, 0], atBirth: atBirth)
+            emitter.edit(DragModule.self) { $0.amount = 0 }
+            let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter)
             system.burst(1)
             let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
             let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
@@ -132,13 +126,10 @@ struct ColorGradientTests {
     }
 
     @Test func gradientsRoundTripThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.colorBySpeed = .linear(from: [1, 1, 1, 1], to: [1, 0, 0, 1])
-        emitter.colorBySpeedRange = 2...8
-        emitter.alternateColorOverLife = .constant([0, 1, 0, 1])
-        emitter.colorByPosition = .constant([0.5, 0.5, 0.5, 1])
-        emitter.colorByPositionStart = [1, 2, 3]
-        emitter.colorByPositionEnd = [4, 5, 6]
+        var emitter = EmitterModules.standard
+        emitter[ColorBySpeedModule.self] = ColorBySpeedModule(curve: .linear(from: [1, 1, 1, 1], to: [1, 0, 0, 1]), range: 2...8)
+        emitter.edit(ColorOverLifeModule.self) { $0.alternate = .constant([0, 1, 0, 1]) }
+        emitter[ColorByPositionModule.self] = ColorByPositionModule(curve: .constant([0.5, 0.5, 0.5, 1]), start: [1, 2, 3], end: [4, 5, 6])
         #expect(try roundTrip(emitter) == emitter)
     }
 }

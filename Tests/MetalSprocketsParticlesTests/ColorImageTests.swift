@@ -9,7 +9,7 @@ import simd
 import Testing
 import UniformTypeIdentifiers
 
-/// `ParticleEmitter.colorImage`: particles take the image's color under their current position (#123).
+/// `ColorImageModule`: particles take the image's color under their current position (#123).
 @Suite(.serialized, .requiresMetal4)
 struct ColorImageTests {
     /// 40×20: red on the left half, blue on the right.
@@ -32,22 +32,22 @@ struct ColorImageTests {
     /// The color of a white particle born at x = -1 after `steps` steps moving right at 15 units per second.
     func color(afterSteps steps: Int) throws -> SIMD3<Int> {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = [-1, 0, 0]
-        emitter.velocity = [15, 0, 0]
-        emitter.velocitySpread = 0
-        emitter.speedVariation = 0
-        emitter.gravity = .zero
-        emitter.drag = 0
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.blendMode = .opaque
-        emitter.sizeOverLife = .constant(0.15)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = [-1, 0, 0] }
+        emitter.edit(VelocityModule.self) { $0.velocity = [15, 0, 0] }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(VelocityModule.self) { $0.speedVariation = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(DragModule.self) { $0.amount = 0 }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SpriteModule.self) { $0.blendMode = .opaque }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(0.15) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
         // 4 by 2 units centered on the origin: x < 0 is red, x > 0 is blue.
-        emitter.colorImage = ParticleColorImage(data: try redBluePNG(), center: .zero, size: 4)
-        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, emitter: emitter)
+        emitter[ColorImageModule.self] = ColorImageModule(image: ParticleColorImage(data: try redBluePNG(), center: .zero, size: 4))
+        let system = try ParticleSystemRuntime(device: renderer.device, capacity: 1, modules: emitter)
         system.burst(1)
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
         let projection = simd_float4x4.perspective(fovY: .pi / 4, aspect: 2, near: 0.1, far: 10)
@@ -82,8 +82,8 @@ struct ColorImageTests {
     }
 
     @Test func colorImagesRoundTripThroughEffectFiles() throws {
-        var emitter = ParticleEmitter()
-        emitter.colorImage = ParticleColorImage(data: try redBluePNG(), center: .zero, size: 2)
-        #expect(try roundTrip(emitter).colorImage == emitter.colorImage)
+        var emitter = EmitterModules.standard
+        emitter[ColorImageModule.self] = ColorImageModule(image: ParticleColorImage(data: try redBluePNG(), center: .zero, size: 2))
+        #expect(try roundTrip(emitter)[ColorImageModule.self]?.image == emitter[ColorImageModule.self]?.image)
     }
 }

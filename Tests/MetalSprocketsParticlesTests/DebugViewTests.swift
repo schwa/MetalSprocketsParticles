@@ -9,23 +9,23 @@ import Testing
 
 @Suite(.serialized, .requiresMetal4)
 struct DebugViewTests {
-    func still(at position: SIMD3<Float>, size: Float = 0.6) -> ParticleEmitter {
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = position
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = .zero
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.sizeOverLife = .constant(size)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
+    func still(at position: SIMD3<Float>, size: Float = 0.6) -> EmitterModules {
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = position }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = .zero }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(SizeOverLifeModule.self) { $0.curve = .constant(size) }
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
         return emitter
     }
 
-    func render(_ emitters: [ParticleEmitter], burst: Int = 1, view debugView: ParticleDebugView) throws -> [SIMD4<UInt8>] {
+    func render(_ emitters: [EmitterModules], burst: Int = 1, view debugView: ParticleDebugView) throws -> [SIMD4<UInt8>] {
         let renderer = try OffscreenRenderer(size: CGSize(width: 128, height: 64))
-        let system = try ParticleSystemRuntime(device: renderer.device, emitters: emitters, capacity: burst)
+        let system = try ParticleSystemRuntime(device: renderer.device, modules: emitters, capacity: burst)
         system.debugView = debugView
         system.emitters.forEach { $0.burst(burst) }
         let view = simd_float4x4(lookingFrom: [0, 0, 4], at: .zero).inverse
@@ -75,7 +75,7 @@ struct DebugViewTests {
     @Test func noneLeavesColorsAlone() throws {
         let normal = try render([still(at: .zero)], view: .none)
         var emitter = still(at: .zero)
-        emitter.colorOverLife = .constant([1, 1, 1, 1])
+        emitter.edit(ColorOverLifeModule.self) { $0.color = .constant([1, 1, 1, 1]) }
         #expect(try render([emitter], view: .none) == normal)
     }
 }

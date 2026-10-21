@@ -40,17 +40,17 @@ struct SignedDistanceFieldColliderTests {
     /// following a scene-graph node would. Returns the particles' final positions.
     func ride(from start: SIMD3<Float>, frames: Int = 90, transform: (Int) -> simd_float4x4) throws -> [SIMD3<Float>] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = start
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0
-        emitter.friction = 1
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = start }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+        emitter.edit(CollisionModule.self) { $0.friction = 1 }
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: emitter)
         let collider = Collider.signedDistanceField(slab)
         runtime.burst(4)
         for frame in 0..<frames {
@@ -86,17 +86,17 @@ struct SignedDistanceFieldColliderTests {
     /// the whole frame, so the collider jumped ahead and its spin over the capped step looked many times faster. The
     /// clock check catches that; this gentle spin alone does not throw the sand far enough to see.
     @Test func aLongFrameKeepsSpunCollidersInStep() throws {
-        var sand = ParticleEmitter()
-        sand.shape = .point
-        sand.position = [0.4, 0.3, 0]
-        sand.velocity = .zero
-        sand.velocitySpread = 0
-        sand.gravity = [0, -9.8, 0]
-        sand.lifetime = 100...100
-        sand.birthRate = 0
-        sand.restitution = 0
-        sand.friction = 1
-        var system = ParticleSystem("Turntable", layers: [EmitterDescription("Sand", settings: sand, capacity: 4)], colliders: [.signedDistanceField(slab)])
+        var sand = EmitterModules.standard
+        sand.edit(ShapeModule.self) { $0.shape = .point }
+        sand.edit(ShapeModule.self) { $0.position = [0.4, 0.3, 0] }
+        sand.edit(VelocityModule.self) { $0.velocity = .zero }
+        sand.edit(VelocityModule.self) { $0.spread = 0 }
+        sand.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        sand.edit(LifetimeModule.self) { $0.range = 100...100 }
+        sand.edit(RateModule.self) { $0.birthRate = 0 }
+        sand.edit(CollisionModule.self) { $0.restitution = 0 }
+        sand.edit(CollisionModule.self) { $0.friction = 1 }
+        var system = ParticleSystem("Turntable", layers: [EmitterDescription("Sand", modules: sand, capacity: 4)], colliders: [.signedDistanceField(slab)])
         system.colliderSpins = [ColliderSpin(collider: 0, axis: [0, 1, 0], speed: 0.5)]
         let size = CGSize(width: 64, height: 64)
         let renderer = try OffscreenRenderer(size: size)
@@ -122,17 +122,17 @@ struct SignedDistanceFieldColliderTests {
     /// previous frame's motion divided by this frame's deltaTime: 0.03 s of turn over 0.004 s is 7.5 times the spin.
     /// Sand riding a slab at 0.5 rad/s, 0.4 from the axis, moves at 0.2 m/s; with the bug it reached about 1.5.
     @Test func unevenFramesDoNotSpeedUpSpunColliders() throws {
-        var sand = ParticleEmitter()
-        sand.shape = .point
-        sand.position = [0.4, 0.3, 0]
-        sand.velocity = .zero
-        sand.velocitySpread = 0
-        sand.gravity = [0, -9.8, 0]
-        sand.lifetime = 100...100
-        sand.birthRate = 0
-        sand.restitution = 0
-        sand.friction = 1
-        var system = ParticleSystem("Turntable", layers: [EmitterDescription("Sand", settings: sand, capacity: 4)], colliders: [.signedDistanceField(slab)])
+        var sand = EmitterModules.standard
+        sand.edit(ShapeModule.self) { $0.shape = .point }
+        sand.edit(ShapeModule.self) { $0.position = [0.4, 0.3, 0] }
+        sand.edit(VelocityModule.self) { $0.velocity = .zero }
+        sand.edit(VelocityModule.self) { $0.spread = 0 }
+        sand.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        sand.edit(LifetimeModule.self) { $0.range = 100...100 }
+        sand.edit(RateModule.self) { $0.birthRate = 0 }
+        sand.edit(CollisionModule.self) { $0.restitution = 0 }
+        sand.edit(CollisionModule.self) { $0.friction = 1 }
+        var system = ParticleSystem("Turntable", layers: [EmitterDescription("Sand", modules: sand, capacity: 4)], colliders: [.signedDistanceField(slab)])
         system.colliderSpins = [ColliderSpin(collider: 0, axis: [0, 1, 0], speed: 0.5)]
         let size = CGSize(width: 64, height: 64)
         let renderer = try OffscreenRenderer(size: size)
@@ -293,19 +293,19 @@ struct SignedDistanceFieldColliderTests {
         on colliders: [Collider], from start: SIMD3<Float> = [0, 1.5, 0], velocity: SIMD3<Float> = .zero, radius: Float = 0, categoryMask: UInt32 = .max
     ) throws -> [SIMD3<Float>] {
         let runner = try Runner()
-        var emitter = ParticleEmitter()
-        emitter.shape = .point
-        emitter.position = start
-        emitter.velocity = velocity
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0
-        emitter.friction = 1
-        emitter.collisionRadius = radius
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .point }
+        emitter.edit(ShapeModule.self) { $0.position = start }
+        emitter.edit(VelocityModule.self) { $0.velocity = velocity }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+        emitter.edit(CollisionModule.self) { $0.friction = 1 }
+        emitter.edit(CollisionModule.self) { $0.radius = radius }
         emitter.categoryMask = categoryMask
-        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, emitter: emitter)
+        let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 4, modules: emitter)
         runtime.colliders = colliders
         runtime.burst(4)
         for _ in 0..<60 {
@@ -372,18 +372,18 @@ struct SignedDistanceFieldColliderTests {
         }
         func slide(on collider: Collider) throws -> Float {
             let runner = try Runner()
-            var emitter = ParticleEmitter()
-            emitter.shape = .point
+            var emitter = EmitterModules.standard
+            emitter.edit(ShapeModule.self) { $0.shape = .point }
             // Just above the slab's top near its high end (the slope falls toward -x).
-            emitter.position = tilt.act([0.6, 0.1, 0])
-            emitter.velocity = .zero
-            emitter.velocitySpread = 0
-            emitter.gravity = [0, -9.8, 0]
-            emitter.lifetime = 10...10
-            emitter.birthRate = 0
-            emitter.restitution = 0
-            emitter.friction = 0
-            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 1, emitter: emitter)
+            emitter.edit(ShapeModule.self) { $0.position = tilt.act([0.6, 0.1, 0]) }
+            emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+            emitter.edit(VelocityModule.self) { $0.spread = 0 }
+            emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+            emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+            emitter.edit(RateModule.self) { $0.birthRate = 0 }
+            emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+            emitter.edit(CollisionModule.self) { $0.friction = 0 }
+            let runtime = try ParticleSystemRuntime(device: runner.device, capacity: 1, modules: emitter)
             runtime.colliders = [collider]
             runtime.burst(1)
             for _ in 0..<20 {

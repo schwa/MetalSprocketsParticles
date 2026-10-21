@@ -12,19 +12,19 @@ struct SceneDepthCollisionTests {
     /// Drops particles onto a sphere of radius 0.5 at the origin that the emitter does not collide with directly
     /// (categoryMask 0); the sphere is only in the scene depth. Returns the particles' final positions.
     func drop(collidesWithSceneDepth: Bool, frames: Int = 90) throws -> [SIMD3<Float>] {
-        var emitter = ParticleEmitter()
-        emitter.shape = .disc(radius: 0.1)
-        emitter.position = [0, 1.2, 0]
-        emitter.velocity = .zero
-        emitter.velocitySpread = 0
-        emitter.gravity = [0, -9.8, 0]
-        emitter.lifetime = 10...10
-        emitter.birthRate = 0
-        emitter.restitution = 0
-        emitter.friction = 1
+        var emitter = EmitterModules.standard
+        emitter.edit(ShapeModule.self) { $0.shape = .disc(radius: 0.1) }
+        emitter.edit(ShapeModule.self) { $0.position = [0, 1.2, 0] }
+        emitter.edit(VelocityModule.self) { $0.velocity = .zero }
+        emitter.edit(VelocityModule.self) { $0.spread = 0 }
+        emitter.edit(GravityModule.self) { $0.acceleration = [0, -9.8, 0] }
+        emitter.edit(LifetimeModule.self) { $0.range = 10...10 }
+        emitter.edit(RateModule.self) { $0.birthRate = 0 }
+        emitter.edit(CollisionModule.self) { $0.restitution = 0 }
+        emitter.edit(CollisionModule.self) { $0.friction = 1 }
         emitter.categoryMask = 0
-        emitter.collidesWithSceneDepth = collidesWithSceneDepth
-        var system = ParticleSystem("Depth", layers: [EmitterDescription("Drops", settings: emitter, capacity: 32)])
+        emitter.edit(CollisionModule.self) { $0.collidesWithSceneDepth = collidesWithSceneDepth }
+        var system = ParticleSystem("Depth", layers: [EmitterDescription("Drops", modules: emitter, capacity: 32)])
         system.colliders = [.sphere(center: .zero, radius: 0.5)]
         system.drawsColliders = true
         system.cameraEye = [0, 1, 3]
