@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         // main until a release includes RenderViewContext.depthTexture (MetalSprockets #530).
-        .package(url: "https://github.com/schwa/MetalSprockets", branch: "main"),
+        .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.6")),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
         .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.6")),
         .package(url: "https://github.com/schwa/MetalCompilerPlugin", .upToNextMinor(from: "0.4.1")),
