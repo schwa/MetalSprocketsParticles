@@ -10,7 +10,7 @@ extension ParticleSystemRuntime {
         var next = 0
         let maximum = Int(PARTICLE_MAX_PARTICLE_LIGHTS)
         for emitter in allEmitters {
-            guard let light = emitter.modules.enabled(LightModule.self)?.light, light.count > 0, next < maximum else {
+            guard let light = emitter.resolved.light, light.count > 0, next < maximum else {
                 continue
             }
             let count = min(light.count, maximum - next, emitter.capacity)
@@ -27,7 +27,7 @@ extension ParticleSystemRuntime {
                 simulationToWorld: emitter.modelTransform,
                 picksBrightest: light.picksBrightest ? 1 : 0
             ))
-            lightColorCurves.append(Self.bakedColorWithOpacity(emitter.modules))
+            lightColorCurves.append(Self.bakedColorWithOpacity(emitter.resolved.colorOverLife))
             next += count
         }
         particleLightGathers = gathers
@@ -36,11 +36,11 @@ extension ParticleSystemRuntime {
     }
 
     /// Color over life with opacity, as the renderer bakes it.
-    static func bakedColorWithOpacity(_ modules: EmitterModules) -> [SIMD4<Float>] {
-        if let color = modules.enabled(ColorOverLifeModule.self) {
+    static func bakedColorWithOpacity(_ color: ColorOverLifeModule?) -> [SIMD4<Float>] {
+        if let color {
             return EmitterDraw.withOpacity(color.color.baked(), color.opacity.baked())
         }
-        let neutral = ParticleEmitter.neutral
+        let neutral = EmitterModules.neutralEmitter
         return EmitterDraw.withOpacity(neutral.colorOverLife.baked(), neutral.opacityOverLife.baked())
     }
 

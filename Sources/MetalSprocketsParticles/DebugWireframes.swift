@@ -218,7 +218,8 @@ public extension ParticleSystemRuntime {
         if options.contains(.emitters) {
             for emitter in emitters {
                 emitterLines.transform = emitter.transform
-                emitter.settings.shape.addWireframe(to: &emitterLines, center: emitter.settings.position)
+                let shape = (shape: emitter.resolved.shape, position: emitter.resolved.position)
+                shape.shape.addWireframe(to: &emitterLines, center: shape.position)
             }
         }
         let colliderLines = options.contains(.colliders) ? colliders.flatMap(\.wireframe) : []

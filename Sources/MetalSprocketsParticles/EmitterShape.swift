@@ -43,11 +43,6 @@ public struct EmitterPoint: Sendable, Equatable, Codable {
 }
 
 extension ParticleShapeData {
-    /// The shader's view of an emitter's shape and birth settings. `mesh` supplies counts for `EmitterShape.mesh`.
-    init(_ settings: ParticleEmitter, mesh: EmitterMesh?) {
-        self.init(shape: settings.shape, position: settings.position, birthLocation: settings.birthLocation, birthDirection: settings.birthDirection, sweep: settings.sweepAngle, mesh: mesh)
-    }
-
     init(shape: EmitterShape, position: SIMD3<Float>, birthLocation: ParticleBirthLocation, birthDirection: ParticleBirthDirection, sweep: Float, mesh: EmitterMesh?) {
         self.init()
         kind = shape.gpuKind

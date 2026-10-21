@@ -93,16 +93,13 @@ struct VariationTests {
 @Suite(.requiresMetal4)
 struct BirthRateVariationTests {
     @Test func rateChangesPerCycleWithinRange() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 600
-        emitter.birthRateVariation = 300
-        emitter.emissionDuration = 1
+        let rate = RateModule(birthRate: 600, variation: 300, emissionDuration: 1)
         var spawner = Spawner(seed: 5)
         var perCycle: [Int] = []
         for _ in 0..<5 {
             var total = 0
             for _ in 0..<60 {
-                total += Int(spawner.advance(deltaTime: 1.0 / 60.0, emitter: emitter, capacity: 1_000_000, isEmitting: true).count)
+                total += Int(spawner.advance(deltaTime: 1.0 / 60.0, rate: rate, maxLifetime: 1, capacity: 1_000_000, isEmitting: true).count)
             }
             perCycle.append(total)
         }
@@ -111,11 +108,10 @@ struct BirthRateVariationTests {
     }
 
     @Test func rateIsDeterministicForSeed() {
-        var emitter = ParticleEmitter()
-        emitter.birthRateVariation = 500
+        let rate = RateModule(variation: 500)
         // Same seed twice on purpose: the rate must be deterministic.
         // swiftlint:disable:next identical_operands
-        #expect(Spawner(seed: 1).birthRate(emitter: emitter) == Spawner(seed: 1).birthRate(emitter: emitter))
-        #expect(Spawner(seed: 1).birthRate(emitter: emitter) != Spawner(seed: 2).birthRate(emitter: emitter))
+        #expect(Spawner(seed: 1).birthRate(rate: rate) == Spawner(seed: 1).birthRate(rate: rate))
+        #expect(Spawner(seed: 1).birthRate(rate: rate) != Spawner(seed: 2).birthRate(rate: rate))
     }
 }

@@ -78,23 +78,6 @@ public extension ParticleFunction {
 enum ParticleFunctionSlot: CaseIterable {
     case update, spawn, collision, death
 
-    var keyPath: KeyPath<ParticleEmitter, ParticleFunction?> {
-        switch self {
-        case .update: \.updateFunction
-        case .spawn: \.spawnFunction
-        case .collision: \.collisionFunction
-        case .death: \.deathFunction
-        }
-    }
-
-    var modulesKeyPath: KeyPath<ParticleEmitter, [StitchedModule]>? {
-        switch self {
-        case .update: \.updateModules
-        case .spawn: \.spawnModules
-        case .collision, .death: nil
-        }
-    }
-
     /// The kernel's function table and parameter buffer names, and the built-in no-op.
     var tableName: String { "\(self)Function" }
     var parametersName: String { "\(self)Parameters" }
@@ -164,45 +147,18 @@ enum SlotFunction: Equatable {
     }
 }
 
-extension ParticleEmitter {
-    /// This emitter's and its sub-emitters' functions.
-    var allFunctions: [SlotFunction] {
-        ([self] + subEmitters.map(\.settings)).flatMap { settings in
-            ParticleFunctionSlot.allCases.compactMap { settings.function(for: $0) }
-        }
-    }
-
-    /// The slot's function: the user function, or the slot's stitched modules as one function. A function wins over
-    /// modules; `validateFunctions` reports having both.
-    /// Whether any of this emitter's own functions may use custom attributes, so the kernel must keep them.
-    var usesCustomAttributes: Bool {
-        ParticleFunctionSlot.allCases.contains { function(for: $0)?.usesCustomAttributes ?? false }
-    }
-
-    func function(for slot: ParticleFunctionSlot) -> SlotFunction? {
-        if let function = self[keyPath: slot.keyPath] {
-            return .user(function)
-        }
-        guard let keyPath = slot.modulesKeyPath else {
-            return nil
-        }
-        let modules = self[keyPath: keyPath]
-        return modules.isEmpty ? nil : .stitched(modules, slot: slot)
-    }
-}
-
 public extension ParticleSystem {
     /// Compiles every layer's functions, so a bad effect file fails when opened rather than when it first runs.
     func validateFunctions(device: MTLDevice) throws {
-        for settings in layers.map(\.settings) {
-            if settings.updateFunction != nil, !settings.updateModules.isEmpty {
-                throw ParticleFunctionError(name: settings.updateFunction?.name ?? "", message: "An emitter cannot have both an update function and stitched update modules.")
+        for modules in layers.map(\.modules) {
+            if let function = modules.allEnabled(UpdateFunctionModule.self).last?.function, !modules.allEnabled(StitchedUpdateModule.self).isEmpty {
+                throw ParticleFunctionError(name: function.name, message: "An emitter cannot have both an update function and stitched update modules.")
             }
-            if settings.spawnFunction != nil, !settings.spawnModules.isEmpty {
-                throw ParticleFunctionError(name: settings.spawnFunction?.name ?? "", message: "An emitter cannot have both a spawn function and stitched spawn modules.")
+            if let function = modules.allEnabled(SpawnFunctionModule.self).last?.function, !modules.allEnabled(StitchedSpawnModule.self).isEmpty {
+                throw ParticleFunctionError(name: function.name, message: "An emitter cannot have both a spawn function and stitched spawn modules.")
             }
         }
-        for function in layers.flatMap(\.settings.allFunctions) {
+        for function in layers.flatMap(\.modules.allFunctions) {
             _ = try GPUFunctions.compile(function, device: device)
         }
     }
@@ -212,7 +168,7 @@ public extension ParticleSystemRuntime {
     /// Compiles every emitter's update and spawn functions, including sub-emitters', so errors show up now rather
     /// than on the next `simulate`. `load(_:)` calls this.
     func compileFunctions() throws {
-        for function in emitters.flatMap(\.settings.allFunctions) {
+        for function in emitters.flatMap(\.modules.allFunctions) {
             _ = try gpuFunctions.simulation(function, slot: .update)
         }
     }

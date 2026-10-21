@@ -31,14 +31,11 @@ public struct SubEmitter: Sendable, Equatable, Codable {
     /// The children's modules. Their shape is centered on the parent particle; birth rate, timing, and warmup are
     /// ignored. Their own sub-emitters work, down to `ParticleSystemRuntime.maxSubEmitterDepth` levels, so a particle can change
     /// type several times. Capacity multiplies at each level (parent capacity × countPerEvent).
-    public var modules: EmitterModules {
-        didSet { lowered = modules.lowered() }
-    }
-    /// `modules.lowered()`, kept up to date.
-    private var lowered: ParticleEmitter
-    /// The children's modules as flat settings. Setting it replaces the modules; disabled modules are kept.
+    public var modules: EmitterModules
+    /// The children's modules as flat settings, for code that still edits those (#228). Reading lowers; setting
+    /// replaces the modules, keeping disabled ones.
     var settings: ParticleEmitter {
-        get { lowered }
+        get { modules.lowered() }
         set { modules = modules.merging(EmitterModules(newValue)) }
     }
     /// How the children are drawn. Soft dots by default.
@@ -53,9 +50,7 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         self.occasion = occasion
         self.countPerEvent = countPerEvent
         self.velocityFactor = velocityFactor
-        let modules = EmitterModules(settings)
-        self.modules = modules
-        lowered = modules.lowered()
+        modules = EmitterModules(settings)
     }
 
     public init(occasion: Occasion, countPerEvent: Int, velocityFactor: Float = 0, modules: EmitterModules) {
@@ -63,7 +58,6 @@ public struct SubEmitter: Sendable, Equatable, Codable {
         self.countPerEvent = countPerEvent
         self.velocityFactor = velocityFactor
         self.modules = modules
-        lowered = modules.lowered()
     }
 
     /// The parent turns into one particle with `settings` and `sprite` when `occasion` happens, keeping its position

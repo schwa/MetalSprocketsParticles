@@ -48,7 +48,7 @@ extension ParticleSystemRuntime {
     /// Makes the trail buffer when an emitter has a trail: `trailStride` points for every particle in the system.
     /// Called after planning (which may rebuild the particle buffer); returns the stride to put in the uniforms.
     func makeTrailsIfNeeded() throws -> Int {
-        let stride = allEmitters.compactMap { $0.settings.trail?.clampedPointCount }.max() ?? 0
+        let stride = allEmitters.compactMap { $0.resolved.trail?.clampedPointCount }.max() ?? 0
         guard stride > 0 else {
             return 0
         }

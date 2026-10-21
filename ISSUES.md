@@ -4861,16 +4861,19 @@ Each module fills its part of SimulationUniforms, RenderUniforms and per-emitter
 ## 227: Runtime holds only modules; ParticleEmitter becomes input-only (#223 stage 2)
 
 +++
-status: new
+status: closed
 priority: medium
 kind: task
 labels: area:architecture, effort:m
 depends: 226
 created: 2026-10-21T12:17:47Z
-updated: 2026-10-21T12:17:53Z
+updated: 2026-10-21T14:40:49Z
+closed: 2026-10-21T14:40:49Z
 +++
 
 EmitterDescription and SubEmitter stop caching the lowered ParticleEmitter (and the didSet that skips initializers). ParticleEmitter stays as a convenience converted to modules once at the edge.
+
+- `2026-10-21T14:40:49Z`: Runtime emitters store only modules. Emitter.settings is computed (lower on read, lift on write) for remaining callers until #228; nothing per-frame uses it. Frame planning, spawner, LOD, culling, triggers, flocking, trails, particle lights, wireframes, sub-emitter layout and function slots read ResolvedModules: one switch pass over enabled modules, cached per emitter until its modules change (EmitterModules+Runtime.swift). A first version that looked modules up per read with generic casts cost Torch Avenue 0.15 -> 0.75 ms build per frame; the cache brings it back (A/B vs previous commit: no regressions). Spawner takes RateModule + max lifetime. setEmitters/rebuild/addEmitter/inits work in modules; the settings versions wrap them. EmitterDescription and SubEmitter dropped their cached lowered copy and the didSet that skipped initializers. Removed ParticleEmitter.function(for:)/usesCustomAttributes/allFunctions, slot key paths, ParticleShapeData(settings:), ParticleEmitter.scalingBirthRate. 485 lib + 80 demo tests, lint clean.
 
 ---
 

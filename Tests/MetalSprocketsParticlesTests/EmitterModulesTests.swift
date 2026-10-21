@@ -32,16 +32,17 @@ struct EmitterModulesTests {
 
     @Test func stitchedUpdateModulesMatchAHandWrittenFunction() throws {
         // Covered end to end with the runtime in StitchingSpikeTests; here: the slot gets one function from the stack.
-        var emitter = ParticleEmitter()
-        emitter.updateModules = [StitchedModule(source: "x", name: "a", parameters: [[1, 0, 0, 0]]), StitchedModule(source: "y", name: "b", parameterCount: 2)]
-        let function = try #require(emitter.function(for: .update))
+        let stitched = [StitchedModule(source: "x", name: "a", parameters: [[1, 0, 0, 0]]), StitchedModule(source: "y", name: "b", parameterCount: 2)]
+        let modules = EmitterModules(update: stitched.map { .stitched(StitchedUpdateModule(module: $0)) })
+        let function = try #require(modules.function(for: .update))
         #expect(function.parameters == [[1, 0, 0, 0], .zero, .zero])
-        #expect(function == .stitched(emitter.updateModules, slot: .update))
-        #expect(emitter.function(for: .spawn) == nil)
+        #expect(function == .stitched(stitched, slot: .update))
+        #expect(modules.function(for: .spawn) == nil)
         // Parameter values do not change what is compiled.
-        var changed = emitter
-        changed.updateModules[0].parameters = [[9, 9, 9, 9]]
-        #expect(changed.function(for: .update)?.key == function.key)
+        var changed = stitched
+        changed[0].parameters = [[9, 9, 9, 9]]
+        let changedModules = EmitterModules(update: changed.map { .stitched(StitchedUpdateModule(module: $0)) })
+        #expect(changedModules.function(for: .update)?.key == function.key)
     }
 
     @Test func editingSettingsKeepsModuleOrder() {
@@ -73,12 +74,12 @@ struct EmitterModulesTests {
     }
 
     @Test func customAttributesOnlyWhenAFunctionMentionsThem() {
-        var emitter = ParticleEmitter()
-        #expect(!emitter.usesCustomAttributes)
-        emitter.updateFunction = ParticleFunction(source: "[[visible]] void f(thread ParticleState &p, float, float, constant float4 *) {}", name: "f")
-        #expect(!emitter.usesCustomAttributes)
-        emitter.spawnModules = [StitchedModule(source: "p.custom.x = 1;", name: "g")]
-        #expect(emitter.usesCustomAttributes)
+        var modules = EmitterModules()
+        #expect(!modules.usesCustomAttributes)
+        modules.update.append(ModuleSlot(.function(UpdateFunctionModule(function: ParticleFunction(source: "[[visible]] void f(thread ParticleState &p, float, float, constant float4 *) {}", name: "f")))))
+        #expect(!modules.usesCustomAttributes)
+        modules.spawn.append(ModuleSlot(.stitched(StitchedSpawnModule(module: StitchedModule(source: "p.custom.x = 1;", name: "g")))))
+        #expect(modules.usesCustomAttributes)
         // Only member accesses outside comments count (#213).
         #expect(!SlotFunction.usesCustomAttributes("// custom colors\nfloat customize = 1; /* p.custom */"))
         #expect(SlotFunction.usesCustomAttributes("p.custom3.y += 1;"))

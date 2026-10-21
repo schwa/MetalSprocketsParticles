@@ -8,68 +8,68 @@ private let deltaTime: Float = 1.0 / 60.0
 
 @Suite(.requiresMetal4)
 struct SpawnerTests {
-    func totalSpawned(seconds: Float, emitter: ParticleEmitter, capacity: Int = 1_000_000) -> Int {
+    func totalSpawned(seconds: Float, rate: RateModule, capacity: Int = 1_000_000) -> Int {
         var spawner = Spawner()
         var total = 0
         for _ in 0..<Int((seconds / deltaTime).rounded()) {
-            total += Int(spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: capacity, isEmitting: true).count)
+            total += Int(spawner.advance(deltaTime: deltaTime, rate: rate, maxLifetime: 3, capacity: capacity, isEmitting: true).count)
         }
         return total
     }
 
     @Test func birthRateIsIndependentOfCapacity() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 600
-        #expect(abs(totalSpawned(seconds: 1, emitter: emitter) - 600) <= 1)
-        #expect(abs(totalSpawned(seconds: 1, emitter: emitter, capacity: 10_000) - 600) <= 1)
+        var rate = RateModule()
+        rate.birthRate = 600
+        #expect(abs(totalSpawned(seconds: 1, rate: rate) - 600) <= 1)
+        #expect(abs(totalSpawned(seconds: 1, rate: rate, capacity: 10_000) - 600) <= 1)
     }
 
     @Test func fractionalRatesAccumulate() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 3
-        #expect(abs(totalSpawned(seconds: 2, emitter: emitter) - 6) <= 1)
+        var rate = RateModule()
+        rate.birthRate = 3
+        #expect(abs(totalSpawned(seconds: 2, rate: rate) - 6) <= 1)
     }
 
     @Test func emissionDurationWithoutLoopStops() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 600
-        emitter.emissionDuration = 0.5
-        emitter.loops = false
-        #expect(abs(totalSpawned(seconds: 2, emitter: emitter) - 300) <= 1)
+        var rate = RateModule()
+        rate.birthRate = 600
+        rate.emissionDuration = 0.5
+        rate.loops = false
+        #expect(abs(totalSpawned(seconds: 2, rate: rate) - 300) <= 1)
     }
 
     @Test func emissionAndIdleCycle() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 600
-        emitter.emissionDuration = 0.5
-        emitter.idleDuration = 0.5
+        var rate = RateModule()
+        rate.birthRate = 600
+        rate.emissionDuration = 0.5
+        rate.idleDuration = 0.5
         // Two full cycles: 2 × 0.5 s of emission.
-        #expect(abs(totalSpawned(seconds: 2, emitter: emitter) - 600) <= 2)
+        #expect(abs(totalSpawned(seconds: 2, rate: rate) - 600) <= 2)
     }
 
     @Test func burstAddsToBirthRate() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 0
+        var rate = RateModule()
+        rate.birthRate = 0
         var spawner = Spawner()
         spawner.pendingBurst = 250
-        #expect(spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: 1_000, isEmitting: true).count == 250)
-        #expect(spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: 1_000, isEmitting: true).count == 0)
+        #expect(spawner.advance(deltaTime: deltaTime, rate: rate, maxLifetime: 3, capacity: 1_000, isEmitting: true).count == 250)
+        #expect(spawner.advance(deltaTime: deltaTime, rate: rate, maxLifetime: 3, capacity: 1_000, isEmitting: true).count == 0)
     }
 
     @Test func notEmittingStillFiresBursts() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 600
+        var rate = RateModule()
+        rate.birthRate = 600
         var spawner = Spawner()
         spawner.pendingBurst = 10
-        #expect(spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: 1_000, isEmitting: false).count == 10)
+        #expect(spawner.advance(deltaTime: deltaTime, rate: rate, maxLifetime: 3, capacity: 1_000, isEmitting: false).count == 10)
     }
 
     @Test func cursorWrapsAroundRing() {
-        var emitter = ParticleEmitter()
-        emitter.birthRate = 60 * 7
+        var rate = RateModule()
+        rate.birthRate = 60 * 7
         var spawner = Spawner()
         for _ in 0..<3 {
-            _ = spawner.advance(deltaTime: deltaTime, emitter: emitter, capacity: 10, isEmitting: true)
+            _ = spawner.advance(deltaTime: deltaTime, rate: rate, maxLifetime: 3, capacity: 10, isEmitting: true)
         }
         #expect(spawner.cursor == 21 % 10)
         #expect(spawner.serial == 21)

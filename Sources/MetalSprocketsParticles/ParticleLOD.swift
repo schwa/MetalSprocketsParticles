@@ -7,38 +7,26 @@ struct CullingCamera {
     var viewProjection: simd_float4x4
 }
 
-extension ParticleEmitter {
-    /// These settings with the birth rate and its variation scaled; unchanged at 1, so default emitters keep their exact
-    /// arithmetic.
-    func scalingBirthRate(by scale: Float) -> Self {
-        guard scale != 1 else {
-            return self
-        }
-        var copy = self
-        copy.birthRate *= scale
-        copy.birthRateVariation *= scale
-        return copy
-    }
-}
-
 extension ParticleSystemRuntime.Emitter {
     /// The birth rate multiplier for distance LOD; 1 when off or without a camera.
     func lodRateScale(camera: CullingCamera?) -> Float {
-        let near = settings.lodNearDistance
-        let far = settings.lodFarDistance
+        let lod = resolved.levelOfDetail
+        let near = lod.near
+        let far = lod.far
         guard let camera, far > near else {
             return 1
         }
         let fraction = simd_clamp((simd_distance(worldCenter, camera.position) - near) / (far - near), 0, 1)
-        return simd_mix(1, max(settings.lodFarRateScale, 0), fraction)
+        return simd_mix(1, max(lod.farRateScale, 0), fraction)
     }
 
     /// Whether the emitter's culling sphere is entirely outside the view.
     func isOutsideView(camera: CullingCamera?) -> Bool {
-        guard let camera, settings.cullingRadius > 0 else {
+        let radius = resolved.levelOfDetail.cullingRadius
+        guard let camera, radius > 0 else {
             return false
         }
-        return !Self.sphereIntersectsFrustum(center: worldCenter, radius: settings.cullingRadius, viewProjection: camera.viewProjection)
+        return !Self.sphereIntersectsFrustum(center: worldCenter, radius: radius, viewProjection: camera.viewProjection)
     }
 
     /// Tests against the six planes of the clip volume (Metal depth 0...1), taken from the rows of the matrix.

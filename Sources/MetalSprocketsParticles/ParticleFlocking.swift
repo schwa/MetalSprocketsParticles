@@ -77,7 +77,7 @@ extension ParticleSystemRuntime {
     func planFlocking() throws -> [FlockData] {
         var flocks: [FlockData] = []
         for emitter in allEmitters {
-            guard let flocking = emitter.settings.flocking else {
+            guard let flocking = emitter.resolved.flocking else {
                 continue
             }
             let window = emitter.liveWindow
@@ -97,7 +97,7 @@ extension ParticleSystemRuntime {
         guard !flocks.isEmpty else {
             return []
         }
-        let capacity = allEmitters.filter { $0.settings.flocking != nil }.map(\.capacity).max() ?? 1
+        let capacity = allEmitters.filter { $0.resolved.flocking != nil }.map(\.capacity).max() ?? 1
         let particleCount = buffer.length / MemoryLayout<Particle>.stride
         if flockingBuffers.map({ $0.capacity < capacity || $0.particleCount != particleCount }) ?? true {
             flockingBuffers = try FlockingBuffers(device: device, capacity: capacity, particleCount: particleCount)

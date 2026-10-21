@@ -64,60 +64,60 @@ struct Spawner: Equatable {
     }
 
     /// Index of the emission cycle containing `time`. Always 0 when emission does not cycle.
-    static func cycleIndex(time: Float, emitter: ParticleEmitter) -> UInt32 {
-        guard let duration = emitter.emissionDuration, emitter.loops else {
+    static func cycleIndex(time: Float, rate: RateModule) -> UInt32 {
+        guard let duration = rate.emissionDuration, rate.loops else {
             return 0
         }
-        let cycle = duration + max(emitter.idleDuration, 0)
+        let cycle = duration + max(rate.idleDuration, 0)
         return cycle > 0 ? UInt32(max(0, (time / cycle).rounded(.down))) : 0
     }
 
     /// `birthRate` +/- `birthRateVariation`, picked once per emission cycle from `seed`.
-    func birthRate(emitter: ParticleEmitter) -> Float {
-        guard emitter.birthRateVariation > 0 else {
-            return max(emitter.birthRate, 0)
+    func birthRate(rate: RateModule) -> Float {
+        guard rate.variation > 0 else {
+            return max(rate.birthRate, 0)
         }
-        var generator = SplitMix64(seed: UInt64(seed) << 32 | UInt64(Self.cycleIndex(time: time, emitter: emitter)))
-        let offset = Float.random(in: -1...1, using: &generator) * emitter.birthRateVariation
-        return max(emitter.birthRate + offset, 0)
+        var generator = SplitMix64(seed: UInt64(seed) << 32 | UInt64(Self.cycleIndex(time: time, rate: rate)))
+        let offset = Float.random(in: -1...1, using: &generator) * rate.variation
+        return max(rate.birthRate + offset, 0)
     }
 
     /// True once the emitter will never spawn on its own again: its envelope has ended at zero, or its single
     /// (non-looping) emission period is over, or its birth rate is zero. Bursts and triggers can still add particles.
-    static func isEmissionOver(time: Float, emitter: ParticleEmitter) -> Bool {
-        if emitter.emissionOverTime.hasEnded(at: time) || emitter.birthRate <= 0 && emitter.birthRateVariation <= 0 {
+    static func isEmissionOver(time: Float, rate: RateModule) -> Bool {
+        if rate.overTime.hasEnded(at: time) || rate.birthRate <= 0 && rate.variation <= 0 {
             return true
         }
-        if let duration = emitter.emissionDuration, !emitter.loops {
+        if let duration = rate.emissionDuration, !rate.loops {
             return time >= duration
         }
         return false
     }
 
-    static func isInEmissionWindow(time: Float, emitter: ParticleEmitter) -> Bool {
-        guard let duration = emitter.emissionDuration else {
+    static func isInEmissionWindow(time: Float, rate: RateModule) -> Bool {
+        guard let duration = rate.emissionDuration else {
             return true
         }
-        guard emitter.loops else {
+        guard rate.loops else {
             return time < duration
         }
-        let cycle = duration + max(emitter.idleDuration, 0)
+        let cycle = duration + max(rate.idleDuration, 0)
         guard cycle > 0 else {
             return false
         }
         return time.truncatingRemainder(dividingBy: cycle) < duration
     }
 
-    mutating func advance(deltaTime: Float, emitter: ParticleEmitter, capacity: Int, isEmitting: Bool) -> Step {
+    mutating func advance(deltaTime: Float, rate: RateModule, maxLifetime lifetime: Float, capacity: Int, isEmitting: Bool) -> Step {
         var count = 0
-        if isEmitting, Self.isInEmissionWindow(time: time, emitter: emitter) {
+        if isEmitting, Self.isInEmissionWindow(time: time, rate: rate) {
             // Rate times the envelope's area over the step. A constant envelope keeps the plain product, so default
             // emitters spawn exactly as before.
-            let envelope = emitter.emissionOverTime
+            let envelope = rate.overTime
             let shapedTime = envelope.keyframes.count == 1
                 ? envelope.keyframes[0].value * deltaTime
                 : envelope.integral(from: time, to: time + deltaTime)
-            accumulator += birthRate(emitter: emitter) * max(shapedTime, 0)
+            accumulator += birthRate(rate: rate) * max(shapedTime, 0)
             let whole = Int(accumulator)
             accumulator -= Float(whole)
             count += whole
@@ -133,7 +133,7 @@ struct Spawner: Equatable {
         cursor = UInt32((Int(cursor) + count) % max(capacity, 1))
         serial &+= UInt32(count)
         time += deltaTime
-        maxLifetime = max(maxLifetime, emitter.lifetime.upperBound)
+        maxLifetime = max(maxLifetime, lifetime)
         checkpoints.append(Checkpoint(time: time, serial: serial))
         // Keep the newest checkpoint at or before the cutoff; older ones can never be needed again.
         let cutoff = time - maxLifetime

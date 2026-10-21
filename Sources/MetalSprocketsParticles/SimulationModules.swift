@@ -16,32 +16,9 @@ protocol SimulationContributor {
 }
 
 extension EmitterModules {
-    /// Values a missing module leaves, as `lowered()` starts from. Stage 4 (#229) replaces this with constants.
-    private static let neutral = ParticleEmitter.neutral
-
-    /// The first enabled module of type `Module`, in stage order.
-    func enabled<Module: ParticleModule>(_: Module.Type) -> Module? {
-        for slot in spawn where slot.isEnabled {
-            if let module = slot.module.module as? Module {
-                return module
-            }
-        }
-        for slot in update where slot.isEnabled {
-            if let module = slot.module.module as? Module {
-                return module
-            }
-        }
-        for slot in render where slot.isEnabled {
-            if let module = slot.module.module as? Module {
-                return module
-            }
-        }
-        return nil
-    }
-
     /// Writes every enabled module's part of `uniforms`, over the values that apply when a module is missing.
     func contribute(to uniforms: inout SimulationUniforms, context: SimulationContext) {
-        let neutral = Self.neutral
+        let neutral = Self.neutralEmitter
         uniforms.shape = ParticleShapeData(shape: neutral.shape, position: neutral.position, birthLocation: neutral.birthLocation, birthDirection: neutral.birthDirection, sweep: neutral.sweepAngle, mesh: context.mesh)
         uniforms.lifetimeMinimum = neutral.lifetime.lowerBound
         uniforms.lifetimeMaximum = neutral.lifetime.upperBound

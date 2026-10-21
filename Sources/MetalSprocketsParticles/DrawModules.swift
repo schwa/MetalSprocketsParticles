@@ -15,9 +15,6 @@ struct DrawModules {
 }
 
 extension EmitterModules {
-    /// Values a missing module leaves, as `lowered()` starts from. Stage 4 (#229) replaces this with constants.
-    private static let neutralEmitter = ParticleEmitter.neutral
-
     /// How a sprite module that is missing draws.
     static var neutralSprite: SpriteModule {
         let neutral = neutralEmitter

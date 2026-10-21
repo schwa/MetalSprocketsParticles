@@ -24,17 +24,24 @@ public final class ParticleSystemRuntime {
 
     /// One emitter in a system: its settings plus the runtime state that does not belong in a value type.
     public final class Emitter {
-        /// The flat settings. Setting them lifts new `modules`; `configure(modules:settings:)` sets both without lifting.
+        /// The modules as flat settings, for code that still edits those; the runtime itself reads only modules (#227).
+        /// Reading lowers and setting lifts, so neither belongs in per-frame code.
         var settings: ParticleEmitter {
-            get { storedSettings }
-            set {
-                storedSettings = newValue
-                storedModules = EmitterModules(newValue)
-            }
+            get { storedModules.lowered() }
+            set { configure(modules: EmitterModules(newValue)) }
         }
-        private var storedSettings: ParticleEmitter
-        /// What the emitter does, as modules. Frame planning reads these (#226).
+        /// What the emitter does.
         private(set) var storedModules: EmitterModules
+        private var resolvedCache: ResolvedModules?
+        /// The values frame planning reads, found once per change of modules.
+        var resolved: ResolvedModules {
+            if let resolvedCache {
+                return resolvedCache
+            }
+            let resolved = ResolvedModules(storedModules)
+            resolvedCache = resolved
+            return resolved
+        }
         /// Keeps particles on the emitter's plane whatever the modules say: the 2D mode of `apply(_:constrainsToPlane:)`.
         var forcesPlane = false
         /// Premultiplied-alpha sprite, or a sprite sheet when `settings.imageSequence` is set. `nil` draws a soft dot.
@@ -92,7 +99,7 @@ public final class ParticleSystemRuntime {
 
         /// World-space center of the emitter's shape, for ordering emitters by distance.
         var worldCenter: SIMD3<Float> {
-            (transform * SIMD4(settings.position, 1)).xyz
+            (transform * SIMD4(resolved.position, 1)).xyz
         }
 
         /// Ring slots that can hold live particles: `count` slots starting at `start`, wrapping at `capacity`.
@@ -105,9 +112,8 @@ public final class ParticleSystemRuntime {
             return (Int(start % UInt32(capacity)), min(Int(spawner.serial &- start), capacity))
         }
 
-        init(settings: ParticleEmitter, capacity: Int, range: Range<Int>, seed: UInt32) {
-            storedSettings = settings
-            storedModules = EmitterModules(settings)
+        init(modules: EmitterModules, capacity: Int, range: Range<Int>, seed: UInt32) {
+            storedModules = modules
             self.capacity = capacity
             self.range = range
             self.seed = seed
@@ -116,26 +122,26 @@ public final class ParticleSystemRuntime {
 
         /// How the sprite module sorts this emitter's particles.
         var sortMode: ParticleSortMode {
-            (storedModules.enabled(SpriteModule.self) ?? EmitterModules.neutralSprite).sortMode
+            resolved.sortMode
         }
 
-        /// Sets modules and the settings they lower to, without lifting. `settings` must equal `modules.lowered()`.
-        func configure(modules: EmitterModules, settings: ParticleEmitter) {
-            storedSettings = settings
+        func configure(modules: EmitterModules) {
             storedModules = modules
+            resolvedCache = nil
         }
 
         /// True when the emitter is done: it will not spawn on its own again (its `emissionOverTime` has ended at zero,
         /// its single emission period is over, its birth rate is zero, or `isEmitting` is off), it has no pending burst
         /// or triggers, and every particle it and its sub-emitters made has died. Use it to remove finite effects.
         public var isFinished: Bool {
-            guard !needsWarmup, settings.triggers.isEmpty, spawner.pendingBurst == 0, pendingPositionedBursts.isEmpty else {
+            let resolved = resolved
+            guard !needsWarmup, resolved.triggers.isEmpty, spawner.pendingBurst == 0, pendingPositionedBursts.isEmpty else {
                 return false
             }
-            guard !isEmitting || Spawner.isEmissionOver(time: spawner.time, emitter: settings) else {
+            guard !isEmitting || Spawner.isEmissionOver(time: spawner.time, rate: resolved.rate) else {
                 return false
             }
-            let childLifetime = settings.subEmitters.map(\.settings.lifetime.upperBound).max() ?? 0
+            let childLifetime = resolved.subEmitters.map(\.modules.resolved.lifetime.upperBound).max() ?? 0
             return spawner.time >= spawner.lastBirthTime + spawner.maxLifetime + childLifetime
         }
 
@@ -402,7 +408,7 @@ public final class ParticleSystemRuntime {
         self.aliveCounters = aliveCounters
         buffer = try Self.makeBuffer(device: device, count: 1)
 
-        try setEmitters(emitters.map { ($0, capacity) })
+        try setEmitters(emitters.map { (modules: EmitterModules($0), capacity: capacity) })
     }
 
     /// Creates a system with a single emitter.
@@ -441,11 +447,17 @@ public final class ParticleSystemRuntime {
     /// Replaces every emitter. Reallocates the particle buffer, so all particles are removed.
     @discardableResult
     func setEmitters(_ emitters: [(settings: ParticleEmitter, capacity: Int)]) throws -> [Emitter] {
+        try setEmitters(emitters.map { (modules: EmitterModules($0.settings), capacity: $0.capacity) })
+    }
+
+    /// Replaces every emitter. Reallocates the particle buffer, so all particles are removed.
+    @discardableResult
+    public func setEmitters(_ emitters: [(modules: EmitterModules, capacity: Int)]) throws -> [Emitter] {
         var start = 0
         var created: [Emitter] = []
         for (index, entry) in emitters.enumerated() {
             let capacity = max(entry.capacity, 1)
-            created.append(Emitter(settings: entry.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(index)))
+            created.append(Emitter(modules: entry.modules, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(index)))
             start = try Self.checkedTotal(start, adding: capacity)
         }
         // Sub-emitter instances follow all emitters, one level at a time, so each level dispatches after its parents.
@@ -455,13 +467,13 @@ public final class ParticleSystemRuntime {
         for _ in 0..<Self.maxSubEmitterDepth {
             var nextLevel: [Emitter] = []
             for parent in level {
-                for (subIndex, sub) in parent.settings.subEmitters.enumerated() {
+                for (subIndex, sub) in parent.resolved.subEmitters.enumerated() {
                     // Effect files can ask for anything; overflow or an impossible buffer is an error, not a crash.
                     let (capacity, overflow) = parent.capacity.multipliedReportingOverflow(by: max(sub.countPerEvent, 1))
                     guard !overflow else {
                         throw ParticleSystemRuntimeError.tooManyParticles
                     }
-                    let child = Emitter(settings: sub.settings, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(created.count + children.count))
+                    let child = Emitter(modules: sub.modules, capacity: capacity, range: start..<(start + capacity), seed: emitterSeed(created.count + children.count))
                     child.parent = parent
                     child.subEmitterIndex = subIndex
                     child.needsWarmup = false
@@ -487,21 +499,21 @@ public final class ParticleSystemRuntime {
 
     /// The shape of every emitter's sub-emitter tree, so a change in nesting or counts triggers a rebuild.
     static func subEmitterLayout(of emitters: [Emitter]) -> [[Int]] {
-        func layout(_ settings: ParticleEmitter, depth: Int) -> [Int] {
+        func layout(_ modules: EmitterModules, depth: Int) -> [Int] {
             guard depth < maxSubEmitterDepth else {
                 return []
             }
             // Each sub-emitter: its count, its own subtree, then a -1 marker closing it.
-            return settings.subEmitters.flatMap { [max($0.countPerEvent, 1)] + layout($0.settings, depth: depth + 1) + [-1] }
+            return modules.resolved.subEmitters.flatMap { [max($0.countPerEvent, 1)] + layout($0.modules, depth: depth + 1) + [-1] }
         }
-        return emitters.map { layout($0.settings, depth: 0) }
+        return emitters.map { layout($0.modules, depth: 0) }
     }
 
     /// Rebuilds the buffer for the current emitters, keeping runtime state that is not part of the settings.
-    func rebuild(adding extra: [(settings: ParticleEmitter, capacity: Int)] = []) throws {
+    func rebuild(adding extra: [(modules: EmitterModules, capacity: Int)] = []) throws {
         let existing = emitters
         let layout = appliedLayout
-        try setEmitters(existing.map { ($0.settings, $0.capacity) } + extra)
+        try setEmitters(existing.map { (modules: $0.modules, capacity: $0.capacity) } + extra)
         // Same emitters, so a later `apply` with the same descriptions need not rebuild again.
         if extra.isEmpty {
             appliedLayout = layout
@@ -523,8 +535,7 @@ public final class ParticleSystemRuntime {
     /// Adds an emitter. Reallocates the particle buffer, so all particles are removed.
     @discardableResult
     func addEmitter(_ settings: ParticleEmitter, capacity: Int) throws -> Emitter {
-        try rebuild(adding: [(settings, capacity)])
-        return emitters[emitters.count - 1]
+        try addEmitter(EmitterModules(settings), capacity: capacity)
     }
 
     /// Removes all particles from every emitter, resets their clocks, and runs warmup again.

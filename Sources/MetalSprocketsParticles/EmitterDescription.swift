@@ -11,15 +11,11 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
     public let id: UUID
     public var name: String
     /// What the emitter does: module stacks per stage.
-    public var modules: EmitterModules {
-        didSet { lowered = modules.lowered() }
-    }
-    /// `modules.lowered()`, kept up to date so reading `settings` every frame costs nothing.
-    private var lowered: ParticleEmitter
-    /// The modules lowered to flat settings, as the simulation runs them. Setting it replaces the modules with ones that
-    /// lower to the new settings; disabled modules are kept.
+    public var modules: EmitterModules
+    /// The modules as flat settings, for code that still edits those (#228). Reading lowers; setting replaces the
+    /// modules with ones that lower to the new settings, keeping disabled ones.
     var settings: ParticleEmitter {
-        get { lowered }
+        get { modules.lowered() }
         set { modules = modules.merging(EmitterModules(newValue)) }
     }
     public var sprite: ParticleSprite
@@ -63,7 +59,6 @@ public struct EmitterDescription: Sendable, Identifiable, Equatable {
         id = UUID()
         self.name = name
         self.modules = modules
-        lowered = modules.lowered()
         self.sprite = sprite
         self.motion = motion
         self.simulationSpace = simulationSpace
@@ -100,14 +95,14 @@ public extension ParticleSystemRuntime {
     func apply(_ descriptions: [EmitterDescription], rebuild: Bool = false, constrainsToPlane: Bool = false) throws {
         let layout = descriptions.map { AppliedEmitter(id: $0.id, capacity: max($0.capacity, 1)) }
         if rebuild || layout != appliedLayout {
-            try setEmitters(descriptions.map { ($0.settings, $0.capacity) })
+            try setEmitters(descriptions.map { (modules: $0.modules, capacity: $0.capacity) })
             for (emitter, description) in zip(emitters, descriptions) {
                 emitter.transform = description.motion.transform(time: 0)
             }
             appliedLayout = layout
         }
         for (emitter, description) in zip(emitters, descriptions) {
-            emitter.configure(modules: description.modules, settings: description.settings)
+            emitter.configure(modules: description.modules)
             emitter.forcesPlane = constrainsToPlane
             emitter.simulationSpace = description.simulationSpace
             // Only a change in the description turns emission on or off, so start and stop triggers survive re-applying
@@ -161,7 +156,6 @@ extension EmitterDescription: Codable {
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         modules = try container.decode(EmitterModules.self, forKey: .modules)
-        lowered = modules.lowered()
         sprite = try container.decode(ParticleSprite.self, forKey: .sprite)
         motion = try container.decode(EmitterMotion.self, forKey: .motion)
         simulationSpace = try container.decode(SimulationSpace.self, forKey: .simulationSpace)

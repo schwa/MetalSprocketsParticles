@@ -17,7 +17,7 @@ extension ParticleSystemRuntime {
     /// Trigger volumes for this frame, in the order the GPU counts them.
     var triggerVolumes: [TriggerVolume] {
         emitters.flatMap { emitter in
-            emitter.settings.triggers.compactMap { trigger in
+            emitter.resolved.triggers.compactMap { trigger in
                 if case let .particlesEnter(volume, _) = trigger.condition {
                     return volume
                 }
@@ -28,7 +28,7 @@ extension ParticleSystemRuntime {
 
     var countsColliderHits: Bool {
         emitters.contains { emitter in
-            emitter.settings.triggers.contains { trigger in
+            emitter.resolved.triggers.contains { trigger in
                 if case .colliderHit = trigger.condition {
                     return true
                 }
@@ -48,7 +48,7 @@ extension ParticleSystemRuntime {
         var volumeIndex = 0
 
         for emitter in emitters {
-            for (index, trigger) in emitter.settings.triggers.enumerated() {
+            for (index, trigger) in emitter.resolved.triggers.enumerated() {
                 var memory = emitter.triggerMemory[index] ?? TriggerMemory()
                 var fires = 0
                 func counterFires(_ counterIndex: Int, threshold: Int) {

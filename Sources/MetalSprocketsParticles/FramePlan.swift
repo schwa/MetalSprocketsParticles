@@ -88,10 +88,17 @@ extension ParticleSystemRuntime {
         counters[2 * slots + slot] = 0
         frameIndex += 1
         evaluateTriggers(deltaTime: state == .playing ? frameDeltaTime : 0)
+        // Each parent's sub-emitters, looked up once per parent rather than once per child.
+        var subEmittersByParent: [ObjectIdentifier: [SubEmitter]] = [:]
         for child in subEmitterInstances {
-            if let parent = child.parent, child.subEmitterIndex < parent.settings.subEmitters.count {
-                let sub = parent.settings.subEmitters[child.subEmitterIndex]
-                child.configure(modules: sub.modules, settings: sub.settings)
+            guard let parent = child.parent else {
+                continue
+            }
+            let subEmitters = subEmittersByParent[ObjectIdentifier(parent)] ?? parent.resolved.subEmitters
+            subEmittersByParent[ObjectIdentifier(parent)] = subEmitters
+            if child.subEmitterIndex < subEmitters.count {
+                let sub = subEmitters[child.subEmitterIndex]
+                child.configure(modules: sub.modules)
                 // Cached per sprite, so this is a dictionary lookup.
                 child.texture = texture(for: sub.sprite)
             }
@@ -190,12 +197,18 @@ extension ParticleSystemRuntime {
     }
 
     private func makeStep(_ emitter: Emitter, deltaTime: Float, motion: SpawnMotion) -> (uniforms: SimulationUniforms, threadCount: Int) {
-        let settings = emitter.settings
+        let resolved = emitter.resolved
         let playing = state == .playing
         let deltaTime = playing ? deltaTime : 0
         // Sub-emitter instances never spawn on their own; their parents write their particles.
         let spawn = playing
-            ? emitter.spawner.advance(deltaTime: deltaTime, emitter: settings.scalingBirthRate(by: emitter.lodRateScale), capacity: emitter.capacity, isEmitting: emitter.isEmitting && !emitter.isSubEmitter)
+            ? emitter.spawner.advance(
+                deltaTime: deltaTime,
+                rate: resolved.rate.scaled(by: emitter.lodRateScale),
+                maxLifetime: resolved.lifetime.upperBound,
+                capacity: emitter.capacity,
+                isEmitting: emitter.isEmitting && !emitter.isSubEmitter
+            )
             : Spawner.Step(cursor: emitter.spawner.cursor, count: 0, serial: emitter.spawner.serial)
         var uniforms = self.uniforms(for: emitter, deltaTime: deltaTime, motion: motion, spawn: spawn)
         uniforms.subEmitterCount = UInt32(emitter.children.count)
@@ -237,9 +250,9 @@ extension ParticleSystemRuntime {
         // The emitter clock, not wall time, so turbulence stays deterministic.
         uniforms.time = emitter.spawner.time
         // 0 when no function reads or writes ParticleState.custom: then the kernel skips the attribute traffic (#206).
-        // Function slots still come from the flat settings until stage 2 (#227).
-        let settings = emitter.settings
-        uniforms.customAttributeCount = settings.usesCustomAttributes ? UInt32(min(max(settings.customAttributeCount, 1), ParticleFunction.maximumCustomAttributes)) : 0
+        let modules = emitter.modules
+        let resolved = emitter.resolved
+        uniforms.customAttributeCount = resolved.usesCustomAttributes ? UInt32(min(max(modules.customAttributeCount, 1), ParticleFunction.maximumCustomAttributes)) : 0
         uniforms.countsColliderHits = countsColliderHits ? 1 : 0
         uniforms.colliderCount = UInt32(colliders.count)
         uniforms.forceFieldCount = UInt32(forceFields.count)
@@ -270,11 +283,12 @@ extension ParticleSystemRuntime {
     private func subEmitterData(for emitter: Emitter) -> (data: [SubEmitterData], uniforms: [SimulationUniforms]) {
         var data: [SubEmitterData] = []
         var uniforms: [SimulationUniforms] = []
+        let subEmitters = emitter.children.isEmpty ? [] : emitter.resolved.subEmitters
         for child in emitter.children {
-            guard child.subEmitterIndex < emitter.settings.subEmitters.count else {
+            guard child.subEmitterIndex < subEmitters.count else {
                 continue
             }
-            let sub = emitter.settings.subEmitters[child.subEmitterIndex]
+            let sub = subEmitters[child.subEmitterIndex]
             data.append(SubEmitterData(
                 occasion: sub.occasion.gpuKind,
                 countPerEvent: UInt32(max(sub.countPerEvent, 1)),
@@ -301,12 +315,14 @@ extension ParticleSystemRuntime {
         emitter.lodRateScale = emitter.lodRateScale(camera: cullingCamera)
         emitter.isCulled = emitter.isOutsideView(camera: cullingCamera)
         // A culled emitter that does not simulate is frozen: no dispatch, and its clock and spawner stand still.
-        if emitter.isCulled, !emitter.settings.simulatesWhenCulled {
+        let modules = emitter.modules
+        let resolved = emitter.resolved
+        if emitter.isCulled, !resolved.levelOfDetail.simulatesWhenCulled {
             return []
         }
         // Filtering here keeps category masks off the GPU: unmasked emitters see exactly the full lists.
-        let colliders = world.colliders.filter { $0.category & emitter.settings.categoryMask != 0 }.map(\.data)
-        let forceFields = world.forceFields.filter { $0.category & emitter.settings.categoryMask != 0 }.map(\.data)
+        let colliders = world.colliders.filter { $0.category & modules.categoryMask != 0 }.map(\.data)
+        let forceFields = world.forceFields.filter { $0.category & modules.categoryMask != 0 }.map(\.data)
         // In local space the emitter is the origin of its own space and never moves.
         let spawnTransform = emitter.simulationSpace == .world ? emitter.transform : matrix_identity_float4x4
         let origin = spawnTransform.columns.3.xyz
@@ -320,7 +336,7 @@ extension ParticleSystemRuntime {
             emitter.needsWarmup = false
             let still = SpawnMotion(transform: spawnTransform, previousOrigin: origin)
             let warmupStep: Float = 1.0 / 60.0
-            var remaining = emitter.settings.warmupDuration
+            var remaining = resolved.rate.warmupDuration
             while remaining > 0 {
                 steps.append(makeStep(emitter, deltaTime: min(warmupStep, remaining), motion: still))
                 remaining -= warmupStep
@@ -341,12 +357,12 @@ extension ParticleSystemRuntime {
         var motion = SpawnMotion(
             transform: spawnTransform,
             previousOrigin: previousOrigin,
-            inheritedVelocity: emitterVelocity * emitter.settings.inheritVelocity
+            inheritedVelocity: emitterVelocity * resolved.inheritVelocity
         )
         if let spin, frameDeltaTime > 0 {
             motion.spinAxis = spin.axis
             motion.spinAngle = spin.angle
-            motion.inheritedAngularVelocity = spin.axis * spin.angle / frameDeltaTime * emitter.settings.inheritVelocity
+            motion.inheritedAngularVelocity = spin.axis * spin.angle / frameDeltaTime * resolved.inheritVelocity
         }
         steps.append(makeStep(emitter, deltaTime: frameDeltaTime, motion: motion))
         let subEmitters = subEmitterData(for: emitter)
@@ -357,16 +373,16 @@ extension ParticleSystemRuntime {
             // Count each emitter once a frame, on its last step (after any warmup steps).
             uniforms.countsAlive = index == steps.count - 1 ? 1 : 0
             uniforms.aliveCounterSlot = aliveCounterSlot
-            let functions = ParticleFunctionSlot.allCases.map { emitter.settings.function(for: $0) }
+            let functions = ParticleFunctionSlot.allCases.map { resolved.function(for: $0) }
             uniforms.hasUpdateFunction = functions[0] == nil ? 0 : 1
             uniforms.hasSpawnFunction = functions[1] == nil ? 0 : 1
             uniforms.hasCollisionFunction = functions[2] == nil ? 0 : 1
             uniforms.hasDeathFunction = functions[3] == nil ? 0 : 1
-            let events = emitter.modules.enabled(EventsModule.self)
+            let events = resolved.events
             uniforms.reportsCollisions = events?.reportsCollisions == true ? 1 : 0
             uniforms.reportsDeaths = events?.reportsDeaths == true ? 1 : 0
             uniforms.eventEmitterIndex = UInt32(emitterIndex)
-            uniforms.collidesWithSceneDepth = emitter.modules.enabled(CollisionModule.self)?.collidesWithSceneDepth == true ? 1 : 0
+            uniforms.collidesWithSceneDepth = resolved.collidesWithSceneDepth ? 1 : 0
             return FramePlan.Dispatch(
                 uniforms: uniforms,
                 threadCount: step.threadCount,
@@ -378,7 +394,7 @@ extension ParticleSystemRuntime {
                 subEmitters: subEmitters.data,
                 subEmitterUniforms: subEmitters.uniforms,
                 functions: functions,
-                birthColorCurve: uniforms.colorsByBirthPosition != 0 ? emitter.settings.colorByPosition?.baked() ?? [.one] : [.one]
+                birthColorCurve: uniforms.colorsByBirthPosition != 0 ? resolved.birthPositionColor?.baked() ?? [.one] : [.one]
             )
         }
     }
