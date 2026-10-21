@@ -3682,10 +3682,10 @@ Acceptance: a large foil mesh glints smoothly across a face (golden); per-vertex
 status: open
 priority: medium
 kind: enhancement
-labels: area:rendering, effort:m
+labels: area:rendering, effort:m, deferred
 depends: 172
 created: 2026-10-19T23:59:01Z
-updated: 2026-10-20T02:27:15Z
+updated: 2026-10-21T00:23:11Z
 +++
 
 Foil (ParticleFoil, #155/#171) shades a card with its own matte color, darkens it edge-on, and adds a Blinn-Phong glint from one light. On tumbling confetti that reads as colored rectangles that turn white (per-vertex glint) or get white dots (per-pixel crinkled glint, uncommitted experiment) instead of foil. User: 'that's just white dots on the foil'.
@@ -3706,6 +3706,7 @@ Related: #172 (pluggable shading; foil could become a built-in shading model the
 - `2026-10-20T02:31:44Z`: Related: #179, the composable-modules refactor; this becomes part of its rendering stage.
 - `2026-10-20T18:26:33Z`: Related: #193 (render modules) builds on this; if the module refactor (#179) lands first, this may be reshaped as render modules.
 - `2026-10-20T22:53:10Z`: Implemented the reflective model as the built-in foil shading function: procedural environment (sky band, dark floor, three soft patches) plus scene/particle lights as hot spots, tinted by the metal, hue-preserving clip, white only at the hottest core; iridescence shifts the tint with angle. Sprites shade per pixel with crinkled facets (21x21 grid, small tilts); meshes per vertex. The old special-case fragment glint is gone. FoilTests updated (brightness swings 3x+ with angle, crinkle spread across the card, brightest pixels keep the gold hue). Goldens: preset-foil-confetti re-recorded. Waiting on your review of Foil Confetti in motion before closing; the facets still read as a visible square grid up close.
+- `2026-10-21T00:23:11Z`: User review: much better, still needs work; parked for later. Known next step: smoother crinkle (noise-based facets instead of a visible square grid).
 
 ---
 
@@ -4644,5 +4645,24 @@ closed: 2026-10-20T20:28:49Z
 Adding the stitched template twice gives two modules named 'swirl'. Editing one's source but keeping the name makes the stack fail to stitch ('Two stitched modules in one stack are named ... but have different sources', #216), so the emitter's functions fail at runtime. The editor's Compile & Apply only validates the module alone. Fix: validate against the whole stack before applying, or give added templates unique names (swirl2...).
 
 - `2026-10-20T20:28:49Z`: Added stitched modules get unique names (swirl, swirl2, ...; the source's function is renamed too). A user can still type a clashing name by hand; the stack then fails with #216's clear error.
+
+---
+
+## 218: Hard-deprecate effect file formats older than 4
+
++++
+status: new
+priority: low
+kind: task
+labels: area:api, effort:s
+created: 2026-10-21T00:24:43Z
+updated: 2026-10-21T00:24:59Z
++++
+
+Effect files are at format 4. The library still reads formats 1 (flat settings), 2 (appearance modules in update), and 3 (foil module, SpriteModule.isLit), through lifting (EmitterModules.init(ParticleEmitter)), the update-stage fallback and LegacyRenderEntry in EmitterModules decoding, and SubEmitter's flat 'settings'.
+
+Hard deprecation: stop reading them. Files without formatVersion 4 fail to load with a clear error ('effect format N is not supported; this library reads format 4'). Remove the legacy decoding paths, the tests that cover them, and particles-migrate (the bundled presets are already format 4). Lifting stays only where tests still use it (@testable), or goes too if tests move to modules.
+
+Docs: Modules.md 'Effect files' section, README.
 
 ---
