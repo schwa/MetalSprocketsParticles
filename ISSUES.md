@@ -4988,18 +4988,20 @@ ModuleStackView.swift lines 43-45: 'call to main actor-isolated static method la
 ## 233: Demo app: verify iOS and visionOS builds and add them to Buildkite
 
 +++
-status: new
+status: closed
 priority: low
 kind: task
 labels: area:ci, area:demo, effort:s
 created: 2026-10-21T16:10:06Z
-updated: 2026-10-21T16:39:28Z
+updated: 2026-10-21T16:45:01Z
+closed: 2026-10-21T16:45:01Z
 +++
 
 The demo claims iphoneos/xros support (SUPPORTED_PLATFORMS in MetalSprocketsParticlesDemo-Shared.xcconfig), but only macOS is built in CI (.buildkite/pipeline.yml, #230). Locally: the iOS Simulator build fails with ~249 errors because the simulator SDK lacks Metal 4 types (MTL4ArgumentTable, MTL4RenderCommandEncoder, ...) in MetalSprockets; generic/platform=iOS (device) is what CI would build but xcb cannot target it; no visionOS simulator is installed. Check generic iOS and visionOS device builds; if they pass, add them to the demo step's destination matrix (as MetalSprockets' example step does); if not, either fix or drop those platforms from SUPPORTED_PLATFORMS.
 
 - `2026-10-21T16:31:44Z`: iOS builds and runs on device after one change: OutlineView's .onDeleteCommand guarded with #if os(macOS) (macOS-only API). The simulator still cannot build (no Metal 4 in the simulator SDK). visionOS not checked yet. iOS UI quality is tracked separately (#234).
 - `2026-10-21T16:39:28Z`: iOS: device build verified locally (xcb build --scheme MetalSprocketsParticlesDemo -d <iPhone> CODE_SIGNING_ALLOWED=NO: 0 errors) and added to the Buildkite demo step as generic/platform=iOS. visionOS: SDK installed but no device or simulator to build for here; left out of CI until checked.
+- `2026-10-21T16:45:01Z`: iOS device builds are verified and in CI (generic/platform=iOS). Simulators are out of scope for now. visionOS is skipped until it is built and tested; tracked in #235.
 
 ---
 
@@ -5014,5 +5016,19 @@ created: 2026-10-21T16:31:44Z
 +++
 
 The demo builds and runs on iOS (after guarding OutlineView's onDeleteCommand with #if os(macOS)), but the UI is a poor fit: it is the macOS layout (outline sidebar, inspector sections, toolbars, sliders) carried over. Needs a design pass for touch and small screens: navigation (outline vs. inspector vs. viewport), inspector density and controls, toolbar items, and keyboard-only affordances (delete command, shortcuts) that have no iOS equivalent. Capture screenshots of the current state when designing. Related: #233 (iOS/visionOS in CI).
+
+---
+
+## 235: Demo: build and test on visionOS, then add it to CI
+
++++
+status: new
+priority: low
+kind: task
+labels: area:demo, area:ci, effort:s
+created: 2026-10-21T16:45:01Z
++++
+
+The demo lists xros in SUPPORTED_PLATFORMS but has never been built or run on visionOS (#233 skipped it). Build for a visionOS device, run it, fix what breaks, then add generic/platform=xrOS to the Buildkite demo step.
 
 ---
