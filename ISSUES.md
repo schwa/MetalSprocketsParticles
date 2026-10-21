@@ -4679,11 +4679,13 @@ Docs: Modules.md 'Effect files' section, README.
 ## 219: New custom shading functions may still stall the first frame (render pipelines are statically linked)
 
 +++
-status: new
+status: closed
 priority: low
 kind: task
 labels: area:rendering, effort:s
 created: 2026-10-21T00:34:16Z
+updated: 2026-10-21T01:44:16Z
+closed: 2026-10-21T01:44:16Z
 +++
 
 MetalSprockets #534 binary-links compute pipelines, which removed the ~360 ms first-frame stall for update/spawn functions (#209). Render pipelines are still statically linked, so a new custom shading function (ShadingModel.custom, #172; per pixel, #174) probably rebuilds the particle vertex or fragment pipeline on its first frame. Not measured yet. Measure it (like StitchingSpikeTests.firstFrameCost, with a custom shading function); if it stalls, ask MetalSprockets for the same binary linking on render pipelines.
@@ -4694,6 +4696,7 @@ Found and fixed a bug while measuring: per-pixel shading after per-vertex shadin
 
 - `2026-10-21T00:47:41Z`: Filed upstream: MetalSprockets #538 (binary linking for render pipelines) and #539 (stage-specific linked functions carrying over between frames).
 - `2026-10-21T01:20:52Z`: MetalSprockets #538 landed: a new custom shading function's first frame is ~8 ms (was 50-100 ms). #539 landed too; the both-stages workaround is removed and ShadingPipelineTests pass without it. Cost: binary linking stops inlining, so per-pixel shading is slower (Foil Confetti GPU 0.12 -> ~0.175 ms). Filed MetalSprockets #540 for a per-pipeline static/binary choice; keep this open until it lands, then statically link the built-ins.
+- `2026-10-21T01:44:16Z`: MetalSprockets #538/#539/#540 landed. Built-in shading functions link statically (inlinable; Foil Confetti GPU back to 0.12 ms), custom ones binary (a new custom shading function's first frame ~7-8 ms, was 50-100 ms). Update functions ~5 ms (was 360 ms, #209). Benchmark gate clean.
 
 ---
 

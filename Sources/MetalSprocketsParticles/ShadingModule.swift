@@ -170,10 +170,13 @@ extension ParticleSystemRuntime {
         if let cachedBuiltInShading {
             return cachedBuiltInShading
         }
+        // Static: the compiler can inline them (per-pixel foil is ~45% faster than with a real call), and they are
+        // always linked, so their pipeline is built once. Custom functions stay binary-linked, so a new one does not
+        // rebuild the pipeline (#219).
         let builtIn = BuiltInShading(
-            unlit: try library.function(type: VisibleFunction.self, named: "particleShadeUnlit"),
-            lit: try library.function(type: VisibleFunction.self, named: "particleShadeLit"),
-            foil: try library.function(type: VisibleFunction.self, named: "particleShadeFoil")
+            unlit: try library.function(type: VisibleFunction.self, named: "particleShadeUnlit").linking(.static),
+            lit: try library.function(type: VisibleFunction.self, named: "particleShadeLit").linking(.static),
+            foil: try library.function(type: VisibleFunction.self, named: "particleShadeFoil").linking(.static)
         )
         cachedBuiltInShading = builtIn
         return builtIn

@@ -288,7 +288,7 @@ extension ShadingModel {
 }
 
 /// A binding to the module inside an enum case.
-private func payload<Stage, Payload>(_ module: Binding<Stage>, _ value: Payload, _ wrap: @escaping (Payload) -> Stage) -> Binding<Payload> {
+private func payload<Stage, Payload: Sendable>(_ module: Binding<Stage>, _ value: Payload, _ wrap: @escaping @Sendable (Payload) -> Stage) -> Binding<Payload> {
     Binding(get: { value }, set: { module.wrappedValue = wrap($0) })
 }
 
