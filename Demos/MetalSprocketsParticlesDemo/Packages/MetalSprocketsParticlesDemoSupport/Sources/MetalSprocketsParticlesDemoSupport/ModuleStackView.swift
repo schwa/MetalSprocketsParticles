@@ -9,13 +9,13 @@ struct ModuleStacksView: View {
 
     var body: some View {
         ModuleStackView(title: "Spawn", stack: $modules.spawn) { module in
-            SpawnModuleEditor(module: module)
+            StageModuleEditor(module: module)
         }
         ModuleStackView(title: "Update", stack: $modules.update) { module in
-            UpdateModuleEditor(module: module)
+            StageModuleEditor(module: module)
         }
         ModuleStackView(title: "Render", stack: $modules.render) { module in
-            RenderModuleEditor(module: module)
+            StageModuleEditor(module: module)
         }
         Section("Categories") {
             CategoryMaskView(
@@ -56,11 +56,11 @@ struct SingleModuleView: View {
     var body: some View {
         switch stage {
         case .spawn:
-            ModuleStackView(title: stage.rawValue, stack: $modules.spawn, only: index) { SpawnModuleEditor(module: $0) }
+            ModuleStackView(title: stage.rawValue, stack: $modules.spawn, only: index) { StageModuleEditor(module: $0) }
         case .update:
-            ModuleStackView(title: stage.rawValue, stack: $modules.update, only: index) { UpdateModuleEditor(module: $0) }
+            ModuleStackView(title: stage.rawValue, stack: $modules.update, only: index) { StageModuleEditor(module: $0) }
         case .render:
-            ModuleStackView(title: stage.rawValue, stack: $modules.render, only: index) { RenderModuleEditor(module: $0) }
+            ModuleStackView(title: stage.rawValue, stack: $modules.render, only: index) { StageModuleEditor(module: $0) }
         }
     }
 }
@@ -287,59 +287,6 @@ extension ShadingModel {
     }
 }
 
-/// A binding to the module inside an enum case.
-private func payload<Stage, Payload: Sendable>(_ module: Binding<Stage>, _ value: Payload, _ wrap: @escaping @Sendable (Payload) -> Stage) -> Binding<Payload> {
-    Binding(get: { value }, set: { module.wrappedValue = wrap($0) })
-}
-
-// MARK: - Spawn
-
-struct SpawnModuleEditor: View {
-    @Binding var module: SpawnModule
-
-    var body: some View {
-        switch module {
-        case let .shape(value):
-            ShapeModuleEditor(module: payload($module, value, SpawnModule.shape))
-        case let .rate(value):
-            RateModuleEditor(module: payload($module, value, SpawnModule.rate))
-        case let .lifetime(value):
-            let lifetime = payload($module, value, SpawnModule.lifetime)
-            ParameterSliderView("Lifetime", value: lifetime.average, in: 0.1...30)
-                .help("Seconds each particle lives, on average. Type a value for longer lives.")
-            ParameterSliderView("Lifetime Variation", value: lifetime.variation, in: 0...15)
-                .help("Each particle lives this many seconds more or less than Lifetime, at random.")
-        case let .velocity(value):
-            let velocity = payload($module, value, SpawnModule.velocity)
-            VectorEditorView("Velocity", value: velocity.velocity, in: -20...20)
-            ParameterSliderView("Spread", value: velocity.spread, in: 0...10)
-            ParameterSliderView("Speed Variation", value: velocity.speedVariation, in: 0...10)
-            ParameterSliderView("Inherit Velocity", value: velocity.inherit, in: 0...1)
-        case let .rotation(value):
-            let rotation = payload($module, value, SpawnModule.rotation)
-            ParameterSliderView("Angle", value: rotation.angle, in: -.pi ... .pi)
-            ParameterSliderView("Angle Variation", value: rotation.angleVariation, in: 0 ... .pi)
-            ParameterSliderView("Spin", value: rotation.angularSpeed, in: -20...20)
-            ParameterSliderView("Spin Variation", value: rotation.angularSpeedVariation, in: 0...20)
-        case let .variation(value):
-            let variation = payload($module, value, SpawnModule.variation)
-            ParameterSliderView("Size", value: variation.size, in: 0...1)
-            ParameterSliderView("Hue", value: variation.color.x, in: 0...0.5)
-            ParameterSliderView("Saturation", value: variation.color.y, in: 0...1)
-            ParameterSliderView("Brightness", value: variation.color.z, in: 0...1)
-            ParameterSliderView("Alpha", value: variation.color.w, in: 0...1)
-        case let .colorImage(value):
-            let image = payload($module, value, SpawnModule.colorImage)
-            ColorImageModuleEditor(image: image.image)
-        case let .function(value):
-            LabeledContent("Function", value: value.function.name)
-            Text("Edit in User Functions below.").font(.caption)
-        case let .stitched(value):
-            StitchedModuleEditor(module: payload($module, value, SpawnModule.stitched).module)
-        }
-    }
-}
-
 struct ShapeModuleEditor: View {
     @Binding var module: ShapeModule
 
@@ -490,59 +437,6 @@ struct StitchedModuleEditor: View {
     }
 }
 
-// MARK: - Update
-
-struct UpdateModuleEditor: View {
-    @Binding var module: UpdateModule
-
-    var body: some View {
-        switch module {
-        case let .gravity(value):
-            VectorEditorView("Gravity", value: payload($module, value, UpdateModule.gravity).acceleration, in: -20...20)
-        case let .drag(value):
-            ParameterSliderView("Drag", value: payload($module, value, UpdateModule.drag).amount, in: 0...5)
-        case let .flocking(value):
-            FlockingModuleEditor(flocking: payload($module, value, UpdateModule.flocking).flocking)
-        case let .collision(value):
-            let collision = payload($module, value, UpdateModule.collision)
-            ParameterSliderView("Bounce", value: collision.restitution, in: 0...1.5)
-            ParameterSliderView("Bounce Variation", value: collision.restitutionVariation, in: 0...1)
-            ParameterSliderView("Friction", value: collision.friction, in: 0...1)
-            ParameterSliderView("Friction Variation", value: collision.frictionVariation, in: 0...1)
-            Toggle("Die on Collision", isOn: collision.diesOnCollision)
-            ParameterSliderView("Radius", value: collision.radius, in: 0...0.5, format: .number.precision(.fractionLength(3)))
-                .help("Particles collide as spheres of this radius instead of points, so large sprites and mesh particles rest on colliders instead of sinking in.")
-            Toggle("Collide with Scene Depth", isOn: collision.collidesWithSceneDepth)
-                .help("Bounce off whatever was drawn into the scene depth last frame (here, solid colliders). Only works on screen.")
-        case .planeConstraint:
-            Text("Keeps particles on the emitter's XY plane, for 2D effects or flat sheets.").font(.caption)
-        case let .events(value):
-            let events = payload($module, value, UpdateModule.events)
-            Toggle("Report Collisions", isOn: events.reportsCollisions)
-                .help("Report each collider hit to the app (ParticleSystemRuntime.recentEvents), for sounds, decals, or event bursts.")
-            Toggle("Report Deaths", isOn: events.reportsDeaths)
-                .help("Report each particle death to the app (ParticleSystemRuntime.recentEvents).")
-        case let .subEmitters(value):
-            LabeledContent("Sub-Emitters", value: "\(value.emitters.count)")
-            Text("Select them in the outline to edit.").font(.caption)
-        case let .triggers(value):
-            LabeledContent("Triggers", value: "\(value.triggers.count)")
-            Text("Select them in the outline to edit.").font(.caption)
-        case let .function(value):
-            LabeledContent("Function", value: value.function.name)
-            Text("Edit in User Functions below.").font(.caption)
-        case let .collisionFunction(value):
-            LabeledContent("Function", value: value.function.name)
-            Text("Edit in User Functions below.").font(.caption)
-        case let .deathFunction(value):
-            LabeledContent("Function", value: value.function.name)
-            Text("Edit in User Functions below.").font(.caption)
-        case let .stitched(value):
-            StitchedModuleEditor(module: payload($module, value, UpdateModule.stitched).module)
-        }
-    }
-}
-
 struct FlockingModuleEditor: View {
     @Binding var flocking: ParticleFlocking
 
@@ -561,92 +455,3 @@ struct FlockingModuleEditor: View {
     }
 }
 
-// MARK: - Render
-
-struct RenderModuleEditor: View {
-    @Binding var module: RenderModule
-
-    var body: some View {
-        switch module {
-        case let .sprite(value):
-            let sprite = payload($module, value, RenderModule.sprite)
-            KindPicker("Blend", selection: sprite.blendMode)
-            KindPicker("Sort", selection: sprite.sortMode)
-            KindPicker("Orientation", selection: sprite.orientation.kind)
-            if value.orientation.kind == .velocityAligned {
-                ParameterSliderView("Stretch", value: sprite.velocityStretch, in: 0...2)
-            }
-            ParameterSliderView("Softness", value: sprite.softness, in: 0...1)
-                .help("Soft particles: fade out over this distance in front of solid colliders instead of clipping hard. 0 turns it off.")
-            ParameterSliderView("Minimum Screen Size", value: sprite.minimumScreenSize, in: 0...0.02, format: .number.precision(.fractionLength(4)))
-                .help("Far particles never draw smaller than this: half their size as a fraction of the view height. 0 lets them shrink.")
-        case let .colorOverLife(value):
-            let color = payload($module, value, RenderModule.colorOverLife)
-            ColorCurveEditorView(title: "Color", curve: color.color)
-            FloatCurveEditorView(title: "Opacity", curve: color.opacity, range: 0...1)
-            Toggle("Alternate Colors", isOn: color.hasAlternateColors)
-                .help("Each particle blends between Color and this second gradient by its own random amount.")
-            if value.hasAlternateColors {
-                ColorCurveEditorView(title: "Alternate", curve: color.editableAlternate)
-            }
-        case let .sizeOverLife(value):
-            FloatCurveEditorView(title: "Size", curve: payload($module, value, RenderModule.sizeOverLife).curve, range: 0...0.5)
-        case let .colorBySpeed(value):
-            let speed = payload($module, value, RenderModule.colorBySpeed)
-            ColorCurveEditorView(title: "Speed Gradient", curve: speed.editableCurve)
-            ParameterSliderView("Slow Speed", value: speed.minimum, in: 0...20)
-            ParameterSliderView("Fast Speed", value: speed.maximum, in: 0...20)
-        case let .colorByPosition(value):
-            let position = payload($module, value, RenderModule.colorByPosition)
-            ColorCurveEditorView(title: "Position Gradient", curve: position.editableCurve)
-            VectorEditorView("Start", value: position.start, in: -5...5)
-            VectorEditorView("End", value: position.end, in: -5...5)
-            Toggle("Sample at Birth", isOn: position.atBirth)
-                .help("Keep the color where each particle is born, instead of changing it as the particle moves.")
-        case let .imageSequence(value):
-            ImageSequenceEditorView(sequence: payload($module, value, RenderModule.imageSequence).sequence)
-        case let .shading(value):
-            let shading = payload($module, value, RenderModule.shading)
-            ShadingModuleEditor(model: shading.model)
-            if value.model != .unlit {
-                Toggle("Per Pixel", isOn: shading.perPixel)
-                    .help("Shade every pixel instead of every vertex: smooth highlights across large faces, at the cost of a function call per pixel.")
-            }
-        case let .mesh(value):
-            LabeledContent("Mesh", value: value.mesh.label)
-            Text("Change it with Draw As in Appearance.").font(.caption)
-        case let .trail(value):
-            let trail = payload($module, value, RenderModule.trail)
-            ParameterSliderView("Points", value: trail.trail.editablePointCount, in: 2...64, format: .number.precision(.fractionLength(0)))
-                .help("Positions kept per particle. Memory is 16 bytes per point per particle of every emitter.")
-            ParameterSliderView("Point Interval", value: trail.trail.pointInterval, in: 0...0.2, format: .number.precision(.fractionLength(3)))
-                .help("Seconds between recorded points, so trails cover the same time at any frame rate. 0 records one every step.")
-            Toggle("Tapers", isOn: trail.trail.tapers)
-            Toggle("Fades", isOn: trail.trail.fades)
-        case let .ribbon(value):
-            Toggle("Tapers", isOn: payload($module, value, RenderModule.ribbon).ribbon.tapers)
-        case let .light(value):
-            let light = payload($module, value, RenderModule.light)
-            ParameterSliderView("Lights", value: light.light.editableCount, in: 1...32, format: .number.precision(.fractionLength(0)))
-                .help("How many particles become lights, picked evenly across the emitter.")
-            ColorPicker("Color", selection: light.light.color.color, supportsOpacity: false)
-            ParameterSliderView("Intensity", value: light.light.intensity, in: 0...10)
-            ParameterSliderView("Range", value: light.light.range, in: 0...10)
-            Toggle("Brightest Particles", isOn: light.light.picksBrightest)
-                .help("Each light takes the brightest particle in its share, so lights sit on the hottest sparks. Off is cheaper.")
-        case let .levelOfDetail(value):
-            let lod = payload($module, value, RenderModule.levelOfDetail)
-            ParameterSliderView("Full Rate Within", value: lod.near, in: 0...50)
-                .help("Distance from the camera within which the emitter emits at its full rate.")
-            ParameterSliderView("Reduced Rate At", value: lod.far, in: 0...100)
-                .help("Distance at which emission falls to the far rate. LOD is off unless this is farther than Full Rate Within.")
-            ParameterSliderView("Far Rate", value: lod.farRateScale, in: 0...1)
-            Toggle("Grow When Thinned", isOn: lod.scalesSize)
-            ParameterSliderView("Culling Radius", value: lod.cullingRadius, in: 0...20)
-                .help("A sphere around the emitter that holds its particles; when it is out of view the emitter is not drawn. 0 never culls.")
-            if value.cullingRadius > 0 {
-                Toggle("Simulate When Culled", isOn: lod.simulatesWhenCulled)
-            }
-        }
-    }
-}

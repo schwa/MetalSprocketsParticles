@@ -4819,16 +4819,19 @@ Split by concern into several files, and share the common vertex setup. Goldens 
 ## 225: Demo module editors are one large switch
 
 +++
-status: open
+status: closed
 priority: low
 kind: task
 labels: area:demo, area:architecture, effort:s
 created: 2026-10-21T02:03:07Z
-updated: 2026-10-21T02:03:43Z
+updated: 2026-10-21T03:18:58Z
+closed: 2026-10-21T03:18:58Z
 +++
 
 ModuleStackView's Spawn/Update/RenderModuleEditor switch over every module case, with editing adapters in ModuleEditing.swift and Inspector+Editing.swift. Adding a module means editing the switch, the adapters, and the menu defaults in different files.
 
 Deepen: one editor per module type (e.g. a protocol the demo conforms each module to), looked up from the module, so adding a module adds one editor.
+
+- `2026-10-21T03:18:58Z`: Each module type now owns its editor: EditableModule (static editor(_: Binding<Self>)) in demo ModuleEditors.swift, conformed by all 33 module types. StageModuleEditor opens the stage enum's existential once and gives the module's editor a typed binding, replacing the three Spawn/Update/Render switch editors and the payload() helper. ModuleEditorTests fails if any StageModule.types entry lacks an editor. 80 demo tests pass, demo app builds, lint clean.
 
 ---
