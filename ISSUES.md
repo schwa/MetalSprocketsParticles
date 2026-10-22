@@ -5075,3 +5075,53 @@ created: 2026-10-21T17:44:16Z
 Build and configure a particle system in the Mac demo, then send it to a connected iPhone or Vision Pro to preview it live there. The effect file format (EffectFile) already holds a full effect, so it could be the payload. Open questions: transport (for example Network.framework with Bonjour discovery), a receiver app on iOS and visionOS, and whether edits stream live or are sent on demand.
 
 ---
+
+## 239: Feature ideas from other particle systems
+
++++
+status: new
+priority: low
+kind: feature
+labels: needs-design
+created: 2026-10-22T00:44:26Z
++++
+
+Ideas from Unity (Shuriken, VFX Graph), Unreal (Niagara), Godot, Houdini, PopcornFX, tyFlow, EmberGen, and others that we do not have yet. This is a list of ideas, not a plan. Split items into separate issues before work starts.
+
+## Simulation
+- Vector fields from 3D textures (baked velocity or force volumes, e.g. from Houdini or EmberGen).
+- Fluid / SPH / position-based dynamics: particles that push on each other.
+- Constraints and springs between particles (rope, cloth, soft clumps), like Vellum or tyFlow.
+- Particle-to-particle collision.
+- Attract to or stick to a mesh surface (particles crawl over or form a shape).
+- Simulation stages: more than one pass per frame over particles or a grid (Niagara).
+- Expose the flocking neighbor grid as a general resource for user functions (Niagara Grid2D/3D).
+- Fixed timestep and substeps, so results do not depend on frame rate.
+- Deterministic replay and scrubbing: seek to time T.
+
+## Emission
+- Prewarm: start an effect in its steady state.
+- Emit from a skinned, animated mesh, with bone and UV attributes.
+- Emit in UV space, with density from a texture mask on a mesh.
+
+## Rendering
+- Particle shadows: cast, receive, and self-shadowing smoke (opacity shadow maps).
+- Distortion / refraction particles (heat haze, shockwaves).
+- Order-independent transparency (weighted blended OIT) as an alternative to sorting.
+- Flipbook frame blending with motion vectors.
+- Volumetric rendering: splat particles into a froxel or 3D fog volume.
+- Motion blur for fast particles, beyond velocity stretching.
+- Normal-mapped or six-way lit smoke sprites (VFX Graph six-way lighting).
+- Decals spawned on hit. Hit events exist, but there is no built-in decal output.
+
+## Authoring and workflow
+- Node-graph authoring (VFX Graph, Niagara, PopcornFX). Related: #100.
+- Exposed effect parameters: named inputs that the app sets at runtime.
+- Scalability: a global particle budget and quality tiers for each device. We have LOD, but no budget.
+- Import formats: Cocos / Particle Designer plist, Godot, Alembic point caches.
+- Timeline / sequencer control of emitters.
+
+## Candidates to do first
+Prewarm, distortion, shadows, 3D vector fields, exposed parameters.
+
+---
