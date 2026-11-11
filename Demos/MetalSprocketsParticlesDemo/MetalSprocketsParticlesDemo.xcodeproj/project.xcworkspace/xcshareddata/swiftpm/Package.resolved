@@ -1,5 +1,5 @@
 {
-  "originHash" : "b37de2b14db63e00e9babf6a20c82a54790016d417442f4571dabbaec649d29d",
+  "originHash" : "d5c19d8d62443ae1bc8fcfe39bdf988e3d84998130dfc053231db8608b91303d",
   "pins" : [
     {
       "identity" : "geometrylite2d",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/GeometryLite3D",
       "state" : {
-        "revision" : "91407ccdf258a3f85f6dbf67f4f63f24af7257f1",
-        "version" : "0.2.5"
+        "revision" : "eac505c27ed43064556a9962efee6c5ff81cbaba",
+        "version" : "0.3.0"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/Interaction3D",
       "state" : {
-        "revision" : "829f6b57780ac2ae07c73039abcb5a6f5e5c46f7",
-        "version" : "0.1.15"
+        "branch" : "main",
+        "revision" : "adda7b248ed655393c26bab8f7b74dac3d4619b7"
       }
     },
     {
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/SwiftMesh",
       "state" : {
-        "revision" : "4270c075af06d438609f61548f7d6c632d15e4da",
-        "version" : "0.0.11"
+        "revision" : "6ee613b1e93e0432954cc271a542f3961310cc3a",
+        "version" : "0.1.0"
       }
     },
     {

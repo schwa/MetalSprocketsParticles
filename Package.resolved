@@ -1,5 +1,5 @@
 {
-  "originHash" : "e46da92b9ed35b7155f9864914ce1d5b8958abb9852d841b492ecdda62a8c52d",
+  "originHash" : "65eec78ba5048cf792fbc9d52bcd9212facf3cd9cd91b918570e80846d7f7629",
   "pins" : [
     {
       "identity" : "geometrylite2d",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/GeometryLite3D",
       "state" : {
-        "revision" : "91407ccdf258a3f85f6dbf67f4f63f24af7257f1",
-        "version" : "0.2.5"
+        "revision" : "eac505c27ed43064556a9962efee6c5ff81cbaba",
+        "version" : "0.3.0"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/GoldenImage",
       "state" : {
-        "revision" : "03b4d1557869ebb2161551edf97f7a27630dc7a7",
-        "version" : "0.1.6"
+        "revision" : "a1d17d68e763bf3ea02e5d634bb69460a1f7be9c",
+        "version" : "0.1.7"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/MetalSprockets",
       "state" : {
-        "revision" : "4d600f46c6ea70d5c709a779422dc073562356c6",
-        "version" : "0.2.6"
+        "revision" : "4062c651c768055ebd2b914562bb5ad851f8a196",
+        "version" : "0.2.9"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/SwiftMesh",
       "state" : {
-        "revision" : "4270c075af06d438609f61548f7d6c632d15e4da",
-        "version" : "0.0.11"
+        "revision" : "6ee613b1e93e0432954cc271a542f3961310cc3a",
+        "version" : "0.1.0"
       }
     },
     {
