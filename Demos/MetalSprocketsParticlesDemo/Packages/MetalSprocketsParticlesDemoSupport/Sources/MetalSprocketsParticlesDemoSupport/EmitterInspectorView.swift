@@ -180,12 +180,16 @@ struct SceneToolbarContent: ToolbarContent {
                 .keyboardShortcut("]", modifiers: .command)
                 .help("Next preset (⌘])")
         }
+        #if !os(visionOS)
         ToolbarSpacer(.fixed, placement: .principal)
+        #endif
         ToolbarItem(placement: .principal) {
             Toggle("2D", systemImage: "view.2d", isOn: $model.is2D)
                 .help("2D mode: the scene seen flat from the front, with every emitter kept on its plane")
         }
+        #if !os(visionOS)
         ToolbarSpacer(.fixed, placement: .principal)
+        #endif
         ToolbarItem(placement: .principal) {
             Picker("Playback", selection: $model.playback) {
                 Label("Play", systemImage: "play.fill").tag(SimulationState.playing)
@@ -196,7 +200,9 @@ struct SceneToolbarContent: ToolbarContent {
             .labelsHidden()
             .fixedSize()
         }
+        #if !os(visionOS)
         ToolbarSpacer(.fixed, placement: .principal)
+        #endif
         ToolbarItemGroup(placement: .principal) {
             Button("Restart", systemImage: "arrow.counterclockwise") { model.restart() }
             Button("Revert", systemImage: "arrow.uturn.backward") { model.reloadPreset() }

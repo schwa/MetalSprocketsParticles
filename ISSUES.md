@@ -5163,12 +5163,14 @@ Reported from SceneSprockets #378.
 ## 241: No visionOS immersive demo to run the stereo particle path on device
 
 +++
-status: new
+status: closed
 priority: medium
 kind: feature
 labels: area:rendering
 depends: 98
 created: 2026-11-12T19:28:20Z
+updated: 2026-11-12T19:41:40Z
+closed: 2026-11-12T19:41:40Z
 +++
 
 The demo app has no visionOS ImmersiveSpace, so the stereo rendering path from #98 (ParticleStereoViews, render(views:sceneDepth:)) cannot be tried on a Vision Pro. MetalSprocketsParticlesDemoSupport lists visionOS as a platform, but no demo target or scene uses immersive rendering.

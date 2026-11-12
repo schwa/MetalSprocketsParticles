@@ -7,7 +7,11 @@ import SwiftUI
 
 public struct ParticlesView: View {
     @State private var model = ParticlesDemoModel()
+    #if os(visionOS)
+    @State private var isInspectorPresented = false
+    #else
     @State private var isInspectorPresented = true
+    #endif
     @AppStorage(ParticleViewportView.showsOverlaysKey) private var showsOverlays = true
 
     public init() {}
@@ -18,12 +22,25 @@ public struct ParticlesView: View {
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
             ParticleViewportView()
+                #if os(visionOS)
+                // No inspector column on visionOS.
+                .sheet(isPresented: $isInspectorPresented) {
+                    SidebarTabsView()
+                        .frame(minWidth: 340, minHeight: 500)
+                }
+                #else
                 .inspector(isPresented: $isInspectorPresented) {
                     SidebarTabsView()
                         .inspectorColumnWidth(min: 300, ideal: 340)
                 }
+                #endif
                 .toolbar {
                     SceneToolbarContent()
+                    #if os(visionOS)
+                    ToolbarItem {
+                        ImmersiveToggle(system: model.currentEffect)
+                    }
+                    #endif
                     ToolbarItem {
                         Toggle("Overlays", systemImage: "square.text.square", isOn: $showsOverlays)
                             .keyboardShortcut("h", modifiers: [.command, .shift])

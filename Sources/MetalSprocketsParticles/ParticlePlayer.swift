@@ -76,6 +76,15 @@ public final class ParticlePlayer {
         sceneDepth: SceneDepth? = nil,
         wireframes: Bool = false
     ) throws -> some Element {
+        try Group {
+            try simulate(deltaTime: deltaTime, view: view)
+            try runtime.renderScene(projection: projection, view: view, sceneDepth: sceneDepth, wireframes: wireframes)
+        }
+    }
+
+    /// One frame's simulation, for hosts that draw the particles themselves (e.g. `runtime.render(views:)` in stereo).
+    /// Put it at the top level of the frame, before the render pass. `view` sorts back-to-front emitters.
+    public func simulate(deltaTime: Float, view: simd_float4x4?) throws -> some Element {
         // The clock moves first, so what this step is given (colliders above all) is where it is at the step's end. The
         // runtime turns the change since the last step into velocity and spin using this step's deltaTime; positions
         // from before the step would be one frame behind, and with uneven frames (a short one after a long one) the
@@ -96,10 +105,7 @@ public final class ParticlePlayer {
         let colliders = system.colliders(at: time, pointer: pointer)
         let transforms = system.transforms(at: time, pointer: pointer)
         runtime.applyEventBursts(system.eventBursts)
-        return try Group {
-            try runtime.simulate(deltaTime: deltaTime, colliders: colliders, transforms: transforms, view: view)
-            try runtime.renderScene(projection: projection, view: view, sceneDepth: sceneDepth, wireframes: wireframes)
-        }
+        return try runtime.simulate(deltaTime: deltaTime, colliders: colliders, transforms: transforms, view: view)
     }
 
     /// A scene depth texture of `size` pixels when the system draws its colliders, kept between frames. For callers of
