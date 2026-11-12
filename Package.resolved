@@ -1,5 +1,5 @@
 {
-  "originHash" : "8a33aaee0e39b6b2990f5d0dff6fb74fe96e4e4e7f304b60fffcd6adc5c53eea",
+  "originHash" : "9ccd6ac950e0fdfd7578fad3cdcdc1fa6024b5f5a4fc4043cd0e97d85adeef48",
   "pins" : [
     {
       "identity" : "geometrylite2d",
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/SwiftPLY",
       "state" : {
-        "revision" : "46a78c2f61babad1b950bd354b83f072c21489b8",
-        "version" : "0.0.1"
+        "revision" : "4b8558957e85f5e9d5c8ff7624ee1c7412ba74a8",
+        "version" : "0.0.2"
       }
     }
   ],

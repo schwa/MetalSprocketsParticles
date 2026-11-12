@@ -43,7 +43,7 @@
       "location" : "https://github.com/schwa/MetalSprockets",
       "state" : {
         "branch" : "main",
-        "revision" : "57a1eefb187e2e9b1ca57ae774d242330596b12d"
+        "revision" : "bf8ce022914262a9070320007b1c23fa851b3f76"
       }
     },
     {
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/SwiftPLY",
       "state" : {
-        "revision" : "46a78c2f61babad1b950bd354b83f072c21489b8",
-        "version" : "0.0.1"
+        "revision" : "4b8558957e85f5e9d5c8ff7624ee1c7412ba74a8",
+        "version" : "0.0.2"
       }
     }
   ],

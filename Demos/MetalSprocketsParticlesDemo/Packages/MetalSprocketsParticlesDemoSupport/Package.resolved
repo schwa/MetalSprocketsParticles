@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/schwa/SwiftPLY",
       "state" : {
-        "revision" : "46a78c2f61babad1b950bd354b83f072c21489b8",
-        "version" : "0.0.1"
+        "revision" : "4b8558957e85f5e9d5c8ff7624ee1c7412ba74a8",
+        "version" : "0.0.2"
       }
     }
   ],

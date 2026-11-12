@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.7")),
         .package(url: "https://github.com/schwa/MetalCompilerPlugin", .upToNextMinor(from: "0.4.1")),
         .package(url: "https://github.com/schwa/SwiftMesh", .upToNextMinor(from: "0.1.0")),
-        .package(url: "https://github.com/schwa/SwiftPLY", .upToNextMinor(from: "0.0.1")),
+        .package(url: "https://github.com/schwa/SwiftPLY", .upToNextMinor(from: "0.0.2")),
     ],
     targets: [
         .target(
