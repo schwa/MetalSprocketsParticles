@@ -5,6 +5,8 @@ import simd
 struct CullingCamera {
     var position: SIMD3<Float>
     var viewProjection: simd_float4x4
+    /// Stereo: the other eye's, culled only when outside both.
+    var otherViewProjections: [simd_float4x4] = []
 }
 
 extension ParticleSystemRuntime.Emitter {
@@ -26,7 +28,9 @@ extension ParticleSystemRuntime.Emitter {
         guard let camera, radius > 0 else {
             return false
         }
-        return !Self.sphereIntersectsFrustum(center: worldCenter, radius: radius, viewProjection: camera.viewProjection)
+        return !([camera.viewProjection] + camera.otherViewProjections).contains {
+            Self.sphereIntersectsFrustum(center: worldCenter, radius: radius, viewProjection: $0)
+        }
     }
 
     /// Tests against the six planes of the clip volume (Metal depth 0...1), taken from the rows of the matrix.

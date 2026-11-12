@@ -45,22 +45,22 @@ enum DrawKind {
 extension ParticleSystemRuntime {
     /// Every visible emitter's draw, in drawing order: unsorted emitters in emitter order, then sorted emitters
     /// farthest first. Updates the culling camera.
-    func planDraws(projection: simd_float4x4, view: simd_float4x4, sceneDepth: MTLTexture?) throws -> [EmitterDraw] {
-        let cameraToWorld = view.inverse
-        let cameraPosition = cameraToWorld.columns.3.xyz
-        cullingCamera = CullingCamera(position: cameraPosition, viewProjection: projection * view)
+    func planDraws(views: ParticleStereoViews, sceneDepth: MTLTexture?) throws -> [EmitterDraw] {
+        let cameraPosition = views.centerView.inverse.columns.3.xyz
+        let viewProjections = views.viewProjections
+        cullingCamera = CullingCamera(position: cameraPosition, viewProjection: viewProjections[0], otherViewProjections: Array(viewProjections.dropFirst()))
         let visible = allEmitters.filter { !$0.isOutsideView(camera: cullingCamera) }
         let unsorted = visible.filter { $0.sortMode == .none }
         let sorted = visible.filter { $0.sortMode != .none }
             .sorted { simd_distance($0.worldCenter, cameraPosition) > simd_distance($1.worldCenter, cameraPosition) }
         let lighting = EmitterDraw.Lighting(ambient: ambientLight, lightCount: min(lights.count, Int(PARTICLE_MAX_LIGHTS)), particleLightCount: particleLightCount)
         return try (unsorted + sorted).map { emitter in
-            try planDraw(emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: sceneDepth != nil)
+            try planDraw(emitter, views: views, lighting: lighting, hasSceneDepth: sceneDepth != nil)
         }
     }
 
-    private func planDraw(_ emitter: Emitter, projection: simd_float4x4, view: simd_float4x4, lighting: EmitterDraw.Lighting, hasSceneDepth: Bool) throws -> EmitterDraw {
-        var draw = EmitterDraw(emitter: emitter, projection: projection, view: view, lighting: lighting, hasSceneDepth: hasSceneDepth)
+    private func planDraw(_ emitter: Emitter, views: ParticleStereoViews, lighting: EmitterDraw.Lighting, hasSceneDepth: Bool) throws -> EmitterDraw {
+        var draw = EmitterDraw(emitter: emitter, views: views, lighting: lighting, hasSceneDepth: hasSceneDepth)
         let modules = draw.modules
         let mesh = try modules.mesh.flatMap { try vertexBuffer(for: $0.mesh) }
         if mesh != nil {
@@ -120,7 +120,7 @@ extension ParticleSystemRuntime {
     }
 
     /// Binds and draws `draws`.
-    func encode(_ draws: [EmitterDraw], sceneDepth: MTLTexture?) throws -> some Element {
+    func encode(_ draws: [EmitterDraw], views: ParticleStereoViews, sceneDepth: MTLTexture?) throws -> some Element {
         let builtInShading = try gpuFunctions.builtInShading()
         let depthCompare = depthCompareFunction
         let trailBuffer = trails ?? placeholderMesh.vertices
@@ -171,6 +171,7 @@ extension ParticleSystemRuntime {
             ) {
                 Draw { encoder in
                     encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
+                    views.configure(encoder)
                     draw.drawPrimitives(encoder)
                 }
             }
@@ -187,6 +188,9 @@ extension ParticleSystemRuntime {
             try pipeline(draw)
                 .depthCompare(function: depthCompare, writes: writesDepth)
                 .renderPipelineDescriptorTransformer { descriptor in
+                    if views.isStereo {
+                        descriptor.maxVertexAmplificationCount = views.count
+                    }
                     if let attachment = descriptor.colorAttachments[0] {
                         draw.blendMode.configure(attachment)
                     }

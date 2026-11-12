@@ -464,6 +464,10 @@ typedef struct {
 /// Lights for emitters with lighting on. Mirrored by the Swift ParticleLight.
 #define PARTICLE_MAX_LIGHTS 8
 
+/// Views drawn at once: 1, or 2 for stereo (visionOS). Vertex amplification draws each primitive once per view and
+/// [[amplification_id]] picks the view's entry in the per-view arrays. With one view, entry 0 is used.
+#define PARTICLE_MAX_VIEW_COUNT 2
+
 typedef MS_ENUM(uint32_t, ParticleLightKind) {
     ParticleLightKindDirectional = 1,
     ParticleLightKindPoint = 2,
@@ -479,7 +483,9 @@ typedef struct {
 } ParticleLightData;
 
 typedef struct {
-    simd_float4x4 viewProjection;
+    // Per view. Everything else that depends on the camera (billboard axes, camera position and forward, sorting)
+    // uses the center view, so both eyes see the same quads.
+    simd_float4x4 viewProjections[PARTICLE_MAX_VIEW_COUNT];
     // Simulation space to world. The emitter transform when simulating in local space, otherwise identity.
     simd_float4x4 model;
     simd_float3 cameraRight;
@@ -549,6 +555,6 @@ typedef struct {
 } RenderUniforms;
 
 typedef struct {
-    simd_float4x4 viewProjection;
+    simd_float4x4 viewProjections[PARTICLE_MAX_VIEW_COUNT];
     simd_float4 color;
 } WireframeUniforms;

@@ -17,7 +17,7 @@ struct DrawPlanTests {
         configure(&settings)
         let system = try ParticleSystemRuntime(capacity: 16, modules: settings)
         system.burst(16)
-        return try #require(try system.planDraws(projection: projection, view: view, sceneDepth: nil).first)
+        return try #require(try system.planDraws(views: ParticleStereoViews(projection: projection, view: view), sceneDepth: nil).first)
     }
 
     /// The vertex shader's bool function constant `name`; false when it is not set.
@@ -104,8 +104,27 @@ struct DrawPlanTests {
         system.burst(8)
         // A debug view records each draw's emitter index.
         system.debugView = .emitter
-        let draws = try system.planDraws(projection: projection, view: view, sceneDepth: nil)
+        let draws = try system.planDraws(views: ParticleStereoViews(projection: projection, view: view), sceneDepth: nil)
         // The unsorted emitter (1) first; then the sorted one farther from the camera (2, at z = -2) before the nearer one (0).
         #expect(draws.map(\EmitterDraw.uniforms.debugEmitterIndex) == [1, 2, 0])
+    }
+
+    @Test func stereoViewsFillPerViewUniformsAndShareTheCenterCamera() throws {
+        let left = simd_float4x4(lookingFrom: [-0.03, 0, 3], at: [-0.03, 0, 0]).inverse
+        let right = simd_float4x4(lookingFrom: [0.03, 0, 3], at: [0.03, 0, 0]).inverse
+        let viewport = MTLViewport(originX: 0, originY: 0, width: 100, height: 100, znear: 0, zfar: 1)
+        let views = ParticleStereoViews(viewMatrices: [left, right], projectionMatrices: [projection, projection], viewports: [viewport, viewport])
+        let system = try ParticleSystemRuntime(capacity: 4, modules: EmitterModules.standard)
+        system.burst(4)
+        let draw = try #require(try system.planDraws(views: views, sceneDepth: nil).first)
+        #expect(draw.uniforms.viewProjections.0 == projection * left)
+        #expect(draw.uniforms.viewProjections.1 == projection * right)
+        #expect(simd_distance(draw.uniforms.cameraPosition, [0, 0, 3]) < 1e-5)
+    }
+
+    @Test func oneViewRepeatsItsViewProjection() throws {
+        let draw = try plan { _ in }
+        #expect(draw.uniforms.viewProjections.0 == projection * view)
+        #expect(draw.uniforms.viewProjections.1 == projection * view)
     }
 }

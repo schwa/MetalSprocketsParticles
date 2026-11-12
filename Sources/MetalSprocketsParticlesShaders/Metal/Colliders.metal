@@ -10,10 +10,11 @@ struct WireframeOut {
 
 vertex WireframeOut wireframeVertex(
     uint vertexID [[vertex_id]],
+    ushort eye [[amplification_id]],
     const device float4 *vertices [[buffer(0)]],
     constant WireframeUniforms &uniforms [[buffer(1)]]
 ) {
-    return { uniforms.viewProjection * float4(vertices[vertexID].xyz, 1) };
+    return { uniforms.viewProjections[eye] * float4(vertices[vertexID].xyz, 1) };
 }
 
 fragment float4 wireframeFragment(constant WireframeUniforms &uniforms [[buffer(0)]]) {
@@ -29,10 +30,11 @@ struct SolidOut {
 
 vertex SolidOut solidVertex(
     uint vertexID [[vertex_id]],
+    ushort eye [[amplification_id]],
     const device float4 *vertices [[buffer(0)]],
     constant WireframeUniforms &uniforms [[buffer(1)]]
 ) {
-    return { uniforms.viewProjection * float4(vertices[vertexID * 2].xyz, 1), vertices[vertexID * 2 + 1].xyz };
+    return { uniforms.viewProjections[eye] * float4(vertices[vertexID * 2].xyz, 1), vertices[vertexID * 2 + 1].xyz };
 }
 
 // Simple headlight-free shading: one fixed key light from above plus ambient, so shapes read without scene lights.

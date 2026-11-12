@@ -2011,6 +2011,7 @@ Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 
 
 - `2026-10-18T19:32:51Z`: Deferred (user): no Vision Pro hardware this week.
 - `2026-11-12T19:17:28Z`: SceneSprockets immersive rendering depends on this: Rendering.metal and Colliders.metal have no [[amplification_id]] path. MetalSprocketsPBR (PBRStereoViews) is a working reference for per-view uniforms.
+- `2026-11-12T19:27:58Z`: Stereo rendering path added: ParticleStereoViews (per-eye view/projection/viewport, centerView), render(views:sceneDepth:) with vertex amplification ([[amplification_id]] in particle, wireframe, and solid vertex shaders; maxVertexAmplificationCount on pipelines). Billboards, sorting, soft-particle depth use the center eye; culling tests both eyes. Remaining: per-eye scene depth for soft particles, stereo entry points for collider solids and debug wireframes, visionOS demo target / ParticleView immersive variant, hand/gaze input, triangle-strip vs foveated (rasterization rate map) compatibility. Not yet run on visionOS hardware.
 
 ---
 

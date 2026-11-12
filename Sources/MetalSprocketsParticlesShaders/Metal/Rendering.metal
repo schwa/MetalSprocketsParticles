@@ -359,6 +359,7 @@ static void finishVertex(
 vertex VertexOut particleTrailVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
+    ushort eye [[amplification_id]],
     const device Particle *particles [[buffer(0)]],
     constant RenderUniforms &uniforms [[buffer(1)]],
     constant float4 *colorCurve [[buffer(2)]],
@@ -395,7 +396,7 @@ vertex VertexOut particleTrailVertex(
     float along = float(point) / float(count - 1);
     float width = sampleCurve(sizeCurve, t) * p.properties.x * (uniforms.trailTapers != 0 ? 1 - along : 1);
     float3 world = here + across * side * width;
-    out.position = uniforms.viewProjection * float4(world, 1);
+    out.position = uniforms.viewProjections[eye] * float4(world, 1);
     out.color = particleColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, here);
     if (uniforms.trailFades != 0) {
         out.color *= 1 - along;
@@ -429,6 +430,7 @@ static bool isLive(Particle p) {
 // the window becomes a zero-width, transparent point, so the ribbon breaks there instead of reaching to a stale spot.
 vertex VertexOut particleRibbonVertex(
     uint vertexID [[vertex_id]],
+    ushort eye [[amplification_id]],
     const device Particle *particles [[buffer(0)]],
     constant RenderUniforms &uniforms [[buffer(1)]],
     constant float4 *colorCurve [[buffer(2)]],
@@ -471,7 +473,7 @@ vertex VertexOut particleRibbonVertex(
         uint neighbor = olderOffset != offset ? olderOffset : newerOffset;
         Particle other = particles[slotIndex(neighbor)];
         float3 at = (uniforms.model * float4(other.position.xyz, 1)).xyz;
-        out.position = isLive(other) ? uniforms.viewProjection * float4(at, 1) : float4(0);
+        out.position = isLive(other) ? uniforms.viewProjections[eye] * float4(at, 1) : float4(0);
         out.color = 0;
         out.viewDepth = dot(at - uniforms.cameraPosition, uniforms.cameraForward);
         return out;
@@ -488,7 +490,7 @@ vertex VertexOut particleRibbonVertex(
     float along = count > 1 ? float(offset) / float(count - 1) : 1;
     float width = sampleCurve(sizeCurve, t) * p.properties.x * (uniforms.ribbonTapers != 0 ? along : 1);
     float3 world = here + across * side * width;
-    out.position = uniforms.viewProjection * float4(world, 1);
+    out.position = uniforms.viewProjections[eye] * float4(world, 1);
     out.color = particleColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, here);
     finishVertex(out, facingInput(uniforms, here, out.color, p, index), world, p, index, t, uniforms, shadingFunction, shadingParameters, lights, particleLights);
     out.texcoord = float2(along, side * 0.5 + 0.5);
@@ -527,6 +529,7 @@ static float4 particleBaseColor(constant RenderUniforms &uniforms, constant floa
 vertex VertexOut particleVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
+    ushort eye [[amplification_id]],
     const device Particle *particles [[buffer(0)]],
     constant RenderUniforms &uniforms [[buffer(1)]],
     constant float4 *colorCurve [[buffer(2)]],
@@ -605,7 +608,7 @@ vertex VertexOut particleVertex(
     float2 stretched = float2(corner.x, corner.y * stretch);
     float2 offset = float2(c * stretched.x - s * stretched.y, s * stretched.x + c * stretched.y);
     float3 world = center + (right * offset.x + up * offset.y) * size;
-    out.position = uniforms.viewProjection * float4(world, 1);
+    out.position = uniforms.viewProjections[eye] * float4(world, 1);
     out.color = particleColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, center);
     // The quad's own plane: a tumbling card's real facing, a billboard's camera-facing one. Unused, and compiled out,
     // when the draw does not shade.
@@ -628,6 +631,7 @@ vertex VertexOut particleVertex(
 vertex VertexOut particleMeshVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
+    ushort eye [[amplification_id]],
     const device Particle *particles [[buffer(0)]],
     constant RenderUniforms &uniforms [[buffer(1)]],
     constant float4 *colorCurve [[buffer(2)]],
@@ -657,7 +661,7 @@ vertex VertexOut particleMeshVertex(
     float3 local = rotateAbout(meshVertices[vertexID * 2].xyz, axis, p.rotation.x) * size;
     float3 normal = rotateAbout(meshVertices[vertexID * 2 + 1].xyz, axis, p.rotation.x);
     float3 world = center + local;
-    out.position = uniforms.viewProjection * float4(world, 1);
+    out.position = uniforms.viewProjections[eye] * float4(world, 1);
     out.color = particleColor(uniforms, colorCurve, extraColorCurves, colorImage, p, index, t, center);
     // Meshes always shade, per vertex or per pixel: even unlit ones shade toward the camera.
     ShadingInput input = { world, normal, normal, normalize(uniforms.cameraPosition - world), out.color, age, lifetime, index, 1, float2(0) };

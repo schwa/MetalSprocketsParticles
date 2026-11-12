@@ -768,7 +768,15 @@ public final class ParticleSystemRuntime {
     /// not interleaved. Pass the scene's depth, the same size as the render target and rendered with `projection`, to
     /// soften emitters with `softness`; it is read, not tested against, so it must not be the pass's depth attachment.
     public func render(projection: simd_float4x4, view: simd_float4x4, sceneDepth: MTLTexture? = nil) throws -> some Element {
-        try encode(try planDraws(projection: projection, view: view, sceneDepth: sceneDepth), sceneDepth: sceneDepth)
+        try render(views: ParticleStereoViews(projection: projection, view: view), sceneDepth: sceneDepth)
+    }
+
+    /// Draws every emitter's particles once for all `views` (vertex amplification), e.g. both eyes of a visionOS
+    /// immersive space. Place inside a render pass whose target has one array slice per view. Sort with
+    /// `views.centerView` passed to `simulate(view:)`. Soft particles need a scene depth for the center view; pass nil
+    /// for none.
+    public func render(views: ParticleStereoViews, sceneDepth: MTLTexture? = nil) throws -> some Element {
+        try encode(try planDraws(views: views, sceneDepth: sceneDepth), views: views, sceneDepth: sceneDepth)
     }
 }
 
@@ -809,8 +817,9 @@ struct EmitterDraw {
     }
 
     /// The camera, emitter, and frame parts of the draw; the emitter's modules write the rest (#226).
-    init(emitter: ParticleSystemRuntime.Emitter, projection: simd_float4x4, view: simd_float4x4, lighting: Lighting, hasSceneDepth: Bool) {
-        let cameraToWorld = view.inverse
+    init(emitter: ParticleSystemRuntime.Emitter, views: ParticleStereoViews, lighting: Lighting, hasSceneDepth: Bool) {
+        let cameraToWorld = views.centerView.inverse
+        let projection = views.projectionMatrices[0]
         colorCurve = []
         sizeCurve = []
         extraColorCurves = []
@@ -828,7 +837,7 @@ struct EmitterDraw {
             sortRecords = nil
         }
         var uniforms = RenderUniforms()
-        uniforms.viewProjection = projection * view
+        uniforms.viewProjections = views.viewProjectionPair
         uniforms.model = emitter.modelTransform
         uniforms.cameraRight = simd_normalize(cameraToWorld.columns.0.xyz)
         uniforms.cameraUp = simd_normalize(cameraToWorld.columns.1.xyz)
