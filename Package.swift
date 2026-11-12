@@ -15,7 +15,7 @@ let package = Package(
         .executable(name: "particles-bench", targets: ["particles-bench"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.9")),
+        .package(url: "https://github.com/schwa/MetalSprockets", .upToNextMinor(from: "0.2.11")),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2"),
         .package(url: "https://github.com/schwa/GoldenImage", .upToNextMinor(from: "0.1.7")),
         .package(url: "https://github.com/schwa/MetalCompilerPlugin", .upToNextMinor(from: "0.4.1")),

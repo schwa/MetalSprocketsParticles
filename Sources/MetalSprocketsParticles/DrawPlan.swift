@@ -45,8 +45,8 @@ enum DrawKind {
 extension ParticleSystemRuntime {
     /// Every visible emitter's draw, in drawing order: unsorted emitters in emitter order, then sorted emitters
     /// farthest first. Updates the culling camera.
-    func planDraws(views: ParticleStereoViews, sceneDepth: MTLTexture?) throws -> [EmitterDraw] {
-        let cameraPosition = views.centerView.inverse.columns.3.xyz
+    func planDraws(views: StereoViews, sceneDepth: MTLTexture?) throws -> [EmitterDraw] {
+        let cameraPosition = views.centerViewMatrix.inverse.columns.3.xyz
         let viewProjections = views.viewProjections
         cullingCamera = CullingCamera(position: cameraPosition, viewProjection: viewProjections[0], otherViewProjections: Array(viewProjections.dropFirst()))
         let visible = allEmitters.filter { !$0.isOutsideView(camera: cullingCamera) }
@@ -59,7 +59,7 @@ extension ParticleSystemRuntime {
         }
     }
 
-    private func planDraw(_ emitter: Emitter, views: ParticleStereoViews, lighting: EmitterDraw.Lighting, hasSceneDepth: Bool) throws -> EmitterDraw {
+    private func planDraw(_ emitter: Emitter, views: StereoViews, lighting: EmitterDraw.Lighting, hasSceneDepth: Bool) throws -> EmitterDraw {
         var draw = EmitterDraw(emitter: emitter, views: views, lighting: lighting, hasSceneDepth: hasSceneDepth)
         let modules = draw.modules
         let mesh = try modules.mesh.flatMap { try vertexBuffer(for: $0.mesh) }
@@ -124,7 +124,7 @@ extension ParticleSystemRuntime {
     }
 
     /// Binds and draws `draws`.
-    func encode(_ draws: [EmitterDraw], views: ParticleStereoViews, sceneDepth: MTLTexture?) throws -> some Element {
+    func encode(_ draws: [EmitterDraw], views: StereoViews, sceneDepth: MTLTexture?) throws -> some Element {
         let builtInShading = try gpuFunctions.builtInShading()
         let depthCompare = depthCompareFunction
         let writesAllDepth = writesDepth

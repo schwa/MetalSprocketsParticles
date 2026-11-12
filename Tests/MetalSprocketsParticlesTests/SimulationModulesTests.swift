@@ -1,5 +1,6 @@
 import Foundation
 import Metal
+import MetalSprockets
 @testable import MetalSprocketsParticles
 import MetalSprocketsParticlesSamples
 import simd
@@ -83,7 +84,7 @@ struct DrawModulesTests {
     func draw(_ modules: EmitterModules) throws -> EmitterDraw {
         let system = try ParticleSystemRuntime(capacity: 4, modules: modules)
         let lighting = EmitterDraw.Lighting(ambient: .zero, lightCount: 0, particleLightCount: 0)
-        return EmitterDraw(emitter: system.emitters[0], views: ParticleStereoViews(projection: matrix_identity_float4x4, view: matrix_identity_float4x4), lighting: lighting, hasSceneDepth: false)
+        return EmitterDraw(emitter: system.emitters[0], views: StereoViews(projection: matrix_identity_float4x4, view: matrix_identity_float4x4), lighting: lighting, hasSceneDepth: false)
     }
 
     @Test func noModulesDrawWhiteAlphaBlendedWithNoExtraColors() throws {

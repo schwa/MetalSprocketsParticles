@@ -70,13 +70,13 @@ public final class ImmersiveParticlesStage: @unchecked Sendable {
             print("[immersive] frame=\(frameIndex) t=\(context.time) dt=\(deltaTime) views=\(context.viewCount) viewports=\(context.viewports.map { "\($0.originX),\($0.originY) \($0.width)x\($0.height)" }) colorSlices=\(context.drawable.colorTextures[0].arrayLength) colorTextures=\(context.drawable.colorTextures.count) textureType=\(context.drawable.colorTextures[0].textureType.rawValue) alive=\(player.runtime.aliveParticleCount) state=\(player.runtime.state) system=\(player.system.name) camera=\(cameraPosition) color=\(context.drawable.colorTextures[0].pixelFormat.rawValue) depth=\(context.drawable.depthTextures[0].pixelFormat.rawValue)")
         }
         // Views of the effect's own space, so the effect sits at `placement` without moving its emitters.
-        let views = ParticleStereoViews(
+        let views = StereoViews(
             viewMatrices: eyes.map { context.viewMatrix(eye: $0) * placement },
             projectionMatrices: eyes.map { context.projectionMatrix(eye: $0) },
             viewports: context.viewports
         )
         return try Group {
-            try player.simulate(deltaTime: deltaTime, view: views.centerView)
+            try player.simulate(deltaTime: deltaTime, view: views.centerViewMatrix)
             try ImmersiveRenderPass(context: context, label: "Particles") {
                 try player.runtime.render(views: views)
             }

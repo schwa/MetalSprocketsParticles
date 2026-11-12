@@ -5224,11 +5224,13 @@ On Vision Pro, particles in the immersive space (#241) show some hard edges inst
 ## 245: Own ParticleStereoViews duplicates other packages' stereo view types
 
 +++
-status: new
+status: closed
 priority: medium
 kind: enhancement
 labels: effort:s
 created: 2026-11-12T20:42:20Z
+updated: 2026-11-12T20:55:04Z
+closed: 2026-11-12T20:55:04Z
 +++
 
 ParticleStereoViews is this package's own copy of per-view stereo matrices, viewports and vertex amplification setup. MetalSprocketsAddOns, MetalSprocketsPBR, MetalSprocketsParticles and SceneSprockets each have one, and callers convert between them at every boundary. See MetalSprockets #MetalSprockets#558.
