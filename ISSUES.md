@@ -5220,3 +5220,21 @@ created: 2026-11-12T20:16:47Z
 On Vision Pro, particles in the immersive space (#241) show some hard edges instead of soft falloff. Seen after particles started writing depth in a depth-only pass (depthAlphaThreshold 0.1) with foveation on. Cause not investigated.
 
 ---
+
+## 245: Own ParticleStereoViews duplicates other packages' stereo view types
+
++++
+status: new
+priority: medium
+kind: enhancement
+labels: effort:s
+created: 2026-11-12T20:42:20Z
++++
+
+ParticleStereoViews is this package's own copy of per-view stereo matrices, viewports and vertex amplification setup. MetalSprocketsAddOns, MetalSprocketsPBR, MetalSprocketsParticles and SceneSprockets each have one, and callers convert between them at every boundary. See MetalSprockets #MetalSprockets#558.
+
+## Proposed fix (per schwa)
+
+Once MetalSprockets ships a shared StereoViews (#MetalSprockets#558) in a tagged release, adopt it in place of ParticleStereoViews and bump the MetalSprockets dependency.
+
+---
