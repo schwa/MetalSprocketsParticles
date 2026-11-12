@@ -5159,3 +5159,20 @@ Expected: this package requires GeometryLite3D 0.3.x (and SwiftMesh 0.1.x where 
 Reported from SceneSprockets #378.
 
 ---
+
+## 241: No visionOS immersive demo to run the stereo particle path on device
+
++++
+status: new
+priority: medium
+kind: feature
+labels: area:rendering
+depends: 98
+created: 2026-11-12T19:28:20Z
++++
+
+The demo app has no visionOS ImmersiveSpace, so the stereo rendering path from #98 (ParticleStereoViews, render(views:sceneDepth:)) cannot be tried on a Vision Pro. MetalSprocketsParticlesDemoSupport lists visionOS as a platform, but no demo target or scene uses immersive rendering.
+
+Expected: a demo that runs on Vision Pro and plays a particle preset in an immersive space, drawn in stereo with vertex amplification.
+
+---
