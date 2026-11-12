@@ -292,6 +292,11 @@ public final class ParticleSystemRuntime {
     /// reversed projection (`reversingDepth(_:)`; `ParticlePlayer` does this itself) and clear depth buffers to 0.
     /// Scene depth, solid colliders, mesh particles, soft particles, and depth collision all follow it.
     public var reverseZ = false
+    /// Writes particle depth in a second, depth-only pass after the color draws, where a particle is at least
+    /// `depthAlphaThreshold` opaque. For targets whose depth is read later: the visionOS compositor treats pixels with
+    /// no depth as empty, so particles that write none do not show in an immersive space.
+    public var writesDepth = false
+    public var depthAlphaThreshold: Float = 0.1
     /// Draws particles in false colors or as wireframes instead of their own colors. Simulation is unaffected.
     public var debugView: ParticleDebugView = .none
     /// Speeds for `ParticleDebugView.speed`; the upper bound is also the seconds for `.lifeRemaining`.
@@ -790,6 +795,8 @@ struct EmitterDraw {
     /// The shader variants for this draw's kind and shading.
     var vertexShader: VertexShader?
     var fragmentShader: FragmentShader?
+    /// The depth-only variant, when the runtime writes depth.
+    var depthFragmentShader: FragmentShader?
     var shadingParameters: [SIMD4<Float>] = [.zero]
     var colorCurve: [SIMD4<Float>]
     var sizeCurve: [Float]

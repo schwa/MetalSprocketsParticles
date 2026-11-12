@@ -232,6 +232,9 @@ final class ParticlesDemoModel {
     private(set) var cameraEye: SIMD3<Float> = [0, 3, 6]
     private(set) var cameraTarget: SIMD3<Float> = [0, 1.5, 0]
 
+    /// visionOS: the effect plays in the immersive space instead of the viewport.
+    var isImmersive = false
+
     init(preset: ParticleSystem = .fountain) {
         system = try? ParticleSystemRuntime()
         presetName = preset.name

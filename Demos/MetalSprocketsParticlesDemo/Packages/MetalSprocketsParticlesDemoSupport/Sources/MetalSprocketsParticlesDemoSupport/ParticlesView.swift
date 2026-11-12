@@ -38,7 +38,7 @@ public struct ParticlesView: View {
                     SceneToolbarContent()
                     #if os(visionOS)
                     ToolbarItem {
-                        ImmersiveToggle(system: model.currentEffect)
+                        ImmersiveToggle(system: model.currentEffect, isImmersive: $model.isImmersive)
                     }
                     #endif
                     ToolbarItem {
@@ -164,7 +164,9 @@ struct ParticleViewportView: View {
     static let colorPixelFormat = ParticleSystemRuntime.colorPixelFormat
 
     var body: some View {
-        if let system = model.system {
+        if model.isImmersive {
+            ContentUnavailableView("Playing Immersively", systemImage: "visionpro", description: Text("The effect is playing in the immersive space."))
+        } else if let system = model.system {
             RenderView(colorPixelFormat: colorFormat.pixelFormat, depthStencilPixelFormat: .depth32Float) { context, size in
                 let aspect = Float(size.width / max(size.height, 1))
                 // The demo owns its 3D camera (the orbit controls); in 2D it shows the scene flat from the front, framed

@@ -552,6 +552,8 @@ typedef struct {
     simd_float3 colorImageOrigin;
     simd_float3 colorImageU;
     simd_float3 colorImageV;
+    // Depth-only pass: pixels less opaque than this write no depth.
+    float depthAlphaThreshold;
 } RenderUniforms;
 
 typedef struct {

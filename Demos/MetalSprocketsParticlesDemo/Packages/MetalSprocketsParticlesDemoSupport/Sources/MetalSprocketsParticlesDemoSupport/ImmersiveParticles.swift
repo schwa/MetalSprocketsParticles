@@ -21,6 +21,7 @@ public final class ImmersiveParticlesStage: @unchecked Sendable {
         var player: ParticlePlayer?
         var playerGeneration = -1
         var lastTime: TimeInterval?
+        var frameIndex = 0
     }
 
     private let state = OSAllocatedUnfairLock(uncheckedState: State())
@@ -42,6 +43,8 @@ public final class ImmersiveParticlesStage: @unchecked Sendable {
                 let player = try ParticlePlayer(system: state.system, device: context.device)
                 // The compositor's depth runs from 1 (near) to 0 (far).
                 player.runtime.reverseZ = true
+                // The compositor treats pixels with no depth as empty.
+                player.runtime.writesDepth = true
                 state.player = player
                 state.playerGeneration = state.generation
             } else if state.playerGeneration != state.generation {
@@ -55,6 +58,17 @@ public final class ImmersiveParticlesStage: @unchecked Sendable {
         }
         let placement = placement
         let eyes = 0 ..< context.viewCount
+        // DIAGNOSTIC (#241): remove once immersive drawing works.
+        let frameIndex = state.withLockUnchecked { state -> Int in
+            state.frameIndex += 1
+            return state.frameIndex
+        }
+        if frameIndex % 90 == 1 {
+            let cameraPosition = context.viewMatrix(eye: 0).inverse.columns.3
+            let clip = context.projectionMatrix(eye: 0) * context.viewMatrix(eye: 0) * placement * SIMD4<Float>(0, 0.5, 0, 1)
+            print("[immersive] effect origin + 0.5 m up, eye 0 NDC: \(clip / clip.w)")
+            print("[immersive] frame=\(frameIndex) t=\(context.time) dt=\(deltaTime) views=\(context.viewCount) viewports=\(context.viewports.map { "\($0.originX),\($0.originY) \($0.width)x\($0.height)" }) colorSlices=\(context.drawable.colorTextures[0].arrayLength) colorTextures=\(context.drawable.colorTextures.count) textureType=\(context.drawable.colorTextures[0].textureType.rawValue) alive=\(player.runtime.aliveParticleCount) state=\(player.runtime.state) system=\(player.system.name) camera=\(cameraPosition) color=\(context.drawable.colorTextures[0].pixelFormat.rawValue) depth=\(context.drawable.depthTextures[0].pixelFormat.rawValue)")
+        }
         // Views of the effect's own space, so the effect sits at `placement` without moving its emitters.
         let views = ParticleStereoViews(
             viewMatrices: eyes.map { context.viewMatrix(eye: $0) * placement },
@@ -77,9 +91,16 @@ public struct ImmersiveParticlesContent: ImmersiveSpaceContent {
     public init() {}
 
     public var body: some ImmersiveSpaceContent {
-        // Particles blend; foveation's coarse periphery shows as blocky edges on them.
-        ImmersiveRenderContent(foveation: false) { context in
-            try ImmersiveParticlesStage.shared.frame(context)
+        // Foveation stays on: without it the compositor may pick its shared layout (both eyes side by side in one
+        // texture), and the stereo draws route each eye to its own array slice, which a shared target lacks.
+        ImmersiveRenderContent { context in
+            do {
+                return try ImmersiveParticlesStage.shared.frame(context)
+            } catch {
+                // DIAGNOSTIC (#241)
+                print("[immersive] frame failed: \(error)")
+                throw error
+            }
         }
     }
 }
@@ -88,9 +109,9 @@ public struct ImmersiveParticlesContent: ImmersiveSpaceContent {
 struct ImmersiveToggle: View {
 
     let system: ParticleSystem
+    @Binding var isImmersive: Bool
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
-    @State private var isImmersive = false
     @State private var isTransitioning = false
 
     var body: some View {

@@ -136,9 +136,10 @@ extension ParticleSystemRuntime {
     }
 
     /// The particle fragment shader, calling the shading function per pixel or not.
-    func fragmentShader(perPixel: Bool) throws -> FragmentShader {
+    func fragmentShader(perPixel: Bool, depthOnly: Bool = false) throws -> FragmentShader {
         var constants = FunctionConstants()
         constants["particleShadesPerPixel"] = .bool(perPixel)
+        constants["particleDepthOnlyConstant"] = .bool(depthOnly)
         return try library.function(type: FragmentShader.self, named: "particleFragment", constants: constants)
     }
 

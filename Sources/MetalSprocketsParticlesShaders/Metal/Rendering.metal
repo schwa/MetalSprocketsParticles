@@ -32,6 +32,10 @@ static float4 applyColorVariation(float4 color, float4 offset) {
 constant bool particleHasShading [[function_constant(0)]];
 // Per-pixel shading (#174): the vertex shader passes the shading input on and the fragment shader calls the function.
 constant bool particleShadesPerPixel [[function_constant(1)]];
+// Depth-only pass (ParticleSystemRuntime.writesDepth): color is masked off and nearly transparent pixels are dropped, so
+// depth is written only where the particle shows.
+constant bool particleDepthOnlyConstant [[function_constant(2)]];
+constant bool particleDepthOnly = is_function_constant_defined(particleDepthOnlyConstant) && particleDepthOnlyConstant;
 
 struct VertexOut {
     float4 position [[position]];
@@ -712,6 +716,9 @@ fragment float4 particleFragment(
         base = float4(1);
     }
     float alpha = base.a * color.a;
+    if (particleDepthOnly && alpha < uniforms.depthAlphaThreshold) {
+        discard_fragment();
+    }
     if (uniforms.blendMode == ParticleBlendModeOpaque) {
         if (alpha < 0.5) {
             discard_fragment();

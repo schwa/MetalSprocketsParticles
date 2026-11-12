@@ -116,6 +116,10 @@ extension ParticleSystemRuntime {
         draw.shadingStage = shading.perPixel ? .fragment : .vertex
         draw.vertexShader = try vertexShader(draw.kind.vertexShaderName, calls: shading.calls, perPixel: shading.perPixel)
         draw.fragmentShader = try fragmentShader(perPixel: shading.perPixel)
+        if writesDepth {
+            draw.depthFragmentShader = try fragmentShader(perPixel: shading.perPixel, depthOnly: true)
+            draw.uniforms.depthAlphaThreshold = depthAlphaThreshold
+        }
         return draw
     }
 
@@ -123,6 +127,7 @@ extension ParticleSystemRuntime {
     func encode(_ draws: [EmitterDraw], views: ParticleStereoViews, sceneDepth: MTLTexture?) throws -> some Element {
         let builtInShading = try gpuFunctions.builtInShading()
         let depthCompare = depthCompareFunction
+        let writesAllDepth = writesDepth
         let trailBuffer = trails ?? placeholderMesh.vertices
         let lightData = lights.prefix(Int(PARTICLE_MAX_LIGHTS)).map(ParticleLightData.init)
         let buffer = buffer
@@ -164,10 +169,10 @@ extension ParticleSystemRuntime {
             }
         }
 
-        func pipeline(_ draw: EmitterDraw) throws -> some Element {
+        func pipeline(_ draw: EmitterDraw, fragmentShader: FragmentShader?) throws -> some Element {
             try RenderPipeline(
                 vertexShader: try draw.vertexShader.orThrow(.resourceCreationFailure("Particle vertex shader")),
-                fragmentShader: try draw.fragmentShader.orThrow(.resourceCreationFailure("Particle fragment shader"))
+                fragmentShader: try fragmentShader.orThrow(.resourceCreationFailure("Particle fragment shader"))
             ) {
                 Draw { encoder in
                     encoder.setTriangleFillMode(draw.wireframe ? .lines : .fill)
@@ -180,21 +185,37 @@ extension ParticleSystemRuntime {
             .linkedFunctions(draw.shading == nil ? [] : builtInShading.linked(with: draw.shading), functionType: draw.shadingStage)
         }
 
-        return ForEach(Array(draws.indices), id: \.self) { index in
-            let draw = draws[index]
-            // Set depth state here rather than inherit the host pass's. Opaque shapes hide each other. Sprites,
-            // ribbons, and trails are unsorted quads with transparent edges, so they never write depth.
-            let writesDepth = draw.kind.isMesh && draw.blendMode == .opaque
-            try pipeline(draw)
-                .depthCompare(function: depthCompare, writes: writesDepth)
-                .renderPipelineDescriptorTransformer { descriptor in
-                    if views.isStereo {
-                        descriptor.maxVertexAmplificationCount = views.count
+        return try Group {
+            ForEach(Array(draws.indices), id: \.self) { index in
+                let draw = draws[index]
+                // Set depth state here rather than inherit the host pass's. Opaque shapes hide each other. Sprites,
+                // ribbons, and trails are unsorted quads with transparent edges, so they never write depth here.
+                let writesDepth = draw.kind.isMesh && draw.blendMode == .opaque
+                try pipeline(draw, fragmentShader: draw.fragmentShader)
+                    .depthCompare(function: depthCompare, writes: writesDepth)
+                    .renderPipelineDescriptorTransformer { descriptor in
+                        if views.isStereo {
+                            descriptor.maxVertexAmplificationCount = views.count
+                        }
+                        if let attachment = descriptor.colorAttachments[0] {
+                            draw.blendMode.configure(attachment)
+                        }
                     }
-                    if let attachment = descriptor.colorAttachments[0] {
-                        draw.blendMode.configure(attachment)
-                    }
+            }
+            if writesAllDepth {
+                // After every color draw, so particles never hide each other's color: depth only, where each shows.
+                ForEach(Array(draws.indices), id: \.self) { index in
+                    let draw = draws[index]
+                    try pipeline(draw, fragmentShader: draw.depthFragmentShader)
+                        .depthCompare(function: depthCompare, writes: true)
+                        .renderPipelineDescriptorTransformer { descriptor in
+                            if views.isStereo {
+                                descriptor.maxVertexAmplificationCount = views.count
+                            }
+                            descriptor.colorAttachments[0]?.writeMask = []
+                        }
                 }
+            }
         }
     }
 }
