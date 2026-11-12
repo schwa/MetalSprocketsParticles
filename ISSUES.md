@@ -5178,3 +5178,45 @@ The demo app has no visionOS ImmersiveSpace, so the stereo rendering path from #
 Expected: a demo that runs on Vision Pro and plays a particle preset in an immersive space, drawn in stereo with vertex amplification.
 
 ---
+
+## 242: visionOS window UI is a mess
+
++++
+status: new
+priority: medium
+kind: bug
+labels: area:demo
+created: 2026-11-12T20:16:46Z
++++
+
+The demo app's window UI on visionOS (Vision Pro) does not lay out or work well. It was made to build for visionOS in #241 (inspector shown as a sheet, toolbar spacers dropped) but was never designed for the platform.
+
+---
+
+## 243: Presets appear far too large in the visionOS immersive space
+
++++
+status: new
+priority: medium
+kind: bug
+labels: area:demo
+created: 2026-11-12T20:16:46Z
++++
+
+In the immersive space (#241), every preset plays at its authored size, 1.5 m in front of the viewer, and looks massive. Expected: effects at a comfortable size in the room.
+
+---
+
+## 244: Particles show sharp edges in the visionOS immersive space
+
++++
+status: new
+priority: medium
+kind: bug
+labels: area:rendering
+created: 2026-11-12T20:16:47Z
++++
+
+On Vision Pro, particles in the immersive space (#241) show some hard edges instead of soft falloff. Seen after particles started writing depth in a depth-only pass (depthAlphaThreshold 0.1) with foveation on. Cause not investigated.
+
+---
