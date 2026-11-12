@@ -2010,6 +2010,7 @@ What this project needs:
 Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 4); visionOS may have the same problem. Needs a device or a fix upstream.
 
 - `2026-10-18T19:32:51Z`: Deferred (user): no Vision Pro hardware this week.
+- `2026-11-12T19:17:28Z`: SceneSprockets immersive rendering depends on this: Rendering.metal and Colliders.metal have no [[amplification_id]] path. MetalSprocketsPBR (PBRStereoViews) is a working reference for per-view uniforms.
 
 ---
 
