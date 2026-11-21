@@ -1990,9 +1990,9 @@ The demo app could then use ParticleView for simple cases, which also tests it.
 status: open
 priority: medium
 kind: feature
-labels: area:rendering, needs-design, deferred
+labels: area:rendering, deferred
 created: 2026-10-18T19:29:44Z
-updated: 2026-10-18T19:32:51Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 Show particle effects in a visionOS immersive space, using MetalSprockets' immersive support.
@@ -2012,6 +2012,7 @@ Blocker to check: the iOS simulator build fails inside MetalSprockets (no Metal 
 - `2026-10-18T19:32:51Z`: Deferred (user): no Vision Pro hardware this week.
 - `2026-11-12T19:17:28Z`: SceneSprockets immersive rendering depends on this: Rendering.metal and Colliders.metal have no [[amplification_id]] path. MetalSprocketsPBR (PBRStereoViews) is a working reference for per-view uniforms.
 - `2026-11-12T19:27:58Z`: Stereo rendering path added: ParticleStereoViews (per-eye view/projection/viewport, centerView), render(views:sceneDepth:) with vertex amplification ([[amplification_id]] in particle, wireframe, and solid vertex shaders; maxVertexAmplificationCount on pipelines). Billboards, sorting, soft-particle depth use the center eye; culling tests both eyes. Remaining: per-eye scene depth for soft particles, stereo entry points for collider solids and debug wireframes, visionOS demo target / ParticleView immersive variant, hand/gaze input, triangle-strip vs foveated (rasterization rate map) compatibility. Not yet run on visionOS hardware.
+- `2026-11-24T17:42:18Z`: Related: #242, #243, #244 (visionOS window, preset scale, sharp edges).
 
 ---
 
@@ -2061,9 +2062,9 @@ Related: #97, #107.
 status: open
 priority: medium
 kind: feature
-labels: area:editor, effort:xl, needs-design, deferred
+labels: area:editor, effort:xl, deferred
 created: 2026-10-18T19:51:12Z
-updated: 2026-10-18T21:58:31Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 Replace the demo's debug-style inspector with a real editor app for particle systems. It should be something an artist or developer would choose to use, not a test harness.
@@ -4923,12 +4924,12 @@ Remove ParticleEmitter, LoweredModule apply/lift and the lift round-trip tests; 
 ## 230: Tests never run under Metal API validation (MTL_DEBUG_LAYER)
 
 +++
-status: new
+status: open
 priority: high
 kind: task
 labels: area:testing, effort:s, area:ci
 created: 2026-10-21T12:21:43Z
-updated: 2026-10-21T16:10:06Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 The suite never runs under the Metal layers that Xcode Debug runs turn on by default: API validation (MTL_DEBUG_LAYER=1) and GPU frame capture (MTL_CAPTURE_ENABLED=1). So layer-only failures never fail a test. Example: binary-linked user functions and stitched modules crashed under both layers (MetalSprockets #541, #542, now fixed upstream), and the suite passed while the demo crashed in Xcode. GitHub CI (macos-26 runners) has no Metal 4 GPU, so it cannot cover this.
@@ -4950,11 +4951,12 @@ Done when: Buildkite is green on main with the validation + capture step.
 ## 231: Every particle draw calls setTriangleFillMode, flooding API validation with redundant-call warnings
 
 +++
-status: new
+status: open
 priority: low
 kind: bug
 labels: area:rendering, effort:s
 created: 2026-10-21T13:53:12Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 Running the demo in Xcode (API validation on) prints, for every emitter draw every frame:
@@ -5010,11 +5012,12 @@ The demo claims iphoneos/xros support (SUPPORTED_PLATFORMS in MetalSprocketsPart
 ## 234: Demo: iOS UI needs a lot of work
 
 +++
-status: new
+status: open
 priority: medium
 kind: enhancement
-labels: area:demo, effort:l, needs-design
+labels: area:demo, effort:l
 created: 2026-10-21T16:31:44Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 The demo builds and runs on iOS (after guarding OutlineView's onDeleteCommand with #if os(macOS)), but the UI is a poor fit: it is the macOS layout (outline sidebar, inspector sections, toolbars, sliders) carried over. Needs a design pass for touch and small screens: navigation (outline vs. inspector vs. viewport), inspector density and controls, toolbar items, and keyboard-only affordances (delete command, shortcuts) that have no iOS equivalent. Capture screenshots of the current state when designing. Related: #233 (iOS/visionOS in CI).
@@ -5024,11 +5027,12 @@ The demo builds and runs on iOS (after guarding OutlineView's onDeleteCommand wi
 ## 235: Demo: build and test on visionOS, then add it to CI
 
 +++
-status: new
+status: open
 priority: low
 kind: task
 labels: area:demo, area:ci, effort:s
 created: 2026-10-21T16:45:01Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 The demo lists xros in SUPPORTED_PLATFORMS but has never been built or run on visionOS (#233 skipped it). Build for a visionOS device, run it, fix what breaks, then add generic/platform=xrOS to the Buildkite demo step.
@@ -5068,10 +5072,12 @@ Calling runtime.simulate(deltaTime:) more than about 4 times before one GPU subm
 ## 238: Send to device: preview an effect from the Mac editor on iPhone or headset
 
 +++
-status: new
+status: open
 priority: medium
 kind: feature
+labels: area:demo, effort:l
 created: 2026-10-21T17:44:16Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 Build and configure a particle system in the Mac demo, then send it to a connected iPhone or Vision Pro to preview it live there. The effect file format (EffectFile) already holds a full effect, so it could be the payload. Open questions: transport (for example Network.framework with Bonjour discovery), a receiver app on iOS and visionOS, and whether edits stream live or are sent on demand.
@@ -5081,11 +5087,12 @@ Build and configure a particle system in the Mac demo, then send it to a connect
 ## 239: Feature ideas from other particle systems
 
 +++
-status: new
+status: open
 priority: low
-kind: feature
-labels: needs-design
+kind: task
+labels: area:simulation, effort:xl
 created: 2026-10-22T00:44:26Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 Ideas from Unity (Shuriken, VFX Graph), Unreal (Niagara), Godot, Houdini, PopcornFX, tyFlow, EmberGen, and others that we do not have yet. This is a list of ideas, not a plan. Split items into separate issues before work starts.
@@ -5182,42 +5189,51 @@ Expected: a demo that runs on Vision Pro and plays a particle preset in an immer
 ## 242: visionOS window UI is a mess
 
 +++
-status: new
+status: open
 priority: medium
-kind: bug
-labels: area:demo
+kind: enhancement
+labels: area:demo, effort:m
 created: 2026-11-12T20:16:46Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 The demo app's window UI on visionOS (Vision Pro) does not lay out or work well. It was made to build for visionOS in #241 (inspector shown as a sheet, toolbar spacers dropped) but was never designed for the platform.
+
+- `2026-11-24T17:42:18Z`: Related: #98 (Vision Pro support).
 
 ---
 
 ## 243: Presets appear far too large in the visionOS immersive space
 
 +++
-status: new
+status: open
 priority: medium
 kind: bug
-labels: area:demo
+labels: area:demo, effort:s
 created: 2026-11-12T20:16:46Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 In the immersive space (#241), every preset plays at its authored size, 1.5 m in front of the viewer, and looks massive. Expected: effects at a comfortable size in the room.
+
+- `2026-11-24T17:42:18Z`: Related: #98 (Vision Pro support).
 
 ---
 
 ## 244: Particles show sharp edges in the visionOS immersive space
 
 +++
-status: new
+status: open
 priority: medium
 kind: bug
-labels: area:rendering
+labels: area:rendering, effort:s
 created: 2026-11-12T20:16:47Z
+updated: 2026-11-24T17:42:18Z
 +++
 
 On Vision Pro, particles in the immersive space (#241) show some hard edges instead of soft falloff. Seen after particles started writing depth in a depth-only pass (depthAlphaThreshold 0.1) with foveation on. Cause not investigated.
+
+- `2026-11-24T17:42:18Z`: Related: #98 (Vision Pro support).
 
 ---
 
@@ -5238,5 +5254,57 @@ ParticleStereoViews is this package's own copy of per-view stereo matrices, view
 ## Proposed fix (per schwa)
 
 Once MetalSprockets ships a shared StereoViews (#MetalSprockets#558) in a tagged release, adopt it in place of ParticleStereoViews and bump the MetalSprockets dependency.
+
+---
+
+## 246: Particle passes assume reverse-Z depth and cannot run in a normal-Z view
+
++++
+status: closed
+priority: low
+kind: enhancement
+labels: effort:m, area:rendering
+created: 2026-11-21T01:50:04Z
+updated: 2026-11-24T17:45:11Z
+closed: 2026-11-24T17:45:11Z
++++
+
+SceneSprockets#325 lets apps choose normal Z or reverse-Z per view. This package assumes reverse-Z: depth compare functions, clear depth values, projection matrices and shaders that read depth expect near = 1, far = 0. In a normal-Z view, its passes would test and read depth the wrong way.
+
+Expected: every pass that tests, clears or reads depth takes the depth direction as an input and works in both modes.
+
+- `2026-11-24T17:45:11Z`: Already supported: ParticleSystemRuntime.reverseZ (#144) switches projection, depth compare, clear depth and scene-depth collision; covered by ReverseZTests. The remaining gap is SceneSprockets hardcoding reverseZ = true: SceneSprockets#668.
+
+---
+
+## 247: GPU particles do not use indirect draws
+
++++
+status: open
+priority: low
+kind: enhancement
+labels: effort:l, indirect-drawing, area:rendering
+created: 2026-11-22T18:03:29Z
+updated: 2026-11-24T17:42:18Z
++++
+
+Particle simulation and draw counts are not driven by compute and indirect draws: the CPU decides how many particles to draw. MetalSprockets now has indirect draws (MetalSprockets#575, #576). Moved from SceneSprockets#521 (part of SceneSprockets#544).
+
+---
+
+## 248: Particles are simulated and stored in world-space Float, so they jitter far from the origin
+
++++
+status: open
+priority: low
+kind: bug
+labels: effort:m, area:simulation
+created: 2026-11-23T13:36:37Z
+updated: 2026-11-24T17:42:18Z
++++
+
+Particle positions are simulated and stored in world space as Float. Far from the world origin (for example at 2^20 m, where Float resolves about 0.125 m) particles jitter or are misplaced. Drawing camera-relative alone does not help, because the stored positions have already lost precision.
+
+SceneSprockets needs particles stored relative to each emitter (emitter origin kept on the CPU, applied camera-relative at draw), with colliders and scene-depth collisions in the same space, and a release it can require. Requested from SceneSprockets#262.
 
 ---
